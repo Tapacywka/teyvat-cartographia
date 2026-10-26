@@ -15,16 +15,16 @@ body:
     attributes:
       label: Mod version
       description: The file name of the JAR in your `mods` folder, or the version from the mod list.
-      placeholder: 0.1.0+mc1.21.1-neoforge
+      placeholder: 0.5.0+mc1.21.1-fabric
     validations:
       required: true
 
   - type: input
-    id: neoforge-version
+    id: loader-version
     attributes:
-      label: NeoForge version
-      description: Shown in the bottom left corner of the title screen and in the launcher.
-      placeholder: 21.1.257
+      label: Mod loader and version
+      description: Fabric Loader and Fabric API, or NeoForge with Sinytra Connector and Forgified Fabric API (the launcher shows them).
+      placeholder: Fabric Loader 0.16.14, Fabric API 0.116.17
     validations:
       required: true
 

@@ -1,9 +1,8 @@
 package net.tapacywka.teyvatcartographia.config;
 
-import net.neoforged.neoforge.common.ModConfigSpec;
 
 /**
- * Client-side user settings (UI only). Stored by NeoForge in {@code config/teyvatcartographia-client.toml}.
+ * Client-side user settings (UI only). Stored in {@code config/teyvatcartographia-client.json} ({@link ConfigSpec}).
  * Explored map data and markers are stored separately under {@code <gameDir>/teyvatcartographia/}.
  */
 public final class MapConfig {
@@ -29,44 +28,44 @@ public final class MapConfig {
         }
     }
 
-    public static final ModConfigSpec SPEC;
+    public static final ConfigSpec SPEC;
 
     // Appearance
-    public static final ModConfigSpec.ConfigValue<String> THEME;
-    public static final ModConfigSpec.EnumValue<MinimapShape> MINIMAP_SHAPE;
-    public static final ModConfigSpec.EnumValue<InterfaceStyle> INTERFACE_STYLE;
+    public static final ConfigSpec.ConfigValue<String> THEME;
+    public static final ConfigSpec.EnumValue<MinimapShape> MINIMAP_SHAPE;
+    public static final ConfigSpec.EnumValue<InterfaceStyle> INTERFACE_STYLE;
 
     // Minimap
-    public static final ModConfigSpec.BooleanValue MINIMAP_ENABLED;
-    public static final ModConfigSpec.IntValue MINIMAP_RADIUS;
-    public static final ModConfigSpec.EnumValue<Corner> MINIMAP_CORNER;
-    public static final ModConfigSpec.IntValue MINIMAP_OFFSET_X;
-    public static final ModConfigSpec.IntValue MINIMAP_OFFSET_Y;
-    public static final ModConfigSpec.DoubleValue MINIMAP_OPACITY;
+    public static final ConfigSpec.BooleanValue MINIMAP_ENABLED;
+    public static final ConfigSpec.IntValue MINIMAP_RADIUS;
+    public static final ConfigSpec.EnumValue<Corner> MINIMAP_CORNER;
+    public static final ConfigSpec.IntValue MINIMAP_OFFSET_X;
+    public static final ConfigSpec.IntValue MINIMAP_OFFSET_Y;
+    public static final ConfigSpec.DoubleValue MINIMAP_OPACITY;
     /** Gap between the frame and the map inside it (GUI units). */
-    public static final ModConfigSpec.IntValue MINIMAP_PADDING;
+    public static final ConfigSpec.IntValue MINIMAP_PADDING;
     /** The faded edge of the map: its width (percent of the radius) and how transparent the very edge gets (percent). */
-    public static final ModConfigSpec.IntValue MINIMAP_FADE_WIDTH;
-    public static final ModConfigSpec.IntValue MINIMAP_FADE_STRENGTH;
+    public static final ConfigSpec.IntValue MINIMAP_FADE_WIDTH;
+    public static final ConfigSpec.IntValue MINIMAP_FADE_STRENGTH;
     /** Gap between the map and the info pills under or over it (GUI units). */
-    public static final ModConfigSpec.IntValue MINIMAP_INFO_GAP;
+    public static final ConfigSpec.IntValue MINIMAP_INFO_GAP;
     /** Size of the text under the minimap: 0 "Auto", else screen pixels per font pixel. */
-    public static final ModConfigSpec.IntValue MINIMAP_TEXT_SIZE;
-    public static final ModConfigSpec.IntValue MINIMAP_PILL_OPACITY;
-    public static final ModConfigSpec.DoubleValue MINIMAP_ZOOM;
-    public static final ModConfigSpec.EnumValue<Orientation> MINIMAP_ORIENTATION;
-    public static final ModConfigSpec.EnumValue<UpdateRate> MINIMAP_UPDATE_RATE;
-    public static final ModConfigSpec.BooleanValue MINIMAP_SHOW_COORDS;
-    public static final ModConfigSpec.BooleanValue MINIMAP_SHOW_BIOME;
-    public static final ModConfigSpec.BooleanValue MINIMAP_SHOW_TIME;
-    public static final ModConfigSpec.EnumValue<TimeSource> MINIMAP_TIME_SOURCE;
-    public static final ModConfigSpec.EnumValue<TimeFormat> MINIMAP_TIME_FORMAT;
-    public static final ModConfigSpec.BooleanValue MINIMAP_SHOW_DAY;
+    public static final ConfigSpec.IntValue MINIMAP_TEXT_SIZE;
+    public static final ConfigSpec.IntValue MINIMAP_PILL_OPACITY;
+    public static final ConfigSpec.DoubleValue MINIMAP_ZOOM;
+    public static final ConfigSpec.EnumValue<Orientation> MINIMAP_ORIENTATION;
+    public static final ConfigSpec.EnumValue<UpdateRate> MINIMAP_UPDATE_RATE;
+    public static final ConfigSpec.BooleanValue MINIMAP_SHOW_COORDS;
+    public static final ConfigSpec.BooleanValue MINIMAP_SHOW_BIOME;
+    public static final ConfigSpec.BooleanValue MINIMAP_SHOW_TIME;
+    public static final ConfigSpec.EnumValue<TimeSource> MINIMAP_TIME_SOURCE;
+    public static final ConfigSpec.EnumValue<TimeFormat> MINIMAP_TIME_FORMAT;
+    public static final ConfigSpec.BooleanValue MINIMAP_SHOW_DAY;
 
     // World map
-    public static final ModConfigSpec.BooleanValue MAP_SHOW_LABELS;
-    public static final ModConfigSpec.BooleanValue MAP_SHOW_GRID;
-    public static final ModConfigSpec.DoubleValue MAP_DEFAULT_ZOOM;
+    public static final ConfigSpec.BooleanValue MAP_SHOW_LABELS;
+    public static final ConfigSpec.BooleanValue MAP_SHOW_GRID;
+    public static final ConfigSpec.DoubleValue MAP_DEFAULT_ZOOM;
 
     /**
      * The three kinds of pins, each with its own settings: the players' own (custom), the operators' signs,
@@ -89,9 +88,9 @@ public final class MapConfig {
      * the methods.
      */
     public static final class PinOptions {
-        public final ModConfigSpec.BooleanValue enabled, map, minimap, marker, beam, path, pathMap, pathMinimap, pathWorld;
+        public final ConfigSpec.BooleanValue enabled, map, minimap, marker, beam, path, pathMap, pathMinimap, pathWorld;
 
-        private PinOptions(ModConfigSpec.Builder b, PinKind kind) {
+        private PinOptions(ConfigSpec.Builder b, PinKind kind) {
             b.push(kind.id);
             enabled = b.comment("Show these pins").translation("teyvatcartographia.config.pins." + kind.id).define("enabled", true);
             map = b.comment("On the world map").translation("teyvatcartographia.config.pins.map").define("map", true);
@@ -135,7 +134,7 @@ public final class MapConfig {
         }
 
         private void reset() {
-            for (ModConfigSpec.BooleanValue v : new ModConfigSpec.BooleanValue[]{enabled, map, minimap, marker, beam, path, pathMap, pathMinimap, pathWorld}) resetValue(v);
+            for (ConfigSpec.BooleanValue v : new ConfigSpec.BooleanValue[]{enabled, map, minimap, marker, beam, path, pathMap, pathMinimap, pathWorld}) resetValue(v);
         }
     }
     private static final PinOptions[] PINS = new PinOptions[PinKind.values().length];
@@ -145,34 +144,34 @@ public final class MapConfig {
     }
 
     // Cartography
-    public static final ModConfigSpec.IntValue CHUNKS_PER_TICK;
-    public static final ModConfigSpec.IntValue SCAN_RADIUS;
-    public static final ModConfigSpec.IntValue MAX_CACHED_TILES;
-    public static final ModConfigSpec.EnumValue<Detail> DETAIL;
-    public static final ModConfigSpec.BooleanValue CAVES_ENABLED;
-    public static final ModConfigSpec.BooleanValue MAP_PLANTS;
-    public static final ModConfigSpec.BooleanValue PLAYER_CONE;
-    public static final ModConfigSpec.ConfigValue<java.util.List<? extends String>> PLANTS_HIDDEN;
-    public static final ModConfigSpec.IntValue WATER_DEPTH;
-    public static final ModConfigSpec.IntValue SHALLOW_WATER;
+    public static final ConfigSpec.IntValue CHUNKS_PER_TICK;
+    public static final ConfigSpec.IntValue SCAN_RADIUS;
+    public static final ConfigSpec.IntValue MAX_CACHED_TILES;
+    public static final ConfigSpec.EnumValue<Detail> DETAIL;
+    public static final ConfigSpec.BooleanValue CAVES_ENABLED;
+    public static final ConfigSpec.BooleanValue MAP_PLANTS;
+    public static final ConfigSpec.BooleanValue PLAYER_CONE;
+    public static final ConfigSpec.ConfigValue<java.util.List<? extends String>> PLANTS_HIDDEN;
+    public static final ConfigSpec.IntValue WATER_DEPTH;
+    public static final ConfigSpec.IntValue SHALLOW_WATER;
 
     // Compatibility with other mods (shown in the settings only while that mod is there).
-    public static final ModConfigSpec.BooleanValue SIFT_ICHOR_SHIMMER;
-    public static final ModConfigSpec.BooleanValue SIFT_SNOW_SHIMMER;
-    public static final ModConfigSpec.BooleanValue SIFT_FOG;
-    public static final ModConfigSpec.BooleanValue AETHER_FOG;
-    public static final ModConfigSpec.BooleanValue NETHER_FOG;
-    public static final ModConfigSpec.BooleanValue END_FOG;
-    public static final ModConfigSpec.EnumValue<net.tapacywka.teyvatcartographia.marker.MarkerType> XAERO_PIN_TYPE;
-    public static final ModConfigSpec.BooleanValue XAERO_HIDDEN;
-    public static final ModConfigSpec.BooleanValue XAERO_DEATHS;
+    public static final ConfigSpec.BooleanValue SIFT_ICHOR_SHIMMER;
+    public static final ConfigSpec.BooleanValue SIFT_SNOW_SHIMMER;
+    public static final ConfigSpec.BooleanValue SIFT_FOG;
+    public static final ConfigSpec.BooleanValue AETHER_FOG;
+    public static final ConfigSpec.BooleanValue NETHER_FOG;
+    public static final ConfigSpec.BooleanValue END_FOG;
+    public static final ConfigSpec.EnumValue<net.tapacywka.teyvatcartographia.marker.MarkerType> XAERO_PIN_TYPE;
+    public static final ConfigSpec.BooleanValue XAERO_HIDDEN;
+    public static final ConfigSpec.BooleanValue XAERO_DEATHS;
 
     public enum Detail { LOW, MEDIUM, HIGH }
 
     /** How the path to a tracked pin goes (user decision 26.10.2026): on foot round deep water, or by boat across it. */
     public enum Route { LAND, WATER }
 
-    public static final ModConfigSpec.EnumValue<Route> PATH_ROUTE;
+    public static final ConfigSpec.EnumValue<Route> PATH_ROUTE;
 
     /** Clock under the minimap: the time of day in the game world, or the real time of the player's computer. */
     public enum TimeSource { GAME_TIME, REAL_TIME, BOTH }
@@ -181,7 +180,7 @@ public final class MapConfig {
     public enum TimeFormat { HOURS_24, HOURS_12, HOURS_12_AM_PM }
 
     static {
-        ModConfigSpec.Builder b = new ModConfigSpec.Builder();
+        ConfigSpec.Builder b = new ConfigSpec.Builder();
 
         b.push("appearance");
         THEME = b.comment("Theme (colours, icons, Fog of War): the id of a folder in assets/teyvatcartographia/themes/ (built in: default; enabled resource packs may add more)")
@@ -291,12 +290,12 @@ public final class MapConfig {
         save();
     }
 
-    private static <T> void resetValue(ModConfigSpec.ConfigValue<T> value) {
+    private static <T> void resetValue(ConfigSpec.ConfigValue<T> value) {
         value.set(value.getDefault());
     }
 
     /** Safe read: config values throw if read before the config file was loaded. */
-    public static <T> T get(ModConfigSpec.ConfigValue<T> value) {
+    public static <T> T get(ConfigSpec.ConfigValue<T> value) {
         try {
             return value.get();
         } catch (IllegalStateException e) {

@@ -23,6 +23,7 @@ import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexSorting;
 import net.minecraft.Util;
+import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -33,7 +34,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
 import org.joml.Vector4f;
@@ -53,8 +53,8 @@ import org.joml.Vector4f;
  *   <li>it is shown for a minute after tracking starts or the pulse key is pressed, then fades out; the pulse key
  *       fades it in again for another minute.</li>
  * </ul>
- * The camera matrices come from {@link RenderLevelStageEvent} of the same frame. The HUD part allocates nothing per
- * frame; the beam is one small vertex batch of 16 quads.
+ * The camera matrices come from the end of the level rendering of the same frame ({@link #afterLevel}). The HUD part
+ * allocates nothing per frame; the beam is one small vertex batch of 16 quads.
  */
 public final class WorldMarkerLayer implements LayeredDraw.Layer {
     /** The above / below arrow, {@code LEVEL_GAP} GUI units past the glyph's edge, at any distance. */
@@ -118,15 +118,14 @@ public final class WorldMarkerLayer implements LayeredDraw.Layer {
     private static long edgeMs;
 
     /**
-     * {@link RenderLevelStageEvent} listener: once the level is rendered draws the stars and the beam and keeps this
+     * Fabric's WorldRenderEvents.LAST: once the level is rendered draws the stars and the beam and keeps this
      * frame's view and projection for the HUD.
      */
-    public static void onRenderLevelStage(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_LEVEL) return;
-        renderInWorld(event);
-        VIEW.set(event.getModelViewMatrix());
-        event.getProjectionMatrix().mul(VIEW, VIEW_PROJ);
-        Vec3 c = event.getCamera().getPosition();
+    public static void afterLevel(Matrix4f levelView, Matrix4f projection, Camera camera, DeltaTracker delta) {
+        renderInWorld(levelView, projection, camera, delta);
+        VIEW.set(levelView);
+        projection.mul(VIEW, VIEW_PROJ);
+        Vec3 c = camera.getPosition();
         camX = c.x;
         camY = c.y;
         camZ = c.z;
@@ -385,19 +384,21 @@ public final class WorldMarkerLayer implements LayeredDraw.Layer {
      * The path stars, then the beam, after the whole level. In Fabulous graphics the water, the particles, the clouds
      * and the weather are laid together by depth at the end: stars drawn after the particles and the beam drawn after
      * the weather (neither writing depth) went under the water there, taking its colour, and the beam stopped above the
-     * ground and was cut by the clouds (tester reports 26.10.2026). Here the level's view is no longer on the
-     * model-view stack and Fabulous leaves the flat projection of its last pass, so both are put back for the draw.
+     * ground and was cut by the clouds (tester reports 26.10.2026). Fabric calls this while the level's view is still
+     * on the model-view stack (NeoForge's AFTER_LEVEL came after it was taken off; multiplied in once more under
+     * Fabric, the view turned twice and drew all behind the camera), and Fabulous leaves the flat projection of its
+     * last pass: the stack top is set to the view alone and the projection put back for the draw.
      */
-    private static void renderInWorld(RenderLevelStageEvent event) {
+    private static void renderInWorld(Matrix4f levelView, Matrix4f projection, Camera camera, DeltaTracker delta) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.options.hideGui) return;
         boolean stars = starsShown > 0f && Navigation.inPlayerDimension(Navigation.target(), mc.player);
         if (!stars && !beamOn) return;
         RenderSystem.backupProjectionMatrix();
-        RenderSystem.setProjectionMatrix(event.getProjectionMatrix(), VertexSorting.DISTANCE_TO_ORIGIN);
+        RenderSystem.setProjectionMatrix(projection, VertexSorting.DISTANCE_TO_ORIGIN);
         Matrix4fStack view = RenderSystem.getModelViewStack();
         view.pushMatrix();
-        view.mul(event.getModelViewMatrix());
+        view.identity().mul(levelView);
         RenderSystem.applyModelViewMatrix();
         RenderTarget particles = mc.levelRenderer.getParticlesTarget();
         if (Minecraft.useShaderTransparency() && particles != null) {
@@ -407,8 +408,8 @@ public final class WorldMarkerLayer implements LayeredDraw.Layer {
             main.copyDepthFrom(particles);
             main.bindWrite(false);
         }
-        if (stars) PathStars.render(event.getCamera(), starsShown);
-        renderBeam(event);
+        if (stars) PathStars.render(camera, starsShown);
+        renderBeam(camera, delta);
         view.popMatrix();
         RenderSystem.applyModelViewMatrix();
         RenderSystem.restoreProjectionMatrix();
@@ -421,13 +422,13 @@ public final class WorldMarkerLayer implements LayeredDraw.Layer {
      * camera-facing layers (glow and core), each a strip from the centre to both edges whose alpha falls to zero at the
      * edges, at the bottom and at the top.
      */
-    private static void renderBeam(RenderLevelStageEvent event) {
+    private static void renderBeam(Camera camera, DeltaTracker delta) {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
         if (player == null || mc.level == null || mc.options.hideGui || !beamOn) return;
         Navigation.Target t = Navigation.target();
         if (!Navigation.inPlayerDimension(t, player)) return;
-        float pt = event.getPartialTick().getGameTimeDeltaPartialTick(false);
+        float pt = delta.getGameTimeDeltaPartialTick(false);
         double px = Mth.lerp(pt, player.xo, player.getX()), py = Mth.lerp(pt, player.yo, player.getY()), pz = Mth.lerp(pt, player.zo, player.getZ());
         double ty = targetY(mc, t, py);
         double dx = t.x() - px, dy = ty - py, dz = t.z() - pz;
@@ -435,7 +436,7 @@ public final class WorldMarkerLayer implements LayeredDraw.Layer {
         float a = shown * nearFade * edgeFade;
         if (a <= 0.01f) return;
 
-        Vec3 cam = event.getCamera().getPosition();
+        Vec3 cam = camera.getPosition();
         float bx = (float) (t.x() - cam.x), bz = (float) (t.z() - cam.z);
         float y0 = (float) (ty + ANCHOR_Y - cam.y), y1 = y0 + Math.max(BEAM_RISE, dist * BEAM_RISE_SHARE);
         float y2 = y1 + BEAM_HEIGHT * 0.4f, y3 = y0 + BEAM_HEIGHT;

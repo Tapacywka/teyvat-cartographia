@@ -1,5 +1,6 @@
 package net.tapacywka.teyvatcartographia.gui.panel;
 
+import net.tapacywka.teyvatcartographia.config.ConfigSpec;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
 import net.tapacywka.teyvatcartographia.gui.TeyvatConfigScreen;
 import net.tapacywka.teyvatcartographia.gui.Ui;
@@ -11,7 +12,6 @@ import net.tapacywka.teyvatcartographia.render.Theme;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
-import net.neoforged.neoforge.common.ModConfigSpec;
 
 import java.util.List;
 import java.util.function.BooleanSupplier;
@@ -25,7 +25,7 @@ public final class SettingsPanel extends SidePanel {
     }
 
     /** {@code tooltipKey}: the matching full-settings option, whose description is reused as tooltip. */
-    private static Row option(String key, String tooltipKey, ModConfigSpec.BooleanValue v) {
+    private static Row option(String key, String tooltipKey, ConfigSpec.BooleanValue v) {
         return new Row(Component.translatable(key), Component.translatable("teyvatcartographia.config." + tooltipKey + ".tooltip"), false, () -> MapConfig.get(v), () -> {
             v.set(!MapConfig.get(v));
             MapConfig.save();

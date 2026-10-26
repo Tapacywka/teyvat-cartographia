@@ -3,6 +3,7 @@ package net.tapacywka.teyvatcartographia.render;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import net.fabricmc.fabric.api.resource.IdentifiableResourceReloadListener;
 import net.tapacywka.teyvatcartographia.TeyvatCartographia;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -51,7 +52,16 @@ import java.util.Map;
  * whose pack was disabled falls back to the default theme. The shapes of the minimap and the interface are not part of
  * a theme: they are settings of their own ({@link Theme.Style}), applied here too.
  */
-public final class ThemeLoader extends SimplePreparableReloadListener<ThemeLoader.Prepared> {
+public final class ThemeLoader extends SimplePreparableReloadListener<ThemeLoader.Prepared>
+        implements IdentifiableResourceReloadListener {
+    private static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(TeyvatCartographia.MOD_ID, "themes");
+
+    /** Fabric's id of this reload listener. */
+    @Override
+    public ResourceLocation getFabricId() {
+        return ID;
+    }
+
     /** {@code legacy}: the setting named a theme of 0.1.x (see {@link Theme#LEGACY}), replaced by the default one. */
     record Prepared(List<String> ids, Map<String, Component> names, String id, Map<String, Integer> colors, boolean legacy,
                     Map<ResourceLocation, Map<ResourceLocation, Integer>> palettes) {}

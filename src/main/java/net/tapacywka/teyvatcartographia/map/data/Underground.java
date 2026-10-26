@@ -3,7 +3,7 @@ package net.tapacywka.teyvatcartographia.map.data;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.neoforged.neoforge.common.Tags;
+import net.fabricmc.fabric.api.tag.convention.v2.ConventionalBlockTags;
 
 import java.util.Objects;
 
@@ -30,8 +30,8 @@ final class Underground {
     static boolean natural(BlockState s) {
         if (!s.blocksMotion()) return false;
         return s.is(BlockTags.BASE_STONE_OVERWORLD) || s.is(BlockTags.DIRT) || s.is(BlockTags.SAND) || s.is(BlockTags.TERRACOTTA)
-                || s.is(Tags.Blocks.STONES) || s.is(Tags.Blocks.GRAVELS) || s.is(Tags.Blocks.ORES) || s.is(Tags.Blocks.SANDS)
-                || s.is(BlockTags.BASE_STONE_NETHER) || s.is(Tags.Blocks.NETHERRACKS) || s.is(Tags.Blocks.END_STONES)
+                || s.is(ConventionalBlockTags.STONES) || s.is(ConventionalBlockTags.GRAVELS) || s.is(ConventionalBlockTags.ORES) || s.is(ConventionalBlockTags.SANDS)
+                || s.is(BlockTags.BASE_STONE_NETHER) || s.is(ConventionalBlockTags.NETHERRACKS) || s.is(ConventionalBlockTags.END_STONES)
                 || s.is(Blocks.SANDSTONE) || s.is(Blocks.RED_SANDSTONE) || s.is(Blocks.CALCITE) || s.is(Blocks.CLAY)
                 || s.is(Blocks.DRIPSTONE_BLOCK) || s.is(Blocks.SMOOTH_BASALT) || s.is(Blocks.AMETHYST_BLOCK)
                 || s.is(Blocks.SNOW_BLOCK) || s.is(Blocks.PACKED_ICE) || s.is(Blocks.BLUE_ICE) || s.is(Blocks.OBSIDIAN)

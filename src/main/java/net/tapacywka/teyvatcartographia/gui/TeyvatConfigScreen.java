@@ -1,5 +1,6 @@
 package net.tapacywka.teyvatcartographia.gui;
 
+import net.tapacywka.teyvatcartographia.config.ConfigSpec;
 import net.tapacywka.teyvatcartographia.compat.ModCompat;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
 import net.tapacywka.teyvatcartographia.config.StepChoice;
@@ -21,7 +22,6 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.options.controls.KeyBindsScreen;
 import net.minecraft.network.chat.Component;
-import net.neoforged.neoforge.common.ModConfigSpec;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
@@ -34,7 +34,8 @@ import java.util.function.DoubleSupplier;
 
 /**
  * Full settings screen in the dark-panel style (switches, sliders, choice cyclers), reachable from the map's
- * settings panel and from the NeoForge mod list. Values are written to the client config immediately.
+ * settings panel and from the mod list (Mod Menu; NeoForge's list through Connector Extras). Values are written to
+ * the client config immediately.
  * All rows share one layout: label on the left, control right-aligned in the right half, on the 4-unit grid.
  */
 public final class TeyvatConfigScreen extends Screen {
@@ -209,11 +210,11 @@ public final class TeyvatConfigScreen extends Screen {
     }
 
     private static class BoolRow extends Row {
-        final ModConfigSpec.BooleanValue value;
+        final ConfigSpec.BooleanValue value;
         /** Run after a change (the map drawn again), or null. */
         Runnable onChange;
 
-        BoolRow(String key, ModConfigSpec.BooleanValue value) {
+        BoolRow(String key, ConfigSpec.BooleanValue value) {
             super(key);
             this.value = value;
         }
@@ -337,12 +338,12 @@ public final class TeyvatConfigScreen extends Screen {
             return this;
         }
 
-        static SliderRow ofInt(String key, ModConfigSpec.IntValue v, int min, int max) {
+        static SliderRow ofInt(String key, ConfigSpec.IntValue v, int min, int max) {
             return new SliderRow(key, min, max, false, true, "%d", () -> MapConfig.get(v), d -> v.set((int) Math.round(d)));
         }
 
         /** A whole number whose 0 means "Auto" (shown as the word). */
-        static SliderRow ofAuto(String key, ModConfigSpec.IntValue v, int max) {
+        static SliderRow ofAuto(String key, ConfigSpec.IntValue v, int max) {
             SliderRow r = new SliderRow(key, 0, max, false, true, "%d", () -> MapConfig.get(v), d -> v.set((int) Math.round(d)));
             r.labeler = d -> Math.round(d) == 0 ? Component.translatable("teyvatcartographia.config.value.auto").getString()
                     : Integer.toString((int) Math.round(d));
@@ -361,16 +362,16 @@ public final class TeyvatConfigScreen extends Screen {
         }
 
         /** A whole number shown as a percentage ("20%"). */
-        static SliderRow ofPercent(String key, ModConfigSpec.IntValue v, int min, int max) {
+        static SliderRow ofPercent(String key, ConfigSpec.IntValue v, int min, int max) {
             return new SliderRow(key, min, max, false, true, "%d%%", () -> MapConfig.get(v), d -> v.set((int) Math.round(d)));
         }
 
-        static SliderRow ofDouble(String key, ModConfigSpec.DoubleValue v, double min, double max, boolean log, String format) {
+        static SliderRow ofDouble(String key, ConfigSpec.DoubleValue v, double min, double max, boolean log, String format) {
             return new SliderRow(key, min, max, log, false, format, () -> MapConfig.get(v), v::set);
         }
 
         /** A zoom setting: the steps of MapView.ZOOM_STEPS, shown as "1/4", "1", "8". */
-        static SliderRow ofZoom(String key, ModConfigSpec.DoubleValue v) {
+        static SliderRow ofZoom(String key, ConfigSpec.DoubleValue v) {
             double[] steps = MapView.ZOOM_STEPS;
             SliderRow r = new SliderRow(key, steps[0], steps[steps.length - 1], false, false, "%.2f", () -> MapConfig.get(v), v::set);
             r.steps = steps;
@@ -482,17 +483,17 @@ public final class TeyvatConfigScreen extends Screen {
 
     private static final class EnumRow<E extends Enum<E>> extends Row {
         static final int H = 16;
-        final ModConfigSpec.EnumValue<E> value;
+        final ConfigSpec.EnumValue<E> value;
         final E[] values;
         final Runnable onChange;
         /** Whether the choice does anything now (the time format only with the clock on); null: always. */
         final BooleanSupplier activeWhen;
 
-        EnumRow(String key, ModConfigSpec.EnumValue<E> value, E[] values, Runnable onChange) {
+        EnumRow(String key, ConfigSpec.EnumValue<E> value, E[] values, Runnable onChange) {
             this(key, value, values, onChange, null);
         }
 
-        EnumRow(String key, ModConfigSpec.EnumValue<E> value, E[] values, Runnable onChange, BooleanSupplier activeWhen) {
+        EnumRow(String key, ConfigSpec.EnumValue<E> value, E[] values, Runnable onChange, BooleanSupplier activeWhen) {
             super(key);
             this.value = value;
             this.values = values;
@@ -616,8 +617,8 @@ public final class TeyvatConfigScreen extends Screen {
             "teyvatcartographia.config.step.maps", "teyvatcartographia.config.step.everywhere"};
 
     /** Sets an on/off setting and its three parts from a step (see {@link StepChoice}); off leaves the parts as they are. */
-    private static void setSteps(int step, ModConfigSpec.BooleanValue on, ModConfigSpec.BooleanValue map,
-                                 ModConfigSpec.BooleanValue minimap, ModConfigSpec.BooleanValue world) {
+    private static void setSteps(int step, ConfigSpec.BooleanValue on, ConfigSpec.BooleanValue map,
+                                 ConfigSpec.BooleanValue minimap, ConfigSpec.BooleanValue world) {
         on.set(StepChoice.on(step));
         if (!StepChoice.on(step)) return;
         map.set(StepChoice.map(step));

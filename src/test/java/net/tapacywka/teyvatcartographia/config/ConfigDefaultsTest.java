@@ -53,7 +53,7 @@ class ConfigDefaultsTest {
     void everyPinKindAndItsPathAreOn() {
         for (MapConfig.PinKind kind : MapConfig.PinKind.values()) {
             MapConfig.PinOptions o = MapConfig.pins(kind);
-            for (var v : new net.neoforged.neoforge.common.ModConfigSpec.BooleanValue[]{o.enabled, o.map, o.minimap, o.marker, o.beam, o.path, o.pathMap, o.pathMinimap, o.pathWorld}) {
+            for (var v : new ConfigSpec.BooleanValue[]{o.enabled, o.map, o.minimap, o.marker, o.beam, o.path, o.pathMap, o.pathMinimap, o.pathWorld}) {
                 assertTrue(v.getDefault(), kind + " " + v.getPath());
             }
         }

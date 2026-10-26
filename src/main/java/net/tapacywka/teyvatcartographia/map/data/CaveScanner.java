@@ -7,7 +7,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.material.MapColor;
-import net.neoforged.neoforge.common.Tags;
+import net.fabricmc.fabric.api.tag.convention.v2.ConventionalBlockTags;
 
 import java.util.Map;
 
@@ -117,9 +117,9 @@ public final class CaveScanner {
                 } else if (s.getFluidState().is(FluidTags.LAVA)) {
                     c = TextureColors.lava() != 0 ? TextureColors.lava() : MapPalette.LAVA;
                     f |= MapTile.FLAG_IMPASSABLE;
-                } else if (s.is(Tags.Blocks.ORES)) {
+                } else if (s.is(ConventionalBlockTags.ORES)) {
                     // Ore stands out from the stone: gems in teal, everything else in pale gold.
-                    boolean gem = s.is(Tags.Blocks.ORES_DIAMOND) || s.is(Tags.Blocks.ORES_EMERALD) || s.is(Tags.Blocks.ORES_LAPIS);
+                    boolean gem = s.is(ConventionalBlockTags.DIAMOND_ORES) || s.is(ConventionalBlockTags.EMERALD_ORES) || s.is(ConventionalBlockTags.LAPIS_ORES);
                     c = gem ? ORE_GEM : ORE;
                 } else {
                     MapColor mc = s.getMapColor(level, pos);

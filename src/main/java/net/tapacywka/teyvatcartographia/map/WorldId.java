@@ -4,7 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.client.server.IntegratedServer;
 import net.minecraft.world.level.storage.LevelResource;
-import net.neoforged.fml.loading.FMLPaths;
+import net.fabricmc.loader.api.FabricLoader;
 
 import java.nio.file.Path;
 import java.util.Locale;
@@ -14,7 +14,7 @@ public final class WorldId {
     private WorldId() {}
 
     public static Path root() {
-        return FMLPaths.GAMEDIR.get().resolve("teyvatcartographia");
+        return FabricLoader.getInstance().getGameDir().resolve("teyvatcartographia");
     }
 
     /** Stable folder name for the world the client is currently in, or {@code null} if not in a world. */

@@ -4,7 +4,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
-import net.neoforged.fml.ModList;
+import net.fabricmc.loader.api.FabricLoader;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
 
 /**
@@ -86,7 +86,6 @@ public final class ModCompat {
     }
 
     private static boolean loaded(String modId) {
-        ModList mods = ModList.get();
-        return mods != null && mods.isLoaded(modId);
+        return FabricLoader.getInstance().isModLoaded(modId);
     }
 }

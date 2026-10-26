@@ -10,18 +10,15 @@ import net.tapacywka.teyvatcartographia.nav.Navigation;
 import net.tapacywka.teyvatcartographia.nav.FarPath;
 import net.tapacywka.teyvatcartographia.nav.PathFinder;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.chunk.LevelChunk;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
-import net.neoforged.neoforge.client.event.ClientTickEvent;
-import net.neoforged.neoforge.event.level.ChunkEvent;
 
-/** Game-bus client event handlers (registered from {@link net.tapacywka.teyvatcartographia.TeyvatCartographia}). */
+/** Client event handlers, called from the Fabric API callbacks registered in {@link ClientSetup}. */
 public final class ClientEvents {
-    @SubscribeEvent
-    public void onClientTick(ClientTickEvent.Post event) {
-        Minecraft mc = Minecraft.getInstance();
+    private ClientEvents() {}
+
+    public static void tick(Minecraft mc) {
         MapDataManager data = MapDataManager.get();
         data.tick();
         MarkerStore.switchWorld(data.worldId());
@@ -61,15 +58,11 @@ public final class ClientEvents {
         if (mc.screen == null) mc.setScreen(WorldMapScreen.newPinHere());
     }
 
-    @SubscribeEvent
-    public void onChunkLoad(ChunkEvent.Load event) {
-        if (event.getLevel().isClientSide() && event.getChunk() instanceof LevelChunk chunk) {
-            MapDataManager.get().onChunkLoaded(chunk);
-        }
+    public static void chunkLoaded(ClientLevel level, LevelChunk chunk) {
+        MapDataManager.get().onChunkLoaded(chunk);
     }
 
-    @SubscribeEvent
-    public void onLoggingOut(ClientPlayerNetworkEvent.LoggingOut event) {
+    public static void loggingOut() {
         MapDataManager.get().closeAll(true);
         MarkerStore.switchWorld(null);
     }

@@ -1,11 +1,21 @@
 package net.tapacywka.teyvatcartographia.map.data;
 
+import net.minecraft.SharedConstants;
+import net.minecraft.server.Bootstrap;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /** The block colours of the map: a texture's colour is the average of its visible pixels, tinted channel by channel. */
 class TextureColorsTest {
+    /** The block registry is read (TextureColors names vanilla blocks): the game's registries set up once. */
+    @BeforeAll
+    static void bootstrap() {
+        SharedConstants.tryDetectVersion();
+        Bootstrap.bootStrap();
+    }
+
     /** NativeImage pixels are ABGR. */
     private static int abgr(int a, int r, int g, int b) {
         return a << 24 | b << 16 | g << 8 | r;

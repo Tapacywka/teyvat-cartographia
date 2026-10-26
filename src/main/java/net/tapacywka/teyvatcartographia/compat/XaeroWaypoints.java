@@ -8,7 +8,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.LevelResource;
-import net.neoforged.fml.loading.FMLPaths;
+import net.fabricmc.loader.api.FabricLoader;
 import net.tapacywka.teyvatcartographia.marker.Marker;
 import net.tapacywka.teyvatcartographia.marker.MarkerType;
 
@@ -35,7 +35,7 @@ public final class XaeroWaypoints {
 
     /** The Xaero folders that may hold waypoints, newest layout first; only those that exist. */
     public static List<Path> roots() {
-        Path game = FMLPaths.GAMEDIR.get();
+        Path game = FabricLoader.getInstance().getGameDir();
         List<Path> out = new ArrayList<>();
         for (Path p : List.of(game.resolve("xaero").resolve("minimap"), game.resolve("XaeroWaypoints"))) {
             if (Files.isDirectory(p)) out.add(p);

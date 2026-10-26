@@ -43,7 +43,7 @@ public final class ChipField {
         this.hint = hint;
         box = new EditBox(Minecraft.getInstance().font, 0, 0, 100, DrawText.LINE, name);
         box.setBordered(false);
-        box.setTextShadow(false); // the vanilla drop shadow smears the text on the chips
+        TextShadow.off(box); // the vanilla drop shadow smears the text on the chips
         box.setMaxLength(maxLength);
         box.setHint(hint);
     }
