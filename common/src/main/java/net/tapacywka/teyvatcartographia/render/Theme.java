@@ -182,6 +182,12 @@ public final class Theme {
     /** The path over deep water: the colour of the sea, and the badge under the sea icon where a crossing begins. */
     public static int ROUTE_SEA = 0xFF3FD0EA;
     public static int ROUTE_SEA_BADGE = 0xE02C323C;
+    /**
+     * The path by air (route By air, user decision 27.10.2026): near white like the sky, as by land is golden and over
+     * water the colour of the sea; dark grey through the fog.
+     */
+    public static int ROUTE_AIR = 0xFFEEF2F7;
+    public static int ROUTE_AIR_FOG = 0xE66E7682;
     public static int PING_GLOW = 0x30FFFFFF;
     public static int PING_RING = 0xFFFFFFFF;
     public static int PING_CORE = 0xFFFFFFFF;

@@ -20,29 +20,17 @@ class VisibilityTest {
         assertEquals(MapConfig.PinKind.SYSTEM, MarkerVisibility.kind(spawn));
     }
 
+    /** At every zoom (1/16 and 1/32 too since 27.10.2026) by the settings of the kind and the place. */
     @Test
     void theSettingsOfTheKindAndThePlace() {
-        assertTrue(MarkerVisibility.shown(false, 1, true, true));
-        assertFalse(MarkerVisibility.shown(false, 1, true, false), "off on this map");
-        assertFalse(MarkerVisibility.shown(false, 1, false, true), "the whole kind off");
-        assertTrue(MarkerVisibility.shown(false, 16, true, true));
-    }
-
-    @Test
-    void at1Over16And1Over32OnlyTheTrackedPin() {
-        assertTrue(MarkerVisibility.shown(false, 0.5, true, true), "pins down to 1/8 since 25.10.2026");
-        assertTrue(MarkerVisibility.shown(false, 1 / 8.0, true, true));
-        assertFalse(MarkerVisibility.shown(false, 1 / 16.0, true, true));
-        assertFalse(MarkerVisibility.shown(false, 1 / 32.0, true, true));
-        assertTrue(MarkerVisibility.shown(true, 1 / 32.0, true, true));
-        assertTrue(MarkerVisibility.pinsHidden(1 / 16.0));
-        assertFalse(MarkerVisibility.pinsHidden(1 / 8.0));
-        assertTrue(MarkerVisibility.shown(false, 32, true, true));
+        assertTrue(MarkerVisibility.shown(false, true, true));
+        assertFalse(MarkerVisibility.shown(false, true, false), "off on this map");
+        assertFalse(MarkerVisibility.shown(false, false, true), "the whole kind off");
     }
 
     @Test
     void theTrackedPinIsAlwaysDrawn() {
-        assertTrue(MarkerVisibility.shown(true, 1, false, false));
+        assertTrue(MarkerVisibility.shown(true, false, false));
     }
 
     @Test

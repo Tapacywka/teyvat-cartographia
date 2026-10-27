@@ -3,8 +3,9 @@ package net.tapacywka.teyvatcartographia.nav;
 /**
  * The path to the target as one line for the world map, the minimap and the stars in the world: the precise near path
  * over the loaded terrain ({@link PathFinder}), continued by the far path over the explored map ({@link FarPath}) from
- * its point closest to the near path's end. Points in world blocks, with which of them lie in the fog, their height
- * (only on the near path, NaN on the far one) and their distance along the line; rebuilt only when either path changed.
+ * its point closest to the near path's end; or the straight line of {@link DirectPath}. Points in world blocks, with
+ * which of them lie in the fog, their height (only on the near path, NaN on the others) and their distance along the
+ * line; rebuilt only when a path changed.
  */
 public final class Route {
     private Route() {}
@@ -21,16 +22,18 @@ public final class Route {
     private static boolean[] fog = new boolean[512];
     /** Which points lie on deep water (drawn in the colour of the sea, user decision 26.10.2026). */
     private static boolean[] water = new boolean[512];
-    private static int count, kNear = -1, kFar = -1;
+    private static int count, kNear = -1, kFar = -1, kDirect = -1;
 
     /** Number of points of the line, collected again when a path changed. */
     public static int collect() {
-        if (PathFinder.version() == kNear && FarPath.version() == kFar) {
+        if (PathFinder.version() == kNear && FarPath.version() == kFar && DirectPath.version() == kDirect) {
             REVEAL.update(Navigation.pathRequest(), version(), count, xz, along, fog, water, net.minecraft.Util.getMillis());
             return count;
         }
         kNear = PathFinder.version();
         kFar = FarPath.version();
+        kDirect = DirectPath.version();
+        if (DirectPath.pointCount() > 0) return collectDirect();
         int near = PathFinder.pointCount(), far = FarPath.pointCount();
         int join = 0;
         if (near > 0 && far > 0) {
@@ -64,6 +67,29 @@ public final class Route {
             water[k] = FarPath.MAIN.water[i];
         }
         for (int i = 0; i < n; i++) {
+            along[i] = i == 0 ? 0 : along[i - 1] + (float) Math.hypot(xz[2 * i] - xz[2 * i - 2], xz[2 * i + 1] - xz[2 * i - 1]);
+        }
+        count = n;
+        REVEAL.update(Navigation.pathRequest(), version(), count, xz, along, fog, water, net.minecraft.Util.getMillis());
+        return count;
+    }
+
+    /** The straight line of {@link DirectPath}: no heights (the stars find the ground), none on water. */
+    private static int collectDirect() {
+        int n = DirectPath.pointCount();
+        if (fog.length < n) {
+            xz = new float[2 * n];
+            ys = new float[n];
+            along = new float[n];
+            fog = new boolean[n];
+            water = new boolean[n];
+        }
+        for (int i = 0; i < n; i++) {
+            xz[2 * i] = DirectPath.x(i);
+            xz[2 * i + 1] = DirectPath.z(i);
+            ys[i] = Float.NaN;
+            fog[i] = DirectPath.fog(i);
+            water[i] = false;
             along[i] = i == 0 ? 0 : along[i - 1] + (float) Math.hypot(xz[2 * i] - xz[2 * i - 2], xz[2 * i + 1] - xz[2 * i - 1]);
         }
         count = n;
@@ -106,6 +132,7 @@ public final class Route {
     static void useForTest(float[] points, int n) {
         kNear = PathFinder.version();
         kFar = FarPath.version();
+        kDirect = DirectPath.version();
         xz = java.util.Arrays.copyOf(points, Math.max(2 * n, 2));
         ys = new float[Math.max(n, 1)];
         along = new float[Math.max(n, 1)];
@@ -119,7 +146,7 @@ public final class Route {
 
     /** Changes whenever the line changes (for cached layers). */
     public static int version() {
-        return 31 * PathFinder.version() + FarPath.version();
+        return 31 * (31 * PathFinder.version() + FarPath.version()) + DirectPath.version();
     }
 
     public static float x(int i) {

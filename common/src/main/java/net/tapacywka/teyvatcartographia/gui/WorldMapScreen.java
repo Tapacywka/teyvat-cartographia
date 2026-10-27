@@ -17,6 +17,7 @@ import net.tapacywka.teyvatcartographia.marker.AutoMarkers;
 import net.tapacywka.teyvatcartographia.marker.Marker;
 import net.tapacywka.teyvatcartographia.marker.MarkerStore;
 import net.tapacywka.teyvatcartographia.marker.MarkerVisibility;
+import net.tapacywka.teyvatcartographia.nav.DirectPath;
 import net.tapacywka.teyvatcartographia.nav.Navigation;
 import net.tapacywka.teyvatcartographia.nav.Route;
 import net.tapacywka.teyvatcartographia.render.Backdrop;
@@ -172,12 +173,12 @@ public final class WorldMapScreen extends Screen {
         return MapView.snapZoom(s);
     }
 
-    /** Markers of the viewed dimension: all of them, or only those drawn at the current scale (MarkerVisibility). */
+    /** Markers of the viewed dimension: all of them, or only those drawn (MarkerVisibility). */
     public List<Marker> visibleMarkers(boolean all) {
         List<Marker> out = new ArrayList<>();
         if (viewedDim == null) return out;
-        for (Marker m : MarkerStore.inDimension(viewedDim)) if (all || MarkerVisibility.shown(m, scale, false)) out.add(m);
-        for (Marker m : AutoMarkers.forDimension(viewedDim)) if (all || MarkerVisibility.shown(m, scale, false)) out.add(m);
+        for (Marker m : MarkerStore.inDimension(viewedDim)) if (all || MarkerVisibility.shown(m, false)) out.add(m);
+        for (Marker m : AutoMarkers.forDimension(viewedDim)) if (all || MarkerVisibility.shown(m, false)) out.add(m);
         return out;
     }
 
@@ -230,10 +231,6 @@ public final class WorldMapScreen extends Screen {
 
     public void focusMarker(Marker m) {
         flyTo(m.centerX(), m.centerZ());
-        if (MarkerVisibility.pinsHidden(scale)) {
-            targetScale = 1;
-            thumbAtTarget = false;
-        }
         selectMarker(m);
     }
 
@@ -470,6 +467,7 @@ public final class WorldMapScreen extends Screen {
             if (hovered != null) drawTooltip(g, hovered, mx, my);
             // The sea icon where a crossing of the path begins (user requests 25 and 26.10.2026).
             else if (overSeaIcon(mx, my)) Ui.tooltip(g, Component.translatable("teyvatcartographia.nav.sea").getString(), null, mx, my, width, height);
+            else if (airIcon && Math.hypot(mx - airX, my - airY) <= SEA_BADGE) Ui.tooltip(g, Component.translatable("teyvatcartographia.nav.air").getString(), null, mx, my, width, height);
         }
         pointer(mx, my);
     }
@@ -504,7 +502,7 @@ public final class WorldMapScreen extends Screen {
     private int[] gridColors = new int[64];
 
     private void drawGrid(GuiGraphics g) {
-        // Region lines from 1/8 like the pins and the biome names, chunk lines from 2 (closer, they fill the map).
+        // Region lines from 1/8 like the biome names, chunk lines from 2 (closer, they fill the map).
         if (scale < MapView.DETAIL_FROM - 1e-6) return;
         int step = scale >= 2 ? 16 : 256;
         double wx0 = view.worldX(0, 0), wz0 = view.worldZ(0, 0), wx1 = view.worldX(width, height), wz1 = view.worldZ(width, height);
@@ -550,6 +548,7 @@ public final class WorldMapScreen extends Screen {
      */
     private void drawRoute(GuiGraphics g) {
         seaIcons = 0;
+        airIcon = false;
         Navigation.Target t = Navigation.target();
         if (!pathShown() || t == null || t.dimension() != viewedDim || !viewingPlayerDim()) return;
         int n = Route.collect();
@@ -558,7 +557,10 @@ public final class WorldMapScreen extends Screen {
         // The walked part is gone: the line starts at its point nearest the player.
         net.minecraft.world.phys.Vec3 me = p.getPosition(Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(true));
         int first = Route.cut(me.x, me.z);
-        int color = Theme.worldMarkerPulse();
+        // By air near white, dark grey through the fog (user decision 27.10.2026); else golden, grey through the fog.
+        boolean air = DirectPath.active();
+        int color = air ? Theme.ROUTE_AIR : Theme.worldMarkerPulse();
+        lineFog = air ? Theme.ROUTE_AIR_FOG : Theme.ROUTE_FOG;
         // The line shown before the search, wiped from its start meanwhile.
         int on = Route.oldCount();
         if (on >= 2) {
@@ -605,13 +607,34 @@ public final class WorldMapScreen extends Screen {
                 SEA_ICONS[2 * seaIcons++ + 1] = sy;
             }
         }
+        // By air (27.10.2026): a cloud on the straight line a little ahead of where it begins, so not over the player.
+        if (DirectPath.active() && lineN >= 2) {
+            float x0 = routeXY[0], y0 = routeXY[1], dx = routeXY[2 * lineN - 2] - x0, dy = routeXY[2 * lineN - 1] - y0;
+            float len = (float) Math.hypot(dx, dy), ahead = SEA_BADGE * AIR_AHEAD;
+            if (len > ahead + SEA_BADGE) {
+                airX = x0 + dx / len * ahead;
+                airY = y0 + dy / len * ahead;
+                Draw.circle(g, airX, airY, SEA_BADGE, Theme.ROUTE_SEA_BADGE);
+                Draw.icon(g, Icon.CLOUD, airX, airY, SEA_BADGE * 1.6f, color);
+                airIcon = true;
+            }
+        }
     }
+
+    /** How far ahead of the line's start the cloud sits, in badge radii. */
+    private static final float AIR_AHEAD = 2.6f;
+    /** The cloud drawn this frame and where, for its tooltip. */
+    private boolean airIcon;
+    private float airX, airY;
 
     /** The line collected by {@link #linePoint}, with its shadow, the pattern starting {@code phase} GUI units in. */
     private void drawLine(GuiGraphics g, int color, float phase) {
         Draw.route(g, routeXY, routeFog, routeWater, lineN, 2.4f, Theme.ROUTE_SHADOW, Theme.ROUTE_SHADOW, Theme.ROUTE_SHADOW, phase);
-        Draw.route(g, routeXY, routeFog, routeWater, lineN, 1.4f, color, Theme.ROUTE_FOG, Theme.ROUTE_SEA, phase);
+        Draw.route(g, routeXY, routeFog, routeWater, lineN, 1.4f, color, lineFog, Theme.ROUTE_SEA, phase);
     }
+
+    /** Colour of the line through the fog, set per frame by the kind of route. */
+    private int lineFog = Theme.ROUTE_FOG;
 
     /** Points of the line being drawn: {@code lineN} screen points in routeXY, which lie in the fog and on deep water. */
     private int lineN;
@@ -735,12 +758,12 @@ public final class WorldMapScreen extends Screen {
         if (viewedDim != null) {
             for (int i = 0, n = MarkerStore.count(); i < n; i++) {
                 Marker m = MarkerStore.get(i);
-                if (m.dimension == viewedDim && (MarkerVisibility.shown(m, scale, false) || isSelected(m))) drawMarker(g, m, size, mx, my, overUi);
+                if (m.dimension == viewedDim && (MarkerVisibility.shown(m, false) || isSelected(m))) drawMarker(g, m, size, mx, my, overUi);
             }
             List<Marker> auto = AutoMarkers.forDimension(viewedDim);
             for (int i = 0; i < auto.size(); i++) {
                 Marker m = auto.get(i);
-                if (MarkerVisibility.shown(m, scale, false) || isSelected(m)) drawMarker(g, m, size, mx, my, overUi);
+                if (MarkerVisibility.shown(m, false) || isSelected(m)) drawMarker(g, m, size, mx, my, overUi);
             }
         }
         if (selX != null && panel == null) drawSelectedPoint(g);

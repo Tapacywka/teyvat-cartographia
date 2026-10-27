@@ -159,7 +159,7 @@ public final class FarPath {
         LocalPlayer p = mc.player;
         Navigation.Target t = Navigation.target();
         TileStore active = MapDataManager.get().active();
-        if (p == null || active == null || !Navigation.inPlayerDimension(t, p)) {
+        if (p == null || active == null || !Navigation.inPlayerDimension(t, p) || DirectPath.active()) {
             clear();
             handled = -1;
             return;

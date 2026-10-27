@@ -14,6 +14,7 @@ import net.tapacywka.teyvatcartographia.marker.Marker;
 import net.tapacywka.teyvatcartographia.marker.MarkerStore;
 import net.tapacywka.teyvatcartographia.marker.MarkerVisibility;
 import net.tapacywka.teyvatcartographia.marker.MarkerType;
+import net.tapacywka.teyvatcartographia.nav.DirectPath;
 import net.tapacywka.teyvatcartographia.nav.Navigation;
 import net.tapacywka.teyvatcartographia.nav.Route;
 import net.tapacywka.teyvatcartographia.render.DayLight;
@@ -224,7 +225,7 @@ public final class MinimapLayer implements LayeredDraw.Layer {
         // that is redrawn only when something visible changed; a still player costs one textured quad per frame.
         ResourceKey<Level> dim = player.level().dimension();
         Navigation.Target target = Navigation.target();
-        int pinState = MarkerVisibility.state(zoom, true);
+        int pinState = MarkerVisibility.state(true);
         // The path to the target, if the settings of its kind show it here: searched while shown, redrawn when it changes.
         MapConfig.PinOptions targetOptions = MarkerVisibility.targetOptions();
         boolean path = targetOptions != null && targetOptions.pathOnMinimap() && Navigation.inPlayerDimension(target, player);
@@ -406,18 +407,16 @@ public final class MinimapLayer implements LayeredDraw.Layer {
         // request 26.10.2026), so they end where the map is still half seen.
         float edge = fadeEdge >= 1f ? mapR - TARGET_EDGE : Math.min(mapR - TARGET_EDGE, mapR * (1 + fadeStart) / 2);
         if (path) drawRoute(g, cx, cy, edge, inner, alpha);
-        // Pins by MarkerVisibility (none but the target below scale 1); the target itself is drawn just after. The map
-        // under them moves smoothly between pixels, so they are not snapped to the pixel grid (snapped, they shook).
+        // Pins by MarkerVisibility, at any zoom; the target itself is drawn just after. The map under them moves
+        // smoothly between pixels, so they are not snapped to the pixel grid (snapped, they shook).
         Draw.snapIcons(false);
-        if (!MarkerVisibility.pinsHidden(zoom)) {
-            for (int i = 0, n = MarkerStore.count(); i < n; i++) {
-                Marker m = MarkerStore.get(i);
-                if (m.dimension == dim && MarkerVisibility.shown(m, zoom, true)) drawMarker(g, m, cx, cy, inner, alpha);
-            }
-            List<Marker> auto = AutoMarkers.forDimension(dim);
-            for (int i = 0; i < auto.size(); i++) {
-                if (MarkerVisibility.shown(auto.get(i), zoom, true)) drawMarker(g, auto.get(i), cx, cy, inner, alpha);
-            }
+        for (int i = 0, n = MarkerStore.count(); i < n; i++) {
+            Marker m = MarkerStore.get(i);
+            if (m.dimension == dim && MarkerVisibility.shown(m, true)) drawMarker(g, m, cx, cy, inner, alpha);
+        }
+        List<Marker> auto = AutoMarkers.forDimension(dim);
+        for (int i = 0; i < auto.size(); i++) {
+            if (MarkerVisibility.shown(auto.get(i), true)) drawMarker(g, auto.get(i), cx, cy, inner, alpha);
         }
         if (target != null && target.dimension() == dim) drawTarget(g, target, cx, cy, edge, alpha);
         Draw.snapIcons(true);
@@ -470,8 +469,10 @@ public final class MinimapLayer implements LayeredDraw.Layer {
     private void drawRoute(GuiGraphics g, float cx, float cy, float edge, float inner, float alpha) {
         int n = Route.collect();
         if (n < 2 && Route.oldCount() < 2) return;
-        pieceLine = Theme.withAlpha(Theme.worldMarkerPulse(), alpha);
-        pieceFog = Theme.withAlpha(Theme.ROUTE_FOG, alpha);
+        // By air near white, dark grey through the fog (user decision 27.10.2026); else golden, grey through the fog.
+        boolean air = DirectPath.active();
+        pieceLine = Theme.withAlpha(air ? Theme.ROUTE_AIR : Theme.worldMarkerPulse(), alpha);
+        pieceFog = Theme.withAlpha(air ? Theme.ROUTE_AIR_FOG : Theme.ROUTE_FOG, alpha);
         pieceSea = Theme.withAlpha(Theme.ROUTE_SEA, alpha);
         pieceShadow = Theme.withAlpha(Theme.ROUTE_SHADOW, alpha);
         pieceN = 0;
@@ -506,7 +507,26 @@ public final class MinimapLayer implements LayeredDraw.Layer {
             Draw.circle(g, sx, sy, SEA_BADGE, badge);
             Draw.icon(g, Icon.SEA, sx, sy, SEA_BADGE * 1.6f, pieceSea);
         }
+        // By air (27.10.2026): a cloud on the straight line a little ahead of the player, once the line is drawn in so far.
+        if (DirectPath.active() && n >= 2) {
+            float total = Route.along(n - 1), shown = Math.min(to, total);
+            float x0 = view.screenX(Route.cutX(), Route.cutZ()), y0 = view.screenY(Route.cutX(), Route.cutZ());
+            float wx = Route.x(0) + (Route.x(n - 1) - Route.x(0)) * shown / total, wz = Route.z(0) + (Route.z(n - 1) - Route.z(0)) * shown / total;
+            float dx = view.screenX(wx, wz) - x0, dy = view.screenY(wx, wz) - y0, len = (float) Math.hypot(dx, dy), ahead = SEA_BADGE * AIR_AHEAD;
+            if (total > 0 && len > ahead + SEA_BADGE) {
+                float sx = x0 + dx / len * ahead, sy = y0 + dy / len * ahead;
+                boolean in = Theme.Style.squareMap ? Math.abs(sx - cx) <= inner - SEA_BADGE && Math.abs(sy - cy) <= inner - SEA_BADGE
+                        : Draw.inCircle(sx, sy, cx, cy, inner - SEA_BADGE);
+                if (in) {
+                    Draw.circle(g, sx, sy, SEA_BADGE, badge);
+                    Draw.icon(g, Icon.CLOUD, sx, sy, SEA_BADGE * 1.6f, pieceLine);
+                }
+            }
+        }
     }
+
+    /** How far ahead of the player the cloud of the path by air sits, in badge radii. */
+    private static final float AIR_AHEAD = 2.6f;
 
     /** Radius of the badge under the sea icon on the minimap (GUI units). */
     private static final float SEA_BADGE = 5;

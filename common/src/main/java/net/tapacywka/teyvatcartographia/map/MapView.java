@@ -12,14 +12,14 @@ package net.tapacywka.teyvatcartographia.map;
 public final class MapView {
     /**
      * Zoom levels of the world map and the minimap (GUI pixels per block): 1 is the middle, doubling up to 32 and
-     * halving down to 1/32 (user request 25.10.2026: no 1/3 and 3). At 1/16 and 1/32 only the tracked target keeps its
-     * pin, and no biome names or region lines are drawn ({@link #DETAIL_FROM}).
+     * halving down to 1/32 (user request 25.10.2026: no 1/3 and 3). At 1/16 and 1/32 no biome names or region lines are
+     * drawn ({@link #DETAIL_FROM}); the pins show at every zoom since 27.10.2026.
      */
     public static final double[] ZOOM_STEPS = {1 / 32.0, 1 / 16.0, 1 / 8.0, 1 / 4.0, 1 / 2.0, 1, 2, 4, 8, 16, 32};
     /** Index of 1 in {@link #ZOOM_STEPS}. */
     public static final int ZOOM_DEFAULT = 5;
     private static final String[] ZOOM_LABELS = {"1/32", "1/16", "1/8", "1/4", "1/2", "1", "2", "4", "8", "16", "32"};
-    /** The smallest zoom with pins, biome names and region lines on the maps: 1/8 (hidden at 1/16 and 1/32). */
+    /** The smallest zoom with biome names and region lines on the maps: 1/8 (hidden at 1/16 and 1/32). */
     public static final double DETAIL_FROM = 1 / 8.0;
 
     /** Index of the zoom step closest to {@code scale} (compared in log space). */

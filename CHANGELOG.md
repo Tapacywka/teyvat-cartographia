@@ -14,10 +14,16 @@ Since 0.5.0 every version comes for both Fabric and NeoForge (`+mc1.21.1-fabric`
   everything the NeoForge version has. Mod Menu shows its settings button. Each version comes as two files of the
   same mod: `+mc1.21.1-fabric` and `+mc1.21.1-neoforge`. The Fabric file also runs on NeoForge through Sinytra
   Connector with Forgified Fabric API (Connector Extras adds the settings button to NeoForge's mod list).
+- A third choice of the Route setting (Pins > Path to the target): By air, a straight line to the tracked pin
+  whatever lies between, for flying with elytra or aircraft. The pulse key away from the line draws it again from
+  where you are. The line is near white (dark grey over unexplored land), with a cloud on it ahead of you. The
+  choices are now named By land, By water and By air.
 
 ### Changed
 - The settings are kept in `config/teyvatcartographia-client.json`, on both loaders. The settings of earlier versions
   (`teyvatcartographia-client.toml`) are taken over the first time the game starts with this version.
+- Pins show on the world map and the minimap at every zoom, 1/16 and 1/32 too: a pin made there no longer vanishes
+  at once. Biome names and the region grid still start at 1/8.
 
 ### Fixed
 - The beam of light over a tracked pin far away (about 2000 blocks and more) no longer ends in a hard cut at its top:

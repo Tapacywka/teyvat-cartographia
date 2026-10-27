@@ -77,6 +77,8 @@
     "route_fog": "#E6C8CED6",
     "route_sea": "#FF3FD0EA",
     "route_sea_badge": "#E02C323C",
+    "route_air": "#FFEEF2F7",
+    "route_air_fog": "#E66E7682",
     "ping_glow": "#30FFFFFF",
     "ping_ring": "#FFFFFFFF",
     "ping_core": "#FFFFFFFF",

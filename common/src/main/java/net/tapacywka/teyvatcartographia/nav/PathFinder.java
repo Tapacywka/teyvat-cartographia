@@ -147,7 +147,7 @@ public final class PathFinder {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer p = mc.player;
         Navigation.Target t = Navigation.target();
-        if (p == null || mc.level == null || !Navigation.inPlayerDimension(t, p)) {
+        if (p == null || mc.level == null || !Navigation.inPlayerDimension(t, p) || DirectPath.active()) {
             if (pointCount > 0) version++;
             pointCount = 0;
             searching = false;

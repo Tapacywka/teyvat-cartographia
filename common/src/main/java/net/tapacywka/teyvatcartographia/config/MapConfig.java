@@ -168,8 +168,11 @@ public final class MapConfig {
 
     public enum Detail { LOW, MEDIUM, HIGH }
 
-    /** How the path to a tracked pin goes (user decision 26.10.2026): on foot round deep water, or by boat across it. */
-    public enum Route { LAND, WATER }
+    /**
+     * How the path to a tracked pin goes (user decision 26.10.2026): on foot round deep water, or by boat across it; or
+     * straight to it whatever lies between (user request 27.10.2026, for flying), {@link net.tapacywka.teyvatcartographia.nav.DirectPath}.
+     */
+    public enum Route { LAND, WATER, AIR }
 
     public static final ConfigSpec.EnumValue<Route> PATH_ROUTE;
 
@@ -216,7 +219,7 @@ public final class MapConfig {
         // Below scale 1 the maps show only the tracked target; the tracked target is always shown on them.
         b.push("pins");
         for (PinKind kind : PinKind.values()) PINS[kind.ordinal()] = new PinOptions(b, kind);
-        PATH_ROUTE = b.comment("LAND: the path walks round deep water (swimming across up to 16 blocks of it). WATER: it goes by boat across deep water").translation("teyvatcartographia.config.path_route").defineEnum("route", Route.LAND);
+        PATH_ROUTE = b.comment("LAND: the path walks round deep water (swimming across up to 16 blocks of it). WATER: it goes by boat across deep water. AIR: a straight line to the pin, whatever lies between (for flying)").translation("teyvatcartographia.config.path_route").defineEnum("route", Route.LAND);
         b.pop();
 
         b.push("worldmap");

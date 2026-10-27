@@ -28,24 +28,19 @@ public final class MarkerVisibility {
     }
 
     /**
-     * Whether pin {@code m} is drawn at {@code scale} (GUI pixels per block) on the minimap or the world map:
-     * <ul>
-     *   <li>the tracked target always;</li>
-     *   <li>at 1/16 and 1/32 nothing else ({@link net.tapacywka.teyvatcartographia.map.MapView#DETAIL_FROM});</li>
-     *   <li>from 1/8 up: by the settings of its kind, separately for the map and the minimap.</li>
-     * </ul>
+     * Whether pin {@code m} is drawn on the minimap or the world map, at any zoom: the tracked target always, the others
+     * by the settings of their kind, separately for the map and the minimap. (Until 27.10.2026 only the tracked target
+     * at 1/16 and 1/32: a pin made there vanished at once and new players made it again, user decision to show them.)
      */
-    public static boolean shown(Marker m, double scale, boolean minimap) {
+    public static boolean shown(Marker m, boolean minimap) {
         if (Navigation.isTracking(m)) return true;
         MapConfig.PinOptions o = MapConfig.pins(kind(m));
-        return shown(false, scale, MapConfig.get(o.enabled), MapConfig.get(minimap ? o.minimap : o.map));
+        return shown(false, MapConfig.get(o.enabled), MapConfig.get(minimap ? o.minimap : o.map));
     }
 
-    /** {@link #shown}: for a tracked pin or not, at {@code scale}, with its kind on or off and on or off there. */
-    static boolean shown(boolean tracked, double scale, boolean kindOn, boolean thereOn) {
-        if (tracked) return true;
-        if (pinsHidden(scale)) return false;
-        return kindOn && thereOn;
+    /** {@link #shown}: for a tracked pin or not, with its kind on or off and on or off there. */
+    static boolean shown(boolean tracked, boolean kindOn, boolean thereOn) {
+        return tracked || kindOn && thereOn;
     }
     /**
      * Where pin {@code m} lies against the shown layer {@code band} (null: the surface): 1 on a layer above it, -1 below,
@@ -68,14 +63,9 @@ public final class MarkerVisibility {
         return 2 * seaLevel + 1;
     }
 
-    /** At 1/16 and 1/32 the map and the minimap show only the tracked target (below 1 until 25.10.2026). */
-    public static boolean pinsHidden(double scale) {
-        return scale < net.tapacywka.teyvatcartographia.map.MapView.DETAIL_FROM - 1e-6;
-    }
-
     /** Everything {@link #shown} depends on apart from the pin itself, as one number (for redraw checks). */
-    public static int state(double scale, boolean minimap) {
-        int state = pinsHidden(scale) ? 1 : 0;
+    public static int state(boolean minimap) {
+        int state = 0;
         for (MapConfig.PinKind k : MapConfig.PinKind.values()) {
             MapConfig.PinOptions o = MapConfig.pins(k);
             if (minimap ? o.onMinimap() : o.onMap()) state |= 2 << k.ordinal();

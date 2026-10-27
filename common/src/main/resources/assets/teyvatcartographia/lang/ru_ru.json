@@ -78,6 +78,7 @@
   "teyvatcartographia.nav.arrived": "Вы прибыли",
   "teyvatcartographia.nav.cleared": "Отслеживание остановлено",
   "teyvatcartographia.nav.sea": "Дальше путь идёт по воде",
+  "teyvatcartographia.nav.air": "Путь идёт напрямую к метке, по воздуху",
   "teyvatcartographia.distance.blocks.one": "%s блок",
   "teyvatcartographia.distance.blocks.few": "%s блока",
   "teyvatcartographia.distance.blocks.many": "%s блоков",
@@ -202,7 +203,7 @@
   "teyvatcartographia.config.path.system": "Путь к системным",
   "teyvatcartographia.config.path.system.tooltip": "Путь к отслеживаемой системной метке. Карта: на карте мира; две карты: ещё и на мини-карте; везде: ещё и звёздочки в мире.",
   "teyvatcartographia.config.path_route": "Маршрут",
-  "teyvatcartographia.config.path_route.tooltip": "По суше: путь обходит глубокую воду и переплывает её только там, где она узкая (до 16 блоков) или иначе не пройти. Через воду: путь идёт на лодке по глубокой воде любой ширины. В обоих случаях участки по воде рисуются цветом моря.",
+  "teyvatcartographia.config.path_route.tooltip": "По суше: путь обходит глубокую воду и переплывает её только там, где она узкая (до 16 блоков) или иначе не пройти. По воде: путь идёт на лодке по глубокой воде любой ширины. В обоих случаях линия золотая, над водой цвета моря, над неизведанным серая. По воздуху: прямая линия к метке, что бы ни было на пути, для полётов на элитрах или летательных аппаратах; линия почти белая, над неизведанным тёмно-серая.",
   "teyvatcartographia.config.path.map": "На карте мира",
   "teyvatcartographia.config.path.map.tooltip": "Путь линией на карте мира.",
   "teyvatcartographia.config.path.minimap": "На мини-карте",
@@ -307,5 +308,6 @@
   "teyvatcartographia.config.value.medium": "Средняя",
   "teyvatcartographia.config.value.high": "Высокая",
   "teyvatcartographia.config.value.land": "По суше",
-  "teyvatcartographia.config.value.water": "Через воду"
+  "teyvatcartographia.config.value.water": "По воде",
+  "teyvatcartographia.config.value.air": "По воздуху"
 }

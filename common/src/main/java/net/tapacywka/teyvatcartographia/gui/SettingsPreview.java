@@ -69,11 +69,13 @@ final class SettingsPreview {
      */
     /**
      * The route setting (user decision 26.10.2026): two pictures of a lake between the player and a tracked pin, the
-     * path walking round it ("On land") and going straight across it in the colour of the sea with the sea icon where
-     * the crossing begins ("Across water"); the choice not taken darkened, each with its name under it.
+     * path walking round it ("By land") and going straight across it in the colour of the sea with the sea icon where
+     * the crossing begins ("By water"), and a third (user request 27.10.2026) with a plain straight line over it
+     * ("By air"); the choices not taken darkened, each with its name under it.
      */
     static void route(GuiGraphics g, float x, float y, float w, float h) {
-        float label = Grid.GAP + DrawText.LINE, fw = (w - Grid.GAP) / 2f, fh = Math.min(h - label, fw * 0.8f);
+        int frames = MapConfig.Route.values().length;
+        float label = Grid.GAP + DrawText.LINE, fw = (w - (frames - 1) * Grid.GAP) / frames, fh = Math.min(h - label, fw * 0.8f);
         float top = Draw.snap(y + (h - fh - label) / 2f);
         MapConfig.Route chosen = MapConfig.PATH_ROUTE.get();
         for (MapConfig.Route r : MapConfig.Route.values()) {
@@ -85,7 +87,12 @@ final class SettingsPreview {
             float px = fx + fw * 0.14f, pz = top + fh * 0.42f, tx = fx + fw * 0.86f;
             boolean water = r == MapConfig.Route.WATER;
             int n;
-            if (water) {
+            if (r == MapConfig.Route.AIR) {
+                // Straight over the lake, as a line in the air: no sea colour, no crossing.
+                n = 2;
+                ROUTE_PTS[0] = px; ROUTE_PTS[1] = pz; ROUTE_PTS[2] = tx; ROUTE_PTS[3] = pz;
+                java.util.Arrays.fill(ROUTE_WATER, false);
+            } else if (water) {
                 n = 4;
                 ROUTE_PTS[0] = px; ROUTE_PTS[1] = pz; ROUTE_PTS[2] = lx0; ROUTE_PTS[3] = pz;
                 ROUTE_PTS[4] = lx1; ROUTE_PTS[5] = pz; ROUTE_PTS[6] = tx; ROUTE_PTS[7] = pz;
@@ -100,10 +107,16 @@ final class SettingsPreview {
                 java.util.Arrays.fill(ROUTE_WATER, false);
             }
             Draw.route(g, ROUTE_PTS, NO_FOG6, ROUTE_WATER, n, 2.4f, Theme.ROUTE_SHADOW, Theme.ROUTE_SHADOW, Theme.ROUTE_SHADOW, 0);
-            Draw.route(g, ROUTE_PTS, NO_FOG6, ROUTE_WATER, n, 1.4f, Theme.worldMarkerPulse(), Theme.ROUTE_FOG, Theme.ROUTE_SEA, 0);
+            Draw.route(g, ROUTE_PTS, NO_FOG6, ROUTE_WATER, n, 1.4f, r == MapConfig.Route.AIR ? Theme.ROUTE_AIR : Theme.worldMarkerPulse(),
+                    Theme.ROUTE_FOG, Theme.ROUTE_SEA, 0);
             if (water) {
                 Draw.circle(g, lx0, pz, 5, Theme.ROUTE_SEA_BADGE);
                 Draw.icon(g, net.tapacywka.teyvatcartographia.render.Icon.SEA, lx0, pz, 8, Theme.ROUTE_SEA);
+            } else if (r == MapConfig.Route.AIR) {
+                // The cloud a little ahead of the player, as on the maps.
+                float ax = px + 5 * 2.6f;
+                Draw.circle(g, ax, pz, 5, Theme.ROUTE_SEA_BADGE);
+                Draw.icon(g, net.tapacywka.teyvatcartographia.render.Icon.CLOUD, ax, pz, 8, Theme.ROUTE_AIR);
             }
             MarkerRenderer.player(g, px, pz, 7, (float) (Math.PI / 2), 1f);
             Draw.icon(g, MarkerType.STAR.icon, tx, pz, 9, Theme.WHITE);

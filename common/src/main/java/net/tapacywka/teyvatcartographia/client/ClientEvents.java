@@ -7,6 +7,7 @@ import net.tapacywka.teyvatcartographia.map.MapView;
 import net.tapacywka.teyvatcartographia.map.data.MapDataManager;
 import net.tapacywka.teyvatcartographia.marker.MarkerStore;
 import net.tapacywka.teyvatcartographia.nav.Navigation;
+import net.tapacywka.teyvatcartographia.nav.DirectPath;
 import net.tapacywka.teyvatcartographia.nav.FarPath;
 import net.tapacywka.teyvatcartographia.nav.PathFinder;
 import net.minecraft.client.Minecraft;
@@ -14,7 +15,7 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.chunk.LevelChunk;
 
-/** Client event handlers, called from the Fabric API callbacks registered in {@link ClientSetup}. */
+/** Client event handlers, called by the loader glue (Fabric API callbacks, NeoForge events). */
 public final class ClientEvents {
     private ClientEvents() {}
 
@@ -25,6 +26,7 @@ public final class ClientEvents {
         Navigation.tick();
         PathFinder.tick();
         FarPath.tick();
+        DirectPath.tick();
         if (mc.player == null) return;
         WorldMapScreen.tickTeleport(mc);
 
