@@ -107,9 +107,10 @@ jobs:
             echo "Modrinth: $number from $jar"
             jq 'del(.changelog)' <<< "$data"
             if [ "$DRY_RUN" = true ]; then continue; fi
-            curl -sf -X POST "$api/version" -H "Authorization: $TOKEN" -H "User-Agent: $USER_AGENT" \
-              -F "data=$data;type=application/json" -F "file=@$jar;type=application/java-archive" \
-              | jq '{id, version_number, name}'
+            code=$(curl -s -o response.json -w '%{http_code}' -X POST "$api/version" -H "Authorization: $TOKEN" -H "User-Agent: $USER_AGENT" \
+              -F "data=$data;type=application/json" -F "file=@$jar;type=application/java-archive")
+            if [ "$code" != 200 ]; then echo "Modrinth: upload refused (HTTP $code)"; cat response.json; echo; exit 1; fi
+            jq '{id, version_number, name}' response.json
           done
 
       - name: CurseForge
@@ -151,7 +152,8 @@ jobs:
             echo "CurseForge: $number from $jar"
             jq 'del(.changelog)' <<< "$metadata"
             if [ "$DRY_RUN" = true ]; then continue; fi
-            curl -sf -X POST "$api/projects/$CURSEFORGE_PROJECT/upload-file" -H "X-Api-Token: $TOKEN" \
-              -F "metadata=$metadata" -F "file=@$jar"
-            echo
+            code=$(curl -s -o response.json -w '%{http_code}' -X POST "$api/projects/$CURSEFORGE_PROJECT/upload-file" -H "X-Api-Token: $TOKEN" \
+              -F "metadata=$metadata" -F "file=@$jar")
+            if [ "$code" != 200 ]; then echo "CurseForge: upload refused (HTTP $code)"; cat response.json; echo; exit 1; fi
+            echo "CurseForge: uploaded, file $(cat response.json)"
           done
