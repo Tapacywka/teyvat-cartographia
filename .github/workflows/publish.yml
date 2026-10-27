@@ -67,8 +67,14 @@ jobs:
         run: |
           set -euo pipefail
           api=https://api.modrinth.com/v2
-          project=$(curl -sf -H "Authorization: $TOKEN" -H "User-Agent: $USER_AGENT" "$api/project/$MODRINTH_PROJECT") \
-            || { echo "Modrinth: the project $MODRINTH_PROJECT cannot be read with this token"; exit 1; }
+          code=$(curl -s -o project.json -w '%{http_code}' -H "Authorization: $TOKEN" -H "User-Agent: $USER_AGENT" "$api/project/$MODRINTH_PROJECT")
+          if [ "$code" != 200 ]; then
+            # 401: the token is not accepted; 404: no such project, or one not public yet and a token without Read projects.
+            echo "Modrinth: the project $MODRINTH_PROJECT cannot be read with this token (HTTP $code)"
+            echo "Modrinth: the token alone: HTTP $(curl -s -o /dev/null -w '%{http_code}' -H "Authorization: $TOKEN" -H "User-Agent: $USER_AGENT" "$api/user")"
+            exit 1
+          fi
+          project=$(cat project.json)
           id=$(jq -r .id <<< "$project")
           echo "Modrinth project $MODRINTH_PROJECT: id $id, status $(jq -r .status <<< "$project")"
           existing=$(curl -sf -H "Authorization: $TOKEN" -H "User-Agent: $USER_AGENT" "$api/project/$id/version" | jq -r '.[].version_number')
@@ -97,7 +103,7 @@ jobs:
           done
 
       - name: CurseForge
-        if: ${{ github.event_name == 'release' || inputs.sites != 'modrinth' }}
+        if: ${{ !cancelled() && (github.event_name == 'release' || inputs.sites != 'modrinth') }}
         env:
           TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
           DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
