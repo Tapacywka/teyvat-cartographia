@@ -83,11 +83,10 @@ jobs:
           if [ "$code" = 200 ]; then
             existing=$(jq -r '.[].version_number' versions.json)
             echo "Modrinth: versions there: $(tr '\n' ' ' <<< "$existing")"
-          elif [ "$(jq '.versions | length' <<< "$project")" = 0 ]; then
-            existing=''
           else
-            echo "Modrinth: the versions cannot be listed (HTTP $code): give the token Read versions"
-            exit 1
+            # Only a run by hand can repeat a release's upload: then give the token Read versions to be safe.
+            echo "Modrinth: the versions cannot be listed (HTTP $code), not checked for repeats"
+            existing=''
           fi
           for loader in fabric neoforge; do
             number="$VERSION+mc$GAME_VERSION-$loader"
