@@ -1,0 +1,141 @@
+name: Publish
+
+# Puts the two JARs of a GitHub release on Modrinth and CurseForge: the Fabric file with Fabric API (required) and
+# Mod Menu (optional), the NeoForge file; Minecraft 1.21.1, client side, the release text as the changelog.
+# Runs when a release is published; by hand for a release made before (tag), as a dry run by default: the tokens and
+# the IDs are checked and what would be uploaded is shown, nothing is uploaded.
+# Secrets: MODRINTH_TOKEN (a personal access token with Create versions), CURSEFORGE_TOKEN (an upload API token).
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag (v0.5.0)
+        required: true
+      dry_run:
+        description: Only check, upload nothing
+        type: boolean
+        default: true
+      sites:
+        description: Where to upload
+        type: choice
+        options: [both, modrinth, curseforge]
+        default: both
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+env:
+  MODRINTH_PROJECT: teyvat-cartographia
+  CURSEFORGE_PROJECT: '1764160'
+  GAME_VERSION: 1.21.1
+  USER_AGENT: Tapacywka/teyvat-cartographia (publish workflow)
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Release files and text
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          set -euo pipefail
+          mkdir dist
+          # The files may still be uploading when the release is published.
+          for i in 1 2 3 4 5 6; do
+            gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --pattern '*.jar' --dir dist --clobber || true
+            [ "$(ls dist/*.jar 2>/dev/null | wc -l)" -ge 2 ] && break
+            sleep 20
+          done
+          ls -l dist
+          [ "$(ls dist/*.jar | wc -l)" -ge 2 ] || { echo "the release has no two JARs"; exit 1; }
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json body --jq .body > changelog.md
+          echo "VERSION=${TAG#v}" >> "$GITHUB_ENV"
+
+      - name: Modrinth
+        if: ${{ github.event_name == 'release' || inputs.sites != 'curseforge' }}
+        env:
+          TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          api=https://api.modrinth.com/v2
+          project=$(curl -sf -H "Authorization: $TOKEN" -H "User-Agent: $USER_AGENT" "$api/project/$MODRINTH_PROJECT") \
+            || { echo "Modrinth: the project $MODRINTH_PROJECT cannot be read with this token"; exit 1; }
+          id=$(jq -r .id <<< "$project")
+          echo "Modrinth project $MODRINTH_PROJECT: id $id, status $(jq -r .status <<< "$project")"
+          existing=$(curl -sf -H "Authorization: $TOKEN" -H "User-Agent: $USER_AGENT" "$api/project/$id/version" | jq -r '.[].version_number')
+          for loader in fabric neoforge; do
+            number="$VERSION+mc$GAME_VERSION-$loader"
+            jar="dist/teyvatcartographia-v$number.jar"
+            if grep -qxF "$number" <<< "$existing"; then echo "Modrinth: $number is there already"; continue; fi
+            if [ "$loader" = fabric ]; then
+              deps='[{"project_id":"P7dR8mSH","dependency_type":"required"},{"project_id":"mOgUt4GM","dependency_type":"optional"}]'
+              name="Teyvat Cartographia $VERSION (Fabric)"
+            else
+              deps='[]'
+              name="Teyvat Cartographia $VERSION (NeoForge)"
+            fi
+            data=$(jq -n --arg id "$id" --arg number "$number" --arg name "$name" --rawfile changelog changelog.md \
+              --arg loader "$loader" --arg game "$GAME_VERSION" --argjson deps "$deps" \
+              '{project_id: $id, version_number: $number, name: $name, changelog: $changelog, dependencies: $deps,
+                game_versions: [$game], version_type: "release", loaders: [$loader], featured: true,
+                file_parts: ["file"], primary_file: "file"}')
+            echo "Modrinth: $number from $jar"
+            jq 'del(.changelog)' <<< "$data"
+            if [ "$DRY_RUN" = true ]; then continue; fi
+            curl -sf -X POST "$api/version" -H "Authorization: $TOKEN" -H "User-Agent: $USER_AGENT" \
+              -F "data=$data;type=application/json" -F "file=@$jar;type=application/java-archive" \
+              | jq '{id, version_number, name}'
+          done
+
+      - name: CurseForge
+        if: ${{ github.event_name == 'release' || inputs.sites != 'modrinth' }}
+        env:
+          TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          api=https://minecraft.curseforge.com/api
+          types=$(curl -sf -H "X-Api-Token: $TOKEN" "$api/game/version-types") \
+            || { echo "CurseForge: the token is not accepted"; exit 1; }
+          versions=$(curl -sf -H "X-Api-Token: $TOKEN" "$api/game/versions")
+          # A version's ID by its name and the slug of its type (minecraft-1-21, modloader, environment, java).
+          pick() {
+            jq -r --arg name "$1" --arg type "$2" --argjson types "$types" \
+              '[.[] | . as $v | select($v.name == $name and ([$types[] | select(.id == $v.gameVersionTypeID) | .slug][0] | startswith($type)))][0].id // empty' \
+              <<< "$versions"
+          }
+          game=$(pick "$GAME_VERSION" minecraft-); client=$(pick Client environment); java=$(pick "Java 21" java)
+          fabric=$(pick Fabric modloader); neoforge=$(pick NeoForge modloader)
+          echo "CurseForge IDs: Minecraft $GAME_VERSION $game, Client $client, Java 21 $java, Fabric $fabric, NeoForge $neoforge"
+          for x in "$game" "$client" "$java" "$fabric" "$neoforge"; do [ -n "$x" ] || { echo "CurseForge: a game version was not found"; exit 1; }; done
+          for loader in fabric neoforge; do
+            number="$VERSION+mc$GAME_VERSION-$loader"
+            jar="dist/teyvatcartographia-v$number.jar"
+            if [ "$loader" = fabric ]; then
+              ids="[$game, $client, $java, $fabric]"
+              relations='{"projects":[{"slug":"fabric-api","type":"requiredDependency"},{"slug":"modmenu","type":"optionalDependency"}]}'
+              name="Teyvat Cartographia $VERSION (Fabric)"
+            else
+              ids="[$game, $client, $java, $neoforge]"
+              relations='{"projects":[]}'
+              name="Teyvat Cartographia $VERSION (NeoForge)"
+            fi
+            metadata=$(jq -n --arg name "$name" --rawfile changelog changelog.md --argjson ids "$ids" --argjson relations "$relations" \
+              '{changelog: $changelog, changelogType: "markdown", displayName: $name, gameVersions: $ids,
+                releaseType: "release", relations: $relations}')
+            echo "CurseForge: $number from $jar"
+            jq 'del(.changelog)' <<< "$metadata"
+            if [ "$DRY_RUN" = true ]; then continue; fi
+            curl -sf -X POST "$api/projects/$CURSEFORGE_PROJECT/upload-file" -H "X-Api-Token: $TOKEN" \
+              -F "metadata=$metadata" -F "file=@$jar"
+            echo
+          done
