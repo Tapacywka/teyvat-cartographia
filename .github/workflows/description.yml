@@ -1,0 +1,49 @@
+name: Modrinth description
+
+# Sets the Modrinth project's description to .github/readme/README_Modrinth.md (written from README.md by the local
+# readme script, then copied here). Runs on a push to main that changes it, or by hand; a dry run only shows the text.
+# Secret: MODRINTH_TOKEN (a personal access token with Write projects).
+
+on:
+  push:
+    branches: [main]
+    paths: [.github/readme/README_Modrinth.md]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Only check, change nothing
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+env:
+  MODRINTH_PROJECT: teyvat-cartographia
+  USER_AGENT: Tapacywka/teyvat-cartographia (description workflow)
+
+jobs:
+  description:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Modrinth
+        env:
+          TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          api=https://api.modrinth.com/v2
+          file=.github/readme/README_Modrinth.md
+          code=$(curl -s -o project.json -w '%{http_code}' -H "Authorization: $TOKEN" -H "User-Agent: $USER_AGENT" "$api/project/$MODRINTH_PROJECT")
+          [ "$code" = 200 ] || { echo "Modrinth: the project cannot be read with this token (HTTP $code)"; exit 1; }
+          id=$(jq -r .id project.json)
+          if cmp -s <(jq -j .body project.json) "$file"; then echo "Modrinth: the description is the same already"; exit 0; fi
+          echo "Modrinth project $id: description $(jq -r '.body | length' project.json) characters now, $(wc -m < "$file") new"
+          head -n 5 "$file"
+          if [ "$DRY_RUN" = true ]; then exit 0; fi
+          jq -n --rawfile body "$file" '{body: $body}' > body.json
+          code=$(curl -s -o response.json -w '%{http_code}' -X PATCH "$api/project/$id" -H "Authorization: $TOKEN" \
+            -H "User-Agent: $USER_AGENT" -H "Content-Type: application/json" --data-binary @body.json)
+          if [ "$code" != 204 ]; then echo "Modrinth: refused (HTTP $code)"; cat response.json; echo; exit 1; fi
+          echo "Modrinth: description set"
