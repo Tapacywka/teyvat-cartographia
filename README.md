@@ -7,9 +7,6 @@
   <a href="https://www.curseforge.com/minecraft/mc-mods/teyvat-cartographia"><img src="https://img.shields.io/curseforge/dt/1764160?style=flat&logo=curseforge&label=curseforge&color=F16436" alt="CurseForge downloads"></a>
   <a href="https://github.com/Tapacywka/teyvat-cartographia/releases"><img src="https://img.shields.io/github/downloads/Tapacywka/teyvat-cartographia/total?style=flat&logo=github&label=downloads&color=4C9F70" alt="GitHub downloads"></a>
   <a href="https://github.com/Tapacywka/teyvat-cartographia/releases/latest"><img src="https://img.shields.io/github/v/release/Tapacywka/teyvat-cartographia?style=flat&label=release&color=E6B85C" alt="Latest release"></a>
-  <img src="https://img.shields.io/badge/Minecraft-1.21.1-62B47A?style=flat" alt="Minecraft 1.21.1">
-  <img src="https://img.shields.io/badge/Fabric-0.16%2B-DBD0B4?style=flat" alt="Fabric 0.16+">
-  <img src="https://img.shields.io/badge/NeoForge-21.1-D7742F?style=flat" alt="NeoForge 21.1">
   <img src="https://img.shields.io/badge/side-client-5B8DEF?style=flat" alt="Client side">
   <a href="https://github.com/Tapacywka/teyvat-cartographia/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-8A8F98?style=flat" alt="MIT license"></a>
 </p>
@@ -22,7 +19,7 @@
 <p align="center">
   <a href="https://modrinth.com/mod/teyvat-cartographia"><img src="https://raw.githubusercontent.com/intergrav/devins-badges/v3/assets/cozy/available/modrinth_vector.svg" alt="Available on Modrinth" height="56"></a>
   <a href="https://www.curseforge.com/minecraft/mc-mods/teyvat-cartographia"><img src="https://raw.githubusercontent.com/intergrav/devins-badges/v3/assets/cozy/available/curseforge_vector.svg" alt="Available on CurseForge" height="56"></a>
-  <a href="https://github.com/Tapacywka/teyvat-cartographia/releases/latest"><img src="https://raw.githubusercontent.com/intergrav/devins-badges/v3/assets/cozy/available/github_vector.svg" alt="Available on GitHub" height="56"></a>
+  <a href="https://github.com/Tapacywka/teyvat-cartographia/releases/latest"><img src="https://raw.githubusercontent.com/intergrav/devins-badges/v3/assets/cozy/available/github_vector.svg" alt="Available on GitHub" height="56"></a><br>
   <a href="https://fabricmc.net"><img src="https://raw.githubusercontent.com/intergrav/devins-badges/v3/assets/cozy/supported/fabric_vector.svg" alt="Supported on Fabric" height="56"></a>
   <a href="https://neoforged.net"><img src="https://raw.githubusercontent.com/intergrav/devins-badges/v3/assets/cozy/supported/neoforge_vector.svg" alt="Supported on NeoForge" height="56"></a>
 </p>
@@ -32,9 +29,8 @@
   &nbsp;&nbsp;|&nbsp;&nbsp;
   <a href="#controls"><b>🎮&nbsp;Controls</b></a>
   &nbsp;&nbsp;|&nbsp;&nbsp;
+  <a href="#themes"><b>🎨&nbsp;Themes</b></a><br>
   <a href="#compatibility"><b>🧩&nbsp;Compatibility</b></a>
-  &nbsp;&nbsp;|&nbsp;&nbsp;
-  <a href="#themes"><b>🎨&nbsp;Themes</b></a>
   &nbsp;&nbsp;|&nbsp;&nbsp;
   <a href="https://github.com/Tapacywka/teyvat-cartographia/issues/new/choose"><b>🐞&nbsp;Report a bug</b></a>
 </p>

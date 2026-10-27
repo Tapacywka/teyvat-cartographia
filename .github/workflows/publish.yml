@@ -1,7 +1,8 @@
 name: Publish
 
-# Puts the two JARs of a GitHub release on Modrinth and CurseForge: the Fabric file with Fabric API (required) and
-# Mod Menu (optional), the NeoForge file; Minecraft 1.21.1, client side, the release text as the changelog.
+# Puts the two JARs of a GitHub release on Modrinth and CurseForge, the Fabric file first: it with Fabric API
+# (required) and Mod Menu (optional), then the NeoForge file; each named by its version number (0.5.0+mc1.21.1-fabric),
+# Minecraft 1.21.1, client side, the whole CHANGELOG.md of the release's tag as the changelog.
 # Runs when a release is published; by hand for a release made before (tag), as a dry run by default: the tokens and
 # the IDs are checked and what would be uploaded is shown, nothing is uploaded.
 # Secrets: MODRINTH_TOKEN (a personal access token with Create versions), CURSEFORGE_TOKEN (an upload API token).
@@ -63,7 +64,9 @@ jobs:
           done
           ls -l dist
           [ "$(ls dist/*.jar | wc -l)" -ge 2 ] || { echo "the release has no two JARs"; exit 1; }
-          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json body --jq .body > changelog.md
+          # The whole changelog as it was at the release, not only this version's part.
+          gh api "repos/$GITHUB_REPOSITORY/contents/CHANGELOG.md?ref=$TAG" -H 'Accept: application/vnd.github.raw' > changelog.md
+          head -n 3 changelog.md; echo "changelog: $(wc -c < changelog.md) bytes"
           echo "VERSION=${TAG#v}" >> "$GITHUB_ENV"
 
       - name: Modrinth
@@ -101,10 +104,10 @@ jobs:
             if grep -qxF "$number" <<< "$existing"; then echo "Modrinth: $number is there already"; continue; fi
             if [ "$loader" = fabric ]; then
               deps='[{"project_id":"P7dR8mSH","dependency_type":"required"},{"project_id":"mOgUt4GM","dependency_type":"optional"}]'
-              name="Teyvat Cartographia $VERSION (Fabric)"
+              name="$number"
             else
               deps='[]'
-              name="Teyvat Cartographia $VERSION (NeoForge)"
+              name="$number"
             fi
             data=$(jq -n --arg id "$id" --arg number "$number" --arg name "$name" --rawfile changelog changelog.md \
               --arg loader "$loader" --arg game "$GAME_VERSION" --argjson deps "$deps" \
@@ -149,11 +152,11 @@ jobs:
             if [ "$loader" = fabric ]; then
               ids="[$game, $client, $java, $fabric]"
               relations='{"projects":[{"slug":"fabric-api","type":"requiredDependency"},{"slug":"modmenu","type":"optionalDependency"}]}'
-              name="Teyvat Cartographia $VERSION (Fabric)"
+              name="$number"
             else
               ids="[$game, $client, $java, $neoforge]"
               relations=null
-              name="Teyvat Cartographia $VERSION (NeoForge)"
+              name="$number"
             fi
             metadata=$(jq -n --arg name "$name" --rawfile changelog changelog.md --argjson ids "$ids" --argjson relations "$relations" \
               '{changelog: $changelog, changelogType: "markdown", displayName: $name, gameVersions: $ids,
