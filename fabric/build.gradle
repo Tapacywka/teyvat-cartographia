@@ -1,0 +1,79 @@
+plugins {
+    // The remapping Loom: Minecraft 1.21.1 is obfuscated, the JAR is remapped to intermediary names. 1.15 and later
+    // need a newer Gradle than this project's 9.2.1.
+    id 'net.fabricmc.fabric-loom-remap' version '1.14.10'
+}
+
+version = "${mod_version}+mc${minecraft_version}-fabric"
+group = mod_group_id
+
+base {
+    archivesName = mod_id
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+repositories {
+    maven { url = 'https://maven.parchmentmc.org' }
+    maven { url = 'https://maven.terraformersmc.com/releases/' }
+    mavenCentral()
+}
+
+// The common code and resources, compiled as this build's own.
+sourceSets.main {
+    java.srcDir rootProject.file('common/src/main/java')
+    resources.srcDir rootProject.file('common/src/main/resources')
+}
+
+loom {
+    mixin {
+        // A refmap in the JAR: Sinytra Connector maps the mixins' targets from it (without one the EditBox mixin
+        // found nothing to wrap under Connector).
+        useLegacyMixinAp = true
+        defaultRefmapName = "${mod_id}.refmap.json"
+    }
+}
+
+// Local development runs (tests in the modpack, gallery shots), when present; not in the public repository.
+if (rootProject.file('devtest-fabric.gradle').exists()) apply from: rootProject.file('devtest-fabric.gradle')
+
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    mappings loom.layered {
+        officialMojangMappings()
+        parchment("org.parchmentmc.data:parchment-${parchment_minecraft_version}:${parchment_mappings_version}@zip")
+    }
+    modImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
+    // The settings button in the mod list (Mod Menu on Fabric, Connector Extras' bridge on NeoForge).
+    modCompileOnly "com.terraformersmc:modmenu:${modmenu_version}"
+}
+
+processResources {
+    def props = [
+            mod_id                 : mod_id,
+            mod_name               : mod_name,
+            mod_license            : mod_license,
+            mod_version            : project.version,
+            mod_authors            : mod_authors,
+            mod_description        : mod_description,
+            minecraft_version_range: fabric_minecraft_range,
+    ]
+    inputs.properties props
+    filesMatching('fabric.mod.json') { expand props }
+}
+
+// The file is named with a "v" before the version (teyvatcartographia-v0.5.0...jar); the mod's own version has none.
+tasks.named('remapJar') {
+    archiveVersion = "v${project.version}"
+}
+tasks.named('jar') {
+    archiveVersion = "v${project.version}"
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    // Full debug information: Sinytra Connector's mixin adapter reads the local variable tables of the mixin's methods
+    // and stopped the game without them (26.10.2026; until 0.4 'source,lines' saved 58 KB).
+    options.debugOptions.debugLevel = 'source,lines,vars'
+}

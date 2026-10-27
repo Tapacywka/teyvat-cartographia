@@ -9,14 +9,21 @@
 !/gradlew
 !/gradlew.bat
 !/gradle/
-!/src/
+!/common/
+!/fabric/
+!/neoforge/
 !/LICENSE
 !/README.md
 !/CHANGELOG.md
 !/.github/
 
-# In-game development tests: local only (devtest.gradle and the devtest package).
-/src/main/java/net/tapacywka/teyvatcartographia/devtest/
+# In-game development tests: local only (devtest-*.gradle and the devtest packages).
+/common/src/main/java/net/tapacywka/teyvatcartographia/devtest/
+/fabric/src/main/java/net/tapacywka/teyvatcartographia/devtest/
+/neoforge/src/main/java/net/tapacywka/teyvatcartographia/devtest/
+# The development games of each loader's build (run/ at the top stays ignored by the first rule).
+/fabric/run*/
+/neoforge/run*/
 
 # Build output and IDE files, wherever they appear.
 .gradle/

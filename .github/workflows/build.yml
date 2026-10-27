@@ -22,12 +22,18 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      # The JAR only; the unit tests run in test.yml.
+      # The JARs only (Fabric and NeoForge); the unit tests run in test.yml.
       - name: Build the mod
         run: ./gradlew assemble --no-daemon
 
-      - name: Mod JAR
+      - name: Fabric JAR
         uses: actions/upload-artifact@v4
         with:
-          name: teyvatcartographia-jar
-          path: build/libs/*.jar
+          name: teyvatcartographia-fabric-jar
+          path: fabric/build/libs/teyvatcartographia-v*.jar
+
+      - name: NeoForge JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: teyvatcartographia-neoforge-jar
+          path: neoforge/build/libs/teyvatcartographia-v*.jar
