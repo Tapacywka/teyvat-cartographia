@@ -8,6 +8,7 @@
   <a href="https://github.com/Tapacywka/teyvat-cartographia/releases"><img src="https://img.shields.io/github/downloads/Tapacywka/teyvat-cartographia/total?style=flat&logo=github&label=downloads&color=4C9F70" alt="GitHub downloads"></a>
   <a href="https://github.com/Tapacywka/teyvat-cartographia/releases/latest"><img src="https://img.shields.io/github/v/release/Tapacywka/teyvat-cartographia?style=flat&label=release&color=E6B85C" alt="Latest release"></a>
   <img src="https://img.shields.io/badge/Minecraft-1.21.1-62B47A?style=flat" alt="Minecraft 1.21.1">
+  <img src="https://img.shields.io/badge/Fabric-0.16%2B-DBD0B4?style=flat" alt="Fabric 0.16+">
   <img src="https://img.shields.io/badge/NeoForge-21.1-D7742F?style=flat" alt="NeoForge 21.1">
   <img src="https://img.shields.io/badge/side-client-5B8DEF?style=flat" alt="Client side">
   <a href="https://github.com/Tapacywka/teyvat-cartographia/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-8A8F98?style=flat" alt="MIT license"></a>
@@ -22,6 +23,7 @@
   <a href="https://modrinth.com/mod/teyvat-cartographia"><img src="https://raw.githubusercontent.com/intergrav/devins-badges/v3/assets/cozy/available/modrinth_vector.svg" alt="Available on Modrinth" height="56"></a>
   <a href="https://www.curseforge.com/minecraft/mc-mods/teyvat-cartographia"><img src="https://raw.githubusercontent.com/intergrav/devins-badges/v3/assets/cozy/available/curseforge_vector.svg" alt="Available on CurseForge" height="56"></a>
   <a href="https://github.com/Tapacywka/teyvat-cartographia/releases/latest"><img src="https://raw.githubusercontent.com/intergrav/devins-badges/v3/assets/cozy/available/github_vector.svg" alt="Available on GitHub" height="56"></a>
+  <a href="https://fabricmc.net"><img src="https://raw.githubusercontent.com/intergrav/devins-badges/v3/assets/cozy/supported/fabric_vector.svg" alt="Supported on Fabric" height="56"></a>
   <a href="https://neoforged.net"><img src="https://raw.githubusercontent.com/intergrav/devins-badges/v3/assets/cozy/supported/neoforge_vector.svg" alt="Supported on NeoForge" height="56"></a>
 </p>
 
@@ -67,7 +69,7 @@ Place pins, search for them and for biomes, track them, follow the path and find
 | | |
 |---|---|
 | Minecraft | **1.21.1** (Java Edition) |
-| Mod loader | **NeoForge 21.1** (built against 21.1.257) |
+| Mod loader | **Fabric** (Fabric Loader 0.16 or newer with [Fabric API](https://github.com/FabricMC/fabric-api)) or **NeoForge 21.1** (built against 21.1.257): one file for each, the same mod |
 | Java | **21** |
 | Side | **Client** only. Servers don't need it, so you can join vanilla and modded servers. |
 | Languages | English, Russian |
@@ -128,13 +130,20 @@ Place pins, search for them and for biomes, track them, follow the path and find
 
 <h2 id="installation">📥 Installation</h2>
 
-1. Install [NeoForge](https://neoforged.net) 21.1 for Minecraft 1.21.1.
-2. Download `teyvatcartographia-v0.4.0+mc1.21.1-neoforge.jar` from
-   [Modrinth](https://modrinth.com/mod/teyvat-cartographia), [CurseForge](https://www.curseforge.com/minecraft/mc-mods/teyvat-cartographia) or the
-   [latest GitHub release](https://github.com/Tapacywka/teyvat-cartographia/releases/latest) and put it into your
-   `mods/` folder.
+1. Install a mod loader for Minecraft 1.21.1: [Fabric](https://fabricmc.net) (Fabric Loader 0.16 or newer) with
+   [Fabric API](https://github.com/FabricMC/fabric-api), or [NeoForge](https://neoforged.net) 21.1.
+2. Download the file for your loader from [Modrinth](https://modrinth.com/mod/teyvat-cartographia),
+   [CurseForge](https://www.curseforge.com/minecraft/mc-mods/teyvat-cartographia) or the
+   [latest GitHub release](https://github.com/Tapacywka/teyvat-cartographia/releases/latest):
+   `teyvatcartographia-v0.5.0+mc1.21.1-fabric.jar` or `teyvatcartographia-v0.5.0+mc1.21.1-neoforge.jar`, and put it
+   into your `mods/` folder.
 3. Launch the game and press **M** in a world.
-4. Optional: make the minimap round (**Settings > Minimap**) or the interface rounded (**Settings > Map**).
+4. Optional: make the minimap round (**Settings > Minimap**) or the interface rounded (**Settings > Map**). On Fabric,
+   [Mod Menu](https://github.com/TerraformersMC/ModMenu) adds a settings button to the mod list.
+
+The Fabric file also runs on NeoForge through [Sinytra Connector](https://github.com/Sinytra/Connector) with
+[Forgified Fabric API](https://github.com/Sinytra/ForgifiedFabricAPI) ([Connector Extras](https://github.com/Sinytra/ConnectorExtras)
+adds its settings button to NeoForge's mod list), but on NeoForge the NeoForge file is the better choice.
 
 <h2 id="controls">🎮 Controls</h2>
 
@@ -169,8 +178,8 @@ Place pins, search for them and for biomes, track them, follow the path and find
   while torches, lava and other lights keep their colour. The Nether (smoke and embers) and The End (a starry void)
   have a fog of their own, soft wisps and glowing motes like the fog of the Genshin Impact map.
 * Biome name labels, biome under the cursor, player and cursor coordinates, explored chunk counter, zoom slider
-  (1/32 to 32, the zoom shown beside its thumb), optional chunk grid. At 1/16 and 1/32 the map shows the land alone:
-  no pins but the tracked one, no biome names, no grid.
+  (1/32 to 32, the zoom shown beside its thumb), optional chunk grid. Pins show at every zoom; at 1/16 and 1/32 the
+  biome names and the grid step aside.
 * **Search** in the pin list (or **Ctrl+F**): pins of every dimension by name, and the explored biomes by name. A
   click flies the map to the result, switching the dimension if needed. A biome goes to its nearest explored place,
   and each further click to the next one ("Place 2 of 5"); the spot is marked with a few rings.
@@ -243,9 +252,10 @@ Place pins, search for them and for biomes, track them, follow the path and find
 * The tracked pin is shown in the 3D world (from the *In the world* step of its kind) like a Genshin Impact waypoint for a minute after you start tracking or
   press the pulse key: constant size, visible through terrain, the distance in blocks under it.
 * Off screen it slides along an ellipse around the centre, above the hotbar and around the minimap.
-* A beam of light in the pin's colour rises from the target at any distance (hidden behind terrain, drawn after the
-  clouds); it fades in over a second when the pin comes onto the screen and out when it goes to the edge. Closer than
-  10 blocks the pin fades out. A white arrow shows a target well above or below you.
+* A golden beam of light rises from the target at any distance (hidden behind terrain, drawn after the clouds),
+  fading out softly towards its top and growing with the distance, so a far pin's beam still stands tall; it fades in
+  over a second when the pin comes onto the screen and out when it goes to the edge. Closer than 10 blocks the pin
+  fades out. A white arrow shows a target well above or below you.
 * The pulse key sends a thin diamond closing in on the pin in one second, and the glyph flashes when it arrives.
 
 <h3 id="walking-path">Walking path</h3>
@@ -255,29 +265,32 @@ Place pins, search for them and for biomes, track them, follow the path and find
 * A precise path over the loaded terrain (128 blocks around you) follows a coarse path over the explored map (up to
   1024 blocks). It goes round lava, tree trunks, walls and mountains, takes steps of up to 2 blocks and shallow water
   straight on, swims across narrow water (up to 16 blocks) and leads out of the water when you are swimming. The Route
-  setting chooses how it treats wider water: On land it walks round, Across water it goes by boat straight over.
+  setting chooses the way: **By land** it walks round wider water, **By water** it goes by boat straight over, and
+  **By air** it is a straight line to the pin whatever lies between, for elytra and aircraft.
 * The world map and the minimap draw it as a golden dash-dot line, grey through unexplored land and in the colour of
-  the sea over water, with a sea icon where each longer crossing begins, without the part you have already walked. In
-  the world, golden sparkles follow the path, within 64 blocks of the camera.
+  the sea over water, with a sea icon where each longer crossing begins, without the part you have already walked. By
+  air the line is near white (dark grey over unexplored land) with a cloud on it ahead of you. In the world, golden
+  sparkles follow the path, within 64 blocks of the camera.
 
 <h3 id="settings">Settings</h3>
 
 * The gear on the map holds quick switches: the three pin kinds, the path to the target, plants, biome names, chunk grid.
-* The full settings screen (also from the NeoForge mod list) has a tab for each part: *Map* (appearance; what the
+* The full settings screen (also from the mod list: NeoForge's, or Mod Menu's on Fabric) has a tab for each part: *Map* (appearance; what the
   map shows: plants, caves; colours; the world map), *Minimap* (display, size and position, look, extra
   information), *Pins* (display and path to the target for each kind), *System* (performance) and
   *Compatibility* (The Nether and End fogs, and the supported mods in the game: see [Compatibility with mods](#compatibility)).
 * **Live preview**: point at a setting and the card beside the list shows it, with what it does. The map around you
   as it will look, the minimap at its real size and where it sits, the three terrain detail modes, the
   cave layers with their buttons to click, each pin kind on the world map, the minimap and in the world, the mapping
-  speed and memory, the mods' fogs and samples. It changes as you move a slider. (At a GUI scale too large for it, it
-  asks for a smaller one.)
+  speed and memory, the mods' fogs and samples. It changes as you move a slider. Without room for the card (GUI 4 on
+  a 1080p screen) the setting under the mouse shows its description as a tooltip instead.
 * A setting with parts is one slider in steps: each pin kind goes Off, Map, Both maps, In the world (the marker over a
   tracked pin), Everywhere (its beam too); its path Off, Map, Both maps, Everywhere (the stars); the clock Off, Game,
   Real, Both.
 * Every list (the settings, plants, pins, overlapping pins on the map) glides as it scrolls, with no steps, and its
   rows dissolve softly at the top and bottom edges.
-* Reset to defaults and a shortcut to key binds. Stored in `config/teyvatcartographia-client.toml`.
+* Reset to defaults and a shortcut to key binds. Stored in `config/teyvatcartographia-client.json` (the
+  `teyvatcartographia-client.toml` of 0.4 and earlier is taken over once).
 
 <h2 id="compatibility">🧩 Compatibility with mods</h2>
 
@@ -292,6 +305,8 @@ world map, so most mods work without anything special. A few get more: with one 
 | [Mielon's The Sift](https://modrinth.com/mod/mielons-the-sift) | A **pearly haze** in the colours of its ichor as the Fog of War; its **rainbow ichor** and **ichor snow** shimmer on the map in their own colours (each can be switched off); its cyan willows keep their colour. |
 | [Biomes O' Plenty](https://github.com/Glitchfiend/BiomesOPlenty), [Regions Unexplored](https://github.com/Apollounknowndev/RegionsUnexplored) | Their biomes, leaves, grass and plants in their own colours (compared side by side with Xaero's Minimap in 16 places); their plants in the Plants list. |
 | [Vanilla Backport](https://github.com/ItsBlackGear/VanillaBackport), [Tiny Takeover Backport](https://github.com/evanbones/Tiny-Takeover-Backport) | The pale garden, leaf litter, bushes and the other new blocks in the colours the game gives them. |
+| [Sodium](https://github.com/CaffeineMC/sodium), [Iris](https://github.com/IrisShaders/Iris) | Work alongside (checked on Fabric and on NeoForge): the minimap, the map, the beam and the path sparkles draw as without them. |
+| [Mod Menu](https://github.com/TerraformersMC/ModMenu) | On Fabric, a settings button for the mod in its list. |
 | [VulkanMod Reforged](https://github.com/TrulyRin/VulkanMod-Reforged) | Works with its Vulkan renderer: the map, the minimap, the path with its sparkles and the beam look as with OpenGL, the lists dissolve at their edges and the blur under the menus works. |
 
 The Nether and The End have fogs of their own too (each can be switched off in Compatibility > Minecraft); a resource pack theme can add a fog for any other dimension (see
@@ -356,7 +371,7 @@ The mod is meant to cost at most 2 to 3% FPS:
 
 | What | Where |
 |---|---|
-| Settings | `config/teyvatcartographia-client.toml` |
+| Settings | `config/teyvatcartographia-client.json` |
 | Map regions | `teyvatcartographia/<world>/<dimension>/r.<x>.<z>.png` + `.dat` (heights and metadata) + `.lod.png` (64 x 64 thumbnail for far zoom) + `index.txt` + `format.txt` (the map format; a map of an older format is deleted and mapped again) |
 | Cave layers | `teyvatcartographia/<world>/<dimension>/caves/b<layer>/` |
 | Biome index for the search | `teyvatcartographia/<world>/<dimension>/biomes.idx` |
@@ -373,8 +388,12 @@ Requirements: JDK 21 (Gradle's toolchain support will use or download one), inte
 ./gradlew build
 ```
 
-On Windows: `gradlew.bat build`. The mod JAR is written to `build/libs/teyvatcartographia-v<version>.jar`.
-`./gradlew runClient` starts a development client with the mod.
+On Windows: `gradlew.bat build`. The project follows the layout of
+[MultiLoader-Template](https://github.com/jaredlll08/MultiLoader-Template): the shared code is in `common/` (compiled
+against the game alone, with the unit tests), the loaders' own parts in `fabric/` and `neoforge/`, the shared build
+rules in `buildSrc/`. One code base builds both files: `fabric/build/libs/teyvatcartographia-v<version>+mc1.21.1-fabric.jar`
+and `neoforge/build/libs/teyvatcartographia-v<version>+mc1.21.1-neoforge.jar`.
+`./gradlew :fabric:runClient` or `./gradlew :neoforge:runClient` starts a development client with the mod.
 
 <h2 id="bug-reports-and-ideas">🐞 Bug reports and ideas</h2>
 

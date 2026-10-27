@@ -1,33 +1,7 @@
 plugins {
-    id 'java-library'
-    id 'net.neoforged.moddev' version '2.0.148'
+    id 'multiloader-loader'
+    id 'net.neoforged.moddev'
 }
-
-version = "${mod_version}+mc${minecraft_version}-neoforge"
-group = mod_group_id
-
-base {
-    archivesName = mod_id
-}
-
-// The file is named with a "v" before the version (teyvatcartographia-v0.5.0...jar); the mod's own version has none.
-tasks.named('jar', Jar) {
-    archiveVersion = "v${project.version}"
-}
-
-java.toolchain.languageVersion = JavaLanguageVersion.of(21)
-
-repositories {
-    mavenLocal()
-    mavenCentral()
-}
-
-// The common code, resources and unit tests, compiled as this build's own.
-sourceSets.main {
-    java.srcDir rootProject.file('common/src/main/java')
-    resources.srcDir rootProject.file('common/src/main/resources')
-}
-sourceSets.test.java.srcDir rootProject.file('common/src/test/java')
 
 neoForge {
     enable {
@@ -59,12 +33,6 @@ neoForge {
             sourceSet(sourceSets.main)
         }
     }
-
-    // Unit tests with the game's classes (common/src/test/java), started without a window.
-    unitTest {
-        enable()
-        testedMod = mods."${mod_id}"
-    }
 }
 
 // Local development runs (tests in the modpack, gallery shots), when present; not in the public repository.
@@ -74,25 +42,8 @@ configurations {
     runtimeClasspath.extendsFrom localRuntime
 }
 
-dependencies {
-    // Unit tests of the mod's logic: no game window, run by `gradlew build` and on GitHub.
-    testImplementation platform('org.junit:junit-bom:5.11.4')
-    testImplementation 'org.junit.jupiter:junit-jupiter'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-}
-
-tasks.named('test', Test).configure {
-    useJUnitPlatform()
-    // The tests read the mod's resources and sources from common/ (they do not run in it).
-    systemProperty 'teyvatcartographia.projectDir', rootProject.file('common').absolutePath
-    testLogging {
-        events 'failed'
-        exceptionFormat = 'full'
-    }
-}
-
-var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
-    var replaceProperties = [
+processResources {
+    def props = [
             minecraft_version      : minecraft_version,
             minecraft_version_range: minecraft_version_range,
             neo_version            : neo_version,
@@ -105,16 +56,11 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
             mod_authors            : mod_authors,
             mod_description        : mod_description
     ]
-    inputs.properties replaceProperties
-    expand replaceProperties
-    from "src/main/templates"
-    into "build/generated/sources/modMetadata"
+    inputs.properties props
+    filesMatching('META-INF/neoforge.mods.toml') { expand props }
 }
-sourceSets.main.resources.srcDir generateModMetadata
-neoForge.ideSyncTask generateModMetadata
 
 tasks.withType(JavaCompile).configureEach {
-    options.encoding = 'UTF-8'
     // Source file names and line numbers (crash reports still point at the line), no tables of local variable names:
     // 58 KB less in the JAR.
     options.debugOptions.debugLevel = 'source,lines'

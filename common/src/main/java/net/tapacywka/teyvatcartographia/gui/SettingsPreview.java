@@ -29,7 +29,7 @@ import java.util.List;
 
 /**
  * The live previews of the Pins, System and Compatibility tabs of {@link TeyvatConfigScreen}. Each draws into the area
- * it is given (the card beside the panel, or over the list), as one group centred on both axes, on the pixel grid.
+ * it is given (the card beside the panel), as one group centred on both axes, on the pixel grid.
  */
 final class SettingsPreview {
     private SettingsPreview() {}

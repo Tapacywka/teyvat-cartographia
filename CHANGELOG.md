@@ -9,6 +9,8 @@ Since 0.5.0 every version comes for both Fabric and NeoForge (`+mc1.21.1-fabric`
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-10-27
+
 ### Added
 - Fabric: Teyvat Cartographia now also comes for Fabric (Fabric Loader and Fabric API for Minecraft 1.21.1), with
   everything the NeoForge version has. Mod Menu shows its settings button. Each version comes as two files of the
@@ -34,7 +36,7 @@ Since 0.5.0 every version comes for both Fabric and NeoForge (`+mc1.21.1-fabric`
 ### Fixed
 - The beam of light over a tracked pin far away (about 2000 blocks and more) no longer ends in a hard cut at its top:
   it fades out smoothly at any distance, and looking up at it does not clip it. Beyond 320 blocks the beam now grows
-  with the distance, so it stays tall on the screen however far the pin is.
+  with the distance, so it stays tall on the screen however far the pin is. Found and fixed by MelonCode, thank you!
 
 ## [0.4.0] - 2026-10-26
 
@@ -276,7 +278,8 @@ The first public release, for Minecraft 1.21.1 on NeoForge 21.1. Client only.
 - Cached HUD layers, chunk work on worker threads and path searches in short slices: the mod is meant to cost at most
   2 to 3% FPS.
 
-[Unreleased]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.1.2...v0.2.0

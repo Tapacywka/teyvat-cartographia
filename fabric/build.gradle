@@ -1,28 +1,10 @@
 plugins {
-    // The remapping Loom: Minecraft 1.21.1 is obfuscated, the JAR is remapped to intermediary names. 1.15 and later
-    // need a newer Gradle than this project's 9.2.1.
-    id 'net.fabricmc.fabric-loom-remap' version '1.14.10'
+    id 'multiloader-loader'
+    id 'net.fabricmc.fabric-loom-remap'
 }
-
-version = "${mod_version}+mc${minecraft_version}-fabric"
-group = mod_group_id
-
-base {
-    archivesName = mod_id
-}
-
-java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
 repositories {
-    maven { url = 'https://maven.parchmentmc.org' }
     maven { url = 'https://maven.terraformersmc.com/releases/' }
-    mavenCentral()
-}
-
-// The common code and resources, compiled as this build's own.
-sourceSets.main {
-    java.srcDir rootProject.file('common/src/main/java')
-    resources.srcDir rootProject.file('common/src/main/resources')
 }
 
 loom {
@@ -63,16 +45,12 @@ processResources {
     filesMatching('fabric.mod.json') { expand props }
 }
 
-// The file is named with a "v" before the version (teyvatcartographia-v0.5.0...jar); the mod's own version has none.
+// The released file is the remapped one, named like the plain JAR (multiloader-common).
 tasks.named('remapJar') {
-    archiveVersion = "v${project.version}"
-}
-tasks.named('jar') {
     archiveVersion = "v${project.version}"
 }
 
 tasks.withType(JavaCompile).configureEach {
-    options.encoding = 'UTF-8'
     // Full debug information: Sinytra Connector's mixin adapter reads the local variable tables of the mixin's methods
     // and stopped the game without them (26.10.2026; until 0.4 'source,lines' saved 58 KB).
     options.debugOptions.debugLevel = 'source,lines,vars'
