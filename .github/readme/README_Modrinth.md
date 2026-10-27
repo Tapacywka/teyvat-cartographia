@@ -44,11 +44,11 @@
 - [About](#about)
 - [Screenshots](#screenshots)
 - [Installation](#installation)
-- [Controls](#controls)
 - [Features](#features)
   - [World map](#world-map) &middot; [Map colours](#map-colours) &middot; [Cave layers](#cave-layers) &middot; [Minimap](#minimap) &middot; [Pins and tracking](#pins-and-tracking) &middot; [Pin in the world](#pin-in-the-world) &middot; [Walking path](#walking-path) &middot; [Settings](#settings)
-- [Compatibility with mods](#compatibility)
+- [Controls](#controls)
 - [Themes](#themes)
+- [Compatibility with mods](#compatibility)
 - [Performance](#performance)
 - [Where data is stored](#where-data-is-stored)
 - [Building from source](#building-from-source)
@@ -140,27 +140,6 @@ Place pins, search for them and for biomes, track them, follow the path and find
 The Fabric file also runs on NeoForge through [Sinytra Connector](https://modrinth.com/mod/connector) with
 [Forgified Fabric API](https://modrinth.com/mod/forgified-fabric-api) ([Connector Extras](https://modrinth.com/mod/connector-extras)
 adds its settings button to NeoForge's mod list), but on NeoForge the NeoForge file is the better choice.
-
-<h2 id="controls">🎮 Controls</h2>
-
-| Where | Action | Control |
-|---|---|---|
-| In game | Open world map | **M** (rebindable) |
-| In game | Toggle minimap / minimap zoom in / zoom out | **N** / **=** / **-** (rebindable) |
-| In game | New pin where you stand (opens the map with the pin editor) / stop tracking | **B** / **Z** (rebindable) |
-| In game | Pulse the tracked pin (shows the pin and the path stars again) | **V** (rebindable) |
-| World map | Pan | drag with the left mouse button, or WASD / arrow keys |
-| World map | Zoom (keeps the point under the cursor) | mouse wheel, `+`/`-`, or the slider on the left |
-| World map | Context menu | right-click: on empty ground **New pin** and, for operators (cheats in singleplayer), **Teleport**; on a pin **Edit** (**Open** for an automatic point) and **Track** |
-| World map | Create a pin | right-click empty ground, **New pin**, choose icon and name, **Confirm** |
-| World map | Overlapping pins | left-click the spot, pick one from the list in the lower right corner |
-| World map | Edit or track a pin | left-click it: rename, type, delete, **Track** |
-| World map | Close the pin panel | left-click empty ground (it creates no pin); a left click on another pin opens that one |
-| World map | Search pins and biomes | **Ctrl+F**, or the field at the top of the pin list; **Enter** opens the first result |
-| World map | Centre on the player | **Space**, the locate button, or the player's edge indicator |
-| World map | Cave layers | the layer button at the right edge (see [Cave layers](#cave-layers)) |
-| World map | Settings / pin list / dimensions | gear and list buttons (bottom left), compass (bottom right) |
-| World map | Close | **Esc** or **M** (Esc closes an open side panel first) |
 
 <h2 id="features">✨ Features</h2>
 
@@ -288,26 +267,26 @@ adds its settings button to NeoForge's mod list), but on NeoForge the NeoForge f
 * Reset to defaults and a shortcut to key binds. Stored in `config/teyvatcartographia-client.json` (the
   `teyvatcartographia-client.toml` of 0.4 and earlier is taken over once).
 
-<h2 id="compatibility">🧩 Compatibility with mods</h2>
+<h2 id="controls">🎮 Controls</h2>
 
-Teyvat Cartographia draws the blocks of any mod in the colours of their textures and lists modded dimensions on the
-world map, so most mods work without anything special. A few get more: with one of them in the game,
-**Settings > Compatibility** has a part for it.
-
-| Mod | What it gets |
-|---|---|
-| [Xaero's Minimap](https://modrinth.com/mod/xaeros-minimap) | **Import** of its waypoints (also those of Xaero's World Map) into your pins: the current world's are found on their own. The pin type they get, and whether hidden waypoints and death points come too, are in its part. |
-| [The Aether](https://modrinth.com/mod/aether) | A Fog of War of its own, a **sea of clouds** seen from above, with the floating islands casting a soft shadow on it (on the world map and the minimap). No cave layers under the islands. |
-| [Mielon's The Sift](https://modrinth.com/mod/mielons-the-sift) | A **pearly haze** in the colours of its ichor as the Fog of War; its **rainbow ichor** and **ichor snow** shimmer on the map in their own colours (each can be switched off); its cyan willows keep their colour. |
-| [Biomes O' Plenty](https://modrinth.com/mod/biomes-o-plenty), [Regions Unexplored](https://modrinth.com/mod/regions-unexplored) | Their biomes, leaves, grass and plants in their own colours (compared side by side with Xaero's Minimap in 16 places); their plants in the Plants list. |
-| [Vanilla Backport](https://modrinth.com/mod/vanillabackport), [Tiny Takeover Backport](https://modrinth.com/mod/tiny-takeover-backport) | The pale garden, leaf litter, bushes and the other new blocks in the colours the game gives them. |
-| [Sodium](https://modrinth.com/mod/sodium), [Iris](https://modrinth.com/mod/iris) | Work alongside (checked on Fabric and on NeoForge): the minimap, the map, the beam and the path sparkles draw as without them. |
-| [Mod Menu](https://modrinth.com/mod/modmenu) | On Fabric, a settings button for the mod in its list. |
-| [VulkanMod Reforged](https://modrinth.com/mod/vulkanmod-reforged) | Works with its Vulkan renderer: the map, the minimap, the path with its sparkles and the beam look as with OpenGL, the lists dissolve at their edges and the blur under the menus works. |
-
-The Nether and The End have fogs of their own too (each can be switched off in Compatibility > Minecraft); a resource pack theme can add a fog for any other dimension (see
-[Themes](#themes)). Players with other minimaps keep them: this mod changes nothing in the world and needs nothing
-from the server.
+| Where | Action | Control |
+|---|---|---|
+| In game | Open world map | **M** (rebindable) |
+| In game | Toggle minimap / minimap zoom in / zoom out | **N** / **=** / **-** (rebindable) |
+| In game | New pin where you stand (opens the map with the pin editor) / stop tracking | **B** / **Z** (rebindable) |
+| In game | Pulse the tracked pin (shows the pin and the path stars again) | **V** (rebindable) |
+| World map | Pan | drag with the left mouse button, or WASD / arrow keys |
+| World map | Zoom (keeps the point under the cursor) | mouse wheel, `+`/`-`, or the slider on the left |
+| World map | Context menu | right-click: on empty ground **New pin** and, for operators (cheats in singleplayer), **Teleport**; on a pin **Edit** (**Open** for an automatic point) and **Track** |
+| World map | Create a pin | right-click empty ground, **New pin**, choose icon and name, **Confirm** |
+| World map | Overlapping pins | left-click the spot, pick one from the list in the lower right corner |
+| World map | Edit or track a pin | left-click it: rename, type, delete, **Track** |
+| World map | Close the pin panel | left-click empty ground (it creates no pin); a left click on another pin opens that one |
+| World map | Search pins and biomes | **Ctrl+F**, or the field at the top of the pin list; **Enter** opens the first result |
+| World map | Centre on the player | **Space**, the locate button, or the player's edge indicator |
+| World map | Cave layers | the layer button at the right edge (see [Cave layers](#cave-layers)) |
+| World map | Settings / pin list / dimensions | gear and list buttons (bottom left), compass (bottom right) |
+| World map | Close | **Esc** or **M** (Esc closes an open side panel first) |
 
 <h2 id="themes">🎨 Themes</h2>
 
@@ -347,6 +326,27 @@ rectangle. Resource packs are merged, so a pack can change a few keys of any the
 when the theme is picked, or on F3+T.
 
 </details>
+
+<h2 id="compatibility">🧩 Compatibility with mods</h2>
+
+Teyvat Cartographia draws the blocks of any mod in the colours of their textures and lists modded dimensions on the
+world map, so most mods work without anything special. A few get more: with one of them in the game,
+**Settings > Compatibility** has a part for it.
+
+| Mod | What it gets |
+|---|---|
+| [Xaero's Minimap](https://modrinth.com/mod/xaeros-minimap) | **Import** of its waypoints (also those of Xaero's World Map) into your pins: the current world's are found on their own. The pin type they get, and whether hidden waypoints and death points come too, are in its part. |
+| [The Aether](https://modrinth.com/mod/aether) | A Fog of War of its own, a **sea of clouds** seen from above, with the floating islands casting a soft shadow on it (on the world map and the minimap). No cave layers under the islands. |
+| [Mielon's The Sift](https://modrinth.com/mod/mielons-the-sift) | A **pearly haze** in the colours of its ichor as the Fog of War; its **rainbow ichor** and **ichor snow** shimmer on the map in their own colours (each can be switched off); its cyan willows keep their colour. |
+| [Biomes O' Plenty](https://modrinth.com/mod/biomes-o-plenty), [Regions Unexplored](https://modrinth.com/mod/regions-unexplored) | Their biomes, leaves, grass and plants in their own colours (compared side by side with Xaero's Minimap in 16 places); their plants in the Plants list. |
+| [Vanilla Backport](https://modrinth.com/mod/vanillabackport), [Tiny Takeover Backport](https://modrinth.com/mod/tiny-takeover-backport) | The pale garden, leaf litter, bushes and the other new blocks in the colours the game gives them. |
+| [Sodium](https://modrinth.com/mod/sodium), [Iris](https://modrinth.com/mod/iris) | Work alongside (checked on Fabric and on NeoForge): the minimap, the map, the beam and the path sparkles draw as without them. |
+| [Mod Menu](https://modrinth.com/mod/modmenu) | On Fabric, a settings button for the mod in its list. |
+| [VulkanMod Reforged](https://modrinth.com/mod/vulkanmod-reforged) | Works with its Vulkan renderer: the map, the minimap, the path with its sparkles and the beam look as with OpenGL, the lists dissolve at their edges and the blur under the menus works. |
+
+The Nether and The End have fogs of their own too (each can be switched off in Compatibility > Minecraft); a resource pack theme can add a fog for any other dimension (see
+[Themes](#themes)). Players with other minimaps keep them: this mod changes nothing in the world and needs nothing
+from the server.
 
 <h2 id="performance">⚡ Performance</h2>
 
