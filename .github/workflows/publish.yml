@@ -116,7 +116,7 @@ jobs:
           # A version's ID by its name and the slug of its type (minecraft-1-21, modloader, environment, java).
           pick() {
             jq -r --arg name "$1" --arg type "$2" --argjson types "$types" \
-              '[.[] | . as $v | select($v.name == $name and ([$types[] | select(.id == $v.gameVersionTypeID) | .slug][0] | startswith($type)))][0].id // empty' \
+              '[.[] | . as $v | select($v.name == $name and (([$types[] | select(.id == $v.gameVersionTypeID) | .slug][0] // "") | startswith($type)))][0].id // empty' \
               <<< "$versions"
           }
           game=$(pick "$GAME_VERSION" minecraft-); client=$(pick Client environment); java=$(pick "Java 21" java)
