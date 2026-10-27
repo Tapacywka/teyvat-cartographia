@@ -1,0 +1,52 @@
+// The code and resources of both loaders, compiled here against the game alone (NeoForm: Minecraft without a loader),
+// so a loader's API used in them fails at once. The unit tests of the mod's logic run here, without a window.
+plugins {
+    id 'multiloader-common'
+    id 'net.neoforged.moddev'
+}
+
+neoForge {
+    enable {
+        neoFormVersion = project.neo_form_version
+    }
+    parchment {
+        mappingsVersion = project.parchment_mappings_version
+        minecraftVersion = project.parchment_minecraft_version
+    }
+    // The unit tests use the game's classes too (codecs, keys, registries).
+    addModdingDependenciesTo(sourceSets.test)
+}
+
+// What the loaders compile and pack as their own (multiloader-loader).
+configurations {
+    commonJava {
+        canBeResolved = false
+        canBeConsumed = true
+    }
+    commonResources {
+        canBeResolved = false
+        canBeConsumed = true
+    }
+}
+
+artifacts {
+    commonJava sourceSets.main.java.sourceDirectories.singleFile
+    commonResources sourceSets.main.resources.sourceDirectories.singleFile
+}
+
+dependencies {
+    // Unit tests of the mod's logic: run by `gradlew build` and on GitHub.
+    testImplementation platform('org.junit:junit-bom:5.11.4')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test', Test).configure {
+    useJUnitPlatform()
+    // The tests read the mod's resources and sources from here.
+    systemProperty 'teyvatcartographia.projectDir', projectDir.absolutePath
+    testLogging {
+        events 'failed'
+        exceptionFormat = 'full'
+    }
+}

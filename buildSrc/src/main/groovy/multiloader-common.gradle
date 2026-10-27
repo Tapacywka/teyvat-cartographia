@@ -1,0 +1,36 @@
+// Rules of every project: Java 21, the mod's group, its JAR named with a "v" before the version
+// (teyvatcartographia-v0.5.0+mc1.21.1-fabric.jar; the mod's own version has none), the repositories.
+plugins {
+    id 'java-library'
+}
+
+group = mod_group_id
+// common/ is not released on its own; each loader's file carries the game and the loader as build metadata.
+version = project.name == 'common' ? mod_version : "${mod_version}+mc${minecraft_version}-${project.name}"
+
+base {
+    archivesName = project.name == 'common' ? "${mod_id}-common" : mod_id
+}
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+
+repositories {
+    mavenCentral()
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = 'ParchmentMC'
+                url = 'https://maven.parchmentmc.org/'
+            }
+        }
+        filter { includeGroup('org.parchmentmc.data') }
+    }
+}
+
+tasks.named('jar', Jar) {
+    archiveVersion = "v${project.version}"
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}

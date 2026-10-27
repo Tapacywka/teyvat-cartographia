@@ -388,8 +388,11 @@ Requirements: JDK 21 (Gradle's toolchain support will use or download one), inte
 ./gradlew build
 ```
 
-On Windows: `gradlew.bat build`. One code base builds both files: `fabric/build/libs/teyvatcartographia-v<version>+mc1.21.1-fabric.jar`
-and `neoforge/build/libs/teyvatcartographia-v<version>+mc1.21.1-neoforge.jar` (the shared code is in `common/`).
+On Windows: `gradlew.bat build`. The project follows the layout of
+[MultiLoader-Template](https://github.com/jaredlll08/MultiLoader-Template): the shared code is in `common/` (compiled
+against the game alone, with the unit tests), the loaders' own parts in `fabric/` and `neoforge/`, the shared build
+rules in `buildSrc/`. One code base builds both files: `fabric/build/libs/teyvatcartographia-v<version>+mc1.21.1-fabric.jar`
+and `neoforge/build/libs/teyvatcartographia-v<version>+mc1.21.1-neoforge.jar`.
 `./gradlew :fabric:runClient` or `./gradlew :neoforge:runClient` starts a development client with the mod.
 
 <h2 id="bug-reports-and-ideas">🐞 Bug reports and ideas</h2>

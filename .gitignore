@@ -1,4 +1,4 @@
-# Only the mod itself is versioned: sources, Gradle build files, licence, readme, changelog and the GitHub
+# Only the mod itself is versioned: sources, Gradle build files (buildSrc too), licence, readme, changelog and the GitHub
 # files (issue forms, README images).
 # Everything else in this folder (test modpacks, backups, docs, tools, references, release files) stays local.
 /*
@@ -9,6 +9,7 @@
 !/gradlew
 !/gradlew.bat
 !/gradle/
+!/buildSrc/
 !/common/
 !/fabric/
 !/neoforge/
@@ -29,5 +30,7 @@
 .gradle/
 build/
 out/
+# The game's log of the unit tests (common/logs/), and of any other run.
+logs/
 *.iml
 .idea/

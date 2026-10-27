@@ -1,0 +1,5 @@
+// The build rules shared by the projects (as in jaredlll08's MultiLoader-Template): multiloader-common for all three,
+// multiloader-loader for fabric/ and neoforge/, which compile the common code as their own.
+plugins {
+    id 'groovy-gradle-plugin'
+}
