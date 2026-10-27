@@ -73,23 +73,23 @@ public final class WorldMarkerLayer implements LayeredDraw.Layer {
     /**
      * A beam of light rises from the target at any distance (until 25.10.2026 within 225 blocks), like the golden shaft
      * of light over a Genshin Impact waypoint (ingame_waypoint_beam_01): a soft wide glow with a narrow bright core,
-     * faint at the marker and full {@code BEAM_RISE} blocks above it, fading out towards its top. It always faces the
-     * camera and keeps about the same width on screen at any distance; terrain hides it. Beyond {@code BEAM_NEAR} of the
-     * camera's far plane it is drawn that far along the same line of sight, all its sizes scaled alike, so it looks the
-     * same and is not cut off. It dims to half as the marker nears the limiter ellipse ({@link MarkerTiming#approach}),
+     * faint at the marker, full a little above it and fading out smoothly to its top ({@link BeamShape}). It always faces
+     * the camera and keeps about the same width on screen at any distance; terrain hides it. Where any part of it, its
+     * top included, would be beyond {@code BEAM_NEAR} of the camera's far plane it is drawn nearer along the same line of
+     * sight, all its sizes scaled alike, so it looks the same and is not cut off. It dims to half as the marker nears the limiter ellipse ({@link MarkerTiming#approach}),
      * fades out the rest over a second once the marker rides the ellipse and in over a second when it comes back onto
      * the screen ({@link MarkerTiming#edgeStep}), and out with the marker close to the target.
      */
     private static final float BEAM_NEAR = 0.8f;
     /** Strength of the glow added over the amber tint (the light core is added at full strength). */
     private static final float BEAM_ADDED = 0.5f;
-    /** Beam length above the marker, and where it is fully bright (at least, or this share of the distance). */
-    private static final float BEAM_HEIGHT = 320, BEAM_RISE = 3, BEAM_RISE_SHARE = 0.1f;
     /**
      * Half-widths per block of distance: on ingame_waypoint_beam_01 at 63 m in 1080 px the glow is about 26 px wide and
-     * the core about 5 (FOV 70: one block at distance d covers 1080 / (1.4 d) px); the glow is drawn a bit wider than that,`r`n     * since its edges fade to nothing.
+     * the core about 5 (FOV 70: one block at distance d covers 1080 / (1.4 d) px); the glow is drawn a bit wider than that,
+     * since its edges fade to nothing.
      */
-    private static final float BEAM_GLOW_K = 0.025f, BEAM_CORE_K = 0.0035f;    /**
+    private static final float BEAM_GLOW_K = 0.025f, BEAM_CORE_K = 0.0035f;
+    /**
      * The limiter is an ellipse around the screen centre (half-axes as fractions of the screen, measured on
      * ingame_waypoint_01/02). Its centre line keeps this many GUI units from the bottom: the vanilla hotbar, health,
      * food and armour rows reach 49 units up, plus the marker's own pointer below the glyph and a small gap.
@@ -104,6 +104,8 @@ public final class WorldMarkerLayer implements LayeredDraw.Layer {
     // Scratch (render thread only).
     private static final Vector4f CLIP = new Vector4f(), EYE = new Vector4f();
     private static final float[] EDGE = new float[2];
+    /** The beam's rows: heights relative to the camera and brightness ({@link BeamShape#rows}). */
+    private static final float[] BEAM_Y = new float[BeamShape.ROWS], BEAM_A = new float[BeamShape.ROWS];
 
     private static long pulseStart = Long.MIN_VALUE;
     /**
@@ -438,41 +440,48 @@ public final class WorldMarkerLayer implements LayeredDraw.Layer {
 
         Vec3 cam = camera.getPosition();
         float bx = (float) (t.x() - cam.x), bz = (float) (t.z() - cam.z);
-        float y0 = (float) (ty + ANCHOR_Y - cam.y), y1 = y0 + Math.max(BEAM_RISE, dist * BEAM_RISE_SHARE);
-        float y2 = y1 + BEAM_HEIGHT * 0.4f, y3 = y0 + BEAM_HEIGHT;
+        float y0 = (float) (ty + ANCHOR_Y - cam.y);
+        BeamShape.rows(dist, BEAM_Y, BEAM_A);
+        for (int i = 0; i < BeamShape.ROWS; i++) BEAM_Y[i] += y0;
         // Across the view: perpendicular to the horizontal direction from the camera to the beam.
         float len = (float) Math.sqrt(bx * bx + bz * bz);
         float rx = len < 1e-3f ? 1f : -bz / len, rz = len < 1e-3f ? 0f : bx / len;
         float glow = Math.max(0.3f, dist * BEAM_GLOW_K), core = Math.max(0.06f, dist * BEAM_CORE_K);
-        // Farther than the far plane allows: the same beam nearer along the line of sight, everything scaled alike.
+        // Any part farther than the far plane allows (its top too, which looking up at it brings deeper into the view):
+        // the same beam nearer along the line of sight, everything scaled alike.
         float near = mc.gameRenderer.getDepthFar() * BEAM_NEAR;
-        if (len > near) {
-            float k = near / len;
-            bx *= k; bz *= k; y0 *= k; y1 *= k; y2 *= k; y3 *= k; glow *= k; core *= k;
+        float top = BEAM_Y[BeamShape.ROWS - 1];
+        float reach = (float) Math.sqrt(len * len + Math.max(y0 * y0, top * top));
+        if (reach > near) {
+            float k = near / reach;
+            bx *= k; bz *= k; glow *= k; core *= k;
+            for (int i = 0; i < BeamShape.ROWS; i++) BEAM_Y[i] *= k;
         }
 
         // An amber tint laid over the scene first, so the beam stays golden on a bright sky (added light alone turned
         // white on blue), then the glow and the light core added to it, the glow at half strength.
         BufferBuilder tint = WorldGlow.begin(VertexFormat.Mode.QUADS);
-        beamLayer(tint, bx, bz, rx, rz, glow, y0, y1, y2, y3, Theme.withAlpha(Theme.WORLD_MARKER_BEAM_TINT, a));
+        beamLayer(tint, bx, bz, rx, rz, glow, Theme.withAlpha(Theme.WORLD_MARKER_BEAM_TINT, a));
         WorldGlow.draw(tint, false);
         BufferBuilder b = WorldGlow.begin(VertexFormat.Mode.QUADS);
-        beamLayer(b, bx, bz, rx, rz, glow, y0, y1, y2, y3, Theme.withAlpha(Theme.WORLD_MARKER_BEAM, a * BEAM_ADDED));
-        beamLayer(b, bx, bz, rx, rz, core, y0, y1, y2, y3, Theme.withAlpha(Theme.WORLD_MARKER_BEAM_CORE, a));
+        beamLayer(b, bx, bz, rx, rz, glow, Theme.withAlpha(Theme.WORLD_MARKER_BEAM, a * BEAM_ADDED));
+        beamLayer(b, bx, bz, rx, rz, core, Theme.withAlpha(Theme.WORLD_MARKER_BEAM_CORE, a));
         WorldGlow.draw(b);
     }
 
-    /** One beam layer of half-width {@code w}: both halves, each faint, full, full, faint from bottom to top. */
-    private static void beamLayer(BufferBuilder b, float x, float z, float rx, float rz, float w, float y0, float y1, float y2, float y3, int color) {
+    /**
+     * One beam layer of half-width {@code w}: both halves, each a strip up the rows {@link #BEAM_Y} at their brightness
+     * {@link #BEAM_A} along the middle, clear at the edges.
+     */
+    private static void beamLayer(BufferBuilder b, float x, float z, float rx, float rz, float w, int color) {
         int clear = color & 0x00FFFFFF;
         for (int side = -1; side <= 1; side += 2) {
             float ex = x + rx * w * side, ez = z + rz * w * side;
-            b.addVertex(x, y0, z).setColor(clear); b.addVertex(ex, y0, ez).setColor(clear);
-            b.addVertex(ex, y1, ez).setColor(clear); b.addVertex(x, y1, z).setColor(color);
-            b.addVertex(x, y1, z).setColor(color); b.addVertex(ex, y1, ez).setColor(clear);
-            b.addVertex(ex, y2, ez).setColor(clear); b.addVertex(x, y2, z).setColor(color);
-            b.addVertex(x, y2, z).setColor(color); b.addVertex(ex, y2, ez).setColor(clear);
-            b.addVertex(ex, y3, ez).setColor(clear); b.addVertex(x, y3, z).setColor(clear);
+            for (int i = 0; i + 1 < BeamShape.ROWS; i++) {
+                float ya = BEAM_Y[i], yb = BEAM_Y[i + 1];
+                b.addVertex(x, ya, z).setColor(Theme.withAlpha(color, BEAM_A[i])); b.addVertex(ex, ya, ez).setColor(clear);
+                b.addVertex(ex, yb, ez).setColor(clear); b.addVertex(x, yb, z).setColor(Theme.withAlpha(color, BEAM_A[i + 1]));
+            }
         }
     }
     private static float smooth(double t) {

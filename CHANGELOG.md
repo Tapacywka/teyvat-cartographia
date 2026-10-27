@@ -19,6 +19,11 @@ Since 0.5.0 every version comes for both Fabric and NeoForge (`+mc1.21.1-fabric`
 - The settings are kept in `config/teyvatcartographia-client.json`, on both loaders. The settings of earlier versions
   (`teyvatcartographia-client.toml`) are taken over the first time the game starts with this version.
 
+### Fixed
+- The beam of light over a tracked pin far away (about 2000 blocks and more) no longer ends in a hard cut at its top:
+  it fades out smoothly at any distance, and looking up at it does not clip it. Beyond 320 blocks the beam now grows
+  with the distance, so it stays tall on the screen however far the pin is.
+
 ## [0.4.0] - 2026-10-26
 
 ### Added
