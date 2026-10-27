@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "net.tapacywka.teyvatcartographia.fabric.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "refmap": "teyvatcartographia.refmap.json",
+  "client": [
+    "EditBoxMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

@@ -3,10 +3,21 @@
 All notable changes to Teyvat Cartographia are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
-[Semantic Versioning](https://semver.org/spec/v2.0.0.html). Each release is built for one game and loader, named in
-the build metadata after the version: `0.2.0+mc1.21.1-neoforge` is version 0.2.0 for Minecraft 1.21.1 on NeoForge.
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html). Each release file is built for one game and loader, named
+in the build metadata after the version: `0.2.0+mc1.21.1-neoforge` is version 0.2.0 for Minecraft 1.21.1 on NeoForge.
+Since 0.5.0 every version comes for both Fabric and NeoForge (`+mc1.21.1-fabric`, `+mc1.21.1-neoforge`).
 
 ## [Unreleased]
+
+### Added
+- Fabric: Teyvat Cartographia now also comes for Fabric (Fabric Loader and Fabric API for Minecraft 1.21.1), with
+  everything the NeoForge version has. Mod Menu shows its settings button. Each version comes as two files of the
+  same mod: `+mc1.21.1-fabric` and `+mc1.21.1-neoforge`. The Fabric file also runs on NeoForge through Sinytra
+  Connector with Forgified Fabric API (Connector Extras adds the settings button to NeoForge's mod list).
+
+### Changed
+- The settings are kept in `config/teyvatcartographia-client.json`, on both loaders. The settings of earlier versions
+  (`teyvatcartographia-client.toml`) are taken over the first time the game starts with this version.
 
 ## [0.4.0] - 2026-10-26
 

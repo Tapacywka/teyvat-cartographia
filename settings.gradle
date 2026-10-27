@@ -1,5 +1,6 @@
 pluginManagement {
     repositories {
+        maven { url = 'https://maven.fabricmc.net/' }
         mavenLocal()
         gradlePluginPortal()
     }
@@ -10,3 +11,7 @@ plugins {
 }
 
 rootProject.name = 'teyvat-map'
+
+// One code for two loaders: common/src (no Gradle project of its own) is compiled by each loader's build as its
+// own sources, so a loader's API used in common code breaks the other build at once.
+include 'fabric', 'neoforge'
