@@ -23,6 +23,11 @@ on:
         type: choice
         options: [both, modrinth, curseforge]
         default: both
+      loaders:
+        description: Which files
+        type: choice
+        options: [both, fabric, neoforge]
+        default: both
 
 permissions:
   contents: read
@@ -36,6 +41,8 @@ env:
   CURSEFORGE_PROJECT: '1764160'
   GAME_VERSION: 1.21.1
   USER_AGENT: Tapacywka/teyvat-cartographia (publish workflow)
+  # Both files on a release; one of them when run by hand (to finish an upload refused for one).
+  LOADERS: ${{ inputs.loaders == 'fabric' && 'fabric' || inputs.loaders == 'neoforge' && 'neoforge' || 'fabric neoforge' }}
 
 jobs:
   publish:
@@ -88,7 +95,7 @@ jobs:
             echo "Modrinth: the versions cannot be listed (HTTP $code), not checked for repeats"
             existing=''
           fi
-          for loader in fabric neoforge; do
+          for loader in $LOADERS; do
             number="$VERSION+mc$GAME_VERSION-$loader"
             jar="dist/teyvatcartographia-v$number.jar"
             if grep -qxF "$number" <<< "$existing"; then echo "Modrinth: $number is there already"; continue; fi
@@ -136,7 +143,7 @@ jobs:
           fabric=$(pick Fabric modloader); neoforge=$(pick NeoForge modloader)
           echo "CurseForge IDs: Minecraft $GAME_VERSION $game, Client $client, Java 21 $java, Fabric $fabric, NeoForge $neoforge"
           for x in "$game" "$client" "$java" "$fabric" "$neoforge"; do [ -n "$x" ] || { echo "CurseForge: a game version was not found"; exit 1; }; done
-          for loader in fabric neoforge; do
+          for loader in $LOADERS; do
             number="$VERSION+mc$GAME_VERSION-$loader"
             jar="dist/teyvatcartographia-v$number.jar"
             if [ "$loader" = fabric ]; then
@@ -145,12 +152,12 @@ jobs:
               name="Teyvat Cartographia $VERSION (Fabric)"
             else
               ids="[$game, $client, $java, $neoforge]"
-              relations='{"projects":[]}'
+              relations=null
               name="Teyvat Cartographia $VERSION (NeoForge)"
             fi
             metadata=$(jq -n --arg name "$name" --rawfile changelog changelog.md --argjson ids "$ids" --argjson relations "$relations" \
               '{changelog: $changelog, changelogType: "markdown", displayName: $name, gameVersions: $ids,
-                releaseType: "release", relations: $relations}')
+                releaseType: "release"} + (if $relations == null then {} else {relations: $relations} end)')
             echo "CurseForge: $number from $jar"
             jq 'del(.changelog)' <<< "$metadata"
             if [ "$DRY_RUN" = true ]; then continue; fi
