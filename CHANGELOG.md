@@ -24,6 +24,12 @@ Since 0.5.0 every version comes for both Fabric and NeoForge (`+mc1.21.1-fabric`
   (`teyvatcartographia-client.toml`) are taken over the first time the game starts with this version.
 - Pins show on the world map and the minimap at every zoom, 1/16 and 1/32 too: a pin made there no longer vanishes
   at once. Biome names and the region grid still start at 1/8.
+- Where the settings have no room for the preview beside them (GUI 4 at 1080p), pointing at a setting shows its
+  description as a tooltip again, instead of the preview button; a description taller than the room scrolls.
+- Minimap > Extra information lists what the lines show first (coordinates, biome, clock, day counter), then their
+  text size, background and spacing.
+- Clearer descriptions: the quick settings of the world map have their own, and the minimap's switch, zoom, size and
+  opacity say more.
 
 ### Fixed
 - The beam of light over a tracked pin far away (about 2000 blocks and more) no longer ends in a hard cut at its top:

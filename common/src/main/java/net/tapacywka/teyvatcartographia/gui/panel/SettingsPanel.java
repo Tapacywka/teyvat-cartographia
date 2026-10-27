@@ -38,7 +38,7 @@ public final class SettingsPanel extends SidePanel {
      */
     private static Row pins(String key, MapConfig.PinKind kind) {
         MapConfig.PinOptions o = MapConfig.pins(kind);
-        return new Row(Component.translatable(key), Component.translatable("teyvatcartographia.config.pins." + kind.id + ".tooltip"), false, o::onMap, () -> {
+        return new Row(Component.translatable(key), Component.translatable(key + ".tooltip"), false, o::onMap, () -> {
             boolean on = !o.onMap();
             o.map.set(on);
             if (on) o.enabled.set(true);
@@ -63,9 +63,9 @@ public final class SettingsPanel extends SidePanel {
                 });
     }
 
-    /** Plants on the map (the list of which ones is on the full settings screen); the chunks around are mapped again. */
+    /** Plants on the map (the list of which ones is on the full settings screen, which its tooltip names); the chunks around are mapped again. */
     private static Row plants() {
-        return new Row(Component.translatable("teyvatcartographia.settings.plants"), Component.translatable("teyvatcartographia.config.plants.tooltip"),
+        return new Row(Component.translatable("teyvatcartographia.settings.plants"), Component.translatable("teyvatcartographia.settings.plants.tooltip"),
                 false, () -> MapConfig.get(MapConfig.MAP_PLANTS), () -> {
                     MapConfig.MAP_PLANTS.set(!MapConfig.get(MapConfig.MAP_PLANTS));
                     MapConfig.save();

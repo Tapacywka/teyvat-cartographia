@@ -255,7 +255,7 @@ public final class Ui {
     }
 
     /** Tooltip box: rounded in the rounded style; in the rectangular one a vanilla tooltip (fill with an inset outline). */
-    private static void tooltipBox(GuiGraphics g, float x, float y, float w, float h) {
+    static void tooltipBox(GuiGraphics g, float x, float y, float w, float h) {
         if (Theme.Style.squareUi) {
             Draw.rect(g, x, y, x + w, y + h, Theme.TOOLTIP);
             Draw.frame(g, x + 1, y + 1, w - 2, h - 2, 1, Theme.TOOLTIP_OUTLINE);

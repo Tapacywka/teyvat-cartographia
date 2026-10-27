@@ -71,10 +71,13 @@ public final class TeyvatConfigScreen extends Screen {
     private float panelX, panelY, panelW, panelH, listTop, listBottom;
     /**
      * The live preview beside the panel: a card on the right when the screen has room for it ({@link #PREVIEW_MIN} GUI
-     * units beside the panel, which keeps its width), else behind a button in the header, over the list.
+     * units beside the panel, which keeps its width); without that room the description of the row under the pointer
+     * as a text tooltip, no pictures ({@link ScrollTooltip}; user request 27.10.2026, until then a header button showed
+     * the preview over the list).
      */
     private static final int PREVIEW_MIN = 200, PREVIEW_MAX = 300;
-    private boolean previewCard, previewOpen;
+    private boolean previewCard;
+    private final ScrollTooltip tip = new ScrollTooltip();
     private float previewX, previewW;
     private final MapView previewView = new MapView();
     /** The setting the preview shows: the one under the pointer (kept while the pointer goes right, to the preview), or null. */
@@ -672,10 +675,8 @@ public final class TeyvatConfigScreen extends Screen {
         minimap.add(SliderRow.ofInt("teyvatcartographia.config.minimap_padding", MapConfig.MINIMAP_PADDING, 0, 16));
         minimap.add(SliderRow.ofPercent("teyvatcartographia.config.minimap_fade_width", MapConfig.MINIMAP_FADE_WIDTH, 0, 50));
         minimap.add(SliderRow.ofPercent("teyvatcartographia.config.minimap_fade_strength", MapConfig.MINIMAP_FADE_STRENGTH, 0, 100));
+        // What the lines under it show first, then how they look (user decision 27.10.2026).
         minimap.add(new Section("teyvatcartographia.config.subsection.minimap_info"));
-        minimap.add(SliderRow.ofInt("teyvatcartographia.config.minimap_info_gap", MapConfig.MINIMAP_INFO_GAP, 0, 8));
-        minimap.add(SliderRow.ofAuto("teyvatcartographia.config.minimap_text_size", MapConfig.MINIMAP_TEXT_SIZE, 4));
-        minimap.add(SliderRow.ofPercent("teyvatcartographia.config.minimap_pill_opacity", MapConfig.MINIMAP_PILL_OPACITY, 0, 100));
         minimap.add(new BoolRow("teyvatcartographia.config.minimap_coords", MapConfig.MINIMAP_SHOW_COORDS));
         minimap.add(new BoolRow("teyvatcartographia.config.minimap_biome", MapConfig.MINIMAP_SHOW_BIOME));
         // The clock as one choice: off, game time, real time, both.
@@ -689,6 +690,9 @@ public final class TeyvatConfigScreen extends Screen {
         minimap.add(new EnumRow<>("teyvatcartographia.config.minimap_time_format", MapConfig.MINIMAP_TIME_FORMAT, MapConfig.TimeFormat.values(), null,
                 () -> MapConfig.get(MapConfig.MINIMAP_SHOW_TIME)));
         minimap.add(new BoolRow("teyvatcartographia.config.minimap_day", MapConfig.MINIMAP_SHOW_DAY));
+        minimap.add(SliderRow.ofAuto("teyvatcartographia.config.minimap_text_size", MapConfig.MINIMAP_TEXT_SIZE, 4));
+        minimap.add(SliderRow.ofPercent("teyvatcartographia.config.minimap_pill_opacity", MapConfig.MINIMAP_PILL_OPACITY, 0, 100));
+        minimap.add(SliderRow.ofInt("teyvatcartographia.config.minimap_info_gap", MapConfig.MINIMAP_INFO_GAP, 0, 8));
         // Pins: each kind as one choice (off, the map, both maps, in the world with the marker, everywhere with the beam);
         // then the path to a tracked pin of each kind (off, the map, both maps, everywhere with the stars).
         pins.add(new Section("teyvatcartographia.config.subsection.pins_display"));
@@ -911,15 +915,6 @@ public final class TeyvatConfigScreen extends Screen {
 
     // ------------------------------------------------------------------ live preview
 
-    /** The header button that opens the preview over the list (only without room for the card). */
-    private float previewButtonX() {
-        return panelX + panelW - Grid.HEADER_H - Grid.TOOL;
-    }
-
-    private float previewButtonY() {
-        return panelY + (Grid.HEADER_H - Grid.TOOL) / 2f;
-    }
-
     private String shownTabKey() {
         return tabs.get(tab).key();
     }
@@ -930,7 +925,10 @@ public final class TeyvatConfigScreen extends Screen {
      * and used; elsewhere on the screen it goes.
      */
     private void followPointer(int mx, int my) {
-        if (!previewCard) return;
+        if (!previewCard) {
+            followTooltip(mx, my);
+            return;
+        }
         if (draggingRow != null) {
             previewRow = draggingRow;
             return;
@@ -946,6 +944,26 @@ public final class TeyvatConfigScreen extends Screen {
             for (Row r : rows) if (r.tooltip != null && inView(r) && my >= r.y && my < r.y + r.height()) at = r;
         }
         previewRow = at;
+    }
+
+    /**
+     * Without room for the preview: the description of the row under the pointer as a tooltip, none while a slider or
+     * the tooltip's own bar is dragged or over the open list of plants; a tooltip that scrolls stays while the pointer is
+     * on it.
+     */
+    private void followTooltip(int mx, int my) {
+        if (tip.dragging() || tip.scrolls() && tip.contains(mx, my)) return;
+        if (scroll != scroller.target()) {
+            tip.hide(); // the rows still move: placed now, it would stay behind them
+            return;
+        }
+        Row at = null;
+        if (draggingRow == null && (plantList == null || !plantList.over(mx, my)) && my >= listTop && my < listBottom
+                && mx >= contentX() && mx < contentX() + contentW()) {
+            for (Row r : rows) if (r.tooltip != null && inView(r) && my >= r.y && my < r.y + r.height()) at = r;
+        }
+        if (at == null) tip.hide();
+        else tip.show(at, at.label, at.tooltip, mx, at.y, at.y + at.height(), width, Grid.MARGIN, footerY() - Grid.GAP);
     }
 
     /** The translation key of a row's name ("teyvatcartographia.config.plants"), or "" for a name of its own. */
@@ -968,7 +986,7 @@ public final class TeyvatConfigScreen extends Screen {
     /**
      * The card: a dark panel with its title, then for the setting pointed at its pictures at the top (a caption with
      * its value under a single one), its name and its description under them; with none pointed at, a line asking for
-     * one. Without room beside the panel (over the list), a line asking for a smaller interface.
+     * one.
      */
     private void renderPreview(GuiGraphics g, float x, float y, float w, float h, float pt) {
         Draw.rect(g, x, y, x + w, y + h, Theme.PANEL_DARK);
@@ -978,10 +996,6 @@ public final class TeyvatConfigScreen extends Screen {
         DrawText.room(title, w - 2 * Grid.PAD);
         DrawText.text(g, title, x + Grid.PAD, DrawText.textY(y, Grid.HEADER_H), Theme.GOLD, false);
         float cx = x + Grid.PAD, cy = y + Grid.HEADER_H + Grid.PAD, cw = w - 2 * Grid.PAD, ch = h - Grid.HEADER_H - 2 * Grid.PAD;
-        if (!previewCard) {
-            previewLines(g, cx, cy, cw, ch, "teyvatcartographia.config.preview.small", "teyvatcartographia.config.preview.small_hint");
-            return;
-        }
         Row row = previewRow;
         if (row == null || row.tooltip == null) {
             previewLines(g, cx, cy, cw, ch, "teyvatcartographia.config.preview.point", "teyvatcartographia.config.preview.point_hint");
@@ -1208,35 +1222,32 @@ public final class TeyvatConfigScreen extends Screen {
         Ui.panel(g, panelX, panelY, panelW, panelH, true, title, Icon.GEAR, mx, my);
         if (previewCard) Backdrop.draw(g, previewX, panelY, previewX + previewW, panelY + panelH);
         Backdrop.release();
-        if (!previewCard) Ui.toolButton(g, previewButtonX(), previewButtonY(), Icon.EARTH, mx, my);
-        // Over the list, the preview hides it (and takes its clicks) until the button is pressed again.
-        boolean overlay = !previewCard && previewOpen;
         if (tabs.size() > 1) for (int i = 0; i < tabs.size(); i++) renderTab(g, i, tabs.get(i).key(), i == tab, mx, my);
         float total = total();
         if (scroll != scroller.pos()) scroller.jump(scroll); // set from outside (the in-game tests): taken at once
         scroll = scroller.update(maxScroll());
 
-        if (!overlay) EdgeFade.capture(g); // the panel under the rows, for their dissolving edges
+        EdgeFade.capture(g); // the rows in a layer of their own, for their dissolving edges
         g.enableScissor((int) panelX, (int) listTop, (int) (panelX + panelW), (int) listBottom);
         float yy = listTop - scroll;
-        int rowMy = my >= listTop && my < listBottom && !overlay && (plantList == null || !plantList.over(mx, my)) ? my : -10_000;
+        // A scrolling tooltip holds the pointer: the rows under it are not pointed at.
+        boolean onTip = !previewCard && tip.scrolls() && tip.contains(mx, my);
+        int rowMy = my >= listTop && my < listBottom && !onTip && (plantList == null || !plantList.over(mx, my)) ? my : -10_000;
         for (Row r : rows) {
             r.y = yy;
             // Rows cut by the edges too: they dissolve there (while scrolling, and the row beyond the last whole one).
-            if (!overlay && r.shown() && yy + r.height() > listTop && yy < listBottom) r.render(g, contentX(), contentW(), mx, rowMy);
+            if (r.shown() && yy + r.height() > listTop && yy < listBottom) r.render(g, contentX(), contentW(), mx, rowMy);
             yy += r.listHeight();
         }
         g.disableScissor();
-        if (!overlay) {
-            float view = listBottom - listTop;
-            EdgeFade.draw(g, panelX, barX() - Grid.GAP, listTop, listBottom, FADE,
-                    Math.min(1, scroll / FADE), Math.min(1, Math.max(0, total - scroll - view) / FADE));
-        }
+        float view = listBottom - listTop;
+        EdgeFade.draw(g, panelX, barX() - Grid.GAP, listTop, listBottom, FADE,
+                Math.min(1, scroll / FADE), Math.min(1, Math.max(0, total - scroll - view) / FADE));
         EdgeFade.release();
         // The list of plants, under its row and over the rows below it; it closes when its row is out of view (where
         // the list is going: it may slide in while the plants open).
         if (plantList != null) {
-            if (overlay || !rows.contains(plantsRow) || !inViewAt(plantsRow, scroller.target())) closePlants();
+            if (!rows.contains(plantsRow) || !inViewAt(plantsRow, scroller.target())) closePlants();
             else {
                 float top = plantsRow.y + Grid.ROW;
                 g.enableScissor((int) panelX, (int) listTop, (int) (panelX + panelW), (int) listBottom);
@@ -1245,14 +1256,14 @@ public final class TeyvatConfigScreen extends Screen {
             }
         }
         followPointer(mx, my);
-        if (overlay) renderPreview(g, contentX(), listTop, contentW(), listBottom - listTop, pt);
-        else renderBar(g, total, mx, my);
+        renderBar(g, total, mx, my);
         if (previewCard) renderPreview(g, previewX, panelY, previewW, panelH, pt);
 
         float bw = footerButtonW(), by = footerY();
         Ui.actionButton(g, footerButtonX(0), by, bw, Component.translatable("teyvatcartographia.config.keybinds"), Icon.KEYBOARD, true, mx, my);
         Ui.actionButton(g, footerButtonX(1), by, bw, Component.translatable("teyvatcartographia.config.reset"), Icon.RESET, true, mx, my);
         Ui.actionButton(g, footerButtonX(2), by, bw, Component.translatable("gui.done"), Icon.CHECK, true, mx, my);
+        if (!previewCard) tip.render(g, mx, my); // over everything, the footer too
 
         if (draggingRow != null) Cursors.force(Cursors.Shape.RESIZE_H);
         if (draggingBar) Cursors.force(Cursors.Shape.RESIZE_V);
@@ -1269,16 +1280,13 @@ public final class TeyvatConfigScreen extends Screen {
             onClose();
             return true;
         }
-        if (!previewCard && Draw.inRect(mx, my, previewButtonX(), previewButtonY(), Grid.TOOL, Grid.TOOL)) {
-            previewOpen = !previewOpen;
-            return true;
-        }
-        if (!previewCard && previewOpen && my >= listTop && my < listBottom && mx >= contentX() && mx < contentX() + contentW()) return true;
+        // A scrolling tooltip takes the clicks on it (its bar), none reach the rows under it.
+        if (!previewCard && tip.click(mx, my)) return true;
         for (int i = 0; tabs.size() > 1 && i < tabs.size(); i++) {
             if (Draw.inRect(mx, my, tabX(i), tabY(), tabW(i), TAB_H)) {
                 tab = i;
                 rows = tabs.get(i).rows();
-                previewOpen = false;
+                tip.hide();
                 previewRow = null;
                 closePlants();
                 scroller.jump(0);
@@ -1321,6 +1329,7 @@ public final class TeyvatConfigScreen extends Screen {
 
     @Override
     public boolean mouseDragged(double mx, double my, int button, double dx, double dy) {
+        if (tip.drag(my)) return true;
         if (draggingBar) {
             dragBar(my);
             return true;
@@ -1338,6 +1347,7 @@ public final class TeyvatConfigScreen extends Screen {
         if (draggingRow instanceof SliderRow s && s.onRelease != null) s.onRelease.run();
         draggingRow = null;
         draggingBar = false;
+        tip.release();
         if (plantList != null) plantList.release();
         return super.mouseReleased(mx, my, button);
     }
@@ -1349,6 +1359,8 @@ public final class TeyvatConfigScreen extends Screen {
             plantList.scrollBy(sy);
             return true;
         }
+        if (!previewCard && tip.scroll(mx, my, sy)) return true;
+        tip.hide(); // the rows move under it
         scroller.wheel(sy, WHEEL);
         return true;
     }
