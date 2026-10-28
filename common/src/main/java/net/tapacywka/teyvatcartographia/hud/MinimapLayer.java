@@ -26,7 +26,6 @@ import net.tapacywka.teyvatcartographia.render.DrawText;
 import net.tapacywka.teyvatcartographia.render.MapLayerRenderer;
 import net.tapacywka.teyvatcartographia.render.MarkerRenderer;
 import net.tapacywka.teyvatcartographia.render.Theme;
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.platform.Window;
 import net.tapacywka.teyvatcartographia.render.Mesh;
 import net.minecraft.util.Util;

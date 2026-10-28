@@ -12,7 +12,6 @@ import net.minecraft.resources.Identifier;
 import net.tapacywka.teyvatcartographia.TeyvatCartographia;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * The mod's GUI pipelines: the game's GUI shaders, one per way of blending, in quads as the game's GUI renderer needs
@@ -52,15 +51,8 @@ public final class Pipelines {
             .withCull(false)
             .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT_PREMULTIPLIED_ALPHA))
             .build();
-    /** Textured triangles replacing what is underneath (no blending). */
-    public static final RenderPipeline TEX_OPAQUE = RenderPipeline.builder(RenderPipelines.GUI_TEXTURED_SNIPPET)
-            .withLocation(id("gui_textured_triangles_opaque"))
-            .withVertexFormat(DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS)
-            .withCull(false)
-            .withColorTargetState(new ColorTargetState(Optional.empty(), ColorTargetState.WRITE_ALL))
-            .build();
 
-    public static final List<RenderPipeline> ALL = List.of(COLOR, COLOR_ADD, TEX, TEX_PREMULTIPLIED, TEX_OPAQUE);
+    public static final List<RenderPipeline> ALL = List.of(COLOR, COLOR_ADD, TEX, TEX_PREMULTIPLIED);
 
     private static Identifier id(String name) {
         return Identifier.fromNamespaceAndPath(TeyvatCartographia.MOD_ID, "pipeline/" + name);

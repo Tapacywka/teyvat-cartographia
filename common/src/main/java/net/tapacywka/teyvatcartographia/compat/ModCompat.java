@@ -33,15 +33,6 @@ public final class ModCompat {
         return loaded("the_sift");
     }
 
-    /**
-     * VulkanMod draws the game with Vulkan: raw OpenGL frame copies come out black or empty there, so the menu blur
-     * copies the frame through the game's own post-processing under it ({@code render/Backdrop}; Project Amber's Vulkan
-     * build, 26.10.2026).
-     */
-    public static boolean vulkan() {
-        return loaded("vulkanmod");
-    }
-
     /** Xaero's Minimap or Xaero's World Map in the game, or the waypoints Xaero's Minimap left in it. */
     public static boolean xaero() {
         return loaded("xaerominimap") || loaded("xaeroworldmap") || !XaeroWaypoints.roots().isEmpty();

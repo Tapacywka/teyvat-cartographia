@@ -672,28 +672,6 @@ public final class Draw {
         endTex(g, b, tex);
     }
 
-    /** As {@link #texturedQuad}, replacing what is underneath (no blending; e.g. a copy of the frame). */
-    public static void texturedQuadOpaque(GuiGraphicsExtractor g, Tex tex, float x0, float y0, float x1, float y1,
-                                          float u0, float v0, float u1, float v1) {
-        Matrix3x2fc m = mat(g);
-        x0 = snap(x0); y0 = snap(y0); x1 = snap(x1); y1 = snap(y1);
-        Mesh b = beginTex();
-        int c = 0xFFFFFFFF;
-        vtx(b, m, x0, y0, u0, v0, c); vtx(b, m, x0, y1, u0, v1, c); vtx(b, m, x1, y1, u1, v1, c);
-        vtx(b, m, x0, y0, u0, v0, c); vtx(b, m, x1, y1, u1, v1, c); vtx(b, m, x1, y0, u1, v0, c);
-        submit(g, Shape.of(b, Pipelines.TEX_OPAQUE, tex.setup(), true, scissor(g)));
-    }
-
-    /** A triangle of a texture replacing what is underneath, like {@link #texturedQuadOpaque}; points and UVs as x, y, u, v. */
-    public static void texturedTriangleOpaque(GuiGraphicsExtractor g, Tex tex, float x1, float y1, float u1, float v1,
-                                              float x2, float y2, float u2, float v2, float x3, float y3, float u3, float v3) {
-        Matrix3x2fc m = mat(g);
-        Mesh b = beginTex();
-        int c = 0xFFFFFFFF;
-        vtx(b, m, x1, y1, u1, v1, c); vtx(b, m, x2, y2, u2, v2, c); vtx(b, m, x3, y3, u3, v3, c);
-        submit(g, Shape.of(b, Pipelines.TEX_OPAQUE, tex.setup(), true, scissor(g)));
-    }
-
     /** As {@link #texturedQuad} for a texture holding premultiplied colour (e.g. an off-screen layer). */
     public static void texturedQuadPremultiplied(GuiGraphicsExtractor g, Tex tex, float x0, float y0, float x1, float y1,
                                                  float u0, float v0, float u1, float v1) {
