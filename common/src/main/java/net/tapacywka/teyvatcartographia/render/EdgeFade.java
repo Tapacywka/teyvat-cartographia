@@ -27,7 +27,15 @@ public final class EdgeFade {
     /** Bands per edge: the smoothstep drawn as straight pieces (8 is closer than a screen's 1/255 steps can show). */
     private static final int BANDS = 8;
 
-    private static final CachedLayer rows = new CachedLayer();
+    /**
+     * One layer per list drawn in a frame (the settings rows, then the plant list under them): since 26.1 the frame's GUI
+     * is drawn after all of them, so a list reusing the layer of the one before replaced its rows (the settings rows
+     * vanished while the plant list was open).
+     */
+    private static final java.util.List<CachedLayer> layers = new ArrayList<>();
+    private static CachedLayer rows;
+    private static int used;
+    private static GuiGraphicsExtractor frame;
     private static boolean active;
 
     /**
@@ -39,6 +47,12 @@ public final class EdgeFade {
 
     /** Starts the rows: from here until {@link #draw} everything is drawn into the rows' layer. */
     public static void capture(GuiGraphicsExtractor g) {
+        if (g != frame) {
+            frame = g; // a new frame: its lists use the layers from the first again
+            used = 0;
+        }
+        if (used == layers.size()) layers.add(new CachedLayer());
+        rows = layers.get(used++);
         var w = Minecraft.getInstance().getWindow();
         rows.bind(g, w.getWidth(), w.getHeight(), false);
         items.clear();
@@ -115,6 +129,9 @@ public final class EdgeFade {
     /** Frees the layer (the screen is closed): a whole screen's worth of video memory. */
     public static void dispose() {
         release();
-        rows.destroy();
+        for (CachedLayer layer : layers) layer.destroy();
+        layers.clear();
+        rows = null;
+        frame = null;
     }
 }

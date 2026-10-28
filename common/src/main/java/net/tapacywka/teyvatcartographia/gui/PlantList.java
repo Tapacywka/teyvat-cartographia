@@ -50,7 +50,10 @@ final class PlantList {
             refilter();
         });
         for (Block b : Plants.all()) {
-            ItemStack item = new ItemStack(b.asItem());
+            // Item components are bound only once a world has loaded its registries (26.1): in the title screen's
+            // settings before the first world a stack cannot be made, so the plant shows its map colour instead.
+            var holder = b.asItem().builtInRegistryHolder();
+            ItemStack item = holder.areComponentsBound() ? new ItemStack(b.asItem()) : ItemStack.EMPTY;
             Component name = b.getName();
             all.add(new Entry(b, item, name, name.getString().toLowerCase(Locale.ROOT)));
         }
