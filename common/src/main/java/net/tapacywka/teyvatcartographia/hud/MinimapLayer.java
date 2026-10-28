@@ -28,13 +28,12 @@ import net.tapacywka.teyvatcartographia.render.MarkerRenderer;
 import net.tapacywka.teyvatcartographia.render.Theme;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.platform.Window;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import net.minecraft.Util;
+import net.tapacywka.teyvatcartographia.render.Mesh;
+import net.minecraft.util.Util;
 import net.minecraft.client.DeltaTracker;
-import org.joml.Matrix4f;
+import org.joml.Matrix3x2fc;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.LayeredDraw;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
@@ -51,7 +50,7 @@ import java.util.TimeZone;
  * the square minimap shape), "N" inside the frame, player arrow with a view cone, pins inside the frame and the navigation target held
  * at the edge when outside. Uses the same {@link MapView} transform and {@link TileStore} as the world map.
  */
-public final class MinimapLayer implements LayeredDraw.Layer {
+public final class MinimapLayer {
     /** Info pills under/over the minimap: one text line with 4 units of padding = 16. */
     private static final int PILL_H = 16;
     private static final float ARROW = 16;
@@ -90,8 +89,8 @@ public final class MinimapLayer implements LayeredDraw.Layer {
         instance = this;
     }
 
-    @Override
-    public void render(GuiGraphics g, DeltaTracker delta) {
+    /** One frame of the HUD layer: each loader calls it from its own (NeoForge GuiLayer, Fabric HudElement). */
+    public void render(GuiGraphicsExtractor g, DeltaTracker delta) {
         Minecraft mc = Minecraft.getInstance();
         if (!visible(mc)) {
             shown = false;
@@ -106,16 +105,16 @@ public final class MinimapLayer implements LayeredDraw.Layer {
      * coordinates), and returns false without a world or with the minimap switched off. Then {@link #drawPrepared}
      * draws it under any transform, and {@link #preparedBounds} tells where it is.
      */
-    public static boolean preparePreview(GuiGraphics g, DeltaTracker delta) {
+    public static boolean preparePreview(GuiGraphicsExtractor g, DeltaTracker delta) {
         Minecraft mc = Minecraft.getInstance();
         if (instance == null || mc.player == null || mc.level == null || !MapConfig.get(MapConfig.MINIMAP_ENABLED)) return false;
         return instance.prepare(g, delta, true);
     }
 
     /** Draws the minimap prepared last (one textured quad, so the current pose may move and scale it). */
-    public static void drawPrepared(GuiGraphics g) {
+    public static void drawPrepared(GuiGraphicsExtractor g) {
         MinimapLayer m = instance;
-        Draw.texturedQuadPremultiplied(g, m.layer.textureId(), m.kBx0, m.kBy0, m.kBx1, m.kBy1, 0f, 1f, 1f, 0f);
+        Draw.texturedQuadPremultiplied(g, m.layer.tex(), m.kBx0, m.kBy0, m.kBx1, m.kBy1, 0f, 1f, 1f, 0f);
     }
 
     /** The area (GUI units: left, top, right, bottom) of the minimap prepared last, with its pills. */
@@ -131,7 +130,7 @@ public final class MinimapLayer implements LayeredDraw.Layer {
     }
 
     /** Brings both cached layers up to date; {@code preview}: for the settings, not the HUD (the HUD area is not touched). */
-    private boolean prepare(GuiGraphics g, DeltaTracker delta, boolean preview) {
+    private boolean prepare(GuiGraphicsExtractor g, DeltaTracker delta, boolean preview) {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
 
@@ -232,7 +231,7 @@ public final class MinimapLayer implements LayeredDraw.Layer {
         Navigation.setPathWanted(Navigation.PATH_MINIMAP, path);
         int route = path ? Route.version() : Integer.MIN_VALUE;
         // While a line is drawn in (3 s after a new search) the layer is redrawn every frame.
-        if (path && Route.revealing()) route += 7919 * (int) (net.minecraft.Util.getMillis() / 8);
+        if (path && Route.revealing()) route += 7919 * (int) (net.minecraft.util.Util.getMillis() / 8);
         // The layer spans the map and the pills (shifted inward at the screen edge).
         Component[] cl = coordsLine == null ? null : coordsLines, bl = biomeLine == null ? null : biomeLines, tl = timeLine == null ? null : timeLines;
         Component[] t2 = timeWrap && time2Line != null ? time2Lines : null;
@@ -273,18 +272,15 @@ public final class MinimapLayer implements LayeredDraw.Layer {
             int pw = Math.max(1, (int) Math.ceil(bw * w.getGuiScale())), ph = Math.max(1, (int) Math.ceil(bh * w.getGuiScale()));
             layer.bind(g, pw, ph, false);
             float guiW = (float) (w.getWidth() / w.getGuiScale()), guiH = (float) (w.getHeight() / w.getGuiScale());
-            g.pose().pushPose();
-            g.pose().scale(guiW / bw, guiH / bh, 1f);
-            g.pose().translate(-bx0, -by0, 0);
-            Draw.beginLayer();
+            g.pose().pushMatrix();
+            g.pose().scale(guiW / bw, guiH / bh);
+            g.pose().translate(-bx0, -by0);
             try {
                 drawContents(g, player, cx, cy, r, alpha, heading, dim, target, zoom, path, coordsLine, biomeLine, timeLine, textBelow, textBlock);
-                g.flush();
             } finally {
                 Draw.snapIcons(true);
-                Draw.endLayer();
-                g.pose().popPose();
-                CachedLayer.unbind();
+                g.pose().popMatrix();
+                layer.unbind();
             }
             layerValid = true;
             kX = pos.x; kZ = pos.z; kHeading = heading; kRotation = view.rotation;
@@ -382,7 +378,7 @@ public final class MinimapLayer implements LayeredDraw.Layer {
     private float kPillScale;
     private ResourceKey<Level> kDim;
 
-    private void drawContents(GuiGraphics g, LocalPlayer player, float cx, float cy, int r, float alpha, float heading, ResourceKey<Level> dim,
+    private void drawContents(GuiGraphicsExtractor g, LocalPlayer player, float cx, float cy, int r, float alpha, float heading, ResourceKey<Level> dim,
                               Navigation.Target target, double zoom, boolean path, Component coordsLine, Component biomeLine, Component timeLine,
                               boolean textBelow, int textBlock) {
         // The map inside the frame, the padding away from it (the frame and its glow stay at r).
@@ -439,12 +435,12 @@ public final class MinimapLayer implements LayeredDraw.Layer {
             float nk = Theme.Style.squareMap ? edge / Math.max(Math.abs(ns), Math.abs(nc)) : edge;
             float a = i == 0 ? alpha : alpha * SIDE_LETTER_ALPHA;
             float half = Math.max(0, DrawText.width(COMPASS[i]) - 1) / 2f; // half the visible glyph, font units
-            g.pose().pushPose();
-            g.pose().translate(Draw.snap(cx + ns * nk - half * pillScale), Draw.snap(cy - nc * nk - 4 * pillScale), 0);
-            g.pose().scale(pillScale, pillScale, 1f);
+            g.pose().pushMatrix();
+            g.pose().translate(Draw.snap(cx + ns * nk - half * pillScale), Draw.snap(cy - nc * nk - 4 * pillScale));
+            g.pose().scale(pillScale, pillScale);
             DrawText.textOutlined(g, COMPASS[i], half, 4, Theme.withAlpha(Theme.MINIMAP_NORTH, a),
-                    Theme.withAlpha(Theme.MINIMAP_NORTH_OUTLINE, a), false);
-            g.pose().popPose();
+                    Theme.withAlpha(Theme.MINIMAP_NORTH_OUTLINE, a));
+            g.pose().popMatrix();
         }
 
         // Pills: coordinates, biome, clock, from the map outwards; over a map in a bottom corner mirrored (the
@@ -466,7 +462,7 @@ public final class MinimapLayer implements LayeredDraw.Layer {
      * points beyond the circle of the "N" ended it up to a point spacing short of that circle, far inside the frame),
      * with the sea icon where each crossing begins (inside the circle bounding the pins, {@code inner}).
      */
-    private void drawRoute(GuiGraphics g, float cx, float cy, float edge, float inner, float alpha) {
+    private void drawRoute(GuiGraphicsExtractor g, float cx, float cy, float edge, float inner, float alpha) {
         int n = Route.collect();
         if (n < 2 && Route.oldCount() < 2) return;
         // By air near white, dark grey through the fog (user decision 27.10.2026); else golden, grey through the fog.
@@ -552,7 +548,7 @@ public final class MinimapLayer implements LayeredDraw.Layer {
      * collected, cut to the map: a segment entering the map starts a new piece at the edge, one leaving it ends the
      * piece there.
      */
-    private void segment(GuiGraphics g, float ax, float ay, float bx, float by, float aAlong, float bAlong, boolean fa, boolean fb,
+    private void segment(GuiGraphicsExtractor g, float ax, float ay, float bx, float by, float aAlong, float bAlong, boolean fa, boolean fb,
                          boolean wa, boolean wb, float cx, float cy, float edge, float lo, float hi) {
         if (!EdgeClip.clip(ax, ay, bx, by, cx, cy, edge, Theme.Style.squareMap)) {
             endPiece(g);
@@ -590,7 +586,7 @@ public final class MinimapLayer implements LayeredDraw.Layer {
         routeWater[pieceN++] = water;
     }
 
-    private void endPiece(GuiGraphics g) {
+    private void endPiece(GuiGraphicsExtractor g) {
         if (pieceN >= 2) {
             Draw.route(g, routeXY, routeFog, routeWater, pieceN, 2f, pieceShadow, pieceShadow, pieceShadow, pieceAlong);
             Draw.route(g, routeXY, routeFog, routeWater, pieceN, 1f, pieceLine, pieceFog, pieceSea, pieceAlong);
@@ -599,7 +595,7 @@ public final class MinimapLayer implements LayeredDraw.Layer {
     }
 
 
-    private void drawMarker(GuiGraphics g, Marker m, float cx, float cy, float inner, float alpha) {
+    private void drawMarker(GuiGraphicsExtractor g, Marker m, float cx, float cy, float inner, float alpha) {
         if (Navigation.isTracking(m)) return;
         float sx = view.screenX(m.centerX(), m.centerZ()), sy = view.screenY(m.centerX(), m.centerZ());
         if (Theme.Style.squareMap ? Math.abs(sx - cx) <= inner && Math.abs(sy - cy) <= inner : Draw.inCircle(sx, sy, cx, cy, inner)) {
@@ -662,7 +658,7 @@ public final class MinimapLayer implements LayeredDraw.Layer {
 
     /** The time of day in the world (tick 0 is 06:00), in the chosen format. */
     private Component gameTimeText(Minecraft mc) {
-        long ticks = Math.floorMod(mc.level.getDayTime() + 6000, 24000L);
+        long ticks = Math.floorMod(mc.level.getOverworldClockTime() + 6000, 24000L);
         int minute = (int) (ticks * 1440 / 24000);
         MapConfig.TimeFormat format = MapConfig.get(MapConfig.MINIMAP_TIME_FORMAT);
         if (gameClock == null || minute != gameMinute || format != gameFormat) {
@@ -678,7 +674,7 @@ public final class MinimapLayer implements LayeredDraw.Layer {
 
     /** "Day 12", or with the game time "Day 12 · 14:35": rebuilt only when the day or the minute changes. */
     private Component dayText(Minecraft mc, boolean withTime) {
-        long day = MinimapFit.day(mc.level.getDayTime());
+        long day = MinimapFit.day(mc.level.getOverworldClockTime());
         if (day != dayShown) {
             dayShown = day;
             dayLine = Component.translatable("teyvatcartographia.minimap.day", day);
@@ -741,7 +737,7 @@ public final class MinimapLayer implements LayeredDraw.Layer {
      * Pill row centred on cx at y, if there are lines; returns the y of the next row. The clock row holds the game
      * time and, when both are shown, the real time to its right.
      */
-    private float pill(GuiGraphics g, float cx, float y, Component[] lines, int color, float alpha) {
+    private float pill(GuiGraphicsExtractor g, float cx, float y, Component[] lines, int color, float alpha) {
         if (lines == null) return y;
         float x = pillX(lines, cx);
         if (lines == timeLines && time2Lines != null && !timeWrap) {
@@ -754,12 +750,12 @@ public final class MinimapLayer implements LayeredDraw.Layer {
     }
 
     /** One pill {@code w} GUI units wide at (x, y), its text (each line centred) drawn at the text scale. */
-    private void pillAt(GuiGraphics g, float x, float y, Component[] lines, float w, int color, float alpha) {
+    private void pillAt(GuiGraphicsExtractor g, float x, float y, Component[] lines, float w, int color, float alpha) {
         float s = pillScale, w0 = w / s;
         int h0 = pillHeight(lines);
-        g.pose().pushPose();
-        g.pose().translate(x, y, 0);
-        g.pose().scale(s, s, 1f);
+        g.pose().pushMatrix();
+        g.pose().translate(x, y);
+        g.pose().scale(s, s);
         int fill = Theme.withAlpha(Theme.INFO_BOX | 0xFF000000, alpha * pillOpacity);
         // Several lines: rounded like the one-line capsule, not a taller capsule.
         if (lines.length > 1 && !Theme.Style.squareUi) Draw.roundRect(g, 0, 0, w0, h0, PILL_H / 2f, fill);
@@ -769,9 +765,9 @@ public final class MinimapLayer implements LayeredDraw.Layer {
             DrawText.text(g, line, (w0 - DrawText.width(line)) / 2f, ty, Theme.withAlpha(color, alpha), false);
             ty += DrawText.LINE;
         }
-        g.pose().popPose();
+        g.pose().popMatrix();
     }
-    private void drawTarget(GuiGraphics g, Navigation.Target t, float cx, float cy, float r, float alpha) {
+    private void drawTarget(GuiGraphicsExtractor g, Navigation.Target t, float cx, float cy, float r, float alpha) {
         float sx = view.screenX(t.x(), t.z()), sy = view.screenY(t.x(), t.z());
         MarkerType type = t.auto();
         if (t.markerId() != null) {
@@ -826,7 +822,7 @@ public final class MinimapLayer implements LayeredDraw.Layer {
     private int cacheGeneration;
 
     /** Re-renders the cached square (radius {@code r + MARGIN}, north up, centred near the player) when needed. */
-    private void refreshCache(GuiGraphics g, Minecraft mc, TileStore store, double px, double pz, double zoom, int r, int tint, float night) {
+    private void refreshCache(GuiGraphicsExtractor g, Minecraft mc, TileStore store, double px, double pz, double zoom, int r, int tint, float night) {
         Window w = mc.getWindow();
         // The rotated view must stay inside the cache: a square map reaches r * sqrt(2) at its corners.
         int cR = (Theme.Style.squareMap ? (int) Math.ceil(r * 1.4143f) : r) + MARGIN;
@@ -847,8 +843,8 @@ public final class MinimapLayer implements LayeredDraw.Layer {
 
         // The GUI projection spans the whole (now cache-sized) viewport; scale cache units (0..2cR) onto it.
         float guiW = (float) (w.getWidth() / w.getGuiScale()), guiH = (float) (w.getHeight() / w.getGuiScale());
-        g.pose().pushPose();
-        g.pose().scale(guiW / (2f * cR), guiH / (2f * cR), 1f);
+        g.pose().pushMatrix();
+        g.pose().scale(guiW / (2f * cR), guiH / (2f * cR));
         if (store != null && !store.cave && FogTexture.hasOwn(store.dimension)) {
             // A dimension with a fog of its own (the Aether's clouds): it fills the minimap too, fixed to the world (the cached
             // square moves with the map between redraws, so the fog must too).
@@ -859,13 +855,11 @@ public final class MinimapLayer implements LayeredDraw.Layer {
         boolean complete = true;
         if (store != null) {
             cacheView.set(px, pz, zoom, 0, cR, cR);
-            // The backdrop made the square opaque; keep its alpha so translucent layers only change colour.
-            RenderSystem.colorMask(true, true, true, false);
+            // The backdrop made the square opaque, and the GUI's blending keeps it so (alpha one, one minus source alpha).
             complete = MapLayerRenderer.drawRect(g, store, cacheView, 0, 0, 2 * cR, 2 * cR, tint, night);
-            RenderSystem.colorMask(true, true, true, true);
         }
-        g.pose().popPose();
-        CachedLayer.unbind();
+        g.pose().popMatrix();
+        cache.unbind();
 
         cacheValid = complete;
         cacheGeneration++;
@@ -907,9 +901,9 @@ public final class MinimapLayer implements LayeredDraw.Layer {
     private boolean cone = true, kCone = true;
 
     /** Draws the cache as a disc: opaque centre, then an annulus whose alpha falls smoothly to 0 at radius r. */
-    private void drawFadedDisc(GuiGraphics g, float cx, float cy, float r, float alpha) {
+    private void drawFadedDisc(GuiGraphicsExtractor g, float cx, float cy, float r, float alpha) {
         if (!cache.exists()) return;
-        Matrix4f m = g.pose().last().pose();
+        Matrix3x2fc m = g.pose();
         int[] colors = bandColors;
         for (int k = 0; k <= BANDS; k++) colors[k] = Theme.withAlpha(Theme.WHITE, alpha * (fadeEdge + (1 - fadeEdge) * fade((float) k / BANDS)));
         float r0 = r * fadeStart;
@@ -919,7 +913,7 @@ public final class MinimapLayer implements LayeredDraw.Layer {
             for (int i = 0; i <= SEGMENTS; i++) gridPoint(k * (SEGMENTS + 1) + i, cx + COS[i] * rk, cy + SIN[i] * rk);
         }
         gridPoint(GRID - 1, cx, cy);
-        BufferBuilder b = Draw.beginTex();
+        Mesh b = Draw.beginTex();
         for (int i = 0; i < SEGMENTS; i++) {
             // opaque centre
             gridVertex(b, m, GRID - 1, colors[0]);
@@ -937,7 +931,7 @@ public final class MinimapLayer implements LayeredDraw.Layer {
                 gridVertex(b, m, a0 + 1, ca);
             }
         }
-        Draw.endTex(b, cache.textureId());
+        Draw.endTex(g, b, cache.tex());
     }
 
     /** Disc grid: (BANDS + 1) rings of (SEGMENTS + 1) points, then the centre. Screen position and cache UV. */
@@ -952,7 +946,7 @@ public final class MinimapLayer implements LayeredDraw.Layer {
         gridV[i] = (float) (1 - (cacheR + (view.worldZ(x, y) - cacheZ) * cacheZoom) / side);
     }
 
-    private void gridVertex(BufferBuilder b, Matrix4f m, int i, int color) {
+    private void gridVertex(Mesh b, Matrix3x2fc m, int i, int color) {
         Draw.vtx(b, m, gridX[i], gridY[i], gridU[i], gridV[i], color);
     }
 
@@ -962,13 +956,13 @@ public final class MinimapLayer implements LayeredDraw.Layer {
      * Square minimap shape: the cache as a square whose alpha fades out towards the frame, like the round minimap: an opaque
      * centre square, then {@link #BANDS} square rings (4 trapezoids each) with the same smoothstep falloff.
      */
-    private void drawSquareMap(GuiGraphics g, float cx, float cy, float r, float alpha) {
+    private void drawSquareMap(GuiGraphicsExtractor g, float cx, float cy, float r, float alpha) {
         if (!cache.exists()) return;
-        Matrix4f m = g.pose().last().pose();
+        Matrix3x2fc m = g.pose();
         int[] colors = bandColors;
         for (int k = 0; k <= BANDS; k++) colors[k] = Theme.withAlpha(Theme.WHITE, alpha * (fadeEdge + (1 - fadeEdge) * fade((float) k / BANDS)));
         float r0 = r * fadeStart;
-        BufferBuilder b = Draw.beginTex();
+        Mesh b = Draw.beginTex();
         int c = colors[0];
         discVertex(b, m, cx - r0, cy - r0, c); discVertex(b, m, cx - r0, cy + r0, c); discVertex(b, m, cx + r0, cy + r0, c);
         discVertex(b, m, cx - r0, cy - r0, c); discVertex(b, m, cx + r0, cy + r0, c); discVertex(b, m, cx + r0, cy - r0, c);
@@ -985,7 +979,7 @@ public final class MinimapLayer implements LayeredDraw.Layer {
                 discVertex(b, m, ix0, iy0, ci); discVertex(b, m, ox1, oy1, co); discVertex(b, m, ix1, iy1, ci);
             }
         }
-        Draw.endTex(b, cache.textureId());
+        Draw.endTex(g, b, cache.tex());
     }
 
     /** 1 at the start of the fade band, 0 at the frame, smooth at both ends. */
@@ -995,7 +989,7 @@ public final class MinimapLayer implements LayeredDraw.Layer {
     }
 
     /** Screen point -> world (through the rotated view) -> position in the north-up cache texture. */
-    private void discVertex(BufferBuilder b, Matrix4f m, float x, float y, int color) {
+    private void discVertex(Mesh b, Matrix3x2fc m, float x, float y, int color) {
         double side = 2.0 * cacheR;
         float u = (float) ((cacheR + (view.worldX(x, y) - cacheX) * cacheZoom) / side);
         float v = (float) (1 - (cacheR + (view.worldZ(x, y) - cacheZ) * cacheZoom) / side);

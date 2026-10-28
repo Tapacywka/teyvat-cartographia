@@ -42,7 +42,7 @@ public final class ClientEvents {
         while (Keybinds.CLEAR_TARGET.consumeClick()) {
             if (Navigation.target() != null) {
                 Navigation.clear();
-                mc.player.displayClientMessage(Component.translatable("teyvatcartographia.nav.cleared"), true);
+                mc.player.sendOverlayMessage(Component.translatable("teyvatcartographia.nav.cleared"));
             }
         }
         while (Keybinds.QUICK_PIN.consumeClick()) quickPin(mc);

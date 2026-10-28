@@ -197,7 +197,7 @@ public final class BiomeIndex {
                 long r = 0, g = 0, b = 0, w = 0;
                 for (int y = 0; y < px; y++) {
                     for (int x = 0; x < px; x++) {
-                        int c = thumb.getPixelRGBA(cx * px + x, cz * px + y); // ABGR
+                        int c = Pixels.abgr(thumb, cx * px + x, cz * px + y); // ABGR
                         int a = c >>> 24;
                         r += (long) (c & 0xFF) * a;
                         g += (long) ((c >> 8) & 0xFF) * a;
@@ -234,7 +234,7 @@ public final class BiomeIndex {
                 for (int i = 0; i < CHUNKS; i++) {
                     if (reg.biome[i] != index) continue;
                     int cx = reg.tx * MapTile.CHUNKS + i % MapTile.CHUNKS, cz = reg.tz * MapTile.CHUNKS + i / MapTile.CHUNKS;
-                    chunks.add(ChunkPos.asLong(cx, cz));
+                    chunks.add(ChunkPos.pack(cx, cz));
                     int c = reg.color[i];
                     if (c != 0) {
                         r += (c >> 16) & 0xFF;
@@ -263,10 +263,10 @@ public final class BiomeIndex {
                 int cx = ChunkPos.getX(k), cz = ChunkPos.getZ(k);
                 sx += cx;
                 sz += cz;
-                visit(ChunkPos.asLong(cx + 1, cz), chunks, seen, queue);
-                visit(ChunkPos.asLong(cx - 1, cz), chunks, seen, queue);
-                visit(ChunkPos.asLong(cx, cz + 1), chunks, seen, queue);
-                visit(ChunkPos.asLong(cx, cz - 1), chunks, seen, queue);
+                visit(ChunkPos.pack(cx + 1, cz), chunks, seen, queue);
+                visit(ChunkPos.pack(cx - 1, cz), chunks, seen, queue);
+                visit(ChunkPos.pack(cx, cz + 1), chunks, seen, queue);
+                visit(ChunkPos.pack(cx, cz - 1), chunks, seen, queue);
             }
             // The chunk of the patch nearest its middle, so the point is inside the biome even for a bent patch.
             double mx = sx / patch.size(), mz = sz / patch.size();

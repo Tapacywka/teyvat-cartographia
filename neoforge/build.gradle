@@ -11,10 +11,8 @@ neoForge {
         disableRecompilation = project.findProperty('binaryGame') == 'true'
     }
 
-    parchment {
-        mappingsVersion = project.parchment_mappings_version
-        minecraftVersion = project.parchment_minecraft_version
-    }
+    // The access transformer is common/'s (packed into this JAR with its resources, named in neoforge.mods.toml).
+    accessTransformers.from(project(':common').file('src/main/resources/META-INF/accesstransformer.cfg'))
 
     runs {
         client {

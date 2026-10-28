@@ -1,7 +1,7 @@
 package net.tapacywka.teyvatcartographia.map.data;
 
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.Block;
 
@@ -23,6 +23,6 @@ public final class CommonTags {
     public static final TagKey<Block> END_STONES = c("end_stones");
 
     private static TagKey<Block> c(String path) {
-        return TagKey.create(Registries.BLOCK, ResourceLocation.fromNamespaceAndPath("c", path));
+        return TagKey.create(Registries.BLOCK, Identifier.fromNamespaceAndPath("c", path));
     }
 }

@@ -6,7 +6,7 @@ import net.tapacywka.teyvatcartographia.render.Draw;
 import net.tapacywka.teyvatcartographia.render.DrawText;
 import net.tapacywka.teyvatcartographia.render.EdgeFade;
 import net.tapacywka.teyvatcartographia.render.Theme;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 import java.util.List;
 
@@ -88,7 +88,7 @@ final class MarkerPickList {
     }
 
     /** {@code time}: seconds, drives the swaying pointer and the pulsing outline of the hovered row. */
-    void render(GuiGraphics g, int mx, int my, float time) {
+    void render(GuiGraphicsExtractor g, int mx, int my, float time) {
         Marker hover = rowAt(mx, my);
         if (hover != null) Cursors.want(Cursors.Shape.HAND);
         float phase = 0.5f + 0.5f * (float) Math.sin(time * HOVER_SPEED); // 0 = grey / pointer in, 1 = white / out
@@ -126,7 +126,7 @@ final class MarkerPickList {
      * One row: a dark band fading out to the right, with a thin outline (the rounded or straight left end, then the
      * top and bottom edges fading out with the band). The hovered row's outline pulses from grey to white and back.
      */
-    private void row(GuiGraphics g, float ry, boolean hot, float phase) {
+    private void row(GuiGraphicsExtractor g, float ry, boolean hot, float phase) {
         int fill = hot ? Theme.PICK_ROW_HOVER : Theme.PICK_ROW;
         float h = ROW_H, r = h / 2f, x0 = x;
         if (!Theme.Style.squareUi) { // rounded left end
@@ -146,14 +146,14 @@ final class MarkerPickList {
     }
 
     /** Top or bottom outline: solid, then fading out with the band. */
-    private void edgeLine(GuiGraphics g, float x0, float ly, int line) {
+    private void edgeLine(GuiGraphicsExtractor g, float x0, float ly, int line) {
         float fade = x + w * 0.4f;
         Draw.rect(g, x0, ly, fade, ly + 1, line);
         Draw.gradientRectH(g, fade, ly, x + w * 0.95f, ly + 1, line, line & 0x00FFFFFF);
     }
 
     /** Thin bar at the list's right end: track over all items, thumb over the visible ones. */
-    private void scrollBar(GuiGraphics g) {
+    private void scrollBar(GuiGraphicsExtractor g) {
         float bx = x + w - BAR_W, h = height();
         Draw.rect(g, bx, y, bx + BAR_W, y + h, Theme.SCROLL_TRACK);
         float th = Math.max(8, h * h / (items.size() * STEP - Grid.GAP));

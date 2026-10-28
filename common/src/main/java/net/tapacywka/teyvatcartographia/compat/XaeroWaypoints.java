@@ -5,7 +5,7 @@ import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.client.server.IntegratedServer;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.LevelResource;
 import net.tapacywka.teyvatcartographia.platform.Platform;
@@ -171,7 +171,7 @@ public final class XaeroWaypoints {
         }
         String[] parts = id.split("\\$", 2);
         if (parts.length != 2) return null;
-        ResourceLocation loc = ResourceLocation.tryBuild(parts[0], parts[1].replace('%', '/').replace(',', '.'));
+        Identifier loc = Identifier.tryBuild(parts[0], parts[1].replace('%', '/').replace(',', '.'));
         return loc == null ? null : ResourceKey.create(Registries.DIMENSION, loc);
     }
 }

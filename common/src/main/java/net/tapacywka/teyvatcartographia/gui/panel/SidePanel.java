@@ -4,7 +4,7 @@ import net.tapacywka.teyvatcartographia.gui.Ui;
 import net.tapacywka.teyvatcartographia.gui.Ui.Grid;
 import net.tapacywka.teyvatcartographia.gui.WorldMapScreen;
 import net.tapacywka.teyvatcartographia.render.Icon;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 
 /**
@@ -73,7 +73,7 @@ public abstract class SidePanel {
         return dark();
     }
 
-    public final void render(GuiGraphics g, int mx, int my, float dt, float screenW) {
+    public final void render(GuiGraphicsExtractor g, int mx, int my, float dt, float screenW) {
         open = Math.min(1f, open + dt * 7f);
         float ease = 1f - (1f - open) * (1f - open) * (1f - open);
         x = screenW - w * ease;
@@ -81,7 +81,7 @@ public abstract class SidePanel {
         renderBody(g, mx, my, contentX(), contentY(), contentW());
     }
 
-    protected abstract void renderBody(GuiGraphics g, int mx, int my, float bx, float by, float bw);
+    protected abstract void renderBody(GuiGraphicsExtractor g, int mx, int my, float bx, float by, float bw);
 
     public boolean contains(double mx, double my) {
         return mx >= x;

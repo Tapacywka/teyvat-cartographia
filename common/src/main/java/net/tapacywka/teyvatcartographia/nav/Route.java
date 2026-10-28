@@ -27,7 +27,7 @@ public final class Route {
     /** Number of points of the line, collected again when a path changed. */
     public static int collect() {
         if (PathFinder.version() == kNear && FarPath.version() == kFar && DirectPath.version() == kDirect) {
-            REVEAL.update(Navigation.pathRequest(), version(), count, xz, along, fog, water, net.minecraft.Util.getMillis());
+            REVEAL.update(Navigation.pathRequest(), version(), count, xz, along, fog, water, net.minecraft.util.Util.getMillis());
             return count;
         }
         kNear = PathFinder.version();
@@ -70,7 +70,7 @@ public final class Route {
             along[i] = i == 0 ? 0 : along[i - 1] + (float) Math.hypot(xz[2 * i] - xz[2 * i - 2], xz[2 * i + 1] - xz[2 * i - 1]);
         }
         count = n;
-        REVEAL.update(Navigation.pathRequest(), version(), count, xz, along, fog, water, net.minecraft.Util.getMillis());
+        REVEAL.update(Navigation.pathRequest(), version(), count, xz, along, fog, water, net.minecraft.util.Util.getMillis());
         return count;
     }
 
@@ -93,7 +93,7 @@ public final class Route {
             along[i] = i == 0 ? 0 : along[i - 1] + (float) Math.hypot(xz[2 * i] - xz[2 * i - 2], xz[2 * i + 1] - xz[2 * i - 1]);
         }
         count = n;
-        REVEAL.update(Navigation.pathRequest(), version(), count, xz, along, fog, water, net.minecraft.Util.getMillis());
+        REVEAL.update(Navigation.pathRequest(), version(), count, xz, along, fog, water, net.minecraft.util.Util.getMillis());
         return count;
     }
 
@@ -193,22 +193,22 @@ public final class Route {
 
     /** How far along the line (blocks) it is shown: it is drawn in from the player after a new search; else all of it. */
     public static float shownTo() {
-        return REVEAL.shownTo(net.minecraft.Util.getMillis(), count > 0 ? along[count - 1] : 0);
+        return REVEAL.shownTo(net.minecraft.util.Util.getMillis(), count > 0 ? along[count - 1] : 0);
     }
 
     /** Whether a line is being drawn in or wiped (the minimap's cached layer redraws every frame meanwhile). */
     public static boolean revealing() {
-        return REVEAL.running(net.minecraft.Util.getMillis());
+        return REVEAL.running(net.minecraft.util.Util.getMillis());
     }
 
     /** Points of the line shown before the last search, still being wiped from its start ({@link #oldFrom}); else 0. */
     public static int oldCount() {
-        return REVEAL.oldCount(net.minecraft.Util.getMillis());
+        return REVEAL.oldCount(net.minecraft.util.Util.getMillis());
     }
 
     /** Where along the old line (blocks) its remaining part starts. */
     public static float oldFrom() {
-        return REVEAL.oldFrom(net.minecraft.Util.getMillis());
+        return REVEAL.oldFrom(net.minecraft.util.Util.getMillis());
     }
 
     public static float oldX(int i) {

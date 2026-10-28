@@ -41,7 +41,7 @@ public final class AutoMarkers {
         long tick = level.getGameTime();
         if (level == cachedLevel && tick == cachedTick && dimension == cachedDim) return cached;
         cachedTick = tick;
-        BlockPos spawn = dimension == Level.OVERWORLD && level.dimension() == Level.OVERWORLD ? level.getSharedSpawnPos() : null;
+        BlockPos spawn = dimension == Level.OVERWORLD && level.dimension() == Level.OVERWORLD ? level.getRespawnData().pos() : null;
         GlobalPos death = mc.player.getLastDeathLocation().filter(d -> d.dimension() == dimension).orElse(null);
         String language = mc.getLanguageManager().getSelected();
         if (level == cachedLevel && dimension == cachedDim && Objects.equals(spawn, cachedSpawn) && Objects.equals(death, cachedDeath)
@@ -66,7 +66,7 @@ public final class AutoMarkers {
         ClientLevel level = mc.level;
         if (level == null || mc.player == null) return List.of();
         List<Marker> out = new ArrayList<>(2);
-        if (level.dimension() == Level.OVERWORLD) out.addAll(build(Level.OVERWORLD, level.getSharedSpawnPos(), null));
+        if (level.dimension() == Level.OVERWORLD) out.addAll(build(Level.OVERWORLD, level.getRespawnData().pos(), null));
         mc.player.getLastDeathLocation().ifPresent(d -> out.addAll(build(d.dimension(), null, d)));
         return out;
     }

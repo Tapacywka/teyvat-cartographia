@@ -1,5 +1,8 @@
 package net.tapacywka.teyvatcartographia.gui;
 
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.tapacywka.teyvatcartographia.config.ConfigSpec;
 import net.tapacywka.teyvatcartographia.compat.ModCompat;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
@@ -18,7 +21,7 @@ import net.tapacywka.teyvatcartographia.render.Icon;
 import net.tapacywka.teyvatcartographia.render.Theme;
 import net.tapacywka.teyvatcartographia.render.ThemeLoader;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.options.controls.KeyBindsScreen;
 import net.minecraft.network.chat.Component;
@@ -127,11 +130,11 @@ public final class TeyvatConfigScreen extends Screen {
             return Grid.ROW;
         }
 
-        void renderLabel(GuiGraphics g, float x, float w) {
+        void renderLabel(GuiGraphicsExtractor g, float x, float w) {
             DrawText.text(g, DrawText.fit(label.getString(), (int) (w / 2 - Grid.GAP)), x, DrawText.textY(y, Grid.ROW), Theme.WHITE, false);
         }
 
-        abstract void render(GuiGraphics g, float x, float w, int mx, int my);
+        abstract void render(GuiGraphicsExtractor g, float x, float w, int mx, int my);
 
         boolean click(double mx, double my, float x, float w) {
             return false;
@@ -151,7 +154,7 @@ public final class TeyvatConfigScreen extends Screen {
         }
 
         @Override
-        void render(GuiGraphics g, float x, float w, int mx, int my) {
+        void render(GuiGraphicsExtractor g, float x, float w, int mx, int my) {
             DrawText.room(label, w);
             DrawText.text(g, label, x, y + Grid.PAD, Theme.GOLD, false);
             Draw.rect(g, x, y + SECTION_H - 3, x + w, y + SECTION_H - 2, Theme.PANEL_LINE);
@@ -192,7 +195,7 @@ public final class TeyvatConfigScreen extends Screen {
         }
 
         @Override
-        void render(GuiGraphics g, float x, float w, int mx, int my) {
+        void render(GuiGraphicsExtractor g, float x, float w, int mx, int my) {
             boolean hover = Draw.inRect(mx, my, x, y + 2, w, Grid.ROW - 4);
             if (hover) Cursors.want(Cursors.Shape.HAND);
             Draw.rect(g, x, y + 2, x + w, y + Grid.ROW - 2, hover ? Theme.PANEL_DARK_TILE_HOVER : Theme.INFO_BOX);
@@ -236,7 +239,7 @@ public final class TeyvatConfigScreen extends Screen {
         }
 
         @Override
-        void render(GuiGraphics g, float x, float w, int mx, int my) {
+        void render(GuiGraphicsExtractor g, float x, float w, int mx, int my) {
             renderLabel(g, x, w);
             Ui.toggle(g, tx(x, w), ty(), MapConfig.get(value), mx, my);
         }
@@ -270,7 +273,7 @@ public final class TeyvatConfigScreen extends Screen {
         }
 
         @Override
-        void render(GuiGraphics g, float x, float w, int mx, int my) {
+        void render(GuiGraphicsExtractor g, float x, float w, int mx, int my) {
             super.render(g, x, w, mx, my);
             boolean on = MapConfig.get(value);
             float ax = ax(x, w), ay = y + Grid.ROW / 2f;
@@ -412,7 +415,7 @@ public final class TeyvatConfigScreen extends Screen {
         }
 
         @Override
-        void render(GuiGraphics g, float x, float w, int mx, int my) {
+        void render(GuiGraphicsExtractor g, float x, float w, int mx, int my) {
             renderLabel(g, x, w);
             if (stepKeys != null) {
                 // The value column fits the longest step name (in the current language).
@@ -525,7 +528,7 @@ public final class TeyvatConfigScreen extends Screen {
         }
 
         @Override
-        void render(GuiGraphics g, float x, float w, int mx, int my) {
+        void render(GuiGraphicsExtractor g, float x, float w, int mx, int my) {
             renderLabel(g, x, w);
             float bx = bx(x, w), bw = w / 2, by = by();
             boolean hover = Draw.inRect(mx, my, bx, by, bw, H);
@@ -558,7 +561,7 @@ public final class TeyvatConfigScreen extends Screen {
     }
 
     /** Choice button with arrows at both ends (clicking the left/right half steps back/forward). */
-    static void cycler(GuiGraphics g, float bx, float by, float bw, float h, Component value, boolean hover) {
+    static void cycler(GuiGraphicsExtractor g, float bx, float by, float bw, float h, Component value, boolean hover) {
         cycler(g, bx, by, bw, h, value, hover, true);
     }
 
@@ -566,7 +569,7 @@ public final class TeyvatConfigScreen extends Screen {
      * Darker when there is nothing to choose or the choice does nothing now ({@code active} false): no hover, dimmed
      * text and arrows, the no sign as the pointer.
      */
-    static void cycler(GuiGraphics g, float bx, float by, float bw, float h, Component value, boolean hover, boolean active) {
+    static void cycler(GuiGraphicsExtractor g, float bx, float by, float bw, float h, Component value, boolean hover, boolean active) {
         if (hover) Cursors.want(active ? Cursors.Shape.HAND : Cursors.Shape.UNAVAILABLE);
         hover &= active;
         int fill = active ? hover ? Theme.BUTTON_HOVER : Theme.BUTTON : Ui.inactive(Theme.BUTTON);
@@ -590,7 +593,7 @@ public final class TeyvatConfigScreen extends Screen {
         }
 
         @Override
-        void render(GuiGraphics g, float x, float w, int mx, int my) {
+        void render(GuiGraphicsExtractor g, float x, float w, int mx, int my) {
             renderLabel(g, x, w);
             float bx = x + w / 2, bw = w / 2, by = y + (Grid.ROW - H) / 2f;
             // Only the built-in theme: nothing to choose until a theme pack is enabled.
@@ -764,7 +767,7 @@ public final class TeyvatConfigScreen extends Screen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics g, int mx, int my, float pt) {
+    public void extractBackground(GuiGraphicsExtractor g, int mx, int my, float pt) {
         FogTexture.draw(g, 0, 0, width, height, 0, 0, Theme.WHITE);
     }
 
@@ -859,7 +862,7 @@ public final class TeyvatConfigScreen extends Screen {
     }
 
     /** The track along the list and the thumb over the part shown; lit while pointed at or dragged. */
-    private void renderBar(GuiGraphics g, float total, int mx, int my) {
+    private void renderBar(GuiGraphicsExtractor g, float total, int mx, int my) {
         float view = listBottom - listTop;
         if (total <= view) return;
         boolean hover = barHit(mx, my);
@@ -902,7 +905,7 @@ public final class TeyvatConfigScreen extends Screen {
     }
 
     /** One tab: the shown one in the button colour with a gold title, the other a darker button (lit under the pointer). */
-    private void renderTab(GuiGraphics g, int i, String key, boolean shown, int mx, int my) {
+    private void renderTab(GuiGraphicsExtractor g, int i, String key, boolean shown, int mx, int my) {
         float x = tabX(i), y = tabY(), w = tabW(i);
         boolean hover = !shown && Draw.inRect(mx, my, x, y, w, TAB_H);
         if (hover) Cursors.want(Cursors.Shape.HAND);
@@ -988,7 +991,7 @@ public final class TeyvatConfigScreen extends Screen {
      * its value under a single one), its name and its description under them; with none pointed at, a line asking for
      * one.
      */
-    private void renderPreview(GuiGraphics g, float x, float y, float w, float h, float pt) {
+    private void renderPreview(GuiGraphicsExtractor g, float x, float y, float w, float h, float pt) {
         Draw.rect(g, x, y, x + w, y + h, Theme.PANEL_DARK);
         Draw.rect(g, x, y, x + w, y + Grid.HEADER_H, Theme.PANEL_DARK_HEADER);
         Draw.rect(g, x, y + Grid.HEADER_H - 1, x + w, y + Grid.HEADER_H, Theme.PANEL_HEADER_LINE);
@@ -1007,10 +1010,10 @@ public final class TeyvatConfigScreen extends Screen {
         Draw.rect(g, cx, cy + DrawText.LINE + Grid.GAP, cx + cw, cy + DrawText.LINE + Grid.GAP + 1, Theme.PANEL_LINE);
         float ty = cy + DrawText.LINE + 2 * Grid.GAP + 1;
         for (net.minecraft.util.FormattedCharSequence l : DrawText.font().split(row.tooltip, (int) cw)) {
-            g.pose().pushPose();
-            g.pose().translate(Draw.snap(cx), Draw.snap(ty), 0);
-            g.drawString(DrawText.font(), l, 0, 0, Theme.CREAM, false);
-            g.pose().popPose();
+            g.pose().pushMatrix();
+            g.pose().translate(Draw.snap(cx), Draw.snap(ty));
+            g.text(DrawText.font(), l, 0, 0, Theme.CREAM, false);
+            g.pose().popMatrix();
             ty += DrawText.LINE + 2;
         }
         if (DESCRIPTION_ONLY.contains(rk)) return;
@@ -1048,12 +1051,12 @@ public final class TeyvatConfigScreen extends Screen {
     }
 
     /** The pictures of the setting {@code rk} of the tab {@code key} in the area, clipped to it. */
-    private void previewPicture(GuiGraphics g, float cx, float cy, float cw, float ch, float pt, String key, String rk) {
+    private void previewPicture(GuiGraphicsExtractor g, float cx, float cy, float cw, float ch, float pt, String key, String rk) {
         Minecraft mc = Minecraft.getInstance();
         boolean world = mc.player != null && mc.level != null;
         // The minimap's layers are brought up to date before any clipping (they draw off screen).
         boolean minimap = world && key.equals("teyvatcartographia.config.tab.minimap")
-                && MinimapLayer.preparePreview(g, mc.getTimer());
+                && MinimapLayer.preparePreview(g, mc.getDeltaTracker());
         g.enableScissor((int) cx, (int) cy, (int) (cx + cw), (int) (cy + ch)); // nothing spills out of the area
         if (rk.equals("teyvatcartographia.config.caves") && world) {
             SettingsPreview.caves(g, cx, cy, cw, ch, (g2, mx, my, mw, mh, band) -> previewMap(g2, mx, my, mw, mh,
@@ -1094,7 +1097,7 @@ public final class TeyvatConfigScreen extends Screen {
     }
 
     /** Lines of muted text in the middle of the area, each shortened to fit. */
-    private static void previewLines(GuiGraphics g, float x, float y, float w, float h, String... keys) {
+    private static void previewLines(GuiGraphicsExtractor g, float x, float y, float w, float h, String... keys) {
         float top = y + (h - keys.length * (DrawText.LINE + 2) + 2) / 2f;
         for (int i = 0; i < keys.length; i++) {
             Component t = Component.literal(DrawText.fit(Component.translatable(keys[i]).getString(), (int) w));
@@ -1103,7 +1106,7 @@ public final class TeyvatConfigScreen extends Screen {
     }
 
     /** A short note in the middle of the area (no world, the minimap off, no preview yet). */
-    private static void previewNote(GuiGraphics g, float x, float y, float w, float h, String key) {
+    private static void previewNote(GuiGraphicsExtractor g, float x, float y, float w, float h, String key) {
         Component t = Component.literal(DrawText.fit(Component.translatable(key).getString(), (int) w));
         DrawText.textCentered(g, t, Draw.snap(x + w / 2f), Draw.snap(y + h / 2f - 4), Theme.TEXT_MUTED, false);
     }
@@ -1112,12 +1115,12 @@ public final class TeyvatConfigScreen extends Screen {
      * The map around the player over the whole area, as the world map draws it at {@code zoom}: fog, regions, the grid
      * and the biome names when they are on, the player in the middle.
      */
-    private void previewMap(GuiGraphics g, float x, float y, float w, float h, double zoom, float pt) {
+    private void previewMap(GuiGraphicsExtractor g, float x, float y, float w, float h, double zoom, float pt) {
         previewMap(g, x, y, w, h, zoom, pt, MapDataManager.get().shownStore());
     }
 
     /** As above, drawing {@code store} (a cave layer for the cave map's preview). */
-    private void previewMap(GuiGraphics g, float x, float y, float w, float h, double zoom, float pt, net.tapacywka.teyvatcartographia.map.data.TileStore store) {
+    private void previewMap(GuiGraphicsExtractor g, float x, float y, float w, float h, double zoom, float pt, net.tapacywka.teyvatcartographia.map.data.TileStore store) {
         Minecraft mc = Minecraft.getInstance();
         net.minecraft.world.phys.Vec3 pos = mc.player.getPosition(pt);
         float mx = Draw.snap(x + w / 2f), my = Draw.snap(y + h / 2f);
@@ -1139,7 +1142,7 @@ public final class TeyvatConfigScreen extends Screen {
     }
 
     /** The chunk and region grid, as the world map draws it (from zoom 1; chunks from 2). */
-    private void previewGrid(GuiGraphics g, float x, float y, float w, float h, double zoom) {
+    private void previewGrid(GuiGraphicsExtractor g, float x, float y, float w, float h, double zoom) {
         if (zoom < net.tapacywka.teyvatcartographia.map.MapView.DETAIL_FROM - 1e-6) return; // like the world map
         int step = zoom >= 2 ? 16 : 256;
         double wx0 = previewView.worldX(x, y), wz0 = previewView.worldZ(x, y), wx1 = previewView.worldX(x + w, y + h), wz1 = previewView.worldZ(x + w, y + h);
@@ -1157,7 +1160,7 @@ public final class TeyvatConfigScreen extends Screen {
      * The minimap with the lines under it as the HUD shows it, at its real size (smaller only without room for it),
      * centred in the area on both axes, on the pixel grid; no picture of the screen (user decision 24.10.2026).
      */
-    private void previewMinimap(GuiGraphics g, float x, float y, float w, float h) {
+    private void previewMinimap(GuiGraphicsExtractor g, float x, float y, float w, float h) {
         int[] b = MinimapLayer.preparedBounds();
         float bw = b[2] - b[0], bh = b[3] - b[1];
         float s = Math.min(1f, Math.min(w / bw, h / bh));
@@ -1165,30 +1168,30 @@ public final class TeyvatConfigScreen extends Screen {
     }
 
     /** A picture of the screen at (x, y), {@code w} x {@code h}, with the minimap alone (no lines under it) where it sits on it. */
-    private void screenPicture(GuiGraphics g, float x, float y, float w, float h) {
+    private void screenPicture(GuiGraphicsExtractor g, float x, float y, float w, float h) {
         float sx = Draw.snap(x), sy = Draw.snap(y), sw = Draw.snap(w), sh = Draw.snap(h);
         Draw.rect(g, sx, sy, sx + sw, sy + sh, Theme.PANEL_DARK_HEADER);
         float[] m = MinimapLayer.preparedMap();
         float kx = sw / width, ky = sh / height;
         g.enableScissor((int) (sx + (m[0] - m[2]) * kx), (int) (sy + (m[1] - m[2]) * ky), (int) Math.ceil(sx + (m[0] + m[2]) * kx),
                 (int) Math.ceil(sy + (m[1] + m[2]) * ky));
-        g.pose().pushPose();
-        g.pose().translate(sx, sy, 0);
-        g.pose().scale(sw / width, sh / height, 1f);
+        g.pose().pushMatrix();
+        g.pose().translate(sx, sy);
+        g.pose().scale(sw / width, sh / height);
         MinimapLayer.drawPrepared(g);
-        g.pose().popPose();
+        g.pose().popMatrix();
         g.disableScissor();
         Draw.frame(g, sx, sy, sw, sh, 1, Theme.PANEL_LINE);
     }
 
     /** The minimap with its lines (bounds {@code b}) with its top left at (x, y), at scale {@code s}. */
-    private static void realMinimap(GuiGraphics g, int[] b, float x, float y, float s) {
-        g.pose().pushPose();
-        g.pose().translate(Draw.snap(x), Draw.snap(y), 0);
-        g.pose().scale(s, s, 1f);
-        g.pose().translate(-b[0], -b[1], 0);
+    private static void realMinimap(GuiGraphicsExtractor g, int[] b, float x, float y, float s) {
+        g.pose().pushMatrix();
+        g.pose().translate(Draw.snap(x), Draw.snap(y));
+        g.pose().scale(s, s);
+        g.pose().translate(-b[0], -b[1]);
         MinimapLayer.drawPrepared(g);
-        g.pose().popPose();
+        g.pose().popMatrix();
     }
     private float footerY() {
         return panelY + panelH - Grid.PAD - Grid.ACTION_H;
@@ -1203,17 +1206,17 @@ public final class TeyvatConfigScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics g, int mx, int my, float pt) {
+    public void extractRenderState(GuiGraphicsExtractor g, int mx, int my, float pt) {
         pointerX = mx;
         pointerY = my;
         Cursors.begin();
-        renderBackground(g, mx, my, pt);
+        extractBackground(g, mx, my, pt);
         layout();
         // Blur the fog before the dimming layer: the translucent dim writes alpha < 1 into the frame, which the vanilla
         // blur turns into black. The fog is static, so the copy is reused: refreshed for the first frames, after a
         // resize and after a theme change.
         boolean refresh = blurFrames < 3 || width != blurW || height != blurH || Theme.generation() != blurTheme;
-        Backdrop.capture(g, pt, refresh, this);
+        Backdrop.capture(g, pt, refresh, this, () -> extractBackground(g, mx, my, pt));
         blurFrames++;
         blurW = width;
         blurH = height;
@@ -1271,7 +1274,9 @@ public final class TeyvatConfigScreen extends Screen {
     }
 
     @Override
-    public boolean mouseClicked(double mx, double my, int button) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        double mx = event.x(), my = event.y();
+        int button = event.button();
         layout();
         if (plantList != null && plantList.click(mx, my, button)) return true;
         // The cave map's preview has a layer field of its own to click.
@@ -1324,11 +1329,13 @@ public final class TeyvatConfigScreen extends Screen {
                 }
             }
         }
-        return super.mouseClicked(mx, my, button);
+        return super.mouseClicked(event, doubleClick);
     }
 
     @Override
-    public boolean mouseDragged(double mx, double my, int button, double dx, double dy) {
+    public boolean mouseDragged(MouseButtonEvent event, double dx, double dy) {
+        double mx = event.x(), my = event.y();
+        int button = event.button();
         if (tip.drag(my)) return true;
         if (draggingBar) {
             dragBar(my);
@@ -1339,17 +1346,19 @@ public final class TeyvatConfigScreen extends Screen {
             draggingRow.drag(mx, contentX(), contentW());
             return true;
         }
-        return super.mouseDragged(mx, my, button, dx, dy);
+        return super.mouseDragged(event, dx, dy);
     }
 
     @Override
-    public boolean mouseReleased(double mx, double my, int button) {
+    public boolean mouseReleased(MouseButtonEvent event) {
+        double mx = event.x(), my = event.y();
+        int button = event.button();
         if (draggingRow instanceof SliderRow s && s.onRelease != null) s.onRelease.run();
         draggingRow = null;
         draggingBar = false;
         tip.release();
         if (plantList != null) plantList.release();
-        return super.mouseReleased(mx, my, button);
+        return super.mouseReleased(event);
     }
 
     @Override
@@ -1366,24 +1375,28 @@ public final class TeyvatConfigScreen extends Screen {
     }
 
     @Override
-    public boolean charTyped(char c, int mods) {
-        return plantList != null && plantList.charTyped(c, mods) || super.charTyped(c, mods);
+    public boolean charTyped(CharacterEvent event) {
+        char c = (char) event.codepoint();
+        int mods = 0;
+        return plantList != null && plantList.charTyped(c, mods) || super.charTyped(event);
     }
 
     @Override
-    public boolean keyPressed(int key, int scan, int mods) {
+    public boolean keyPressed(KeyEvent event) {
+        int key = event.key(), scan = event.scancode(), mods = event.modifiers();
         if (plantList != null && plantList.keyPressed(key, scan, mods)) return true;
         if (key == GLFW.GLFW_KEY_ESCAPE) {
             onClose();
             return true;
         }
-        return super.keyPressed(key, scan, mods);
+        return super.keyPressed(event);
     }
 
     @Override
     public void removed() {
         closePlants();
         Cursors.reset();
+        Backdrop.dispose();
         EdgeFade.dispose();
     }
 

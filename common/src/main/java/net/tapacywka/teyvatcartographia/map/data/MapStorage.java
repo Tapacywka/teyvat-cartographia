@@ -1,7 +1,7 @@
 package net.tapacywka.teyvatcartographia.map.data;
 
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.resources.ResourceKey;
 import com.mojang.blaze3d.platform.NativeImage;
@@ -161,7 +161,7 @@ public final class MapStorage {
         List<ResourceKey<Biome>> palette = new ArrayList<>();
         int n = in.readInt();
         for (int i = 0; i < n && i < 4096; i++) {
-            ResourceLocation id = ResourceLocation.tryParse(in.readUTF());
+            Identifier id = Identifier.tryParse(in.readUTF());
             palette.add(id == null ? null : ResourceKey.create(Registries.BIOME, id));
         }
         return palette;
@@ -169,7 +169,7 @@ public final class MapStorage {
 
     static void writePalette(DataOutputStream out, List<ResourceKey<Biome>> palette) throws IOException {
         out.writeInt(palette.size());
-        for (ResourceKey<Biome> b : palette) out.writeUTF(b == null ? "" : b.location().toString());
+        for (ResourceKey<Biome> b : palette) out.writeUTF(b == null ? "" : b.identifier().toString());
     }
 
     /** Matches a region's metadata file, {@code r.<tx>.<tz>.dat}. */
@@ -191,7 +191,7 @@ public final class MapStorage {
                 int r = 0, g = 0, b = 0, n = 0;
                 for (int dy = 0; dy < 4; dy++) {
                     for (int dx = 0; dx < 4; dx++) {
-                        int c = src.getPixelRGBA(x * 4 + dx, y * 4 + dy);
+                        int c = Pixels.abgr(src, x * 4 + dx, y * 4 + dy);
                         if ((c >>> 24) == 0) continue;
                         r += c & 0xFF;
                         g += (c >> 8) & 0xFF;
@@ -199,7 +199,7 @@ public final class MapStorage {
                         n++;
                     }
                 }
-                out.setPixelRGBA(x, y, n == 0 ? 0 : ((n * 255 / 16) << 24) | ((b / n) << 16) | ((g / n) << 8) | (r / n));
+                out.setPixelABGR(x, y, n == 0 ? 0 : ((n * 255 / 16) << 24) | ((b / n) << 16) | ((g / n) << 8) | (r / n));
             }
         }
         return out;

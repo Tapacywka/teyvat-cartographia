@@ -1,6 +1,6 @@
 package net.tapacywka.teyvatcartographia.gui;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
@@ -68,7 +68,7 @@ final class PlantList {
         return Math.min(room, 2 * Grid.GAP + Grid.CHIP_H + Grid.GAP + Math.min(MAX_ROWS, Math.max(1, shown.size())) * ITEM_H + Grid.GAP);
     }
 
-    void render(GuiGraphics g, float x, float y, float w, float h, int mx, int my) {
+    void render(GuiGraphicsExtractor g, float x, float y, float w, float h, int mx, int my) {
         this.x = x;
         this.y = y;
         this.w = w;
@@ -98,7 +98,7 @@ final class PlantList {
             boolean listed = Plants.listed(e.block);
             float ix = x + 2 * Grid.GAP;
             if (!e.item.isEmpty()) {
-                g.renderItem(e.item, Math.round(ix), Math.round(ry + (ITEM_H - 16) / 2f));
+                EdgeFade.item(g, e.item, Math.round(ix), Math.round(ry + (ITEM_H - 16) / 2f));
             } else {
                 // A crop without an item of its own: its colour on the map.
                 TextureColors.Entry c = TextureColors.get(e.block);

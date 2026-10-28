@@ -37,7 +37,7 @@ final class LevelTerrain implements Terrain {
         // to its floor.
         boolean needSpace = underground;
         if (underground) y = startY + 3; // not the heightmap: on the client it can be wrong under thick rock
-        int bottom = level.getMinBuildHeight();
+        int bottom = level.getMinY();
         for (int i = 0; i < 24 && y > bottom; i++) {
             BlockState s = level.getBlockState(pos.set(x, y - 1, z));
             if (needSpace) {

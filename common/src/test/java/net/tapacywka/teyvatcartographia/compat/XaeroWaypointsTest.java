@@ -2,7 +2,7 @@ package net.tapacywka.teyvatcartographia.compat;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.Level;
 import net.tapacywka.teyvatcartographia.marker.Marker;
 import net.tapacywka.teyvatcartographia.marker.MarkerType;
@@ -67,7 +67,7 @@ class XaeroWaypointsTest {
         assertEquals(Level.OVERWORLD, XaeroWaypoints.dimension(Path.of("dim%0")));
         assertEquals(Level.NETHER, XaeroWaypoints.dimension(Path.of("dim%-1")));
         assertEquals(Level.END, XaeroWaypoints.dimension(Path.of("dim%1")));
-        assertEquals(ResourceKey.create(Registries.DIMENSION, ResourceLocation.fromNamespaceAndPath("twilightforest", "twilight_forest")),
+        assertEquals(ResourceKey.create(Registries.DIMENSION, Identifier.fromNamespaceAndPath("twilightforest", "twilight_forest")),
                 XaeroWaypoints.dimension(Path.of("dim%twilightforest$twilight_forest")));
         assertNull(XaeroWaypoints.dimension(Path.of("waypoints")));
         assertNull(XaeroWaypoints.dimension(Path.of("dim%nonsense")));

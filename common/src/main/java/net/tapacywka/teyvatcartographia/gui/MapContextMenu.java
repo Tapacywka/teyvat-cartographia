@@ -5,7 +5,7 @@ import net.tapacywka.teyvatcartographia.render.Draw;
 import net.tapacywka.teyvatcartographia.render.DrawText;
 import net.tapacywka.teyvatcartographia.render.Icon;
 import net.tapacywka.teyvatcartographia.render.Theme;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 
 import java.util.List;
@@ -69,7 +69,7 @@ final class MapContextMenu {
     }
 
     /** {@code time}: seconds, drives the swaying pointer and the pulsing outline of the row under the mouse. */
-    void render(GuiGraphics g, int mx, int my, float time) {
+    void render(GuiGraphicsExtractor g, int mx, int my, float time) {
         Item hover = rowAt(mx, my);
         if (hover != null) Cursors.want(Cursors.Shape.HAND);
         float phase = 0.5f + 0.5f * (float) Math.sin(time * HOVER_SPEED);
@@ -93,7 +93,7 @@ final class MapContextMenu {
      * thin outline (the rounded or straight left end, then the top and bottom edges fading out with the band). The
      * hovered row's outline pulses from grey to white and back.
      */
-    private void row(GuiGraphics g, float ry, boolean hot, float phase) {
+    private void row(GuiGraphicsExtractor g, float ry, boolean hot, float phase) {
         int fill = hot ? Theme.PICK_ROW_HOVER : Theme.PICK_ROW;
         float h = ROW_H, r = h / 2f, x0 = x;
         if (!Theme.Style.squareUi) { // rounded left end
@@ -111,7 +111,7 @@ final class MapContextMenu {
     }
 
     /** Top or bottom outline: solid, then fading out with the band. */
-    private void edgeLine(GuiGraphics g, float x0, float ly, int line) {
+    private void edgeLine(GuiGraphicsExtractor g, float x0, float ly, int line) {
         float fade = x + w * 0.4f;
         Draw.rect(g, x0, ly, fade, ly + 1, line);
         Draw.gradientRectH(g, fade, ly, x + w * 0.95f, ly + 1, line, line & 0x00FFFFFF);

@@ -9,7 +9,7 @@ import net.tapacywka.teyvatcartographia.map.data.MapDataManager;
 import net.tapacywka.teyvatcartographia.render.Draw;
 import net.tapacywka.teyvatcartographia.render.Icon;
 import net.tapacywka.teyvatcartographia.render.Theme;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
@@ -78,7 +78,7 @@ public final class DimensionPanel extends SidePanel {
     }
 
     @Override
-    protected void renderBody(GuiGraphics g, int mx, int my, float bx, float by, float bw) {
+    protected void renderBody(GuiGraphicsExtractor g, int mx, int my, float bx, float by, float bw) {
         for (int i = 0; i < dims.size(); i++) {
             Ui.gridTile(g, tileX(i), tileY(i), tileW(), WorldMapScreen.dimensionName(dims.get(i)), dims.get(i) == screen.viewedDimension(), mx, my);
         }

@@ -2,7 +2,7 @@ package net.tapacywka.teyvatcartographia.render;
 
 import net.tapacywka.teyvatcartographia.TeyvatCartographia;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -42,12 +42,12 @@ public final class Theme {
     }
 
     /** An asset of the active theme: {@code assets/teyvatcartographia/themes/<id>/<path>}. */
-    public static ResourceLocation asset(String path) {
+    public static Identifier asset(String path) {
         return asset(id, path);
     }
 
-    public static ResourceLocation asset(String themeId, String path) {
-        return ResourceLocation.fromNamespaceAndPath(TeyvatCartographia.MOD_ID, "themes/" + themeId + "/" + path);
+    public static Identifier asset(String themeId, String path) {
+        return Identifier.fromNamespaceAndPath(TeyvatCartographia.MOD_ID, "themes/" + themeId + "/" + path);
     }
 
     /**

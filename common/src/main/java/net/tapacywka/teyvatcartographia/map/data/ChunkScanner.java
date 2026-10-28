@@ -7,7 +7,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.QuartPos;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.level.ColorResolver;
 import net.minecraft.world.level.LightLayer;
@@ -68,19 +68,19 @@ public final class ChunkScanner {
 
     /** {@link #scan(ClientLevel, LevelChunk, boolean, LevelChunk[])} with the chunks around as they are now (main thread). */
     public static Snapshot scan(ClientLevel level, LevelChunk chunk, boolean ceiling) {
-        return scan(level, chunk, ceiling, around(level, chunk.getPos().x, chunk.getPos().z));
+        return scan(level, chunk, ceiling, around(level, chunk.getPos().x(), chunk.getPos().z()));
     }
 
     public static Snapshot scan(ClientLevel level, LevelChunk chunk, boolean ceiling, LevelChunk[] around) {
-        int cx = chunk.getPos().x, cz = chunk.getPos().z;
+        int cx = chunk.getPos().x(), cz = chunk.getPos().z();
         around[4] = chunk; // itself, whatever the level held when the ring was taken
         int[] color = new int[256];
         short[] height = new short[256];
         byte[] depth = new byte[256];
         boolean[] isVoid = new boolean[256], keep = new boolean[256];
         int[] bottom = new int[256];
-        int minY = level.getMinBuildHeight();
-        int ceilingStart = Math.min(level.getMaxBuildHeight() - 1, minY + level.dimensionType().logicalHeight() - 1);
+        int minY = level.getMinY();
+        int ceilingStart = Math.min(level.getMaxY(), minY + level.dimensionType().logicalHeight() - 1);
         BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
         boolean shallow = MapConfig.get(MapConfig.SHALLOW_WATER) > 0;
         TintGrid water = TintGrid.of(around, cx, cz, BiomeColors.WATER_COLOR_RESOLVER),
@@ -231,11 +231,11 @@ public final class ChunkScanner {
         }
 
         private static Fluid fluid(String path) {
-            return BuiltInRegistries.FLUID.getOptional(ResourceLocation.fromNamespaceAndPath("the_sift", path)).orElse(null);
+            return BuiltInRegistries.FLUID.getOptional(Identifier.fromNamespaceAndPath("the_sift", path)).orElse(null);
         }
 
         private static Block block(String path) {
-            return BuiltInRegistries.BLOCK.getOptional(ResourceLocation.fromNamespaceAndPath("the_sift", path)).orElse(null);
+            return BuiltInRegistries.BLOCK.getOptional(Identifier.fromNamespaceAndPath("the_sift", path)).orElse(null);
         }
     }
 
@@ -380,7 +380,9 @@ public final class ChunkScanner {
      */
     private static int worldTint(ClientLevel level, BlockState state, BlockPos pos, TextureColors.Entry tex) {
         try {
-            int c = net.minecraft.client.Minecraft.getInstance().getBlockColors().getColor(state, level, pos, tex.tintIndex());
+            net.minecraft.client.color.block.BlockTintSource source =
+                    net.minecraft.client.Minecraft.getInstance().getBlockColors().getTintSource(state, tex.tintIndex());
+            int c = source == null ? -1 : source.colorInWorld(state, level, pos);
             return c == -1 ? tex.texture() : TextureColors.multiply(tex.texture(), c);
         } catch (RuntimeException e) {
             return tex.argb();

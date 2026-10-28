@@ -1,5 +1,5 @@
-// Rules of every project: Java 21, the mod's group, its JAR named with a "v" before the version
-// (teyvatcartographia-v0.5.0+mc1.21.1-fabric.jar; the mod's own version has none), the repositories.
+// Rules of every project: Java 25, the mod's group, its JAR named with a "v" before the version
+// (teyvatcartographia-v0.6.0+mc26.1.2-fabric.jar; the mod's own version has none), the repositories.
 plugins {
     id 'java-library'
 }
@@ -12,19 +12,10 @@ base {
     archivesName = project.name == 'common' ? "${mod_id}-common" : mod_id
 }
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
 repositories {
     mavenCentral()
-    exclusiveContent {
-        forRepository {
-            maven {
-                name = 'ParchmentMC'
-                url = 'https://maven.parchmentmc.org/'
-            }
-        }
-        filter { includeGroup('org.parchmentmc.data') }
-    }
 }
 
 tasks.named('jar', Jar) {

@@ -10,7 +10,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
@@ -54,7 +54,7 @@ import java.util.Map;
 public final class ThemeLoader extends SimplePreparableReloadListener<ThemeLoader.Prepared> {
     /** {@code legacy}: the setting named a theme of 0.1.x (see {@link Theme#LEGACY}), replaced by the default one. */
     record Prepared(List<String> ids, Map<String, Component> names, String id, Map<String, Integer> colors, boolean legacy,
-                    Map<ResourceLocation, Map<ResourceLocation, Integer>> palettes) {}
+                    Map<Identifier, Map<Identifier, Integer>> palettes) {}
 
     private static List<String> available = List.of(Theme.DEFAULT);
     private static Map<String, Component> names = Map.of();
@@ -80,9 +80,9 @@ public final class ThemeLoader extends SimplePreparableReloadListener<ThemeLoade
     protected Prepared prepare(ResourceManager rm, ProfilerFiller profiler) {
         List<String> ids = new ArrayList<>();
         Map<String, Component> titles = new HashMap<>();
-        Map<ResourceLocation, Resource> found = rm.listResources("themes", l -> l.getPath().endsWith("/theme.json"));
-        for (Map.Entry<ResourceLocation, Resource> e : found.entrySet()) {
-            ResourceLocation loc = e.getKey();
+        Map<Identifier, Resource> found = rm.listResources("themes", l -> l.getPath().endsWith("/theme.json"));
+        for (Map.Entry<Identifier, Resource> e : found.entrySet()) {
+            Identifier loc = e.getKey();
             if (!loc.getNamespace().equals(TeyvatCartographia.MOD_ID)) continue;
             String[] parts = loc.getPath().split("/");
             if (parts.length != 3) continue; // themes/<id>/theme.json
@@ -112,7 +112,7 @@ public final class ThemeLoader extends SimplePreparableReloadListener<ThemeLoade
 
     private static Map<String, Integer> readColors(ResourceManager rm, String themeId) {
         Map<String, Integer> colors = new HashMap<>();
-        ResourceLocation loc = Theme.asset(themeId, "colors.json");
+        Identifier loc = Theme.asset(themeId, "colors.json");
         for (Resource res : rm.getResourceStack(loc)) {
             try (Reader r = res.openAsReader()) {
                 JsonObject root = JsonParser.parseReader(r).getAsJsonObject();
@@ -142,18 +142,18 @@ public final class ThemeLoader extends SimplePreparableReloadListener<ThemeLoade
      * dimension {@code <namespace>:<path>} their colours. The default theme's palettes first, the selected theme's
      * replace them dimension by dimension; every resource pack providing a file is merged (lowest priority first).
      */
-    private static Map<ResourceLocation, Map<ResourceLocation, Integer>> readPalettes(ResourceManager rm, String themeId) {
-        Map<ResourceLocation, Map<ResourceLocation, Integer>> out = new HashMap<>();
+    private static Map<Identifier, Map<Identifier, Integer>> readPalettes(ResourceManager rm, String themeId) {
+        Map<Identifier, Map<Identifier, Integer>> out = new HashMap<>();
         for (String theme : themeId.equals(Theme.DEFAULT) ? List.of(Theme.DEFAULT) : List.of(Theme.DEFAULT, themeId)) {
             String folder = "themes/" + theme + "/dimensions/";
-            Map<ResourceLocation, List<Resource>> found = rm.listResourceStacks(folder.substring(0, folder.length() - 1),
+            Map<Identifier, List<Resource>> found = rm.listResourceStacks(folder.substring(0, folder.length() - 1),
                     l -> l.getPath().endsWith(".json"));
-            for (Map.Entry<ResourceLocation, List<Resource>> e : found.entrySet()) {
-                ResourceLocation loc = e.getKey();
+            for (Map.Entry<Identifier, List<Resource>> e : found.entrySet()) {
+                Identifier loc = e.getKey();
                 if (!loc.getNamespace().equals(TeyvatCartographia.MOD_ID)) continue;
-                ResourceLocation dimension = dimensionOf(loc.getPath().substring(folder.length()));
+                Identifier dimension = dimensionOf(loc.getPath().substring(folder.length()));
                 if (dimension == null) continue;
-                Map<ResourceLocation, Integer> blocks = new HashMap<>();
+                Map<Identifier, Integer> blocks = new HashMap<>();
                 for (Resource res : e.getValue()) {
                     try (Reader r = res.openAsReader()) {
                         blocks.putAll(paletteBlocks(JsonParser.parseReader(r).getAsJsonObject(), loc + " (" + res.sourcePackId() + ")"));
@@ -168,18 +168,18 @@ public final class ThemeLoader extends SimplePreparableReloadListener<ThemeLoade
     }
 
     /** {@code aether/the_aether.json} as the dimension {@code aether:the_aether}; null for another path. */
-    static ResourceLocation dimensionOf(String file) {
+    static Identifier dimensionOf(String file) {
         int slash = file.indexOf('/');
         if (slash <= 0 || !file.endsWith(".json")) return null;
-        return ResourceLocation.tryBuild(file.substring(0, slash), file.substring(slash + 1, file.length() - ".json".length()));
+        return Identifier.tryBuild(file.substring(0, slash), file.substring(slash + 1, file.length() - ".json".length()));
     }
 
     /** The {@code "blocks"} of a palette file: block id to colour; bad ids and colours are left out (and logged). */
-    static Map<ResourceLocation, Integer> paletteBlocks(JsonObject root, String where) {
-        Map<ResourceLocation, Integer> blocks = new HashMap<>();
+    static Map<Identifier, Integer> paletteBlocks(JsonObject root, String where) {
+        Map<Identifier, Integer> blocks = new HashMap<>();
         if (!root.has("blocks")) return blocks;
         for (Map.Entry<String, JsonElement> e : root.getAsJsonObject("blocks").entrySet()) {
-            ResourceLocation block = ResourceLocation.tryParse(e.getKey());
+            Identifier block = Identifier.tryParse(e.getKey());
             Integer argb = e.getValue().isJsonPrimitive() ? parse(e.getValue().getAsString()) : null;
             if (block == null || argb == null) {
                 TeyvatCartographia.LOGGER.warn("Map palette {}: bad entry '{}': {}", where, e.getKey(), e.getValue());
@@ -207,7 +207,7 @@ public final class ThemeLoader extends SimplePreparableReloadListener<ThemeLoade
         // The palettes per dimension, for the blocks of the mods in the game (others are left out); the chunks around
         // the player are mapped again in the new colours.
         Map<ResourceKey<Level>, Map<Block, Integer>> palettes = new HashMap<>();
-        for (Map.Entry<ResourceLocation, Map<ResourceLocation, Integer>> e : p.palettes().entrySet()) {
+        for (Map.Entry<Identifier, Map<Identifier, Integer>> e : p.palettes().entrySet()) {
             Map<Block, Integer> blocks = new HashMap<>();
             e.getValue().forEach((id, argb) -> BuiltInRegistries.BLOCK.getOptional(id).ifPresent(b -> blocks.put(b, argb)));
             if (!blocks.isEmpty()) palettes.put(ResourceKey.create(Registries.DIMENSION, e.getKey()), Map.copyOf(blocks));

@@ -25,7 +25,7 @@ final class FabricPlatform implements Platform {
 
     @Override
     public void noTextShadow(EditBox box) {
-        ((TextShadowSwitch) box).teyvatcartographia$setTextShadow(false);
+        box.setTextShadow(false);
     }
 
     @Override

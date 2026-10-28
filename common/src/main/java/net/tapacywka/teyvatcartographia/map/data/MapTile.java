@@ -2,13 +2,11 @@ package net.tapacywka.teyvatcartographia.map.data;
 
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.resources.ResourceKey;
-import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.tapacywka.teyvatcartographia.map.MapView;
-import net.minecraft.client.renderer.texture.DynamicTexture;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL12;
+import net.tapacywka.teyvatcartographia.render.GpuImage;
+import net.tapacywka.teyvatcartographia.render.Tex;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -41,7 +39,7 @@ public final class MapTile {
     final byte[] light;
     /** Lit pixels only (tile colour, alpha from the light level); created when the tile has any light. */
     private NativeImage lightImage;
-    private DynamicTexture lightTexture;
+    private GpuImage lightTexture;
     private boolean lightDirty;
     private int litColumns;
     /** Per chunk: bit 0..3 = neighbour N/S/W/E was known when the chunk was shaded; bit 7 = chunk present. */
@@ -55,7 +53,7 @@ public final class MapTile {
     public double labelX, labelZ;
     public int labelForCount = -1;
 
-    private DynamicTexture texture;
+    private GpuImage texture;
     boolean gpuDirty = true;
     boolean diskDirty;
     long lastUsedMs = System.currentTimeMillis();
@@ -166,8 +164,8 @@ public final class MapTile {
             for (int x = 0; x < 16; x++) {
                 int i = z * 16 + x, ti = idx(x0 + x, z0 + z);
                 if (merge && (f[i] & FLAG_KNOWN) == 0) continue;
-                if (image.getPixelRGBA(x0 + x, z0 + z) != abgr[i]) {
-                    image.setPixelRGBA(x0 + x, z0 + z, abgr[i]);
+                if (Pixels.abgr(image, x0 + x, z0 + z) != abgr[i]) {
+                    image.setPixelABGR(x0 + x, z0 + z, abgr[i]);
                     pixels = true;
                 }
                 if (heights[ti] != h[i] || flags[ti] != f[i]) {
@@ -211,90 +209,75 @@ public final class MapTile {
 
     // ------------------------------------------------------------ GPU
 
-    /** Returns the GL texture id, uploading pending changes if {@code allowUpload}. -1 if not yet available. */
-    public int textureId(boolean allowUpload) {
+    /**
+     * The region's texture, uploading pending changes if {@code allowUpload}; null if not yet available. Sampled with
+     * clamped edges (samples at the very edge wrapped to the opposite, often unexplored, side as 1px seams between
+     * regions), smoothed or sharp as {@link #setFilter} says.
+     */
+    public Tex tex(boolean allowUpload) {
         RenderSystem.assertOnRenderThread();
         if (texture == null) {
-            if (!allowUpload) return -1;
-            texture = new DynamicTexture(image) {
-                @Override
-                public void close() {
-                    // The NativeImage is owned by the tile; only release the GL texture here.
-                    releaseId();
-                }
-            };
-            // Clamp, otherwise samples at the very edge wrap to the opposite (often unexplored) side
-            // and show up as 1px seams between regions.
-            texture.bind();
-            GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
-            GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+            if (!allowUpload) return null;
+            texture = new GpuImage("Teyvat Cartographia region", image);
             gpuDirty = false;
         } else if (gpuDirty && allowUpload) {
-            texture.upload();
+            texture.upload(image);
             gpuDirty = false;
         }
-        return texture.getId();
+        return texture.tex(linear);
     }
 
     public boolean needsUpload() {
         return texture == null || gpuDirty;
     }
 
+    private boolean linear, lightLinear;
+
     public void setFilter(boolean blur) {
-        if (texture != null) texture.setFilter(blur, false);
+        linear = blur;
     }
+
 
     public boolean hasLight() {
         return litColumns > 0;
     }
 
-    /** Whether {@link #lightTextureId} would build or upload the light texture. */
+    /** Whether {@link #lightTex} would build or upload the light texture. */
     public boolean lightNeedsUpload() {
         return litColumns > 0 && (lightTexture == null || lightDirty);
     }
 
     /**
      * Texture of the lit pixels: tile colour with alpha from the block light level, slightly warmed. Drawn over the
-     * night-darkened map it brings back the day colours around torches, lava etc. -1 if none / not yet uploaded.
+     * night-darkened map it brings back the day colours around torches, lava etc. Null if none or not yet uploaded.
      */
-    public int lightTextureId(boolean allowUpload) {
+    public Tex lightTex(boolean allowUpload) {
         RenderSystem.assertOnRenderThread();
-        if (litColumns <= 0) return -1;
-        if (lightTexture != null && !lightDirty) return lightTexture.getId();
-        if (!allowUpload) return lightTexture == null ? -1 : lightTexture.getId();
+        if (litColumns <= 0) return null;
+        if (lightTexture != null && !lightDirty) return lightTexture.tex(lightLinear);
+        if (!allowUpload) return lightTexture == null ? null : lightTexture.tex(lightLinear);
         if (lightImage == null) lightImage = new NativeImage(SIZE, SIZE, true);
         for (int z = 0; z < SIZE; z++) {
             for (int x = 0; x < SIZE; x++) {
                 int lv = light[idx(x, z)];
                 if (lv <= 0) {
-                    lightImage.setPixelRGBA(x, z, 0);
+                    lightImage.setPixelABGR(x, z, 0);
                     continue;
                 }
-                int c = image.getPixelRGBA(x, z); // ABGR
+                int c = Pixels.abgr(image, x, z); // ABGR
                 float a = LIGHT_ALPHA[Math.min(15, lv)] * ((c >>> 24) / 255f);
                 int r = c & 0xFF, gr = (c >> 8) & 0xFF, b = (c >> 16) & 0xFF;
                 float warm = 0.26f * a; // torch-light warmth
                 r = (int) (r + (255 - r) * warm);
                 gr = (int) (gr + (214 - gr) * warm * 0.8f);
                 b = (int) (b * (1 - warm * 0.5f));
-                lightImage.setPixelRGBA(x, z, ((int) (a * 255) << 24) | (b << 16) | (gr << 8) | r);
+                lightImage.setPixelABGR(x, z, ((int) (a * 255) << 24) | (b << 16) | (gr << 8) | r);
             }
         }
-        if (lightTexture == null) {
-            lightTexture = new DynamicTexture(lightImage) {
-                @Override
-                public void close() {
-                    releaseId();
-                }
-            };
-            lightTexture.bind();
-            GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
-            GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
-        } else {
-            lightTexture.upload();
-        }
+        if (lightTexture == null) lightTexture = new GpuImage("Teyvat Cartographia region light", lightImage);
+        else lightTexture.upload(lightImage);
         lightDirty = false;
-        return lightTexture.getId();
+        return lightTexture.tex(lightLinear);
     }
 
     /** Light level 0..15 to overlay opacity: gentle falloff, like in-game (precomputed; the overlay has 65536 pixels). */
@@ -305,7 +288,7 @@ public final class MapTile {
     }
 
     public void setLightFilter(boolean blur) {
-        if (lightTexture != null) lightTexture.setFilter(blur, false);
+        lightLinear = blur;
     }
 
     /** Frees GPU and native memory. The tile must not be used afterwards. */

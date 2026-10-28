@@ -14,13 +14,14 @@ import net.tapacywka.teyvatcartographia.marker.MarkerType;
 import net.tapacywka.teyvatcartographia.render.Draw;
 import net.tapacywka.teyvatcartographia.render.DrawText;
 import net.tapacywka.teyvatcartographia.render.FogTexture;
+import net.tapacywka.teyvatcartographia.render.Tex;
 import net.tapacywka.teyvatcartographia.render.MarkerRenderer;
 import net.tapacywka.teyvatcartographia.render.Theme;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.level.block.Block;
 
@@ -36,7 +37,7 @@ final class SettingsPreview {
 
     /** Draws the map around the player into an area at a zoom (GUI units per block). */
     interface MapArea {
-        void draw(GuiGraphics g, float x, float y, float w, float h, double zoom);
+        void draw(GuiGraphicsExtractor g, float x, float y, float w, float h, double zoom);
     }
 
     private static final int LINE = DrawText.LINE + 2;
@@ -73,7 +74,7 @@ final class SettingsPreview {
      * the crossing begins ("By water"), and a third (user request 27.10.2026) with a plain straight line over it
      * ("By air"); the choices not taken darkened, each with its name under it.
      */
-    static void route(GuiGraphics g, float x, float y, float w, float h) {
+    static void route(GuiGraphicsExtractor g, float x, float y, float w, float h) {
         int frames = MapConfig.Route.values().length;
         float label = Grid.GAP + DrawText.LINE, fw = (w - (frames - 1) * Grid.GAP) / frames, fh = Math.min(h - label, fw * 0.8f);
         float top = Draw.snap(y + (h - fh - label) / 2f);
@@ -132,7 +133,7 @@ final class SettingsPreview {
     private static final float[] ROUTE_PTS = new float[12];
     private static final boolean[] ROUTE_WATER = new boolean[6], NO_FOG6 = new boolean[6];
 
-    static void pins(GuiGraphics g, float x, float y, float w, float h, MapArea map, String focusKey) {
+    static void pins(GuiGraphicsExtractor g, float x, float y, float w, float h, MapArea map, String focusKey) {
         MapConfig.PinKind focus = null;
         boolean path = false;
         for (MapConfig.PinKind k : MapConfig.PinKind.values()) {
@@ -201,22 +202,22 @@ final class SettingsPreview {
      * The real minimap as the HUD draws it now (its shape, frame, zoom, "N" and pins; prepared by the screen before any
      * clipping), its map scaled to fill the largest square of the area, in the middle.
      */
-    static void minimap(GuiGraphics g, float x, float y, float w, float h) {
+    static void minimap(GuiGraphicsExtractor g, float x, float y, float w, float h) {
         float[] m = net.tapacywka.teyvatcartographia.hud.MinimapLayer.preparedMap();
         float side = Draw.snap(Math.min(w, h)), sx = Draw.snap(x + (w - side) / 2f), sy = Draw.snap(y + (h - side) / 2f), s = side / (2 * m[2]);
         Draw.rect(g, x, y, x + w, y + h, Theme.PANEL_DARK_HEADER);
         g.enableScissor((int) sx, (int) sy, (int) (sx + side), (int) (sy + side));
-        g.pose().pushPose();
-        g.pose().translate(sx, sy, 0);
-        g.pose().scale(s, s, 1f);
-        g.pose().translate(-(m[0] - m[2]), -(m[1] - m[2]), 0);
+        g.pose().pushMatrix();
+        g.pose().translate(sx, sy);
+        g.pose().scale(s, s);
+        g.pose().translate(-(m[0] - m[2]), -(m[1] - m[2]));
         net.tapacywka.teyvatcartographia.hud.MinimapLayer.drawPrepared(g);
-        g.pose().popPose();
+        g.pose().popMatrix();
         g.disableScissor();
     }
 
     /** The map around the player in an area at a zoom, or the theme's fog without a world. */
-    private static void mapArea(GuiGraphics g, float x, float y, float w, float h, MapArea map, double zoom) {
+    private static void mapArea(GuiGraphicsExtractor g, float x, float y, float w, float h, MapArea map, double zoom) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player != null && mc.level != null) map.draw(g, x, y, w, h, zoom);
         else {
@@ -230,7 +231,7 @@ final class SettingsPreview {
      * path to one of each kind, faint where the world map does not show them. With one: its pins ({@code path}: only
      * the one its path leads to, as a tracked pin always shows) and its path.
      */
-    private static void samplePins(GuiGraphics g, float cx, float cy, float size, MapConfig.PinKind only, boolean path) {
+    private static void samplePins(GuiGraphicsExtractor g, float cx, float cy, float size, MapConfig.PinKind only, boolean path) {
         MarkerType[] types = MarkerType.values();
         float r = size * 0.34f, pin = Math.min(MarkerRenderer.SIZE, size / 7f);
         for (MarkerType to : PATH_TO) {
@@ -272,7 +273,7 @@ final class SettingsPreview {
      * distance), with its beam of light ({@link #WORLD_BEAM}: an amber tint, a golden glow and a warm core), or
      * with the sparkles of the path leading up to it from the near ground ({@link #WORLD_STARS}), golden for every kind.
      */
-    private static void world(GuiGraphics g, float x, float y, float w, float h, MapConfig.PinKind kind, int mode) {
+    private static void world(GuiGraphicsExtractor g, float x, float y, float w, float h, MapConfig.PinKind kind, int mode) {
         float horizon = Draw.snap(y + h * 0.55f);
         Draw.gradientRectV(g, x, y, x + w, horizon, SKY_TOP, SKY_HORIZON);
         Draw.gradientRectV(g, x, horizon, x + w, y + h, GROUND_FAR, GROUND_NEAR);
@@ -309,7 +310,7 @@ final class SettingsPreview {
      * light added to the picture, each part bright in the middle and clear at its tips: a round glow, the vertical and
      * horizontal arms, two short diagonal rays and a light core (the same sizes in blocks).
      */
-    private static void sparkle(GuiGraphics g, float cx, float cy, float b, int gold, int light) {
+    private static void sparkle(GuiGraphicsExtractor g, float cx, float cy, float b, int gold, int light) {
         halo(g, cx, cy, 0.16f * b, Theme.withAlpha(gold, 0.45f));
         diamond(g, cx, cy, 1, 0, 0.035f * b, 0.34f * b, gold);
         diamond(g, cx, cy, 1, 0, 0.26f * b, 0.035f * b, gold);
@@ -319,13 +320,13 @@ final class SettingsPreview {
     }
 
     /** A small mote of the path as in the world: a round glow round a light dot, a block being {@code b} units. */
-    private static void mote(GuiGraphics g, float cx, float cy, float b, int gold, int light) {
+    private static void mote(GuiGraphicsExtractor g, float cx, float cy, float b, int gold, int light) {
         halo(g, cx, cy, 0.07f * b, Theme.withAlpha(gold, 0.45f));
         diamond(g, cx, cy, 1, 0, 0.03f * b, 0.03f * b, light);
     }
 
     /** A diamond added to the picture with half-width {@code w} along (ax, ay) and half-height {@code h} across it. */
-    private static void diamond(GuiGraphics g, float cx, float cy, float ax, float ay, float w, float h, int argb) {
+    private static void diamond(GuiGraphicsExtractor g, float cx, float cy, float ax, float ay, float w, float h, int argb) {
         // The axis (ax, ay) and the one across it, (ay, -ax) turned to point up the screen for the unturned diamond.
         float ux = ay, uy = -ax;
         RIM_X[0] = cx + ux * h; RIM_Y[0] = cy + uy * h;
@@ -336,7 +337,7 @@ final class SettingsPreview {
     }
 
     /** A round glow of radius {@code r} added to the picture (an octagon, as in the world). */
-    private static void halo(GuiGraphics g, float cx, float cy, float r, int argb) {
+    private static void halo(GuiGraphicsExtractor g, float cx, float cy, float r, int argb) {
         for (int q = 0; q < 8; q++) {
             RIM_X[q] = cx + r * (float) Math.cos(q * Math.PI / 4);
             RIM_Y[q] = cy + r * (float) Math.sin(q * Math.PI / 4);
@@ -350,7 +351,7 @@ final class SettingsPreview {
 
     /** Draws a layer of the map around the player into an area: the surface (null) or a cave band. */
     interface LayerArea {
-        void draw(GuiGraphics g, float x, float y, float w, float h, Integer band);
+        void draw(GuiGraphicsExtractor g, float x, float y, float w, float h, Integer band);
     }
 
     private static final int CAVE_BIG = 28, CAVE_SMALL_MAX = 5, CAVE_STEP = 28;
@@ -374,7 +375,7 @@ final class SettingsPreview {
         return Component.translatable("teyvatcartographia.map.caves", h[0], h[1]);
     }
 
-    static void caves(GuiGraphics g, float x, float y, float w, float h, LayerArea map, int mx, int my) {
+    static void caves(GuiGraphicsExtractor g, float x, float y, float w, float h, LayerArea map, int mx, int my) {
         java.util.NavigableSet<Integer> bands = MapDataManager.get().caveBands();
         if (caveBand != null && !bands.contains(caveBand)) caveBand = null;
         float label = Grid.GAP + DrawText.LINE;
@@ -453,7 +454,7 @@ final class SettingsPreview {
      * worker), each captioned with its mode; the chosen one in cream, the others muted. The fog shows where nothing is
      * loaded.
      */
-    static void detail(GuiGraphics g, float x, float y, float w, float h) {
+    static void detail(GuiGraphicsExtractor g, float x, float y, float w, float h) {
         long now = System.currentTimeMillis();
         if (now - detailAsked > 3000) {
             detailAsked = now;
@@ -463,9 +464,9 @@ final class SettingsPreview {
         if (p != null && p != detailShown) {
             detailShown = p;
             for (int i = 0; i < DETAIL_TEX.length; i++) {
-                if (DETAIL_TEX[i] == null) DETAIL_TEX[i] = new net.minecraft.client.renderer.texture.DynamicTexture(DETAIL_W, DETAIL_H, true);
+                if (DETAIL_TEX[i] == null) DETAIL_TEX[i] = new net.minecraft.client.renderer.texture.DynamicTexture(() -> "Teyvat Cartographia preview", DETAIL_W, DETAIL_H, true);
                 com.mojang.blaze3d.platform.NativeImage img = DETAIL_TEX[i].getPixels();
-                for (int k = 0; k < p[i].length; k++) img.setPixelRGBA(k % DETAIL_W, k / DETAIL_W, p[i][k]);
+                for (int k = 0; k < p[i].length; k++) img.setPixelABGR(k % DETAIL_W, k / DETAIL_W, p[i][k]);
                 DETAIL_TEX[i].upload();
             }
         }
@@ -488,7 +489,7 @@ final class SettingsPreview {
         for (int i = 0; i < n; i++) {
             float fy = Draw.snap(y + i * (sh + label + Grid.GAP));
             FogTexture.draw(g, fx, fy, fx + sw, fy + sh, 0, 0, Theme.WHITE);
-            if (DETAIL_TEX[i] != null && detailShown != null) Draw.texturedQuad(g, DETAIL_TEX[i].getId(), fx, fy, fx + sw, fy + sh, u0, v0, u1, v1, 0xFFFFFFFF);
+            if (DETAIL_TEX[i] != null && detailShown != null) Draw.texturedQuad(g, Tex.clamped(DETAIL_TEX[i], false), fx, fy, fx + sw, fy + sh, u0, v0, u1, v1, 0xFFFFFFFF);
             Draw.frame(g, fx, fy, sw, sh, 1, i == chosen ? Theme.GOLD : Theme.PANEL_LINE);
             Component c = Component.translatable(DETAIL_KEYS[i]);
             DrawText.room(c, sw);
@@ -509,7 +510,7 @@ final class SettingsPreview {
     private static final int STAT_H = 16;
 
     /** System: live numbers of the mapping (read once a second); in a world only. */
-    static void system(GuiGraphics g, float x, float y, float w, float h) {
+    static void system(GuiGraphicsExtractor g, float x, float y, float w, float h) {
         long now = System.currentTimeMillis();
         if (now - statsAt > 1000 || STATS[0] == null) {
             statsAt = now;
@@ -540,23 +541,23 @@ final class SettingsPreview {
 
     // ------------------------------------------------------------------ Compatibility
 
-    private static final Block ICHOR_SNOW = BuiltInRegistries.BLOCK.getOptional(ResourceLocation.fromNamespaceAndPath("the_sift", "ichor_snow_block")).orElse(null);
+    private static final Block ICHOR_SNOW = BuiltInRegistries.BLOCK.getOptional(Identifier.fromNamespaceAndPath("the_sift", "ichor_snow_block")).orElse(null);
     private static XaeroWaypoints.Options xaeroFor;
     private static Path xaeroFolder;
     private static int xaeroCount = -1;
     private static long xaeroAt;
 
     /** A text {@code w} wide beside a sample {@code h} high, wrapped onto as many lines as fit and centred on it. */
-    private static void label(GuiGraphics g, Component text, float x, float y, float w, float h) {
+    private static void label(GuiGraphicsExtractor g, Component text, float x, float y, float w, float h) {
         List<FormattedCharSequence> lines = DrawText.font().split(text, (int) w);
         int n = Math.min(lines.size(), Math.max(1, (int) ((h + 2) / LINE)));
         DrawText.room(text, w * n);
         float ty = Draw.snap(y + (h - (n * LINE - 2)) / 2f);
         for (int i = 0; i < n; i++) {
-            g.pose().pushPose();
-            g.pose().translate(Draw.snap(x), ty + i * LINE, 0);
-            g.drawString(DrawText.font(), lines.get(i), 0, 0, Theme.CREAM, false);
-            g.pose().popPose();
+            g.pose().pushMatrix();
+            g.pose().translate(Draw.snap(x), ty + i * LINE);
+            g.text(DrawText.font(), lines.get(i), 0, 0, Theme.CREAM, false);
+            g.pose().popMatrix();
         }
     }
 
@@ -570,7 +571,7 @@ final class SettingsPreview {
      * (the theme's fog while it is off), a field of ichor or of ichor snow as the map colours them (shimmering or
      * plain), or for Xaero's Minimap how many waypoints the import takes, with their pin.
      */
-    static void compatSample(GuiGraphics g, float x, float y, float w, float h, String key) {
+    static void compatSample(GuiGraphicsExtractor g, float x, float y, float w, float h, String key) {
         x = Draw.snap(x);
         y = Draw.snap(y);
         w = Draw.snap(w);
@@ -585,7 +586,7 @@ final class SettingsPreview {
             boolean snow = key.endsWith("sift_snow");
             int i = snow ? 1 : 0;
             boolean shimmer = MapConfig.get(snow ? MapConfig.SIFT_SNOW_SHIMMER : MapConfig.SIFT_ICHOR_SHIMMER);
-            if (SIFT_TEX[i] == null) SIFT_TEX[i] = new net.minecraft.client.renderer.texture.DynamicTexture(SIFT_BLOCKS, SIFT_BLOCKS, true);
+            if (SIFT_TEX[i] == null) SIFT_TEX[i] = new net.minecraft.client.renderer.texture.DynamicTexture(() -> "Teyvat Cartographia preview", SIFT_BLOCKS, SIFT_BLOCKS, true);
             if (!Boolean.valueOf(shimmer).equals(SIFT_SHOWN[i])) {
                 SIFT_SHOWN[i] = shimmer;
                 int plainIchor = TextureColors.ichor();
@@ -596,14 +597,14 @@ final class SettingsPreview {
                         int c = snow ? (shimmer || plainSnow == null ? 0xFF000000 | Shimmer.ichorSnow(bx, bz) : plainSnow.argb())
                                 : (shimmer || plainIchor == 0 ? 0xFF000000 | Shimmer.ichor(bx, bz) : plainIchor);
                         // ARGB to the image's ABGR.
-                        img.setPixelRGBA(bx, bz, (c & 0xFF00FF00) | (c & 0xFF) << 16 | (c >> 16) & 0xFF);
+                        img.setPixelABGR(bx, bz, (c & 0xFF00FF00) | (c & 0xFF) << 16 | (c >> 16) & 0xFF);
                     }
                 }
                 SIFT_TEX[i].upload();
             }
             // Square blocks: as many as the longer side shows of the field.
             float side = Math.max(w, h);
-            Draw.texturedQuad(g, SIFT_TEX[i].getId(), x, y, x + w, y + h, 0, 0, w / side, h / side, 0xFFFFFFFF);
+            Draw.texturedQuad(g, Tex.clamped(SIFT_TEX[i], false), x, y, x + w, y + h, 0, 0, w / side, h / side, 0xFFFFFFFF);
             Draw.frame(g, x, y, w, h, 1, Theme.PANEL_LINE);
         } else if (key.contains("compat.xaero")) {
             Component line = xaeroLine();

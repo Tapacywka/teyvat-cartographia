@@ -11,6 +11,6 @@ import net.tapacywka.teyvatcartographia.TeyvatCartographia;
 public final class TeyvatCartographiaNeoForge {
     public TeyvatCartographiaNeoForge(IEventBus modBus, ModContainer container) {
         // The client classes are only touched on the client (a dedicated server has none of them).
-        if (FMLEnvironment.dist.isClient()) NeoForgeClient.init(modBus, container);
+        if (FMLEnvironment.getDist().isClient()) NeoForgeClient.init(modBus, container);
     }
 }

@@ -17,7 +17,7 @@ import net.tapacywka.teyvatcartographia.render.DrawText;
 import net.tapacywka.teyvatcartographia.render.Icon;
 import net.tapacywka.teyvatcartographia.render.MarkerRenderer;
 import net.tapacywka.teyvatcartographia.render.Theme;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
@@ -220,7 +220,7 @@ public final class PinPanel extends SidePanel {
     private static final float BAR_W = 3;
 
     @Override
-    protected void renderBody(GuiGraphics g, int mx, int my, float bx, float by, float bw) {
+    protected void renderBody(GuiGraphicsExtractor g, int mx, int my, float bx, float by, float bw) {
         hoveredType = null;
         int maxText = (int) (bw - Grid.CHIP_H - Grid.GAP);
         boolean readOnly = readOnly();

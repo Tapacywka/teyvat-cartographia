@@ -9,10 +9,9 @@ neoForge {
     enable {
         neoFormVersion = project.neo_form_version
     }
-    parchment {
-        mappingsVersion = project.parchment_mappings_version
-        minecraftVersion = project.parchment_minecraft_version
-    }
+    // The fields of the game the mod reaches (NeoForge reads the same file from the JAR, Fabric has its own
+    // access widener with the same entries).
+    accessTransformers.from(file('src/main/resources/META-INF/accesstransformer.cfg'))
     // The unit tests use the game's classes too (codecs, keys, registries).
     addModdingDependenciesTo(sourceSets.test)
 }

@@ -1,6 +1,5 @@
 package net.tapacywka.teyvatcartographia.map.data;
 
-import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
@@ -8,9 +7,8 @@ import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.tapacywka.teyvatcartographia.TeyvatCartographia;
 import net.tapacywka.teyvatcartographia.map.MapView;
-import net.minecraft.client.renderer.texture.DynamicTexture;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL12;
+import net.tapacywka.teyvatcartographia.render.GpuImage;
+import net.tapacywka.teyvatcartographia.render.Tex;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,7 +51,7 @@ public final class LodStore {
         public final int lx, lz;
         final long key;
         final NativeImage image = new NativeImage(MapTile.SIZE, MapTile.SIZE, true);
-        private DynamicTexture texture;
+        private GpuImage texture;
         boolean gpuDirty = true;
         /** Bit per cell (region) still waiting for its thumbnail. */
         int pending;
@@ -82,27 +80,18 @@ public final class LodStore {
             return texture == null || gpuDirty;
         }
 
-        /** The GL texture id (linear filtering), uploading pending changes if {@code allowUpload}; -1 if not available yet. */
-        public int textureId(boolean allowUpload) {
+        /** The texture (smoothed), uploading pending changes if {@code allowUpload}; null if not available yet. */
+        public Tex tex(boolean allowUpload) {
             RenderSystem.assertOnRenderThread();
             if (texture == null) {
-                if (!allowUpload) return -1;
-                texture = new DynamicTexture(image) {
-                    @Override
-                    public void close() {
-                        releaseId(); // the image belongs to the tile
-                    }
-                };
-                texture.setFilter(true, false);
-                texture.bind();
-                GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
-                GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+                if (!allowUpload) return null;
+                texture = new GpuImage("Teyvat Cartographia LOD", image);
                 gpuDirty = false;
             } else if (gpuDirty && allowUpload) {
-                texture.upload();
+                texture.upload(image);
                 gpuDirty = false;
             }
-            return texture.getId();
+            return texture.tex(true);
         }
 
         void release() {
@@ -206,7 +195,7 @@ public final class LodStore {
     private static void blit(LodTile t, int cell, NativeImage thumb) {
         int x0 = (cell % REGIONS) * CELL, y0 = (cell / REGIONS) * CELL;
         for (int y = 0; y < CELL; y++) {
-            for (int x = 0; x < CELL; x++) t.image.setPixelRGBA(x0 + x, y0 + y, thumb == null ? 0 : thumb.getPixelRGBA(x, y));
+            for (int x = 0; x < CELL; x++) t.image.setPixelABGR(x0 + x, y0 + y, thumb == null ? 0 : Pixels.abgr(thumb, x, y));
         }
         t.pending &= ~(1 << cell);
         t.gpuDirty = true;

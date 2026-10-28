@@ -2,7 +2,7 @@ package net.tapacywka.teyvatcartographia.map.data;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.biome.Biome;
 import net.tapacywka.teyvatcartographia.map.MapView;
 import org.junit.jupiter.api.Test;
@@ -29,8 +29,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * date by the files' times (a new region joins, a removed one leaves, an unchanged one is not read again).
  */
 class BiomeIndexCacheTest {
-    private static final ResourceKey<Biome> PLAINS = ResourceKey.create(Registries.BIOME, ResourceLocation.withDefaultNamespace("plains"));
-    private static final ResourceKey<Biome> DESERT = ResourceKey.create(Registries.BIOME, ResourceLocation.withDefaultNamespace("desert"));
+    private static final ResourceKey<Biome> PLAINS = ResourceKey.create(Registries.BIOME, Identifier.withDefaultNamespace("plains"));
+    private static final ResourceKey<Biome> DESERT = ResourceKey.create(Registries.BIOME, Identifier.withDefaultNamespace("desert"));
     private static final int N = MapTile.CHUNKS;
 
     @TempDir

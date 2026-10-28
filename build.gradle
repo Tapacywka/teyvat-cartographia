@@ -1,9 +1,9 @@
 // The mod is built by fabric/ (Fabric Loom) and neoforge/ (ModDevGradle) from the code in common/ (jaredlll08's
 // MultiLoader-Template layout: the shared rules in buildSrc/). The plugins are declared here once, applied below.
 plugins {
-    // The remapping Loom: Minecraft 1.21.1 is obfuscated, the JAR is remapped to intermediary names. 1.15 and later
+    // Loom without remapping: Minecraft 26.x ships with Mojang's names, there is no intermediary. 1.15 and later
     // need a newer Gradle than this project's 9.2.1.
-    id 'net.fabricmc.fabric-loom-remap' version '1.14.10' apply false
+    id 'net.fabricmc.fabric-loom' version '1.14.10' apply false
     id 'net.neoforged.moddev' version '2.0.148' apply false
 }
 

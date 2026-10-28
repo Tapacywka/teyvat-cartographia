@@ -1,6 +1,6 @@
 package net.tapacywka.teyvatcartographia.gui;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import net.tapacywka.teyvatcartographia.gui.Ui.Grid;
@@ -105,7 +105,7 @@ final class ScrollTooltip {
         return scrolls() && my >= bodyTop && my < bodyBottom && mx >= barX() - Grid.GAP && mx < barX() + BAR_W + Grid.GAP;
     }
 
-    void render(GuiGraphics g, int mx, int my) {
+    void render(GuiGraphicsExtractor g, int mx, int my) {
         if (owner == null) return;
         float scroll = scroller.update(maxScroll());
         Ui.tooltipBox(g, x, y, w, h);
@@ -116,10 +116,10 @@ final class ScrollTooltip {
         float ty = bodyTop - scroll;
         for (FormattedCharSequence l : lines) {
             if (ty + DrawText.LINE > bodyTop && ty < bodyBottom) {
-                g.pose().pushPose();
-                g.pose().translate(Draw.snap(x + Grid.PAD), Draw.snap(ty), 0);
-                g.drawString(DrawText.font(), l, 0, 0, Theme.CREAM, false);
-                g.pose().popPose();
+                g.pose().pushMatrix();
+                g.pose().translate(Draw.snap(x + Grid.PAD), Draw.snap(ty));
+                g.text(DrawText.font(), l, 0, 0, Theme.CREAM, false);
+                g.pose().popMatrix();
             }
             ty += DrawText.LINE + 2;
         }

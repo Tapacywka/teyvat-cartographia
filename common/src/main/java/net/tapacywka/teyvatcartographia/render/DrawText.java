@@ -2,10 +2,10 @@ package net.tapacywka.teyvatcartographia.render;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
+import org.joml.Matrix3x2f;
 
 /**
  * Text in GUI coordinates: always the vanilla Minecraft font at its native 1x size, snapped to the physical pixel grid
@@ -34,15 +34,28 @@ public final class DrawText {
         return top + (height - 8f) / 2f;
     }
 
-    public static void text(GuiGraphics g, Component text, float x, float y, int color, boolean shadow) {
-        g.pose().pushPose();
-        g.pose().translate(Draw.snap(x), Draw.snap(y), 0);
-        g.drawString(font(), text, 0, 0, color, shadow);
-        g.pose().popPose();
+    public static void text(GuiGraphicsExtractor g, Component text, float x, float y, int color, boolean shadow) {
+        draw(g, text.getVisualOrderText(), Draw.snap(x), Draw.snap(y), color, shadow, 0, false);
     }
 
-    public static void text(GuiGraphics g, String text, float x, float y, int color, boolean shadow) {
+    public static void text(GuiGraphicsExtractor g, String text, float x, float y, int color, boolean shadow) {
         text(g, Component.literal(text), x, y, color, shadow);
+    }
+
+    /**
+     * The text's glyphs as the mod's own elements (into the frame or a {@link CachedLayer} being redrawn), at (x, y)
+     * after the GUI pose; with {@code outlined} first its 8 copies in {@code outline} around it.
+     */
+    private static void draw(GuiGraphicsExtractor g, FormattedCharSequence seq, float x, float y, int color, boolean shadow, int outline,
+                             boolean outlined) {
+        Matrix3x2f pose = new Matrix3x2f(g.pose()).translate(x, y);
+        if (outlined) TextShape.submit(g, font().prepareText(seq, 0, 0, opaque(outline), false, false, 0), pose, TextShape.OUTLINE);
+        TextShape.submit(g, font().prepareText(seq, 0, 0, opaque(color), shadow, false, 0), pose, TextShape.ONCE);
+    }
+
+    /** A colour given without alpha is opaque, as the game's text used to take it (26.1 draws alpha 0 as nothing). */
+    private static int opaque(int color) {
+        return (color & 0xFC000000) == 0 ? color | 0xFF000000 : color;
     }
 
     /**
@@ -53,26 +66,19 @@ public final class DrawText {
         return Math.max(0, width(text) - 1);
     }
 
-    public static void textCentered(GuiGraphics g, Component text, float cx, float y, int color, boolean shadow) {
+    public static void textCentered(GuiGraphicsExtractor g, Component text, float cx, float y, int color, boolean shadow) {
         text(g, text, cx - visualWidth(text) / 2f, y, color, shadow);
     }
 
-    public static void textRight(GuiGraphics g, Component text, float right, float y, int color, boolean shadow) {
+    public static void textRight(GuiGraphicsExtractor g, Component text, float right, float y, int color, boolean shadow) {
         text(g, text, right - visualWidth(text), y, color, shadow);
     }
 
-    /**
-     * Map-label text: light fill with a dark 8-direction outline, centred at (cx, cy). {@code flush == false} leaves
-     * the glyphs batched (call {@code g.flush()} after a group of labels).
-     */
-    public static void textOutlined(GuiGraphics g, Component text, float cx, float cy, int color, int outline, boolean flush) {
+    /** Map-label text: light fill with a dark 8-direction outline, centred at (cx, cy). */
+    public static void textOutlined(GuiGraphicsExtractor g, Component text, float cx, float cy, int color, int outline) {
         FormattedCharSequence seq = text.getVisualOrderText();
         float w = Math.max(0, font().width(seq) - 1); // visible glyph width (no trailing advance)
-        g.pose().pushPose();
-        g.pose().translate(Draw.snap(cx - w / 2f), Draw.snap(cy - 4f), 0);
-        font().drawInBatch8xOutline(seq, 0, 0, color, outline, g.pose().last().pose(), g.bufferSource(), LightTexture.FULL_BRIGHT);
-        if (flush) g.flush();
-        g.pose().popPose();
+        draw(g, seq, Draw.snap(cx - w / 2f), Draw.snap(cy - 4f), color, false, outline, true);
     }
 
     /**

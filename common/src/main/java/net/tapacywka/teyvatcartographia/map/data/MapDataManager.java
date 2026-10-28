@@ -14,7 +14,7 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.LevelChunk;
@@ -194,7 +194,7 @@ public final class MapDataManager {
                 try {
                     Path f = dir.resolve(folder).resolve("dimension.txt");
                     if (java.nio.file.Files.exists(f)) {
-                        ResourceLocation id = ResourceLocation.tryParse(java.nio.file.Files.readString(f).trim());
+                        Identifier id = Identifier.tryParse(java.nio.file.Files.readString(f).trim());
                         ResourceKey<Level> d = id == null ? null : ResourceKey.create(Registries.DIMENSION, id);
                         if (d != null && !out.contains(d)) out.add(d);
                     }
@@ -223,7 +223,7 @@ public final class MapDataManager {
         LocalPlayer player = Minecraft.getInstance().player;
         if (active == null || level == null || player == null) return false;
         boolean ceiling = level.dimensionType().hasCeiling();
-        int side = 2 * rx + 1, rows = 2 * rz + 1, pcx = player.chunkPosition().x, pcz = player.chunkPosition().z;
+        int side = 2 * rx + 1, rows = 2 * rz + 1, pcx = player.chunkPosition().x(), pcz = player.chunkPosition().z();
         List<LevelChunk> chunks = new ArrayList<>();
         List<ChunkShader.Neighbourhood> around = new ArrayList<>();
         List<LevelChunk[]> rings = new ArrayList<>();
@@ -246,7 +246,7 @@ public final class MapDataManager {
                     ChunkScanner.Snapshot snap = ChunkScanner.scan(lvl, chunk, ceiling, rings.get(i));
                     ChunkShader.Neighbourhood n = around.get(i);
                     fillOwnColumns(snap, n);
-                    int ox = (chunk.getPos().x - pcx + rx) * 16, oz = (chunk.getPos().z - pcz + rz) * 16;
+                    int ox = (chunk.getPos().x() - pcx + rx) * 16, oz = (chunk.getPos().z() - pcz + rz) * 16;
                     for (MapConfig.Detail d : modes) {
                         int[] abgr = ChunkShader.shade(snap, n, d).abgr();
                         for (int z = 0; z < 16; z++) System.arraycopy(abgr, z * 16, out[d.ordinal()], (oz + z) * 16 * side + ox, 16);
@@ -275,7 +275,7 @@ public final class MapDataManager {
 
     public void onChunkLoaded(LevelChunk chunk) {
         if (active == null || chunk.getLevel() != level) return;
-        enqueue(chunk.getPos().x, chunk.getPos().z, false);
+        enqueue(chunk.getPos().x(), chunk.getPos().z(), false);
     }
 
     // ------------------------------------------------------------------ lifecycle
@@ -307,7 +307,7 @@ public final class MapDataManager {
         updateUnderground(player);
         if (underground.current() != null && cavesSupported() && tickCounter % CAVE_TICKS == 0) scanCaves(player, underground.current());
 
-        int pcx = player.chunkPosition().x, pcz = player.chunkPosition().z;
+        int pcx = player.chunkPosition().x(), pcz = player.chunkPosition().z();
         if (tickCounter % 20 == 0) {
             // Blocks change mostly around the player: refresh the 3x3 chunks regularly.
             for (int dz = -1; dz <= 1; dz++) for (int dx = -1; dx <= 1; dx++) enqueue(pcx + dx, pcz + dz, true);
@@ -374,7 +374,7 @@ public final class MapDataManager {
         for (String folder : MapStorage.listDimensions(dimDir(dim).resolve("caves"))) {
             if (folder.matches("b-?\\d+")) caveBands.add(Integer.parseInt(folder.substring(1)));
         }
-        TeyvatCartographia.LOGGER.info("Teyvat Cartographia: mapping {} / {} ({} chunks explored previously)", worldId, dim.location(), active.exploredChunks());
+        TeyvatCartographia.LOGGER.info("Teyvat Cartographia: mapping {} / {} ({} chunks explored previously)", worldId, dim.identifier(), active.exploredChunks());
     }
 
     private void closeCaves() {
@@ -397,7 +397,7 @@ public final class MapDataManager {
         Integer now = null;
         if (cavesSupported()) {
             BlockPos eye = BlockPos.containing(player.getEyePosition());
-            int top = Math.min(level.getMaxBuildHeight(), eye.getY() + ROOF_SCAN);
+            int top = Math.min(level.getMaxY() + 1, eye.getY() + ROOF_SCAN);
             roof.reset();
             for (int y = eye.getY() + 1; y < top && roof.best() < Underground.ROOF; y++) {
                 roof.add(Underground.natural(level.getBlockState(ROOF_POS.set(eye.getX(), y, eye.getZ()))));
@@ -425,9 +425,9 @@ public final class MapDataManager {
                     try {
                         results.add(new Object[]{gen, CaveScanner.scan(lvl, chunk, band, px, pz, CAVE_RADIUS), band});
                     } catch (RuntimeException e) {
-                        TeyvatCartographia.LOGGER.debug("Cave chunk {},{} could not be sampled", chunk.getPos().x, chunk.getPos().z, e);
+                        TeyvatCartographia.LOGGER.debug("Cave chunk {},{} could not be sampled", chunk.getPos().x(), chunk.getPos().z(), e);
                     } catch (Throwable e) {
-                        TeyvatCartographia.LOGGER.error("Cave mapping failed for chunk {},{}", chunk.getPos().x, chunk.getPos().z, e);
+                        TeyvatCartographia.LOGGER.error("Cave mapping failed for chunk {},{}", chunk.getPos().x(), chunk.getPos().z(), e);
                     } finally {
                         inFlight.decrementAndGet();
                     }
@@ -438,13 +438,13 @@ public final class MapDataManager {
 
     /** Folder of a dimension's map: its id with ':' as '_' (as in earlier versions, so old maps stay). */
     private Path dimDir(ResourceKey<Level> dimension) {
-        return WorldId.root().resolve(worldId).resolve(WorldId.sanitize(dimension.location().toString().replace(':', '_')));
+        return WorldId.root().resolve(worldId).resolve(WorldId.sanitize(dimension.identifier().toString().replace(':', '_')));
     }
 
     // ------------------------------------------------------------------ scheduling
 
     private static long chunkKey(int cx, int cz) {
-        return ChunkPos.asLong(cx, cz);
+        return ChunkPos.pack(cx, cz);
     }
 
     private void enqueue(int cx, int cz, boolean priority) {
@@ -505,7 +505,7 @@ public final class MapDataManager {
         MapConfig.Detail detail = MapConfig.get(MapConfig.DETAIL);
         int maxDist = effectiveRadius() + 2;
         LocalPlayer player = Minecraft.getInstance().player;
-        int pcx = player.chunkPosition().x, pcz = player.chunkPosition().z;
+        int pcx = player.chunkPosition().x(), pcz = player.chunkPosition().z();
         while (budget > 0 && !queue.isEmpty() && inFlight.get() < MAX_IN_FLIGHT) {
             long k = queue.dequeueLong();
             queued.remove(k);

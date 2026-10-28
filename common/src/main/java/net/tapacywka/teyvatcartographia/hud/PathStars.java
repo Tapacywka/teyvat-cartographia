@@ -6,7 +6,7 @@ import net.tapacywka.teyvatcartographia.map.data.MapDataManager;
 import net.tapacywka.teyvatcartographia.nav.Route;
 import net.tapacywka.teyvatcartographia.render.Theme;
 import net.tapacywka.teyvatcartographia.render.WorldGlow;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -15,7 +15,7 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Vector3f;
+import org.joml.Vector3fc;
 
 /**
  * The path to the tracked target drawn in the world as small golden sparkles, along the whole line of the world map
@@ -75,16 +75,16 @@ final class PathStars {
             routeVersion = Route.version();
             java.util.Arrays.fill(lifeOf, Integer.MIN_VALUE);
         }
-        float pt = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
-        Vec3 me = camera.getEntity().getPosition(pt);
+        float pt = Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(false);
+        Vec3 me = camera.entity().getPosition(pt);
         // From where the walked part ends (moving forward only, shared with the map lines).
         Route.cut(me.x, me.z);
         // Only on the part of a new line drawn in so far (3 s after a new search, Route.shownTo).
         float from = Route.cutAlong() + START, end = Math.min(Math.min(from - START + WINDOW, total), Route.shownTo());
         if (end <= from) return;
         boolean cave = MapDataManager.get().undergroundBand() != null;
-        Vec3 cam = camera.getPosition();
-        Vector3f left = camera.getLeftVector(), up = camera.getUpVector();
+        Vec3 cam = camera.position();
+        Vector3fc left = camera.leftVector(), up = camera.upVector();
         float lx = left.x(), ly = left.y(), lz = left.z(), ux = up.x(), uy = up.y(), uz = up.z();
         float time = (Util.getMillis() % 1_000_000L) / 1000f;
         int color = Theme.worldMarkerPulse(), coreColor = Theme.WORLD_MARKER_BEAM_CORE | 0xFF000000; // golden, a light core
@@ -166,7 +166,7 @@ final class PathStars {
         int bz = (int) Math.floor(lerp(Route.z(i), Route.z(i + 1), t) + sideZ * side);
         if (!level.hasChunk(bx >> 4, bz >> 4)) return Float.NaN;
         // From the top (the client keeps only this heightmap) down through leaves and plants, like the path search.
-        int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING, bx, bz), bottom = level.getMinBuildHeight();
+        int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING, bx, bz), bottom = level.getMinY();
         for (int k = 0; k < 24 && y > bottom; k++, y--) {
             BlockState st = level.getBlockState(POS.set(bx, y - 1, bz));
             // Trunks too: a sparkle beside a tree belongs at its foot, not on top of the trunk.

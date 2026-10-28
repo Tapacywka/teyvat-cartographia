@@ -1,7 +1,7 @@
 package net.tapacywka.teyvatcartographia.render;
 
 import net.tapacywka.teyvatcartographia.marker.MarkerType;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 /**
  * Marker symbols in two styles, like Genshin Impact's custom pins:
@@ -38,7 +38,7 @@ public final class MarkerRenderer {
      * Map style, centred at (cx, cy): the glyph with its shadow; the selected pin (clicked) also gets the spiked
      * ring. Tracking is shown separately by {@link #pulse}.
      */
-    public static void pin(GuiGraphics g, Icon icon, float cx, float cy, float size, boolean selected, boolean hovered, float alpha) {
+    public static void pin(GuiGraphicsExtractor g, Icon icon, float cx, float cy, float size, boolean selected, boolean hovered, float alpha) {
         float k = size / SIZE, r = size * RING;
         if (selected) {
             int ring = Theme.withAlpha(Theme.MARKER_RING, alpha);
@@ -60,7 +60,7 @@ public final class MarkerRenderer {
      * in for the first third (0 to 0.33 s), stays fully visible (0.33 to 0.67 s) and fades out (0.67 to 1 s), in
      * {@code color} (white, {@link Theme#MARKER_PULSE}). Nothing is drawn for the rest of the period.
      */
-    public static void pulse(GuiGraphics g, float cx, float cy, float size, float seconds, int color, float alpha) {
+    public static void pulse(GuiGraphicsExtractor g, float cx, float cy, float size, float seconds, int color, float alpha) {
         if (seconds < 0 || seconds >= PULSE_LIFE) return;
         float p = seconds / PULSE_LIFE;
         float eased = 1f - (1f - p) * (1f - p); // quick start, gentle end
@@ -87,7 +87,7 @@ public final class MarkerRenderer {
      * around the glyph (fast at first, slowing down at the marker, like pulse_01 to pulse_03), turning from white to
      * {@code color} (the beam's); it fades in, stays and fades out like the map pulse, the last third at the glyph.
      */
-    public static void worldPulse(GuiGraphics g, float cx, float cy, float size, float seconds, float startRadius, int color, float alpha) {
+    public static void worldPulse(GuiGraphicsExtractor g, float cx, float cy, float size, float seconds, float startRadius, int color, float alpha) {
         if (seconds < 0 || seconds >= WORLD_PULSE_LIFE) return;
         float end = size * 0.75f;
         float p = Math.min(1f, seconds / WORLD_PULSE_CONVERGE);
@@ -117,7 +117,7 @@ public final class MarkerRenderer {
      * Small arrow at the marker in the world showing that the tracked target is above ({@code up}) or below the
      * player; {@code cy} is the arrow's centre and {@code size} its width, in {@code color} with a dark rim.
      */
-    public static void levelArrow(GuiGraphics g, float cx, float cy, float size, boolean up, int color, float alpha) {
+    public static void levelArrow(GuiGraphicsExtractor g, float cx, float cy, float size, boolean up, int color, float alpha) {
         float h = size / 2f, k = up ? -1 : 1, t = size * 0.42f; // half width, direction, half height
         float o = Math.max(1f, size * 0.14f);
         Draw.triangle(g, cx - h - o, cy - k * (t + o * 0.6f), cx + h + o, cy - k * (t + o * 0.6f), cx, cy + k * (t + o * 1.2f),
@@ -125,14 +125,14 @@ public final class MarkerRenderer {
         Draw.triangle(g, cx - h, cy - k * t, cx + h, cy - k * t, cx, cy + k * t, Theme.withAlpha(color, alpha));
     }
 
-    private static void ringShape(GuiGraphics g, float cx, float cy, float r, float width, int argb) {
+    private static void ringShape(GuiGraphicsExtractor g, float cx, float cy, float r, float width, int argb) {
         if ((argb >>> 24) == 0) return;
         if (Theme.Style.squareUi) Draw.frame(g, cx - r - width / 2f, cy - r - width / 2f, 2 * r + width, 2 * r + width, width, argb);
         else Draw.circleOutline(g, cx, cy, r, width, argb);
     }
 
     /** Menu style: the glyph on a tile with outer size {@code size} (pin type grid, pin list). */
-    public static void badge(GuiGraphics g, Icon icon, float cx, float cy, float size, boolean selected, boolean hovered, float alpha) {
+    public static void badge(GuiGraphicsExtractor g, Icon icon, float cx, float cy, float size, boolean selected, boolean hovered, float alpha) {
         float h = size / 2f, k = size / SIZE;
         float radius = 2.5f * k, frame = Math.max(1f, (selected ? 1.5f : 1f) * k);
         int fill = Theme.withAlpha(hovered ? Theme.MARKER_TILE_HOVER : Theme.MARKER_TILE, alpha);
@@ -153,7 +153,7 @@ public final class MarkerRenderer {
     }
 
     /** Draws a marker on the map, centred on its position (x, y). */
-    public static void draw(GuiGraphics g, MarkerType type, float x, float y, float size, boolean selected, boolean hovered, float alpha) {
+    public static void draw(GuiGraphicsExtractor g, MarkerType type, float x, float y, float size, boolean selected, boolean hovered, float alpha) {
         draw(g, type, x, y, size, selected, hovered, alpha, 0);
     }
 
@@ -165,19 +165,19 @@ public final class MarkerRenderer {
      * 0 the same, see {@code MarkerVisibility.layerRelation}): a pin on another layer is fainter and has a small white
      * arrow up or down at its top right, like the pins of other floors on the Genshin Impact map.
      */
-    public static void draw(GuiGraphics g, MarkerType type, float x, float y, float size, boolean selected, boolean hovered, float alpha, int layer) {
+    public static void draw(GuiGraphicsExtractor g, MarkerType type, float x, float y, float size, boolean selected, boolean hovered, float alpha, int layer) {
         float s = hovered ? size * 1.1f : size;
         pin(g, type.icon, x, y, s, selected, hovered, layer == 0 ? alpha : alpha * OTHER_LAYER_ALPHA);
         if (layer != 0) levelArrow(g, x + s * 0.38f, y - s * 0.3f, Math.max(4f, s * 0.32f), layer > 0, Theme.WORLD_MARKER_LEVEL, alpha);
     }
 
     /** Draws a marker's menu badge centred at (cx, cy), for lists and grids. */
-    public static void drawCentered(GuiGraphics g, MarkerType type, float cx, float cy, float size, float alpha) {
+    public static void drawCentered(GuiGraphicsExtractor g, MarkerType type, float cx, float cy, float size, float alpha) {
         badge(g, type.icon, cx, cy, size, false, false, alpha);
     }
 
     /** Player arrow with soft glow (off with the view cone); {@code angle} radians clockwise from up. */
-    public static void player(GuiGraphics g, float x, float y, float size, float angle, float alpha) {
+    public static void player(GuiGraphicsExtractor g, float x, float y, float size, float angle, float alpha) {
         if (net.tapacywka.teyvatcartographia.config.MapConfig.get(net.tapacywka.teyvatcartographia.config.MapConfig.PLAYER_CONE)) Draw.ring(g, x, y, 0f, size * 0.8f, Theme.withAlpha(Theme.PLAYER_GLOW, alpha), Theme.withAlpha(Theme.PLAYER_GLOW, 0f));
         Draw.icon(g, Icon.PLAYER, x, y, size, Theme.withAlpha(Theme.PLAYER_ARROW, alpha), angle);
     }

@@ -108,7 +108,7 @@ public final class Navigation {
 
     /** Whether the player sits in a boat (the path then goes by water). */
     public static boolean inBoat(LocalPlayer player) {
-        return player.getVehicle() instanceof net.minecraft.world.entity.vehicle.Boat;
+        return player.getVehicle() instanceof net.minecraft.world.entity.vehicle.boat.AbstractBoat;
     }
 
     /**
@@ -216,7 +216,7 @@ public final class Navigation {
             }
         }
         if (arrives(target, distance(mc.player))) {
-            mc.player.displayClientMessage(Component.translatable("teyvatcartographia.nav.arrived"), true);
+            mc.player.sendOverlayMessage(Component.translatable("teyvatcartographia.nav.arrived"));
             clear();
         }
     }

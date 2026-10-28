@@ -1,6 +1,6 @@
 package net.tapacywka.teyvatcartographia.render;
 
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.resources.ResourceKey;
 import net.tapacywka.teyvatcartographia.map.MapView;
@@ -8,7 +8,7 @@ import net.tapacywka.teyvatcartographia.map.data.LodStore;
 import net.tapacywka.teyvatcartographia.map.data.MapTile;
 import net.tapacywka.teyvatcartographia.map.data.TileStore;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 
 import java.util.HashMap;
@@ -44,7 +44,7 @@ public final class MapLayerRenderer {
     }
 
     /** Draws regions covering the screen rectangle (view must have rotation 0). */
-    public static boolean drawRect(GuiGraphics g, TileStore store, MapView view, float x0, float y0, float x1, float y1, int tint) {
+    public static boolean drawRect(GuiGraphicsExtractor g, TileStore store, MapView view, float x0, float y0, float x1, float y1, int tint) {
         return drawRect(g, store, view, x0, y0, x1, y1, tint, 0f);
     }
 
@@ -55,7 +55,7 @@ public final class MapLayerRenderer {
      * @return {@code false} if some visible region is still loading or waiting for its texture upload, i.e. the
      *         picture is incomplete and should be drawn again (the minimap cache relies on this)
      */
-    public static boolean drawRect(GuiGraphics g, TileStore store, MapView view, float x0, float y0, float x1, float y1, int tint, float lightAlpha) {
+    public static boolean drawRect(GuiGraphicsExtractor g, TileStore store, MapView view, float x0, float y0, float x1, float y1, int tint, float lightAlpha) {
         if (store == null) return true;
         int tx0 = MapView.blockToTile((int) Math.floor(view.worldX(x0, y0)));
         int tz0 = MapView.blockToTile((int) Math.floor(view.worldZ(x0, y0)));
@@ -72,8 +72,8 @@ public final class MapLayerRenderer {
             for (int tz = tz0; tz <= tz1; tz++) {
                 for (int tx = tx0; tx <= tx1; tx++) {
                     MapTile t = store.exists(tx, tz) ? store.peek(tx, tz) : null;
-                    int id = t == null ? -1 : t.textureId(false);
-                    if (id >= 0) shadow(g, id, view, t.blockX0(), t.blockZ0(), MapTile.SIZE, x0, y0, x1, y1, edge, edge, 1 - edge, 1 - edge);
+                    Tex id = t == null ? null : t.tex(false);
+                    if (id != null) shadow(g, id, view, t.blockX0(), t.blockZ0(), MapTile.SIZE, x0, y0, x1, y1, edge, edge, 1 - edge, 1 - edge);
                 }
             }
         }
@@ -83,9 +83,10 @@ public final class MapLayerRenderer {
                 MapTile t = store.get(tx, tz);
                 boolean allow = t != null && (!t.needsUpload() || uploads > 0);
                 if (t != null && t.needsUpload() && allow) uploads--;
-                int id = t == null ? -1 : t.textureId(allow);
+                if (t != null) t.setFilter(blur);
+                Tex id = t == null ? null : t.tex(allow);
                 if (t == null || !allow) complete = false;
-                if (id < 0) {
+                if (id == null) {
                     // Still loading (e.g. just zoomed in from the LOD scales): its quarter-size copy fills the hole meanwhile.
                     if (!lodUpdated) {
                         store.lod().update();
@@ -94,7 +95,6 @@ public final class MapLayerRenderer {
                     uploads = drawLodCell(g, store.lod(), view, tx, tz, x0, y0, x1, y1, tint, uploads);
                     continue;
                 }
-                t.setFilter(blur);
                 float sx0 = view.screenX(t.blockX0(), t.blockZ0()), sy0 = view.screenY(t.blockX0(), t.blockZ0());
                 float sx1 = view.screenX(t.blockX0() + MapTile.SIZE, t.blockZ0() + MapTile.SIZE);
                 float sy1 = view.screenY(t.blockX0() + MapTile.SIZE, t.blockZ0() + MapTile.SIZE);
@@ -109,9 +109,9 @@ public final class MapLayerRenderer {
                     // (the Nether, towns at night), and regions later in the loop then never got their textures.
                     boolean lightUpload = t.lightNeedsUpload(), allowLight = !lightUpload || uploads > 0;
                     if (lightUpload && allowLight) uploads--;
-                    int lid = t.lightTextureId(allowLight);
-                    if (lid >= 0) {
-                        t.setLightFilter(blur);
+                    t.setLightFilter(blur);
+                    Tex lid = t.lightTex(allowLight);
+                    if (lid != null) {
                         Draw.texturedQuad(g, lid, cx0, cy0, cx1, cy1,
                                 in((cx0 - sx0) / w, edge), in((cy0 - sy0) / h, edge), in((cx1 - sx0) / w, edge), in((cy1 - sy0) / h, edge), lightColor);
                     } else {
@@ -131,7 +131,7 @@ public final class MapLayerRenderer {
      * The shadow of one texture (a region or a LOD tile, {@code size} blocks from block (bx0, bz0), texture part u0..u1,
      * v0..v1): drawn black with its alpha, twice (a softer, farther copy for a blurred edge), clipped to the rectangle.
      */
-    private static void shadow(GuiGraphics g, int id, MapView view, int bx0, int bz0, int size, float x0, float y0, float x1, float y1,
+    private static void shadow(GuiGraphicsExtractor g, Tex id, MapView view, int bx0, int bz0, int size, float x0, float y0, float x1, float y1,
                                float u0, float v0, float u1, float v1) {
         float sx0 = view.screenX(bx0, bz0), sy0 = view.screenY(bx0, bz0);
         float sx1 = view.screenX(bx0 + size, bz0 + size), sy1 = view.screenY(bx0 + size, bz0 + size);
@@ -147,13 +147,13 @@ public final class MapLayerRenderer {
     }
 
     /** Draws region (tx, tz) from its cell of the LOD tile, clipped to the rectangle; returns the uploads left. */
-    private static int drawLodCell(GuiGraphics g, LodStore lod, MapView view, int tx, int tz, float x0, float y0, float x1, float y1,
+    private static int drawLodCell(GuiGraphicsExtractor g, LodStore lod, MapView view, int tx, int tz, float x0, float y0, float x1, float y1,
                                    int tint, int uploads) {
         LodStore.LodTile t = lod.get(Math.floorDiv(tx, LodStore.REGIONS), Math.floorDiv(tz, LodStore.REGIONS));
         boolean allow = !t.needsUpload() || uploads > 0;
         if (t.needsUpload() && allow) uploads--;
-        int id = t.textureId(allow);
-        if (id < 0) return uploads;
+        Tex id = t.tex(allow);
+        if (id == null) return uploads;
         int bx0 = tx * MapTile.SIZE, bz0 = tz * MapTile.SIZE;
         float sx0 = view.screenX(bx0, bz0), sy0 = view.screenY(bx0, bz0);
         float sx1 = view.screenX(bx0 + MapTile.SIZE, bz0 + MapTile.SIZE), sy1 = view.screenY(bx0 + MapTile.SIZE, bz0 + MapTile.SIZE);
@@ -175,7 +175,7 @@ public final class MapLayerRenderer {
     }
 
     /** Draws the LOD tiles covering the rectangle (no light overlay: torches are invisible that far out). */
-    private static boolean drawLod(GuiGraphics g, TileStore store, MapView view, float x0, float y0, float x1, float y1, int tint) {
+    private static boolean drawLod(GuiGraphicsExtractor g, TileStore store, MapView view, float x0, float y0, float x1, float y1, int tint) {
         LodStore lod = store.lod();
         lod.update();
         boolean complete = true;
@@ -190,8 +190,8 @@ public final class MapLayerRenderer {
                 for (int lx = lx0; lx <= lx1; lx++) {
                     if (!lod.any(lx, lz)) continue;
                     LodStore.LodTile t = lod.get(lx, lz);
-                    int id = t.textureId(false);
-                    if (id >= 0) shadow(g, id, view, t.blockX0(), t.blockZ0(), LodStore.BLOCKS, x0, y0, x1, y1, EDGE, EDGE, 1 - EDGE, 1 - EDGE);
+                    Tex id = t.tex(false);
+                    if (id != null) shadow(g, id, view, t.blockX0(), t.blockZ0(), LodStore.BLOCKS, x0, y0, x1, y1, EDGE, EDGE, 1 - EDGE, 1 - EDGE);
                 }
             }
         }
@@ -203,8 +203,8 @@ public final class MapLayerRenderer {
                 boolean allow = !t.needsUpload() || uploads > 0;
                 if (t.needsUpload() && allow) uploads--;
                 if (!allow) complete = false;
-                int id = t.textureId(allow);
-                if (id < 0) continue;
+                Tex id = t.tex(allow);
+                if (id == null) continue;
                 float sx0 = view.screenX(t.blockX0(), t.blockZ0()), sy0 = view.screenY(t.blockX0(), t.blockZ0());
                 float sx1 = view.screenX(t.blockX0() + LodStore.BLOCKS, t.blockZ0() + LodStore.BLOCKS);
                 float sy1 = view.screenY(t.blockX0() + LodStore.BLOCKS, t.blockZ0() + LodStore.BLOCKS);
@@ -225,7 +225,7 @@ public final class MapLayerRenderer {
 
     /** The game's name of a biome: its translation key, as vanilla builds it ('/' in the path as '.'). */
     public static Component biomeName(ResourceKey<Biome> biome) {
-        return NAMES.computeIfAbsent(biome, k -> Component.translatable(Util.makeDescriptionId("biome", k.location())));
+        return NAMES.computeIfAbsent(biome, k -> Component.translatable(Util.makeDescriptionId("biome", k.identifier())));
     }
 
     // Labels placed this frame (reused: no allocation per frame).
@@ -241,7 +241,7 @@ public final class MapLayerRenderer {
      * Draws one label per region (its dominant biome), skipping duplicates close to each other and labels whose box
      * intersects any of the {@code avoid} rectangles (x0, y0, x1, y1). All labels are flushed in one batch.
      */
-    public static void drawBiomeLabels(GuiGraphics g, TileStore store, MapView view, float x0, float y0, float x1, float y1,
+    public static void drawBiomeLabels(GuiGraphicsExtractor g, TileStore store, MapView view, float x0, float y0, float x1, float y1,
                                        java.util.List<float[]> avoid) {
         // Shown from 1/8 up (user request 25.10.2026, they were shown from 1/4 to 4): at 1/16 and 1/32 they crowd.
         if (store == null || view.scale < MapView.DETAIL_FROM - 1e-6) return;
@@ -280,9 +280,8 @@ public final class MapLayerRenderer {
             placed[count * 4 + 2] = hw;
             placed[count * 4 + 3] = hh;
             placedIds[count++] = t.labelBiome;
-            DrawText.textOutlined(g, name, sx, sy, Theme.LABEL_TEXT, Theme.LABEL_OUTLINE, false);
+            DrawText.textOutlined(g, name, sx, sy, Theme.LABEL_TEXT, Theme.LABEL_OUTLINE);
         }
-        g.flush();
     }
 
     private static void computeLabel(MapTile t) {

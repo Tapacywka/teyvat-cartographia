@@ -25,7 +25,7 @@ import net.tapacywka.teyvatcartographia.render.Icon;
 import net.tapacywka.teyvatcartographia.render.MarkerRenderer;
 import net.tapacywka.teyvatcartographia.render.Theme;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
 
@@ -233,7 +233,7 @@ public final class MarkerListPanel extends SidePanel {
         return fieldY() + Grid.CHIP_H + Grid.PAD;
     }
 
-    private void renderField(GuiGraphics g, int mx, int my, float bx, float bw) {
+    private void renderField(GuiGraphicsExtractor g, int mx, int my, float bx, float bw) {
         field.render(g, bx, fieldY(), bw, mx, my);
     }
 
@@ -261,7 +261,7 @@ public final class MarkerListPanel extends SidePanel {
     }
 
 
-    private void renderTransfer(GuiGraphics g, int mx, int my, float bx, float bw) {
+    private void renderTransfer(GuiGraphicsExtractor g, int mx, int my, float bx, float bw) {
         boolean free = !FileDialogs.isOpen();
         float row = transferRowY(), half = halfWidth();
         Ui.actionButton(g, bx, row, half, Component.translatable("teyvatcartographia.transfer.export"), Icon.EXPORT, free, mx, my);
@@ -349,7 +349,7 @@ public final class MarkerListPanel extends SidePanel {
     }
 
     @Override
-    protected void renderBody(GuiGraphics g, int mx, int my, float bx, float by, float bw) {
+    protected void renderBody(GuiGraphicsExtractor g, int mx, int my, float bx, float by, float bw) {
         boolean rebuilt = refresh();
         renderField(g, mx, my, bx, bw);
         renderTransfer(g, mx, my, bx, bw);
@@ -383,7 +383,7 @@ public final class MarkerListPanel extends SidePanel {
         }
     }
 
-    private void renderRow(GuiGraphics g, Row r, float bx, float ry, float rw, int mx, int my) {
+    private void renderRow(GuiGraphicsExtractor g, Row r, float bx, float ry, float rw, int mx, int my) {
         if (!r.clickable()) {
             // Headings and notes: one muted line, set on the row grid's baseline.
             DrawText.text(g, r.name(), bx + (r.kind() == Kind.NOTE ? Grid.GAP : 0), DrawText.textY(ry, LINE_H), Theme.TEXT_MUTED, false);

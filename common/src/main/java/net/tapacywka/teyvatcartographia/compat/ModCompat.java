@@ -2,7 +2,7 @@ package net.tapacywka.teyvatcartographia.compat;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.Level;
 import net.tapacywka.teyvatcartographia.platform.Platform;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
@@ -23,7 +23,7 @@ public final class ModCompat {
 
     public static final String AETHER = "aether";
     public static final ResourceKey<Level> AETHER_DIMENSION =
-            ResourceKey.create(Registries.DIMENSION, ResourceLocation.fromNamespaceAndPath(AETHER, "the_aether"));
+            ResourceKey.create(Registries.DIMENSION, Identifier.fromNamespaceAndPath(AETHER, "the_aether"));
 
     public static boolean aether() {
         return loaded(AETHER);
@@ -48,7 +48,7 @@ public final class ModCompat {
     }
 
     public static final ResourceKey<Level> SIFT_DIMENSION =
-            ResourceKey.create(Registries.DIMENSION, ResourceLocation.fromNamespaceAndPath("the_sift", "the_sift"));
+            ResourceKey.create(Registries.DIMENSION, Identifier.fromNamespaceAndPath("the_sift", "the_sift"));
 
     /**
      * Whether a dimension's own fog of war may show: the Nether's, the End's, the Aether's and The Sift's by their switch

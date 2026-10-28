@@ -179,7 +179,7 @@ public final class MapSearch {
         for (Marker m : pins) {
             if (!matches(m.name, needle)) continue;
             boolean h = here != null && m.dimension == here;
-            found.add(new PinHit(m, h, h ? "" : m.dimension.location().toString(), h ? Navigation.distance(px, py, pz, m.centerX(), m.y, m.centerZ()) : 0));
+            found.add(new PinHit(m, h, h ? "" : m.dimension.identifier().toString(), h ? Navigation.distance(px, py, pz, m.centerX(), m.y, m.centerZ()) : 0));
         }
         found.sort(Comparator.comparing((PinHit h) -> !h.here).thenComparing(PinHit::dimension).thenComparingDouble(PinHit::distance)
                 .thenComparing(h -> h.marker.name, String.CASE_INSENSITIVE_ORDER));
@@ -229,7 +229,7 @@ public final class MapSearch {
             if (s == null) continue;
             for (ResourceKey<Biome> b : s.palette()) {
                 if (wanted.size() >= MAX_BIOMES) break;
-                String path = b.location().getPath().replace('_', ' ');
+                String path = b.identifier().getPath().replace('_', ' ');
                 if (matches(MapLayerRenderer.biomeName(b).getString(), needle) || matches(path, needle)) wanted.add(new Wanted(dims.get(i), s, b));
             }
         }
@@ -259,7 +259,7 @@ public final class MapSearch {
     }
 
     private static String cursorKey(BiomeHit h) {
-        return h.dimension.location() + "|" + h.biome.location();
+        return h.dimension.identifier() + "|" + h.biome.identifier();
     }
 
     /** A click on a biome row: the next place (the nearest the first time). Returns the place to fly to. */

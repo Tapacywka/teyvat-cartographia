@@ -74,7 +74,7 @@ public final class TileStore {
         readIndex();
         try {
             Files.createDirectories(dir);
-            Files.writeString(dir.resolve("dimension.txt"), dimension.location().toString(), StandardCharsets.UTF_8);
+            Files.writeString(dir.resolve("dimension.txt"), dimension.identifier().toString(), StandardCharsets.UTF_8);
         } catch (IOException e) {
             TeyvatCartographia.LOGGER.warn("Could not create map directory {}", dir, e);
         }

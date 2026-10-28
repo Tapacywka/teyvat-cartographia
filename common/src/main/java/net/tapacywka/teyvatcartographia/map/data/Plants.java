@@ -1,11 +1,11 @@
 package net.tapacywka.teyvatcartographia.map.data;
 
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.block.BambooStalkBlock;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.BushBlock;
+import net.minecraft.world.level.block.VegetationBlock;
 import net.minecraft.world.level.block.CactusBlock;
 import net.minecraft.world.level.block.ChorusFlowerBlock;
 import net.minecraft.world.level.block.ChorusPlantBlock;
@@ -43,7 +43,7 @@ public final class Plants {
 
     /** A plant by its class (known before a world brings the block tags). */
     public static boolean plantByClass(Block b) {
-        return b instanceof BushBlock || b instanceof CactusBlock || b instanceof SugarCaneBlock || b instanceof ChorusPlantBlock
+        return b instanceof VegetationBlock || b instanceof CactusBlock || b instanceof SugarCaneBlock || b instanceof ChorusPlantBlock
                 || b instanceof ChorusFlowerBlock || b instanceof BambooStalkBlock;
     }
 
@@ -66,7 +66,7 @@ public final class Plants {
         if (ids != shownFrom) {
             Set<Block> s = new HashSet<>(all());
             for (String id : ids) {
-                ResourceLocation rl = ResourceLocation.tryParse(id);
+                Identifier rl = Identifier.tryParse(id);
                 if (rl != null) BuiltInRegistries.BLOCK.getOptional(rl).ifPresent(s::remove);
             }
             shown = s;

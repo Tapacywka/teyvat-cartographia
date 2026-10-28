@@ -1,16 +1,19 @@
 package net.tapacywka.teyvatcartographia.render;
 
-import com.mojang.blaze3d.platform.GlStateManager;
+import net.tapacywka.teyvatcartographia.map.data.Pixels;
+import com.mojang.blaze3d.systems.CommandEncoder;
+import com.mojang.blaze3d.textures.AddressMode;
+import com.mojang.blaze3d.textures.FilterMode;
+import com.mojang.blaze3d.textures.GpuTexture;
+import com.mojang.blaze3d.textures.GpuTextureView;
+import com.mojang.blaze3d.textures.TextureFormat;
 import com.mojang.blaze3d.platform.NativeImage;
-import com.mojang.blaze3d.platform.TextureUtil;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.tapacywka.teyvatcartographia.TeyvatCartographia;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL12;
 
 import java.io.InputStream;
 import java.util.Locale;
@@ -29,33 +32,39 @@ public final class IconAtlas {
     private IconAtlas() {}
 
     private static final int MAX_LEVEL = 3; // 8 px cells; the 8 px cell padding keeps levels from bleeding
-    private static int textureId = -1;
+    private static GpuTexture texture;
+    private static GpuTextureView view;
+    private static Tex tex;
 
-    public static int textureId() {
+    /** The atlas, sampled trilinearly with clamped edges (stitched on first use). */
+    public static Tex tex() {
         RenderSystem.assertOnRenderThread();
-        if (textureId == -1) textureId = load();
-        return textureId;
+        if (tex == null) load();
+        return tex;
     }
 
     /** Drops the texture; the next draw stitches the (possibly changed) theme icons again. */
     public static void invalidate() {
         RenderSystem.assertOnRenderThread();
-        if (textureId != -1) {
-            TextureUtil.releaseTextureId(textureId);
-            textureId = -1;
-        }
+        if (view != null) view.close();
+        if (texture != null) texture.close();
+        view = null;
+        texture = null;
+        tex = null;
     }
 
-    private static int load() {
-        int id = TextureUtil.generateTextureId();
+    private static void load() {
         try {
             NativeImage base = stitch();
             premultiply(base);
-            TextureUtil.prepareImage(id, MAX_LEVEL, base.getWidth(), base.getHeight());
+            texture = RenderSystem.getDevice().createTexture(() -> "Teyvat Cartographia icons",
+                    GpuTexture.USAGE_TEXTURE_BINDING | GpuTexture.USAGE_COPY_DST, TextureFormat.RGBA8,
+                    base.getWidth(), base.getHeight(), 1, MAX_LEVEL + 1);
+            view = RenderSystem.getDevice().createTextureView(texture);
+            CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
             NativeImage level = base;
             for (int l = 0; l <= MAX_LEVEL; l++) {
-                GlStateManager._bindTexture(id);
-                level.upload(l, 0, 0, 0, 0, level.getWidth(), level.getHeight(), true, true, true, false);
+                encoder.writeToTexture(texture, level, l, 0, 0, 0, level.getWidth(), level.getHeight(), 0, 0);
                 if (l < MAX_LEVEL) {
                     NativeImage next = halve(level);
                     level.close();
@@ -63,13 +72,17 @@ public final class IconAtlas {
                 }
             }
             level.close();
-            GlStateManager._bindTexture(id);
-            GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
-            GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+            tex = new Tex(view, RenderSystem.getSamplerCache().getSampler(AddressMode.CLAMP_TO_EDGE, AddressMode.CLAMP_TO_EDGE,
+                    FilterMode.LINEAR, FilterMode.LINEAR, true));
         } catch (Exception e) {
             TeyvatCartographia.LOGGER.error("Could not build the icon atlas", e);
+            invalidate();
+            // Draw nothing rather than fail every frame: an empty 1 x 1 texture.
+            texture = RenderSystem.getDevice().createTexture(() -> "Teyvat Cartographia icons", GpuTexture.USAGE_TEXTURE_BINDING
+                    | GpuTexture.USAGE_COPY_DST, TextureFormat.RGBA8, 1, 1, 1, 1);
+            view = RenderSystem.getDevice().createTextureView(texture);
+            tex = Tex.clamped(view, false);
         }
-        return id;
     }
 
     /** Copies every icon into its cell of a transparent atlas; missing or wrongly sized icons stay empty. */
@@ -79,7 +92,7 @@ public final class IconAtlas {
         ResourceManager rm = Minecraft.getInstance().getResourceManager();
         for (Icon icon : Icon.values()) {
             String file = "icons/64/" + icon.name().toLowerCase(Locale.ROOT) + ".png";
-            ResourceLocation loc = Theme.asset(file);
+            Identifier loc = Theme.asset(file);
             Optional<Resource> res = rm.getResource(loc);
             if (res.isEmpty() && !Theme.id().equals(Theme.DEFAULT)) {
                 loc = Theme.asset(Theme.DEFAULT, file); // a theme may leave icons out
@@ -96,7 +109,7 @@ public final class IconAtlas {
                 }
                 int ox = (icon.ordinal() % Icon.COLUMNS) * cell, oy = (icon.ordinal() / Icon.COLUMNS) * cell;
                 for (int y = 0; y < cell; y++) {
-                    for (int x = 0; x < cell; x++) atlas.setPixelRGBA(ox + x, oy + y, img.getPixelRGBA(x, y));
+                    for (int x = 0; x < cell; x++) atlas.setPixelABGR(ox + x, oy + y, Pixels.abgr(img, x, y));
                 }
             } catch (Exception e) {
                 TeyvatCartographia.LOGGER.warn("Could not read icon {}", loc, e);
@@ -109,10 +122,10 @@ public final class IconAtlas {
     private static void premultiply(NativeImage img) {
         for (int y = 0; y < img.getHeight(); y++) {
             for (int x = 0; x < img.getWidth(); x++) {
-                int c = img.getPixelRGBA(x, y);
+                int c = Pixels.abgr(img, x, y);
                 int a = (c >>> 24) & 0xFF;
                 int b = ((c >> 16) & 0xFF) * a / 255, g = ((c >> 8) & 0xFF) * a / 255, r = (c & 0xFF) * a / 255;
-                img.setPixelRGBA(x, y, (a << 24) | (b << 16) | (g << 8) | r);
+                img.setPixelABGR(x, y, (a << 24) | (b << 16) | (g << 8) | r);
             }
         }
     }
@@ -126,14 +139,14 @@ public final class IconAtlas {
                 int a = 0, b = 0, g = 0, r = 0;
                 for (int dy = 0; dy < 2; dy++) {
                     for (int dx = 0; dx < 2; dx++) {
-                        int c = src.getPixelRGBA(x * 2 + dx, y * 2 + dy);
+                        int c = Pixels.abgr(src, x * 2 + dx, y * 2 + dy);
                         a += (c >>> 24) & 0xFF;
                         b += (c >> 16) & 0xFF;
                         g += (c >> 8) & 0xFF;
                         r += c & 0xFF;
                     }
                 }
-                dst.setPixelRGBA(x, y, ((a + 2) / 4 << 24) | ((b + 2) / 4 << 16) | ((g + 2) / 4 << 8) | (r + 2) / 4);
+                dst.setPixelABGR(x, y, ((a + 2) / 4 << 24) | ((b + 2) / 4 << 16) | ((g + 2) / 4 << 8) | (r + 2) / 4);
             }
         }
         return dst;

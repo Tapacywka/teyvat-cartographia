@@ -1,10 +1,11 @@
 package net.tapacywka.teyvatcartographia.gui;
 
+import net.tapacywka.teyvatcartographia.map.data.Pixels;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.tapacywka.teyvatcartographia.TeyvatCartographia;
 import net.tapacywka.teyvatcartographia.render.Theme;
@@ -79,7 +80,7 @@ public final class Cursors {
             wanted.made = true;
         }
         if (wanted != applied) {
-            GLFW.glfwSetCursor(mc.getWindow().getWindow(), wanted.handle);
+            GLFW.glfwSetCursor(mc.getWindow().handle(), wanted.handle);
             applied = wanted;
         }
     }
@@ -87,7 +88,7 @@ public final class Cursors {
     /** The vanilla pointer again (a mod screen closed). */
     public static void reset() {
         if (applied == null) return;
-        GLFW.glfwSetCursor(Minecraft.getInstance().getWindow().getWindow(), 0L);
+        GLFW.glfwSetCursor(Minecraft.getInstance().getWindow().handle(), 0L);
         applied = null;
     }
 
@@ -97,7 +98,7 @@ public final class Cursors {
     }
 
     private static void destroy() {
-        GLFW.glfwSetCursor(Minecraft.getInstance().getWindow().getWindow(), 0L);
+        GLFW.glfwSetCursor(Minecraft.getInstance().getWindow().handle(), 0L);
         applied = null;
         for (Shape s : Shape.values()) {
             if (s.handle != 0) GLFW.glfwDestroyCursor(s.handle);
@@ -165,7 +166,7 @@ public final class Cursors {
                     for (int sx = 0; sx < 4; sx++) {
                         int px = Math.min(n - 1, (int) ((x + (sx + 0.5f) / 4f) * n / size));
                         int py = Math.min(n - 1, (int) ((y + (sy + 0.5f) / 4f) * n / size));
-                        sum += (mask.getPixelRGBA(px, py) >>> 24) / 255f;
+                        sum += (Pixels.abgr(mask, px, py) >>> 24) / 255f;
                     }
                 }
                 out[y * size + x] = sum / 16f;
@@ -200,7 +201,7 @@ public final class Cursors {
 
     private static Optional<Resource> resource(String file) {
         var rm = Minecraft.getInstance().getResourceManager();
-        ResourceLocation loc = Theme.asset("cursors/" + file);
+        Identifier loc = Theme.asset("cursors/" + file);
         Optional<Resource> res = rm.getResource(loc);
         if (res.isEmpty() && !Theme.id().equals(Theme.DEFAULT)) res = rm.getResource(Theme.asset(Theme.DEFAULT, "cursors/" + file));
         return res;

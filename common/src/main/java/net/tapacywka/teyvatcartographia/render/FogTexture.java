@@ -2,14 +2,12 @@ package net.tapacywka.teyvatcartographia.render;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.platform.NativeImage;
-import org.lwjgl.opengl.GL11;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.world.level.Level;
 import net.tapacywka.teyvatcartographia.TeyvatCartographia;
@@ -38,7 +36,12 @@ public final class FogTexture {
     public static final int REPEAT = 512;
 
     /** One fog: its texture, its repeat (GUI units) and whether the map's land casts a shadow on it. */
-    private record Fog(DynamicTexture texture, int repeat, boolean shadow) {}
+    private record Fog(DynamicTexture texture, int repeat, boolean shadow) {
+        // Repeated, so the whole screen is one quad with texture coordinates beyond 0..1; smoothed.
+        Tex tex() {
+            return Tex.repeated(texture.getTextureView(), true);
+        }
+    }
 
     private static Fog base;
     /** The dimensions' own fogs, null for a dimension without one (looked up once per theme). */
@@ -57,7 +60,7 @@ public final class FogTexture {
     private static Fog of(ResourceKey<Level> dimension) {
         if (dimension == null || !ModCompat.ownFog(dimension)) return base();
         if (!dimensions.containsKey(dimension)) {
-            ResourceLocation id = dimension.location();
+            Identifier id = dimension.identifier();
             String path = "fog/" + id.getNamespace() + "/" + id.getPath();
             NativeImage img = read(path + ".png");
             JsonObject settings = img == null ? null : settings(path + ".json");
@@ -69,13 +72,7 @@ public final class FogTexture {
     }
 
     private static DynamicTexture texture(NativeImage img) {
-        DynamicTexture texture = new DynamicTexture(img);
-        texture.setFilter(true, false);
-        // Repeat, so the whole screen is one quad with texture coordinates beyond 0..1.
-        texture.bind();
-        GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
-        GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
-        return texture;
+        return new DynamicTexture(() -> "Teyvat Cartographia fog", img);
     }
 
     /** A theme resource, else the default theme's (like icons). */
@@ -143,7 +140,7 @@ public final class FogTexture {
     private static NativeImage plain() {
         NativeImage img = new NativeImage(64, 64, false);
         int c = Theme.FOG_BASE;
-        img.fillRect(0, 0, 64, 64, (c & 0xFF00FF00) | ((c >> 16) & 0xFF) | ((c & 0xFF) << 16)); // ARGB -> ABGR
+        img.fillRect(0, 0, 64, 64, c); // ARGB since 26.1
         return img;
     }
 
@@ -151,18 +148,18 @@ public final class FogTexture {
      * Fills the rectangle with the theme's fog; {@code offsetX/Y} scroll it (parallax with the map). One repeat is
      * {@link #REPEAT} GUI units unless the fog's settings say otherwise.
      */
-    public static void draw(GuiGraphics g, float x0, float y0, float x1, float y1, float offsetX, float offsetY, int tint) {
+    public static void draw(GuiGraphicsExtractor g, float x0, float y0, float x1, float y1, float offsetX, float offsetY, int tint) {
         draw(g, null, x0, y0, x1, y1, offsetX, offsetY, tint);
     }
 
     /** As above with the fog of a dimension (its own, else the theme's). */
-    public static void draw(GuiGraphics g, ResourceKey<Level> dimension, float x0, float y0, float x1, float y1, float offsetX, float offsetY,
+    public static void draw(GuiGraphicsExtractor g, ResourceKey<Level> dimension, float x0, float y0, float x1, float y1, float offsetX, float offsetY,
                             int tint) {
         Fog fog = of(dimension);
-        int id = fog.texture().getId();
+        Tex tex = fog.tex();
         float tile = fog.repeat();
         float u0 = mod(offsetX, tile) / tile, v0 = mod(offsetY, tile) / tile;
-        Draw.texturedQuad(g, id, x0, y0, x1, y1, u0, v0, u0 + (x1 - x0) / tile, v0 + (y1 - y0) / tile, tint);
+        Draw.texturedQuad(g, tex, x0, y0, x1, y1, u0, v0, u0 + (x1 - x0) / tile, v0 + (y1 - y0) / tile, tint);
     }
 
     private static float mod(float a, float m) {

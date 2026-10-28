@@ -66,7 +66,7 @@ public enum MarkerType {
      */
     public static boolean isOperator() {
         LocalPlayer p = Minecraft.getInstance().player;
-        return p != null && p.hasPermissions(2);
+        return p != null && p.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER);
     }
 
     /** The type of a saved pin, by name: never fails ({@link #parse} maps old and unknown names). */

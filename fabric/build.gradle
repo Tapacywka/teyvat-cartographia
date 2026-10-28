@@ -1,34 +1,22 @@
 plugins {
     id 'multiloader-loader'
-    id 'net.fabricmc.fabric-loom-remap'
+    id 'net.fabricmc.fabric-loom'
 }
 
 repositories {
     maven { url = 'https://maven.terraformersmc.com/releases/' }
 }
 
-loom {
-    mixin {
-        // A refmap in the JAR: Sinytra Connector maps the mixins' targets from it (without one the EditBox mixin
-        // found nothing to wrap under Connector).
-        useLegacyMixinAp = true
-        defaultRefmapName = "${mod_id}.refmap.json"
-    }
-}
-
 // Local development runs (tests in the modpack, gallery shots), when present; not in the public repository.
 if (rootProject.file('devtest-fabric.gradle').exists()) apply from: rootProject.file('devtest-fabric.gradle')
 
 dependencies {
+    // Minecraft 26.x ships with Mojang's names: no mappings, no remapping (the JAR is the compiled one).
     minecraft "com.mojang:minecraft:${minecraft_version}"
-    mappings loom.layered {
-        officialMojangMappings()
-        parchment("org.parchmentmc.data:parchment-${parchment_minecraft_version}:${parchment_mappings_version}@zip")
-    }
-    modImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
+    implementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
     // The settings button in the mod list (Mod Menu on Fabric, Connector Extras' bridge on NeoForge).
-    modCompileOnly "com.terraformersmc:modmenu:${modmenu_version}"
+    compileOnly "com.terraformersmc:modmenu:${modmenu_version}"
 }
 
 processResources {
@@ -43,15 +31,4 @@ processResources {
     ]
     inputs.properties props
     filesMatching('fabric.mod.json') { expand props }
-}
-
-// The released file is the remapped one, named like the plain JAR (multiloader-common).
-tasks.named('remapJar') {
-    archiveVersion = "v${project.version}"
-}
-
-tasks.withType(JavaCompile).configureEach {
-    // Full debug information: Sinytra Connector's mixin adapter reads the local variable tables of the mixin's methods
-    // and stopped the game without them (26.10.2026; until 0.4 'source,lines' saved 58 KB).
-    options.debugOptions.debugLevel = 'source,lines,vars'
 }

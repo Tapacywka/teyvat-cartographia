@@ -185,7 +185,7 @@ public final class MarkerStore {
 
     /** The pins of an old shared pins file: {@code {data: {pins: [...]}}} as the server saved them. */
     static List<Marker> readOldShared(net.minecraft.nbt.CompoundTag root) {
-        net.minecraft.nbt.Tag list = root.getCompound("data").get("pins");
+        net.minecraft.nbt.Tag list = root.getCompoundOrEmpty("data").get("pins");
         if (list == null) return List.of();
         return Marker.CODEC.listOf().parse(net.minecraft.nbt.NbtOps.INSTANCE, list)
                 .resultOrPartial(e -> TeyvatCartographia.LOGGER.error("Problem in the old shared pins: {}", e)).orElse(List.of());

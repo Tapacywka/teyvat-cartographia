@@ -1,16 +1,18 @@
 package net.tapacywka.teyvatcartographia.map.data;
 
 import com.mojang.blaze3d.platform.NativeImage;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.color.block.BlockTintSource;
+import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
+import net.minecraft.client.renderer.block.dispatch.BlockStateModelPart;
+import net.minecraft.client.resources.model.geometry.BakedQuad;
 import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.RandomSource;
@@ -30,6 +32,7 @@ import net.tapacywka.teyvatcartographia.TeyvatCartographia;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.IdentityHashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -122,7 +125,7 @@ public final class TextureColors {
         return false;
     }
 
-    private record Found(ResourceLocation texture, Tint tint, int fixedTint, int index) {}
+    private record Found(Identifier texture, Tint tint, int fixedTint, int index) {}
 
     private static void start(Minecraft mc) {
         RandomSource random = RandomSource.create(42L);
@@ -152,7 +155,7 @@ public final class TextureColors {
         }
         ResourceManager rm = mc.getResourceManager();
         Util.backgroundExecutor().execute(() -> {
-            Map<ResourceLocation, Integer> averages = new HashMap<>();
+            Map<Identifier, Integer> averages = new HashMap<>();
             Map<Block, Entry> out = new IdentityHashMap<>();
             for (Map.Entry<Block, Found> e : found.entrySet()) {
                 Entry en = entry(e.getValue(), averages, rm);
@@ -163,10 +166,10 @@ public final class TextureColors {
                 Entry en = entry(e.getValue(), averages, rm);
                 if (en != null) outStates.put(e.getKey(), en);
             }
-            water = averages.computeIfAbsent(ResourceLocation.withDefaultNamespace("block/water_still"), t -> read(rm, t));
-            lava = averages.computeIfAbsent(ResourceLocation.withDefaultNamespace("block/lava_still"), t -> read(rm, t));
-            snow = averages.computeIfAbsent(ResourceLocation.withDefaultNamespace("block/snow"), t -> read(rm, t));
-            ichor = averages.computeIfAbsent(ResourceLocation.fromNamespaceAndPath("the_sift", "block/ichor_still"), t -> read(rm, t));
+            water = averages.computeIfAbsent(Identifier.withDefaultNamespace("block/water_still"), t -> read(rm, t));
+            lava = averages.computeIfAbsent(Identifier.withDefaultNamespace("block/lava_still"), t -> read(rm, t));
+            snow = averages.computeIfAbsent(Identifier.withDefaultNamespace("block/snow"), t -> read(rm, t));
+            ichor = averages.computeIfAbsent(Identifier.fromNamespaceAndPath("the_sift", "block/ichor_still"), t -> read(rm, t));
             blocks = out;
             states = outStates;
             fresh = true;
@@ -184,12 +187,12 @@ public final class TextureColors {
     private static BlockState upper(Minecraft mc, BlockState s, RandomSource random) {
         if (!s.hasProperty(BlockStateProperties.DOUBLE_BLOCK_HALF)) return s;
         BlockState u = s.setValue(BlockStateProperties.DOUBLE_BLOCK_HALF, DoubleBlockHalf.UPPER);
-        BakedModel m = mc.getBlockRenderer().getBlockModel(u);
-        return m.getQuads(u, null, random).isEmpty() && m.getQuads(u, Direction.UP, random).isEmpty() ? s : u;
+        BlockStateModel m = model(mc, u);
+        return quads(m, null, random).isEmpty() && quads(m, Direction.UP, random).isEmpty() ? s : u;
     }
 
     /** A colour from its texture (averaged once per texture) and its fixed tint; null when the texture has none. */
-    private static Entry entry(Found f, Map<ResourceLocation, Integer> averages, ResourceManager rm) {
+    private static Entry entry(Found f, Map<Identifier, Integer> averages, ResourceManager rm) {
         int argb = averages.computeIfAbsent(f.texture(), t -> read(rm, t));
         if (argb == 0) return null;
         int texture = argb;
@@ -200,13 +203,13 @@ public final class TextureColors {
     /** The texture on a block's top face and its tint, or null for a block drawn without a model. */
     private static Found top(Minecraft mc, BlockState state, RandomSource random) {
         if (state.getRenderShape() != RenderShape.MODEL) return null;
-        BakedModel model = mc.getBlockRenderer().getBlockModel(state);
-        BakedQuad quad = first(model.getQuads(state, Direction.UP, random), true);
-        if (quad == null) quad = first(model.getQuads(state, null, random), true);
-        if (quad == null) quad = first(model.getQuads(state, null, random), false); // plants: their crossed planes
-        TextureAtlasSprite sprite = quad != null ? quad.getSprite() : model.getParticleIcon();
+        BlockStateModel model = model(mc, state);
+        BakedQuad quad = first(quads(model, Direction.UP, random), true);
+        if (quad == null) quad = first(quads(model, null, random), true);
+        if (quad == null) quad = first(quads(model, null, random), false); // plants: their crossed planes
+        TextureAtlasSprite sprite = quad != null ? quad.materialInfo().sprite() : model.particleMaterial().sprite();
         if (sprite == null) return null;
-        int index = quad != null ? quad.getTintIndex() : -1;
+        int index = quad != null ? quad.materialInfo().tintIndex() : -1;
         Tint tint = Tint.NONE;
         int fixed = -1;
         MapColor mc0 = state.getMapColor(EmptyBlockGetter.INSTANCE, BlockPos.ZERO);
@@ -233,14 +236,14 @@ public final class TextureColors {
                 if (vanilla && (state.getBlock() instanceof LeavesBlock || mc0 == MapColor.PLANT && !GRASSY.contains(state.getBlock()))) tint = Tint.FOLIAGE;
                 else if (vanilla && (mc0 == MapColor.GRASS || GRASSY.contains(state.getBlock()))) tint = Tint.GRASS;
                 else tint = Tint.WORLD;
-            } else if (c != -1 && rgb == FoliageColor.getDefaultColor()) tint = Tint.FOLIAGE;
-            else if (c != -1 && rgb == GrassColor.getDefaultColor()) tint = Tint.GRASS;
+            } else if (c != -1 && rgb == (FoliageColor.FOLIAGE_DEFAULT & 0xFFFFFF)) tint = Tint.FOLIAGE;
+            else if (c != -1 && rgb == (GrassColor.getDefaultColor() & 0xFFFFFF)) tint = Tint.GRASS;
             else if (c != -1) {
                 fixed = c;
                 tint = Tint.WORLD;
             }
         }
-        ResourceLocation name = sprite.contents().name();
+        Identifier name = sprite.contents().name();
         return name.equals(MissingTextureAtlasSprite.getLocation()) ? null : new Found(name, tint, fixed, index);
     }
 
@@ -256,10 +259,15 @@ public final class TextureColors {
     /** {@link #fixedTint}: the block's colour handler cannot answer without a world. */
     private static final int NEEDS_WORLD = Integer.MIN_VALUE;
 
-    /** The tint a block gives itself without a world: -1 without a colour handler (not tinted), or {@link #NEEDS_WORLD}. */
+    /**
+     * The tint a block gives itself without a world: -1 without a colour handler (not tinted), or {@link #NEEDS_WORLD}.
+     * Since 26.1 a handler is a tint source per tint index with a colour of its own for no world (the biome's default for
+     * the game's foliage and grass).
+     */
     private static int fixedTint(Minecraft mc, BlockState state, int index) {
         try {
-            return mc.getBlockColors().getColor(state, null, null, index);
+            BlockTintSource source = mc.getBlockColors().getTintSource(state, index);
+            return source == null ? -1 : source.color(state);
         } catch (RuntimeException e) {
             return NEEDS_WORLD;
         }
@@ -269,20 +277,34 @@ public final class TextureColors {
     private static final Set<Block> GRASSY = Set.of(Blocks.SHORT_GRASS, Blocks.TALL_GRASS, Blocks.FERN, Blocks.LARGE_FERN, Blocks.SUGAR_CANE);
 
     private static BakedQuad first(List<BakedQuad> quads, boolean upOnly) {
-        for (BakedQuad q : quads) if (!upOnly || q.getDirection() == Direction.UP) return q;
+        for (BakedQuad q : quads) if (!upOnly || q.direction() == Direction.UP) return q;
         return null;
     }
 
+    private static BlockStateModel model(Minecraft mc, BlockState state) {
+        return mc.getModelManager().getBlockStateModelSet().get(state);
+    }
+
+    /** The quads of a block model facing {@code side} (null: not culled by a side), over all its parts. */
+    private static List<BakedQuad> quads(BlockStateModel model, Direction side, RandomSource random) {
+        List<BlockStateModelPart> parts = new ArrayList<>();
+        model.collectParts(random, parts);
+        if (parts.size() == 1) return parts.getFirst().getQuads(side);
+        List<BakedQuad> out = new ArrayList<>();
+        for (BlockStateModelPart part : parts) out.addAll(part.getQuads(side));
+        return out;
+    }
+
     /** The average colour of a texture ({@code block/stone}: {@code textures/block/stone.png}), 0 if unreadable. */
-    private static int read(ResourceManager rm, ResourceLocation texture) {
-        ResourceLocation file = texture.withPath(p -> "textures/" + p + ".png");
+    private static int read(ResourceManager rm, Identifier texture) {
+        Identifier file = texture.withPath(p -> "textures/" + p + ".png");
         Optional<Resource> res = rm.getResource(file);
         if (res.isEmpty()) return 0;
         try (InputStream in = res.get().open(); NativeImage img = NativeImage.read(in)) {
             int w = img.getWidth(), h = img.getHeight();
             int frame = h > w && h % w == 0 ? w : h; // an animated texture: its first frame
             int[] abgr = new int[w * frame];
-            for (int y = 0; y < frame; y++) for (int x = 0; x < w; x++) abgr[y * w + x] = img.getPixelRGBA(x, y);
+            for (int y = 0; y < frame; y++) for (int x = 0; x < w; x++) abgr[y * w + x] = Pixels.abgr(img, x, y);
             return average(abgr);
         } catch (Exception e) {
             return 0;

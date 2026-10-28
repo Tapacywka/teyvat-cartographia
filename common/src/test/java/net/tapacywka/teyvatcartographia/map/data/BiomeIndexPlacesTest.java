@@ -3,7 +3,7 @@ package net.tapacywka.teyvatcartographia.map.data;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.biome.Biome;
 import org.junit.jupiter.api.Test;
 
@@ -15,8 +15,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** The places of a biome that the map search offers: connected patches, small ones dropped, nearest first. */
 class BiomeIndexPlacesTest {
-    private static final ResourceKey<Biome> PLAINS = ResourceKey.create(Registries.BIOME, ResourceLocation.withDefaultNamespace("plains"));
-    private static final ResourceKey<Biome> FOREST = ResourceKey.create(Registries.BIOME, ResourceLocation.withDefaultNamespace("forest"));
+    private static final ResourceKey<Biome> PLAINS = ResourceKey.create(Registries.BIOME, Identifier.withDefaultNamespace("plains"));
+    private static final ResourceKey<Biome> FOREST = ResourceKey.create(Registries.BIOME, Identifier.withDefaultNamespace("forest"));
     private static final int N = MapTile.CHUNKS;
 
     /** One region at the origin, all forest, with plains on the given chunks (x, z pairs) in colour 0xFF102030. */
@@ -94,7 +94,7 @@ class BiomeIndexPlacesTest {
 
     @Test
     void aBiomeNotOnTheMapHasNoPlaces() {
-        ResourceKey<Biome> desert = ResourceKey.create(Registries.BIOME, ResourceLocation.withDefaultNamespace("desert"));
+        ResourceKey<Biome> desert = ResourceKey.create(Registries.BIOME, Identifier.withDefaultNamespace("desert"));
         BiomeIndex.Places p = BiomeIndex.places(snapshot(square(2, 2, 3)), desert, 0, 0);
         assertTrue(p.places().isEmpty());
         assertEquals(0, p.color());

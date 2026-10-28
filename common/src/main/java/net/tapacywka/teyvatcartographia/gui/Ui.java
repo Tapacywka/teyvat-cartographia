@@ -5,7 +5,7 @@ import net.tapacywka.teyvatcartographia.render.Draw;
 import net.tapacywka.teyvatcartographia.render.DrawText;
 import net.tapacywka.teyvatcartographia.render.Icon;
 import net.tapacywka.teyvatcartographia.render.Theme;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 
 /**
@@ -46,7 +46,7 @@ public final class Ui {
     // ------------------------------------------------------------------ panel chrome
 
     /** Side panel chrome: body (dark or parchment), header with icon, gold title and close cross. */
-    public static void panel(GuiGraphics g, float x, float y, float w, float h, boolean dark, Component title, Icon titleIcon, int mx, int my) {
+    public static void panel(GuiGraphicsExtractor g, float x, float y, float w, float h, boolean dark, Component title, Icon titleIcon, int mx, int my) {
         // Translucent body over the blurred backdrop (vanilla "Menu Background Blur"), if the screen captured one.
         Backdrop.draw(g, x, y, x + w, y + h);
         // The same in both styles: a panel is a plain rectangle (no frame or bevel).
@@ -79,7 +79,7 @@ public final class Ui {
      * the space between that circle and the right edge (so it looks centred next to the icon).
      * Height is always {@link Grid#ACTION_H}.
      */
-    public static void actionButton(GuiGraphics g, float x, float y, float w, Component label, Icon icon,
+    public static void actionButton(GuiGraphicsExtractor g, float x, float y, float w, Component label, Icon icon,
                                     boolean enabled, int mx, int my) {
         float h = Grid.ACTION_H;
         boolean hover = enabled && Draw.inRect(mx, my, x, y, w, h);
@@ -112,7 +112,7 @@ public final class Ui {
      * Small icon button ({@link Grid#TOOL} square, e.g. "delete pin" at the end of a field), styled like the icon
      * badge of the action buttons (dark fill, yellow icon): a circle in the rounded style, a square in the rectangular one.
      */
-    public static void toolButton(GuiGraphics g, float x, float y, Icon icon, int mx, int my) {
+    public static void toolButton(GuiGraphicsExtractor g, float x, float y, Icon icon, int mx, int my) {
         float s = Grid.TOOL, cx = x + s / 2f, cy = y + s / 2f;
         boolean hover = Draw.inRect(mx, my, x, y, s, s);
         if (hover) Cursors.want(Cursors.Shape.HAND);
@@ -136,7 +136,7 @@ public final class Ui {
     }
 
     /** Toggle switch ({@link Grid#TOGGLE_W} x {@link Grid#TOGGLE_H}) in the style of the "Map Settings" switches. */
-    public static void toggle(GuiGraphics g, float x, float y, boolean on, int mx, int my) {
+    public static void toggle(GuiGraphicsExtractor g, float x, float y, boolean on, int mx, int my) {
         float w = Grid.TOGGLE_W, h = Grid.TOGGLE_H, r = h / 2f;
         boolean hover = Draw.inRect(mx, my, x, y, w, h);
         if (hover) Cursors.want(Cursors.Shape.HAND);
@@ -166,7 +166,7 @@ public final class Ui {
     }
 
     /** Grid tile used by the region (dimension) list: dark tile, thin border, orange bar when active. */
-    public static void gridTile(GuiGraphics g, float x, float y, float w, Component label, boolean active, int mx, int my) {
+    public static void gridTile(GuiGraphicsExtractor g, float x, float y, float w, Component label, boolean active, int mx, int my) {
         float h = Grid.TILE_H;
         boolean hover = Draw.inRect(mx, my, x, y, w, h);
         if (hover) Cursors.want(Cursors.Shape.HAND);
@@ -188,7 +188,7 @@ public final class Ui {
     }
 
     /** Dark translucent pill ({@link Grid#PILL_H} high) with an icon and text, right-aligned at {@code rightX}. Returns width. */
-    public static float pill(GuiGraphics g, float rightX, float y, Component text, Icon icon, int iconColor) {
+    public static float pill(GuiGraphicsExtractor g, float rightX, float y, Component text, Icon icon, int iconColor) {
         float h = Grid.PILL_H;
         // Rounded ends: content inset = h/2 on both sides; icon sits in the left cap.
         float inset = h / 2f;
@@ -202,12 +202,12 @@ public final class Ui {
     }
 
     /** Round button ({@link Grid#BUTTON} diameter) centred at (cx, cy). */
-    public static void iconButton(GuiGraphics g, float cx, float cy, Icon icon, boolean light, int mx, int my) {
+    public static void iconButton(GuiGraphicsExtractor g, float cx, float cy, Icon icon, boolean light, int mx, int my) {
         iconButton(g, cx, cy, Grid.BUTTON, Grid.ICON, icon, light, mx, my);
     }
 
     /** Round button of a custom diameter (e.g. the larger compass button). */
-    public static void iconButton(GuiGraphics g, float cx, float cy, float diameter, float iconSize, Icon icon, boolean light, int mx, int my) {
+    public static void iconButton(GuiGraphicsExtractor g, float cx, float cy, float diameter, float iconSize, Icon icon, boolean light, int mx, int my) {
         float r = diameter / 2f;
         boolean hover = buttonHit(cx, cy, diameter, mx, my);
         if (hover) Cursors.want(Cursors.Shape.HAND);
@@ -238,13 +238,13 @@ public final class Ui {
      * Input/value field on the light panel: a capsule in the rounded style (matching the round buttons and icons it
      * carries), a plain rectangle in the rectangular one.
      */
-    public static void chip(GuiGraphics g, float x, float y, float w, float h, int fill) {
+    public static void chip(GuiGraphicsExtractor g, float x, float y, float w, float h, int fill) {
         if (Theme.Style.squareUi) Draw.rect(g, x, y, x + w, y + h, fill);
         else Draw.capsule(g, x, y, w, h, fill);
     }
 
     /** Pill shape: a capsule in the rounded style, a rectangle (with its outline, if any) in the rectangular one. */
-    public static void pillShape(GuiGraphics g, float x, float y, float w, float h, int fill, int outline) {
+    public static void pillShape(GuiGraphicsExtractor g, float x, float y, float w, float h, int fill, int outline) {
         if (Theme.Style.squareUi) {
             Draw.rect(g, x, y, x + w, y + h, fill);
             if ((outline >>> 24) != 0) Draw.frame(g, x, y, w, h, 1, outline);
@@ -255,7 +255,7 @@ public final class Ui {
     }
 
     /** Tooltip box: rounded in the rounded style; in the rectangular one a vanilla tooltip (fill with an inset outline). */
-    static void tooltipBox(GuiGraphics g, float x, float y, float w, float h) {
+    static void tooltipBox(GuiGraphicsExtractor g, float x, float y, float w, float h) {
         if (Theme.Style.squareUi) {
             Draw.rect(g, x, y, x + w, y + h, Theme.TOOLTIP);
             Draw.frame(g, x + 1, y + 1, w - 2, h - 2, 1, Theme.TOOLTIP_OUTLINE);
@@ -266,7 +266,7 @@ public final class Ui {
     }
 
     /** Tooltip with a gold title and a word-wrapped description (max ~200 units wide), kept on screen. */
-    public static void wrappedTooltip(GuiGraphics g, Component title, Component body, int mx, int my, int screenW, int screenH) {
+    public static void wrappedTooltip(GuiGraphicsExtractor g, Component title, Component body, int mx, int my, int screenW, int screenH) {
         int maxW = Math.min(200, screenW - 2 * Grid.MARGIN - 2 * Grid.PAD);
         java.util.List<net.minecraft.util.FormattedCharSequence> lines = DrawText.font().split(body, maxW);
         int w = DrawText.width(title);
@@ -283,16 +283,16 @@ public final class Ui {
         DrawText.text(g, title, x + Grid.PAD, y + Grid.PAD, Theme.GOLD, false);
         float ty = y + Grid.PAD + DrawText.LINE + Grid.GAP;
         for (net.minecraft.util.FormattedCharSequence l : lines) {
-            g.pose().pushPose();
-            g.pose().translate(Draw.snap(x + Grid.PAD), Draw.snap(ty), 0);
-            g.drawString(DrawText.font(), l, 0, 0, Theme.CREAM, false);
-            g.pose().popPose();
+            g.pose().pushMatrix();
+            g.pose().translate(Draw.snap(x + Grid.PAD), Draw.snap(ty));
+            g.text(DrawText.font(), l, 0, 0, Theme.CREAM, false);
+            g.pose().popMatrix();
             ty += lineStep;
         }
     }
 
     /** Tooltip box with a gold title and an optional cream subtitle, placed near the cursor and kept on screen. */
-    public static void tooltip(GuiGraphics g, String title, String sub, int mx, int my, int screenW, int screenH) {
+    public static void tooltip(GuiGraphicsExtractor g, String title, String sub, int mx, int my, int screenW, int screenH) {
         int w = Math.max(DrawText.width(title), sub == null ? 0 : DrawText.width(sub)) + 2 * Grid.PAD;
         int h = Grid.PAD * 2 + DrawText.LINE + (sub == null ? 0 : DrawText.LINE + 2);
         DrawText.room(title, screenW - 2 * Grid.MARGIN - 2 * Grid.PAD);
@@ -316,7 +316,7 @@ public final class Ui {
      * the side panels it is frosted glass: the vanilla menu blur ({@link Backdrop}) under the translucent panel colour,
      * box and pointer as one shape with one outline.
      */
-    public static void popupLeftOf(GuiGraphics g, Component title, java.util.List<Component> lines, float tipX, float cy, float bottom) {
+    public static void popupLeftOf(GuiGraphicsExtractor g, Component title, java.util.List<Component> lines, float tipX, float cy, float bottom) {
         popupLeftOf(g, title, lines, 0, 0, tipX, cy, bottom);
     }
 
@@ -327,7 +327,7 @@ public final class Ui {
      * {@link #popupLeftOf} at least {@code minW} wide inside its padding, with {@code extraH} more room under the lines
      * (for buttons); returns its box.
      */
-    public static Box popupLeftOf(GuiGraphics g, Component title, java.util.List<Component> lines, int minW, int extraH, float tipX, float cy, float bottom) {
+    public static Box popupLeftOf(GuiGraphicsExtractor g, Component title, java.util.List<Component> lines, int minW, int extraH, float tipX, float cy, float bottom) {
         int w = Math.max(minW, DrawText.width(title));
         for (Component l : lines) w = Math.max(w, DrawText.width(l));
         w += 2 * Grid.PAD;
@@ -363,7 +363,7 @@ public final class Ui {
     }
 
     /** A one-line tooltip whose right edge is at {@code right}, centred on {@code cy} (beside a button at the screen edge). */
-    public static void tooltipLeftOf(GuiGraphics g, String title, float right, float cy) {
+    public static void tooltipLeftOf(GuiGraphicsExtractor g, String title, float right, float cy) {
         int w = DrawText.width(title) + 2 * Grid.PAD, h = Grid.PAD * 2 + DrawText.LINE;
         DrawText.room(title, right - Grid.MARGIN - 2 * Grid.PAD);
         float x = Draw.snap(right - w), y = Draw.snap(cy - h / 2f);

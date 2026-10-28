@@ -9,9 +9,9 @@ import net.tapacywka.teyvatcartographia.render.Draw;
 import net.tapacywka.teyvatcartographia.render.FogTexture;
 import net.tapacywka.teyvatcartographia.render.MapLayerRenderer;
 import net.tapacywka.teyvatcartographia.render.Theme;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 /**
  * The picture of the world map screen: the fog-of-war backdrop with a gentle parallax (it follows panning and stays
@@ -37,7 +37,7 @@ final class MapPicture {
     private long kDrawnNs;
 
     /** Draws the picture of {@code view} (centre and scale given separately) over the whole screen. */
-    void draw(GuiGraphics g, TileStore store, MapView view, double centerX, double centerZ, double scale, int width, int height, float pt) {
+    void draw(GuiGraphicsExtractor g, TileStore store, MapView view, double centerX, double centerZ, double scale, int width, int height, float pt) {
         updateFogParallax(centerX, centerZ, scale);
         // Cave layers are not lit by the sky.
         boolean cave = store != null && store.cave;
@@ -54,15 +54,12 @@ final class MapPicture {
                 || fogOffsetX != kFogX || fogOffsetZ != kFogZ || Theme.generation() != kTheme;
         if (dirty) {
             layer.bind(g, w.getWidth(), w.getHeight(), false);
-            Draw.beginLayer();
             try {
                 // The dimension's own fog (the Aether's sea of clouds), not under a cave layer.
                 FogTexture.draw(g, store == null || store.cave ? null : store.dimension, 0, 0, width, height, (float) fogOffsetX, (float) fogOffsetZ, Theme.WHITE);
                 complete = MapLayerRenderer.drawRect(g, store, view, 0, 0, width, height, tint, night);
-                g.flush();
             } finally {
-                Draw.endLayer();
-                CachedLayer.unbind();
+                layer.unbind();
             }
             kStore = store;
             kVersion = version;
@@ -79,7 +76,7 @@ final class MapPicture {
             kFogZ = fogOffsetZ;
             kTheme = Theme.generation();
         }
-        Draw.texturedQuadPremultiplied(g, layer.textureId(), 0, 0, width, height, 0f, 1f, 1f, 0f);
+        Draw.texturedQuadPremultiplied(g, layer.tex(), 0, 0, width, height, 0f, 1f, 1f, 0f);
     }
 
     /** The fog follows panning only: zooming (a scale change) leaves it where it is. */

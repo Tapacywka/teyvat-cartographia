@@ -10,7 +10,7 @@ import net.tapacywka.teyvatcartographia.render.DrawText;
 import net.tapacywka.teyvatcartographia.render.Icon;
 import net.tapacywka.teyvatcartographia.render.Theme;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 
 import java.util.List;
@@ -121,7 +121,7 @@ public final class SettingsPanel extends SidePanel {
     }
 
     @Override
-    protected void renderBody(GuiGraphics g, int mx, int my, float bx, float by, float bw) {
+    protected void renderBody(GuiGraphicsExtractor g, int mx, int my, float bx, float by, float bw) {
         for (int i = 0; i < rows.size(); i++) {
             Row r = rows.get(i);
             float ty = DrawText.textY(rowY(i), Grid.ROW);

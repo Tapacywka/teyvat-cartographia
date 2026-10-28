@@ -1,5 +1,8 @@
 package net.tapacywka.teyvatcartographia.gui;
 
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.world.level.biome.Biome;
 import net.tapacywka.teyvatcartographia.client.Keybinds;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
@@ -31,7 +34,7 @@ import net.tapacywka.teyvatcartographia.render.MapLayerRenderer;
 import net.tapacywka.teyvatcartographia.render.MarkerRenderer;
 import net.tapacywka.teyvatcartographia.render.Theme;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.chat.Component;
@@ -136,10 +139,10 @@ public final class WorldMapScreen extends Screen {
 
     /** The mod's name for a dimension, else its id's path made readable ("the_aether" as "The Aether"). */
     private static Component buildDimensionName(ResourceKey<Level> dimension) {
-        String key = net.minecraft.Util.makeDescriptionId("teyvatcartographia.dimension", dimension.location());
+        String key = net.minecraft.util.Util.makeDescriptionId("teyvatcartographia.dimension", dimension.identifier());
         if (net.minecraft.client.resources.language.I18n.exists(key)) return Component.translatable(key);
-        String pretty = readableName(dimension.location().getPath());
-        return Component.literal(pretty.isEmpty() ? dimension.location().toString() : pretty);
+        String pretty = readableName(dimension.identifier().getPath());
+        return Component.literal(pretty.isEmpty() ? dimension.identifier().toString() : pretty);
     }
 
     /** An id's path as a title: words split at "_", "/" and "-", each with a capital letter ("the_aether": "The Aether"). */
@@ -342,6 +345,7 @@ public final class WorldMapScreen extends Screen {
         MapDataManager.get().releaseViewStores();
         chrome.destroy();
         picture.destroy();
+        Backdrop.dispose();
         EdgeFade.dispose(); // the pin list's and pick list's dissolving edges
     }
 
@@ -402,12 +406,12 @@ public final class WorldMapScreen extends Screen {
     // ================================================================== rendering
 
     @Override
-    public void renderBackground(GuiGraphics g, int mx, int my, float pt) {
+    public void extractBackground(GuiGraphicsExtractor g, int mx, int my, float pt) {
         // The map covers the whole screen; no vanilla blur/dirt background.
     }
 
     @Override
-    public void render(GuiGraphics g, int mx, int my, float pt) {
+    public void extractRenderState(GuiGraphicsExtractor g, int mx, int my, float pt) {
         long now = System.nanoTime();
         float dt = Math.min(0.1f, (now - lastFrameNs) / 1e9f);
         lastFrameNs = now;
@@ -436,15 +440,13 @@ public final class WorldMapScreen extends Screen {
         // 7. Off-screen indicator of the tracked pin, then the player
         drawTargetIndicator(g, mx, my);
         drawPlayer(g, mx, my, pt);
-        // Outlined map text writes depth (slightly in front of z = 0), which would cut holes into UI text drawn
-        // later at the same place. Everything below is UI on top of the map, so start it with a clean depth buffer.
-        RenderSystem.clear(GL11.GL_DEPTH_BUFFER_BIT, Minecraft.ON_OSX);
 
         // 8. Panel (dims the map behind it, like the references; the panel itself is frosted glass)
         if (panel != null) {
             // Re-blur only when the map behind the panel moved, and a few times a second for its animations.
             boolean moved = centerX != blurX || centerZ != blurZ || scale != blurScale;
-            Backdrop.capture(g, pt, moved || time - blurTime > 0.25f, this);
+            Backdrop.capture(g, pt, moved || time - blurTime > 0.25f, this,
+                    () -> picture.draw(g, store, view, centerX, centerZ, scale, width, height, pt));
             if (moved || time - blurTime > 0.25f) {
                 blurX = centerX;
                 blurZ = centerZ;
@@ -501,7 +503,7 @@ public final class WorldMapScreen extends Screen {
     private float[] gridRects = new float[256];
     private int[] gridColors = new int[64];
 
-    private void drawGrid(GuiGraphics g) {
+    private void drawGrid(GuiGraphicsExtractor g) {
         // Region lines from 1/8 like the biome names, chunk lines from 2 (closer, they fill the map).
         if (scale < MapView.DETAIL_FROM - 1e-6) return;
         int step = scale >= 2 ? 16 : 256;
@@ -546,7 +548,7 @@ public final class WorldMapScreen extends Screen {
      * through the fog, in the colour of the sea over deep water (user decision 26.10.2026), with the sea icon where each
      * crossing begins.
      */
-    private void drawRoute(GuiGraphics g) {
+    private void drawRoute(GuiGraphicsExtractor g) {
         seaIcons = 0;
         airIcon = false;
         Navigation.Target t = Navigation.target();
@@ -555,7 +557,7 @@ public final class WorldMapScreen extends Screen {
         LocalPlayer p = Minecraft.getInstance().player;
         if (n < 2 && Route.oldCount() < 2 || p == null) return;
         // The walked part is gone: the line starts at its point nearest the player.
-        net.minecraft.world.phys.Vec3 me = p.getPosition(Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(true));
+        net.minecraft.world.phys.Vec3 me = p.getPosition(Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(true));
         int first = Route.cut(me.x, me.z);
         // By air near white, dark grey through the fog (user decision 27.10.2026); else golden, grey through the fog.
         boolean air = DirectPath.active();
@@ -628,7 +630,7 @@ public final class WorldMapScreen extends Screen {
     private float airX, airY;
 
     /** The line collected by {@link #linePoint}, with its shadow, the pattern starting {@code phase} GUI units in. */
-    private void drawLine(GuiGraphics g, int color, float phase) {
+    private void drawLine(GuiGraphicsExtractor g, int color, float phase) {
         Draw.route(g, routeXY, routeFog, routeWater, lineN, 2.4f, Theme.ROUTE_SHADOW, Theme.ROUTE_SHADOW, Theme.ROUTE_SHADOW, phase);
         Draw.route(g, routeXY, routeFog, routeWater, lineN, 1.4f, color, lineFog, Theme.ROUTE_SEA, phase);
     }
@@ -749,7 +751,7 @@ public final class WorldMapScreen extends Screen {
     /** The layer shown while the pins are drawn (pins on other layers get an arrow). */
     private Integer shownBand;
 
-    private void drawMarkers(GuiGraphics g, int mx, int my) {
+    private void drawMarkers(GuiGraphicsExtractor g, int mx, int my) {
         float size = markerSize();
         shownBand = viewedBand();
         boolean overUi = panel != null && panel.contains(mx, my) || pick != null && pick.contains(mx, my) || menu != null && menu.contains(mx, my);
@@ -770,7 +772,7 @@ public final class WorldMapScreen extends Screen {
     }
 
     /** Rings from a search result for {@link #FOUND_PULSES} seconds after the flight; a biome place also gets a point. */
-    private void drawFound(GuiGraphics g) {
+    private void drawFound(GuiGraphicsExtractor g) {
         float since = time - foundAt;
         if (foundDim != viewedDim || since < 0 || since >= FOUND_PULSES) return;
         float sx = view.screenX(foundX, foundZ), sy = view.screenY(foundX, foundZ);
@@ -786,7 +788,7 @@ public final class WorldMapScreen extends Screen {
         return selected != null && selected.id.equals(m.id);
     }
 
-    private void drawMarker(GuiGraphics g, Marker m, float size, int mx, int my, boolean overUi) {
+    private void drawMarker(GuiGraphicsExtractor g, Marker m, float size, int mx, int my, boolean overUi) {
         float sx = view.screenX(m.centerX(), m.centerZ()), sy = view.screenY(m.centerX(), m.centerZ());
         if (sx < -size || sy < -size || sx > width + size || sy > height + size) return;
         boolean hover = !overUi && !dragging && Draw.inCircle(mx, my, sx, sy, size * 0.6f);
@@ -803,12 +805,12 @@ public final class WorldMapScreen extends Screen {
         return (p - (float) Math.floor(p)) * MarkerRenderer.PULSE_PERIOD;
     }
 
-    private void drawSelectedAgain(GuiGraphics g) {
+    private void drawSelectedAgain(GuiGraphicsExtractor g) {
         float sx = view.screenX(selected.centerX(), selected.centerZ()), sy = view.screenY(selected.centerX(), selected.centerZ());
         MarkerRenderer.draw(g, selected.type, sx, sy, markerSize(), true, false, 1f, MarkerVisibility.layerRelation(selected, viewedBand()));
     }
 
-    private void drawSelectedPoint(GuiGraphics g) {
+    private void drawSelectedPoint(GuiGraphicsExtractor g) {
         float sx = view.screenX(selX, selZ), sy = view.screenY(selX, selZ);
         float pulse = 1f + (float) Math.sin(time * 5) * 0.08f;
         Draw.ring(g, sx, sy, 0, 14 * pulse, Theme.PING_GLOW, Theme.withAlpha(Theme.PING_GLOW, 0f));
@@ -854,7 +856,7 @@ public final class WorldMapScreen extends Screen {
      * towards the real position (sx, sy) in {@code accent} (the player's green, the tracked pin's gold)
      * (reference: landscape examples).
      */
-    private void drawIndicator(GuiGraphics g, float ix, float iy, float sx, float sy, Icon icon, int tint, int accent, float angle, int mx, int my) {
+    private void drawIndicator(GuiGraphicsExtractor g, float ix, float iy, float sx, float sy, Icon icon, int tint, int accent, float angle, int mx, int my) {
         boolean hover = Draw.inCircle(mx, my, ix, iy, INDICATOR_R + 2);
         int glow = Theme.withAlpha(accent, 0.25f);
         Draw.ring(g, ix, iy, INDICATOR_R - 1, INDICATOR_R + 6, glow, Theme.withAlpha(glow, 0f));
@@ -874,7 +876,7 @@ public final class WorldMapScreen extends Screen {
         Draw.triangle(g, ax + ux * 5, ay + uy * 5, ax - uy * 4, ay + ux * 4, ax + uy * 4, ay - ux * 4, accent);
     }
 
-    private void drawPlayer(GuiGraphics g, int mx, int my, float pt) {
+    private void drawPlayer(GuiGraphicsExtractor g, int mx, int my, float pt) {
         indicatorX = Float.NaN;
         LocalPlayer p = Minecraft.getInstance().player;
         if (p == null || !viewingPlayerDim()) return;
@@ -903,7 +905,7 @@ public final class WorldMapScreen extends Screen {
     }
 
     /** Off-screen indicator for the tracked pin, like the player's (Genshin shows both). Click: fly to the pin. */
-    private void drawTargetIndicator(GuiGraphics g, int mx, int my) {
+    private void drawTargetIndicator(GuiGraphicsExtractor g, int mx, int my) {
         targetIndicatorX = Float.NaN;
         Marker m = trackedMarker();
         if (m == null) return;
@@ -1040,7 +1042,7 @@ public final class WorldMapScreen extends Screen {
     private int kBandCount, kLayerFirst;
     private boolean kLayersOpen;
 
-    private void drawChrome(GuiGraphics g, int mx, int my, TileStore store) {
+    private void drawChrome(GuiGraphicsExtractor g, int mx, int my, TileStore store) {
         boolean panelOpen = panel != null, locate = viewingPlayerDim();
         Component cursor = null, player = null, area = null, explored = null;
         if (!panelOpen) {
@@ -1059,7 +1061,6 @@ public final class WorldMapScreen extends Screen {
                 || MapDataManager.get().caveBands().size() != kBandCount || layerShownFrom() != kLayerFirst || layersOpen != kLayersOpen;
         if (dirty) {
             chrome.bind(g, w.getWidth(), w.getHeight(), false);
-            Draw.beginLayer();
             try {
                 drawZoomSlider(g, mx, my);
                 if (!panelOpen) {
@@ -1068,10 +1069,8 @@ public final class WorldMapScreen extends Screen {
                     drawBottomRight(g, mx, my, store);
                     drawLayers(g, mx, my);
                 }
-                g.flush();
             } finally {
-                Draw.endLayer();
-                CachedLayer.unbind();
+                chrome.unbind();
             }
             chromeValid = true;
             kHover = hover;
@@ -1104,7 +1103,7 @@ public final class WorldMapScreen extends Screen {
             float[] r = chromeRects[i];
             float x0 = Math.max(0, r[0]), y0 = Math.max(0, r[1]), x1 = Math.min(width, r[2]), y1 = Math.min(height, r[3]);
             if (x1 <= x0 || y1 <= y0) continue;
-            Draw.texturedQuadPremultiplied(g, chrome.textureId(), x0, y0, x1, y1,
+            Draw.texturedQuadPremultiplied(g, chrome.tex(), x0, y0, x1, y1,
                     x0 / width, 1f - y0 / height, x1 / width, 1f - y1 / height);
         }
     }
@@ -1133,7 +1132,7 @@ public final class WorldMapScreen extends Screen {
         return h;
     }
 
-    private void drawTopBar(GuiGraphics g, int mx, int my) {
+    private void drawTopBar(GuiGraphicsExtractor g, int mx, int my) {
         Ui.iconButton(g, closeX(), closeY(), COMPASS_D, BIG_ICON, Icon.CLOSE, true, mx, my);
         float right = closeX() - BIG_R - Grid.PAD;
         float y = BAR_Y;
@@ -1164,7 +1163,7 @@ public final class WorldMapScreen extends Screen {
         return MapView.ZOOM_STEPS[(int) Math.round(Math.max(0, Math.min(1, t)) * (MapView.ZOOM_STEPS.length - 1))];
     }
 
-    private void sliderEnd(GuiGraphics g, float x, float y, Icon icon, boolean hover) {
+    private void sliderEnd(GuiGraphicsExtractor g, float x, float y, Icon icon, boolean hover) {
         if (Theme.Style.squareUi) {
             Draw.rect(g, x - 8, y - 8, x + 8, y + 8, Theme.ZOOM_BUTTON);
             Draw.frame(g, x - 8, y - 8, 16, 16, 1, hover ? Theme.ZOOM_BUTTON_OUTLINE_HOVER : Theme.ZOOM_BUTTON_OUTLINE);
@@ -1180,7 +1179,7 @@ public final class WorldMapScreen extends Screen {
         return Theme.Style.squareUi ? 4 : 8;
     }
 
-    private void drawZoomSlider(GuiGraphics g, int mx, int my) {
+    private void drawZoomSlider(GuiGraphicsExtractor g, int mx, int my) {
         float x = leftColumnX(), top = sliderTop(), bottom = sliderBottom();
         sliderEnd(g, x, sliderPlusY(), Icon.PLUS, Draw.inCircle(mx, my, x, sliderPlusY(), 9));
         sliderEnd(g, x, sliderMinusY(), Icon.MINUS, Draw.inCircle(mx, my, x, sliderMinusY(), 9));
@@ -1209,7 +1208,7 @@ public final class WorldMapScreen extends Screen {
         }
         DrawText.room(zoomText, ZOOM_LABEL_W);
         float lw = DrawText.width(zoomText);
-        DrawText.textOutlined(g, zoomText, x + ZOOM_LABEL_GAP + lw / 2f, ty, Theme.LABEL_TEXT, Theme.LABEL_OUTLINE, false);
+        DrawText.textOutlined(g, zoomText, x + ZOOM_LABEL_GAP + lw / 2f, ty, Theme.LABEL_TEXT, Theme.LABEL_OUTLINE);
     }
 
     /** The zoom label beside the slider's thumb: its gap from the track's centre and the room it may take ("1/32"). */
@@ -1217,14 +1216,14 @@ public final class WorldMapScreen extends Screen {
     private String zoomLabel;
     private Component zoomText;
 
-    private void drawBottomLeft(GuiGraphics g, int mx, int my) {
+    private void drawBottomLeft(GuiGraphicsExtractor g, int mx, int my) {
         float y = rowButtonY();
         Ui.iconButton(g, rowButtonX(0), y, COMPASS_D, BIG_ICON, Icon.GEAR, true, mx, my);
         Ui.iconButton(g, rowButtonX(1), y, Icon.LIST, false, mx, my);
         if (viewingPlayerDim()) Ui.iconButton(g, rowButtonX(2), y, Icon.LOCATE, false, mx, my);
     }
 
-    private void drawBottomRight(GuiGraphics g, int mx, int my, TileStore store) {
+    private void drawBottomRight(GuiGraphicsExtractor g, int mx, int my, TileStore store) {
         Ui.iconButton(g, compassX(), compassY(), COMPASS_D, COMPASS_ICON, Icon.COMPASS, true, mx, my);
         float right = compassX() - COMPASS_D / 2f - Grid.PAD;
         // Two lines (8 + 8 glyph height, 8 gap) span the compass button's height: cy - 12 .. cy + 12.
@@ -1360,7 +1359,7 @@ public final class WorldMapScreen extends Screen {
         return mx >= layerX() - BIG_R - Grid.GAP && my >= top && my <= bottom;
     }
 
-    private void drawLayers(GuiGraphics g, int mx, int my) {
+    private void drawLayers(GuiGraphicsExtractor g, int mx, int my) {
         if (!layersShown()) return;
         int[] it = items();
         int from = layerShownFrom(), to = layerShownTo();
@@ -1403,7 +1402,7 @@ public final class WorldMapScreen extends Screen {
      * Tooltip of the layer field under the mouse, left of it: "Layers" on the closed large button, "Surface" on the
      * open one, the band's name on a small one. Returns whether one was drawn.
      */
-    private boolean drawLayerTooltip(GuiGraphics g, int mx, int my) {
+    private boolean drawLayerTooltip(GuiGraphicsExtractor g, int mx, int my) {
         float right = layerX() - BIG_R - Grid.GAP;
         if (layerButtonHit(mx, my)) {
             String key = layersOpen ? "teyvatcartographia.map.layer.surface" : "teyvatcartographia.map.layers";
@@ -1432,7 +1431,7 @@ public final class WorldMapScreen extends Screen {
         });
     }
 
-    private void drawTooltip(GuiGraphics g, Marker m, int mx, int my) {
+    private void drawTooltip(GuiGraphicsExtractor g, Marker m, int mx, int my) {
         LocalPlayer p = Minecraft.getInstance().player;
         // Second line: distance from the player (when in the same dimension).
         String sub = null;
@@ -1445,7 +1444,9 @@ public final class WorldMapScreen extends Screen {
     // ================================================================== input
 
     @Override
-    public boolean mouseClicked(double mx, double my, int button) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        double mx = event.x(), my = event.y();
+        int button = event.button();
         if (menu != null) {
             // Any click closes the context menu; a left click on an enabled row runs it, a right click elsewhere opens
             // the menu there.
@@ -1589,7 +1590,9 @@ public final class WorldMapScreen extends Screen {
     }
 
     @Override
-    public boolean mouseDragged(double mx, double my, int button, double dx, double dy) {
+    public boolean mouseDragged(MouseButtonEvent event, double dx, double dy) {
+        double mx = event.x(), my = event.y();
+        int button = event.button();
         if (sliderDrag) {
             setSliderFrom(my);
             return true;
@@ -1611,7 +1614,9 @@ public final class WorldMapScreen extends Screen {
     }
 
     @Override
-    public boolean mouseReleased(double mx, double my, int button) {
+    public boolean mouseReleased(MouseButtonEvent event) {
+        double mx = event.x(), my = event.y();
+        int button = event.button();
         if (sliderDrag) {
             sliderDrag = false;
             return true;
@@ -1682,7 +1687,7 @@ public final class WorldMapScreen extends Screen {
     private static void teleportTo(ResourceKey<Level> dim, int bx, int y, int bz) {
         LocalPlayer p = Minecraft.getInstance().player;
         if (p == null || !net.tapacywka.teyvatcartographia.marker.MarkerType.isOperator()) return; // re-checked: /deop meanwhile
-        String in = "execute in " + dim.location() + " ";
+        String in = "execute in " + dim.identifier() + " ";
         if (y != Integer.MIN_VALUE) p.connection.sendCommand(in + "run tp @s " + bx + ".5 " + y + " " + bz + ".5");
         else if (dim == Level.NETHER) p.connection.sendCommand(in + "run spreadplayers " + bx + ".5 " + bz + ".5 0 8 under 120 false @s");
         else if (dim == Level.END) p.connection.sendCommand(in + "run spreadplayers " + bx + ".5 " + bz + ".5 0 8 false @s");
@@ -1709,7 +1714,7 @@ public final class WorldMapScreen extends Screen {
         if (p == null || p.level().dimension() != landDim || !p.level().hasChunk(landX >> 4, landZ >> 4)
                 || Math.abs(p.getX() - landX - 0.5) > 1 || Math.abs(p.getZ() - landZ - 0.5) > 1) return;
         landTicks = 0;
-        p.connection.sendCommand("execute in " + landDim.location() + " positioned " + landX + ".5 0 " + landZ + ".5 positioned over motion_blocking run tp @s ~ ~ ~");
+        p.connection.sendCommand("execute in " + landDim.identifier() + " positioned " + landX + ".5 0 " + landZ + ".5 positioned over motion_blocking run tp @s ~ ~ ~");
     }
 
     /** Over a button, the zoom slider, the layer field or an off-screen indicator (a right click there opens no menu). */
@@ -1742,7 +1747,8 @@ public final class WorldMapScreen extends Screen {
     }
 
     @Override
-    public boolean keyPressed(int key, int scan, int mods) {
+    public boolean keyPressed(KeyEvent event) {
+        int key = event.key(), scan = event.scancode(), mods = event.modifiers();
         if (panel != null && panel.keyPressed(key, scan, mods)) return true;
         if (key == GLFW.GLFW_KEY_F && (mods & GLFW.GLFW_MOD_CONTROL) != 0 && (panel == null || !panel.capturesKeyboard())) {
             // Ctrl+F: the pin list with the cursor in its search field.
@@ -1759,7 +1765,7 @@ public final class WorldMapScreen extends Screen {
             return true;
         }
         if (typing) return true;
-        if (Keybinds.OPEN_MAP.matches(key, scan)) {
+        if (Keybinds.OPEN_MAP.matches(event)) {
             onClose();
             return true;
         }
@@ -1773,21 +1779,23 @@ public final class WorldMapScreen extends Screen {
             case GLFW.GLFW_KEY_UP, GLFW.GLFW_KEY_W -> flyTo(targetX, targetZ - 80 / scale);
             case GLFW.GLFW_KEY_DOWN, GLFW.GLFW_KEY_S -> flyTo(targetX, targetZ + 80 / scale);
             default -> {
-                return super.keyPressed(key, scan, mods);
+                return super.keyPressed(event);
             }
         }
         return true;
     }
 
     @Override
-    public boolean charTyped(char c, int mods) {
+    public boolean charTyped(CharacterEvent event) {
+        char c = (char) event.codepoint();
+        int mods = 0;
         if (panel != null && panel.charTyped(c, mods)) return true;
-        return super.charTyped(c, mods);
+        return super.charTyped(event);
     }
 
     @Override
-    public void resize(Minecraft mc, int w, int h) {
-        super.resize(mc, w, h);
+    public void resize(int w, int h) {
+        super.resize(w, h);
         if (panel != null) panel.layout(w, h);
     }
 }

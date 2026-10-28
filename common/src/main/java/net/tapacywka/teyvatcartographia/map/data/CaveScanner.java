@@ -64,8 +64,8 @@ public final class CaveScanner {
     }
 
     public static ChunkShader.Result scan(ClientLevel level, LevelChunk chunk, int band, double px, double pz, double radius) {
-        int cx = chunk.getPos().x, cz = chunk.getPos().z;
-        int yMin = band * BAND, yMax = yMin + BAND - 1, bottom = level.getMinBuildHeight();
+        int cx = chunk.getPos().x(), cz = chunk.getPos().z();
+        int yMin = band * BAND, yMax = yMin + BAND - 1, bottom = level.getMinY();
         int[] floor = new int[256], color = new int[256];
         byte[] flags = new byte[256];
         boolean[] drop = new boolean[256];
