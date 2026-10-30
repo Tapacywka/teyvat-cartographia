@@ -4,7 +4,7 @@
     ],
     "passes": [
         {
-            "name": "teyvatcartographia:frame_copy",
+            "name": "teyvatcartographia_frame_copy",
             "intarget": "minecraft:main",
             "outtarget": "copy"
         }

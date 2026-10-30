@@ -85,7 +85,7 @@ public final class EdgeFade {
     /** One band from {@code ya} (colour {@code ca}) to {@code yb} ({@code cb}). */
     private static void band(BufferBuilder b, Matrix4f m, float x0, float x1, float ya, float yb, float gw, float gh, int ca, int cb) {
         if (yb <= ya || x1 <= x0) return;
-        float u0 = x0 / gw, u1 = x1 / gw, va = 1 - ya / gh, vb = 1 - yb / gh;
+        float u0 = x0 / gw, u1 = x1 / gw, va = CachedLayer.v(1 - ya / gh), vb = CachedLayer.v(1 - yb / gh);
         Draw.vtx(b, m, x0, ya, u0, va, ca); Draw.vtx(b, m, x0, yb, u0, vb, cb); Draw.vtx(b, m, x1, yb, u1, vb, cb);
         Draw.vtx(b, m, x0, ya, u0, va, ca); Draw.vtx(b, m, x1, yb, u1, vb, cb); Draw.vtx(b, m, x1, ya, u1, va, ca);
     }

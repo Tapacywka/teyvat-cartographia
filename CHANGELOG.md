@@ -9,6 +9,13 @@ Since 0.5.0 every version comes for both Fabric and NeoForge (`+mc1.21.1-fabric`
 
 ## [Unreleased]
 
+### Changed
+- The list of plants in the settings shows each plant's colour on the map instead of its item.
+
+### Fixed
+- Fabric with VulkanMod: the minimap, the settings lists, the zoom bar of the world map and the distance under the
+  in-world marker were drawn upside down, and the menus had no blurred background.
+
 ## [0.5.0] - 2026-10-27
 
 ### Added

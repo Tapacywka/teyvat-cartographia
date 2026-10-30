@@ -40,7 +40,9 @@ public final class Backdrop {
      * Under VulkanMod the raw frame copies come out black or empty, so the frame is copied by the game's own
      * post-processing instead ({@code shaders/post/frame_copy.json}, opaque), which VulkanMod runs like the blur itself,
      * and the sharp frame is laid back as an ordinary textured quad (26.10.2026). One chain for the sharp copy, one for
-     * the blurred one.
+     * the blurred one. Its program is {@code minecraft:shaders/program/teyvatcartographia_frame_copy}: the game reads a
+     * post pass's program from its own namespace only (NeoForge also takes "mod:name"), so on Fabric with the original
+     * VulkanMod the chain failed to load and the menus had no blur (30.10.2026).
      */
     private static final ResourceLocation FRAME_COPY =
             ResourceLocation.fromNamespaceAndPath(TeyvatCartographia.MOD_ID, "shaders/post/frame_copy.json");
@@ -83,7 +85,7 @@ public final class Backdrop {
             main.bindWrite(true);
             Window w = mc.getWindow();
             float gw = (float) (w.getWidth() / w.getGuiScale()), gh = (float) (w.getHeight() / w.getGuiScale());
-            Draw.texturedQuadOpaque(g, sharpCopy.getTempTarget("copy").getColorTextureId(), 0, 0, gw, gh, 0, 1, 1, 0);
+            Draw.texturedQuadOpaque(g, sharpCopy.getTempTarget("copy").getColorTextureId(), 0, 0, gw, gh, 0, CachedLayer.v(1), 1, CachedLayer.v(0));
             RenderSystem.enableDepthTest();
             ready = true;
             return;
@@ -111,7 +113,7 @@ public final class Backdrop {
         if (!ready || shown == null) return;
         Window w = Minecraft.getInstance().getWindow();
         float gw = (float) (w.getWidth() / w.getGuiScale()), gh = (float) (w.getHeight() / w.getGuiScale());
-        Draw.texturedQuadOpaque(g, shown.getColorTextureId(), x0, y0, x1, y1, x0 / gw, 1 - y0 / gh, x1 / gw, 1 - y1 / gh);
+        Draw.texturedQuadOpaque(g, shown.getColorTextureId(), x0, y0, x1, y1, x0 / gw, CachedLayer.v(1 - y0 / gh), x1 / gw, CachedLayer.v(1 - y1 / gh));
     }
 
     /** Draws the blurred backdrop into the given GUI triangle (a popup's pointer; no-op without a capture this frame). */
@@ -120,8 +122,8 @@ public final class Backdrop {
         if (!ready || shown == null) return;
         Window w = Minecraft.getInstance().getWindow();
         float gw = (float) (w.getWidth() / w.getGuiScale()), gh = (float) (w.getHeight() / w.getGuiScale());
-        Draw.texturedTriangleOpaque(g, shown.getColorTextureId(), x1, y1, x1 / gw, 1 - y1 / gh,
-                x2, y2, x2 / gw, 1 - y2 / gh, x3, y3, x3 / gw, 1 - y3 / gh);
+        Draw.texturedTriangleOpaque(g, shown.getColorTextureId(), x1, y1, x1 / gw, CachedLayer.v(1 - y1 / gh),
+                x2, y2, x2 / gw, CachedLayer.v(1 - y2 / gh), x3, y3, x3 / gw, CachedLayer.v(1 - y3 / gh));
     }
 
     /** The blurred copy in use: the copy chain's target under VulkanMod, else the blitted one; null before the first. */

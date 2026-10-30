@@ -79,7 +79,7 @@ final class MapPicture {
             kFogZ = fogOffsetZ;
             kTheme = Theme.generation();
         }
-        Draw.texturedQuadPremultiplied(g, layer.textureId(), 0, 0, width, height, 0f, 1f, 1f, 0f);
+        Draw.texturedQuadPremultiplied(g, layer.textureId(), 0, 0, width, height, 0f, CachedLayer.v(1f), 1f, CachedLayer.v(0f));
     }
 
     /** The fog follows panning only: zooming (a scale change) leaves it where it is. */

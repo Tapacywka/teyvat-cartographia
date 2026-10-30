@@ -378,7 +378,7 @@ public final class WorldMarkerLayer implements LayeredDraw.Layer {
             kScale = scale;
         }
         Draw.texturedQuadPremultiplied(g, sprite.textureId(), sx - spriteHalfW, sy - spriteTop, sx + spriteHalfW, sy + spriteBottom,
-                0f, 1f, 1f, 0f, alpha);
+                0f, CachedLayer.v(1f), 1f, CachedLayer.v(0f), alpha);
     }
 
     /** The path to the target as stars in the world, shown and faded on the marker's timer. */

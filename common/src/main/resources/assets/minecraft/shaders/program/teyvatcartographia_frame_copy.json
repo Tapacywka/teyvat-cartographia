@@ -4,8 +4,8 @@
         "srcrgb": "1",
         "dstrgb": "0"
     },
-    "vertex": "teyvatcartographia:frame_copy",
-    "fragment": "teyvatcartographia:frame_copy",
+    "vertex": "teyvatcartographia_frame_copy",
+    "fragment": "teyvatcartographia_frame_copy",
     "attributes": [ "Position" ],
     "samplers": [
         { "name": "DiffuseSampler" }

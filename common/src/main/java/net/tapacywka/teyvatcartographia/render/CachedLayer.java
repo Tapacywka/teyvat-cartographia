@@ -3,6 +3,7 @@ package net.tapacywka.teyvatcartographia.render;
 import com.mojang.blaze3d.pipeline.TextureTarget;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.tapacywka.teyvatcartographia.compat.ModCompat;
 import org.lwjgl.opengl.GL11;
 
 /**
@@ -42,6 +43,18 @@ public final class CachedLayer {
     public int textureId() {
         return target.getColorTextureId();
     }
+
+    /**
+     * A texture coordinate v of a layer as OpenGL reads it (0 at the bottom row), for the texture as the renderer keeps
+     * it: the original VulkanMod keeps the top row first ({@link ModCompat#vulkanTopFirst}; under it the minimap, the
+     * settings rows and the zoom bar came out upside down, 30.10.2026).
+     */
+    public static float v(float v) {
+        if (topFirst == 0) topFirst = ModCompat.vulkanTopFirst() ? 1 : -1; // asked once: the mods are known from the start
+        return topFirst > 0 ? 1 - v : v;
+    }
+
+    private static int topFirst;
 
     public void destroy() {
         if (target != null) {

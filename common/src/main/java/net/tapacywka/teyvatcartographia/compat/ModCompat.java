@@ -42,6 +42,24 @@ public final class ModCompat {
         return loaded("vulkanmod");
     }
 
+    /**
+     * The original VulkanMod (Fabric), not VulkanMod-Reforged (NeoForge, the same mod id, also seen by this mod's Fabric
+     * build through Connector): its textures drawn into keep the top row first, where OpenGL and Reforged keep the bottom
+     * row first, so the mod's own layers came out upside down there (30.10.2026, {@code render/CachedLayer#v}).
+     */
+    public static boolean vulkanTopFirst() {
+        return vulkan() && !neoForge();
+    }
+
+    private static boolean neoForge() {
+        try {
+            Class.forName("net.neoforged.fml.ModList", false, ModCompat.class.getClassLoader());
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+    }
+
     /** Xaero's Minimap or Xaero's World Map in the game, or the waypoints Xaero's Minimap left in it. */
     public static boolean xaero() {
         return loaded("xaerominimap") || loaded("xaeroworldmap") || !XaeroWaypoints.roots().isEmpty();

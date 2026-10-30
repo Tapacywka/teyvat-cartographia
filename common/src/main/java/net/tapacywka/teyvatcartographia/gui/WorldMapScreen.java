@@ -1105,7 +1105,7 @@ public final class WorldMapScreen extends Screen {
             float x0 = Math.max(0, r[0]), y0 = Math.max(0, r[1]), x1 = Math.min(width, r[2]), y1 = Math.min(height, r[3]);
             if (x1 <= x0 || y1 <= y0) continue;
             Draw.texturedQuadPremultiplied(g, chrome.textureId(), x0, y0, x1, y1,
-                    x0 / width, 1f - y0 / height, x1 / width, 1f - y1 / height);
+                    x0 / width, CachedLayer.v(1f - y0 / height), x1 / width, CachedLayer.v(1f - y1 / height));
         }
     }
 
