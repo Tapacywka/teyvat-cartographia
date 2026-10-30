@@ -1,8 +1,8 @@
 name: Publish
 
 # Puts the two JARs of a GitHub release on Modrinth and CurseForge, the Fabric file first: it with Fabric API
-# (required) and Mod Menu (optional), then the NeoForge file; each named by its version number (0.5.0+mc1.21.1-fabric),
-# Minecraft 1.21.1, client side, the whole CHANGELOG.md of the release's tag as the changelog.
+# (required) and Mod Menu (optional), then the NeoForge file; each named by its version number (0.6.0+mc26.1.2-fabric),
+# Minecraft 26.1.2 (the game of this branch, mc26), client side, the whole CHANGELOG.md of the release's tag as the changelog.
 # Runs when a release is published; by hand for a release made before (tag), as a dry run by default: the tokens and
 # the IDs are checked and what would be uploaded is shown, nothing is uploaded.
 # Secrets: MODRINTH_TOKEN (a personal access token with Create versions), CURSEFORGE_TOKEN (an upload API token).
@@ -40,7 +40,9 @@ concurrency:
 env:
   MODRINTH_PROJECT: teyvat-cartographia
   CURSEFORGE_PROJECT: '1764160'
-  GAME_VERSION: 1.21.1
+  GAME_VERSION: 26.1.2
+  # The Java the game needs, as CurseForge names it.
+  JAVA_VERSION: Java 25
   USER_AGENT: Tapacywka/teyvat-cartographia (publish workflow)
   # Both files on a release; one of them when run by hand (to finish an upload refused for one).
   LOADERS: ${{ inputs.loaders == 'fabric' && 'fabric' || inputs.loaders == 'neoforge' && 'neoforge' || 'fabric neoforge' }}
@@ -142,9 +144,9 @@ jobs:
               '[.[] | . as $v | select($v.name == $name and (([$types[] | select(.id == $v.gameVersionTypeID) | .slug][0] // "") | startswith($type)))][0].id // empty' \
               <<< "$versions"
           }
-          game=$(pick "$GAME_VERSION" minecraft-); client=$(pick Client environment); java=$(pick "Java 21" java)
+          game=$(pick "$GAME_VERSION" minecraft-); client=$(pick Client environment); java=$(pick "$JAVA_VERSION" java)
           fabric=$(pick Fabric modloader); neoforge=$(pick NeoForge modloader)
-          echo "CurseForge IDs: Minecraft $GAME_VERSION $game, Client $client, Java 21 $java, Fabric $fabric, NeoForge $neoforge"
+          echo "CurseForge IDs: Minecraft $GAME_VERSION $game, Client $client, $JAVA_VERSION $java, Fabric $fabric, NeoForge $neoforge"
           for x in "$game" "$client" "$java" "$fabric" "$neoforge"; do [ -n "$x" ] || { echo "CurseForge: a game version was not found"; exit 1; }; done
           for loader in $LOADERS; do
             number="$VERSION+mc$GAME_VERSION-$loader"
