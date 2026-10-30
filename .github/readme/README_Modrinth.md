@@ -131,7 +131,7 @@ Place pins, search for them and for biomes, track them, follow the path and find
 2. Download the file for your loader from [Modrinth](https://modrinth.com/mod/teyvat-cartographia),
    [CurseForge](https://www.curseforge.com/minecraft/mc-mods/teyvat-cartographia) or the
    [latest GitHub release](https://github.com/Tapacywka/teyvat-cartographia/releases/latest):
-   `teyvatcartographia-v0.5.0+mc1.21.1-fabric.jar` or `teyvatcartographia-v0.5.0+mc1.21.1-neoforge.jar`, and put it
+   `teyvatcartographia-v0.5.1+mc1.21.1-fabric.jar` or `teyvatcartographia-v0.5.1+mc1.21.1-neoforge.jar`, and put it
    into your `mods/` folder.
 3. Launch the game and press **M** in a world.
 4. Optional: make the minimap round (**Settings > Minimap**) or the interface rounded (**Settings > Map**). On Fabric,
@@ -342,7 +342,7 @@ world map, so most mods work without anything special. A few get more: with one 
 | [Vanilla Backport](https://modrinth.com/mod/vanillabackport), [Tiny Takeover Backport](https://modrinth.com/mod/tiny-takeover-backport) | The pale garden, leaf litter, bushes and the other new blocks in the colours the game gives them. |
 | [Sodium](https://modrinth.com/mod/sodium), [Iris](https://modrinth.com/mod/iris) | Work alongside (checked on Fabric and on NeoForge): the minimap, the map, the beam and the path sparkles draw as without them. |
 | [Mod Menu](https://modrinth.com/mod/modmenu) | On Fabric, a settings button for the mod in its list. |
-| [VulkanMod Reforged](https://modrinth.com/mod/vulkanmod-reforged) | Works with its Vulkan renderer: the map, the minimap, the path with its sparkles and the beam look as with OpenGL, the lists dissolve at their edges and the blur under the menus works. |
+| [VulkanMod](https://modrinth.com/mod/vulkanmod) (Fabric), [VulkanMod Reforged](https://modrinth.com/mod/vulkanmod-reforged) (NeoForge) | Work with their Vulkan renderer: the map, the minimap, the path with its sparkles and the beam look as with OpenGL, the lists dissolve at their edges and the blur under the menus works. |
 
 The Nether and The End have fogs of their own too (each can be switched off in Compatibility > Minecraft); a resource pack theme can add a fog for any other dimension (see
 [Themes](#themes)). Players with other minimaps keep them: this mod changes nothing in the world and needs nothing

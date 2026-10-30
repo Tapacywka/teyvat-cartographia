@@ -9,6 +9,8 @@ Since 0.5.0 every version comes for both Fabric and NeoForge (`+mc1.21.1-fabric`
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-10-30
+
 ### Changed
 - The list of plants in the settings shows each plant's colour on the map instead of its item.
 
@@ -285,7 +287,8 @@ The first public release, for Minecraft 1.21.1 on NeoForge 21.1. Client only.
 - Cached HUD layers, chunk work on worker threads and path searches in short slices: the mod is meant to cost at most
   2 to 3% FPS.
 
-[Unreleased]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.2.0...v0.3.0
