@@ -33,6 +33,14 @@ public final class ModCompat {
         return loaded("the_sift");
     }
 
+    /**
+     * VulkanMod (Fabric) in the game: its textures drawn into keep the top row first, where the game's own (OpenGL) keep
+     * the bottom row first, so the mod's layers are drawn into upside down there ({@code render/CachedLayer}).
+     */
+    public static boolean vulkan() {
+        return loaded("vulkanmod");
+    }
+
     /** Xaero's Minimap or Xaero's World Map in the game, or the waypoints Xaero's Minimap left in it. */
     public static boolean xaero() {
         return loaded("xaerominimap") || loaded("xaeroworldmap") || !XaeroWaypoints.roots().isEmpty();

@@ -2,7 +2,8 @@ package net.tapacywka.teyvatcartographia.gui;
 
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.FoliageColor;
+import net.minecraft.world.level.GrassColor;
 import net.minecraft.world.level.block.Block;
 import net.tapacywka.teyvatcartographia.gui.Ui.Grid;
 import net.tapacywka.teyvatcartographia.map.data.MapDataManager;
@@ -21,13 +22,13 @@ import java.util.Locale;
 
 /**
  * The list of plants under the Plants row of the settings (opened by its arrow): a field at the top that filters it by
- * name as you type, with how many are switched on, then every plant of the game and its mods with its item, its name and
- * a switch. Drawn over the rows under the Plants row, inside the settings list; scrolled by the wheel.
+ * name as you type, with how many are switched on, then every plant of the game and its mods with its colour on the map,
+ * its name and a switch. Drawn over the rows under the Plants row, inside the settings list; scrolled by the wheel.
  */
 final class PlantList {
     private static final int ITEM_H = 20, MAX_ROWS = 9;
 
-    private record Entry(Block block, ItemStack item, Component name, String lower) {}
+    private record Entry(Block block, int colour, Component name, String lower) {}
 
     private final ChipField field;
     private final List<Entry> all = new ArrayList<>();
@@ -50,15 +51,26 @@ final class PlantList {
             refilter();
         });
         for (Block b : Plants.all()) {
-            // Item components are bound only once a world has loaded its registries (26.1): in the title screen's
-            // settings before the first world a stack cannot be made, so the plant shows its map colour instead.
-            var holder = b.asItem().builtInRegistryHolder();
-            ItemStack item = holder.areComponentsBound() ? new ItemStack(b.asItem()) : ItemStack.EMPTY;
             Component name = b.getName();
-            all.add(new Entry(b, item, name, name.getString().toLowerCase(Locale.ROOT)));
+            all.add(new Entry(b, mapColour(b), name, name.getString().toLowerCase(Locale.ROOT)));
         }
         all.sort(Comparator.comparing(Entry::lower));
         refilter();
+    }
+
+    /**
+     * The plant's colour on the map (user request 30.10.2026: instead of its item, which in 26.1 cannot even be made
+     * before the first world, its components not bound yet): its texture colour, grass and foliage tinted with the
+     * game's default tints, as no biome is at hand (also in the title screen).
+     */
+    private static int mapColour(Block b) {
+        TextureColors.Entry c = TextureColors.get(b);
+        if (c == null) return Theme.PANEL_LINE;
+        return switch (c.tint()) {
+            case GRASS -> TextureColors.multiply(c.argb(), GrassColor.getDefaultColor());
+            case FOLIAGE -> TextureColors.multiply(c.argb(), FoliageColor.FOLIAGE_DEFAULT);
+            default -> c.argb();
+        };
     }
 
     private void refilter() {
@@ -100,13 +112,7 @@ final class PlantList {
             Entry e = shown.get(i);
             boolean listed = Plants.listed(e.block);
             float ix = x + 2 * Grid.GAP;
-            if (!e.item.isEmpty()) {
-                EdgeFade.item(g, e.item, Math.round(ix), Math.round(ry + (ITEM_H - 16) / 2f));
-            } else {
-                // A crop without an item of its own: its colour on the map.
-                TextureColors.Entry c = TextureColors.get(e.block);
-                Draw.rect(g, ix + 2, ry + 4, ix + 14, ry + 16, c != null ? c.argb() : Theme.PANEL_LINE);
-            }
+            Draw.rect(g, ix + 2, ry + 4, ix + 14, ry + 16, e.colour);
             float nameW = toggleX() - Grid.GAP - (ix + 16 + Grid.GAP);
             DrawText.text(g, DrawText.fit(e.name.getString(), (int) nameW), ix + 16 + Grid.GAP, DrawText.textY(ry, ITEM_H), listed ? Theme.CREAM : Theme.TEXT_MUTED, false);
             Ui.toggle(g, toggleX(), ry + (ITEM_H - Grid.TOGGLE_H) / 2f, listed, mx, inList(my) ? my : -10_000);

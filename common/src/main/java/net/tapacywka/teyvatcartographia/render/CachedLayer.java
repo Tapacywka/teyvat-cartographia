@@ -22,6 +22,7 @@ import net.minecraft.client.gui.render.TextureSetup;
 import net.minecraft.client.renderer.Projection;
 import net.minecraft.client.renderer.ProjectionMatrixBuffer;
 import net.minecraft.client.renderer.state.gui.GuiElementRenderState;
+import net.tapacywka.teyvatcartographia.compat.ModCompat;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
@@ -46,6 +47,8 @@ public final class CachedLayer {
     private GpuTextureView view;
     private Tex tex;
     private boolean linear;
+    /** The texture still to be cleared to transparent, by the next pass drawn into it. */
+    private boolean clearPending;
     private final List<GuiElementRenderState> elements = new ArrayList<>();
 
     /**
@@ -76,8 +79,10 @@ public final class CachedLayer {
     public void unbind() {
         Draw.popLayer(this);
         CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
-        encoder.clearColorTexture(texture, 0);
-        if (elements.isEmpty()) return;
+        // Cleared by the first render pass (its clear colour), not clearColorTexture: VulkanMod clears a texture through
+        // one framebuffer it shares for all of them, and the AMD driver crashed there on the minimap's first redraw after
+        // a screen closed (30.10.2026). Passes are the path every draw of the layer takes anyway.
+        clearPending = true;
         Window window = Minecraft.getInstance().getWindow();
         float guiW = (float) (window.getWidth() / window.getGuiScale()), guiH = (float) (window.getHeight() / window.getGuiScale());
         // The game's GUI projection (as GuiRenderer sets it), spanning the screen's GUI size over the texture.
@@ -106,6 +111,12 @@ public final class CachedLayer {
                 MeshData mesh = buffer.build();
                 if (mesh != null) draw(encoder, mesh, pipeline, textures, scissor, transforms, pw, ph, guiW, guiH);
             }
+            if (clearPending) {
+                // Nothing drawn after all: cleared on its own.
+                try (RenderPass pass = encoder.createRenderPass(() -> "Teyvat Cartographia layer", view, OptionalInt.of(0))) {
+                    clearPending = false;
+                }
+            }
         } finally {
             RenderSystem.restoreProjectionMatrix();
             elements.clear();
@@ -120,7 +131,9 @@ public final class CachedLayer {
             RenderSystem.AutoStorageIndexBuffer indices = RenderSystem.getSequentialBuffer(mesh.drawState().mode());
             GpuBuffer indexBuffer = indices.getBuffer(count);
             VertexFormat.IndexType indexType = indices.type();
-            try (RenderPass pass = encoder.createRenderPass(() -> "Teyvat Cartographia layer", view, OptionalInt.empty())) {
+            OptionalInt clear = clearPending ? OptionalInt.of(0) : OptionalInt.empty();
+            clearPending = false;
+            try (RenderPass pass = encoder.createRenderPass(() -> "Teyvat Cartographia layer", view, clear)) {
                 pass.setPipeline(pipeline);
                 RenderSystem.bindDefaultUniforms(pass);
                 pass.setUniform("DynamicTransforms", transforms);
@@ -138,6 +151,19 @@ public final class CachedLayer {
             }
         }
     }
+
+    /**
+     * A texture coordinate v of a layer as OpenGL reads it (0 at the bottom row), for the texture as the renderer keeps
+     * it: VulkanMod keeps the top row first (it shows the game's own such layers unflipped; under it the settings rows
+     * came out upside down, 30.10.2026). Flipping the projection while drawing in instead lost the text (its quads
+     * turned face down and culled).
+     */
+    public static float v(float v) {
+        if (topFirst == 0) topFirst = ModCompat.vulkan() ? 1 : -1; // asked once: the mods are known from the start
+        return topFirst > 0 ? 1 - v : v;
+    }
+
+    private static int topFirst;
 
     public boolean exists() {
         return texture != null;

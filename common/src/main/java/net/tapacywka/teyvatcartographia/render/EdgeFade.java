@@ -2,8 +2,6 @@ package net.tapacywka.teyvatcartographia.render;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.world.item.ItemStack;
-import org.joml.Matrix3x2f;
 import org.joml.Matrix3x2fc;
 
 import java.util.ArrayList;
@@ -32,18 +30,11 @@ public final class EdgeFade {
      * is drawn after all of them, so a list reusing the layer of the one before replaced its rows (the settings rows
      * vanished while the plant list was open).
      */
-    private static final java.util.List<CachedLayer> layers = new ArrayList<>();
+    private static final List<CachedLayer> layers = new ArrayList<>();
     private static CachedLayer rows;
     private static int used;
     private static GuiGraphicsExtractor frame;
     private static boolean active;
-
-    /**
-     * Items of the rows (the plant list's): the game draws them from its own item atlas, which cannot go into the
-     * layer, so they are kept and drawn after it, whole (cut by the list's edges, not faded), at the pose they had.
-     */
-    private record Item(ItemStack stack, int x, int y, Matrix3x2f pose) {}
-    private static final List<Item> items = new ArrayList<>();
 
     /** Starts the rows: from here until {@link #draw} everything is drawn into the rows' layer. */
     public static void capture(GuiGraphicsExtractor g) {
@@ -55,14 +46,7 @@ public final class EdgeFade {
         rows = layers.get(used++);
         var w = Minecraft.getInstance().getWindow();
         rows.bind(g, w.getWidth(), w.getHeight(), false);
-        items.clear();
         active = true;
-    }
-
-    /** An item of a row: kept while the rows are captured (see {@link Item}), else drawn at once. */
-    public static void item(GuiGraphicsExtractor g, ItemStack stack, int x, int y) {
-        if (active) items.add(new Item(stack, x, y, new Matrix3x2f(g.pose())));
-        else g.item(stack, x, y);
     }
 
     /**
@@ -90,17 +74,6 @@ public final class EdgeFade {
         band(b, m, 0, x0, top, bottom, gw, gh, 0xFFFFFFFF, 0xFFFFFFFF);
         band(b, m, x1, gw, top, bottom, gw, gh, 0xFFFFFFFF, 0xFFFFFFFF);
         Draw.endPremultiplied(g, b, rows.tex());
-        if (!items.isEmpty()) {
-            g.enableScissor((int) x0, (int) top, (int) Math.ceil(x1), (int) Math.ceil(bottom));
-            for (Item item : items) {
-                g.pose().pushMatrix();
-                g.pose().set(item.pose());
-                g.item(item.stack(), item.x(), item.y());
-                g.pose().popMatrix();
-            }
-            g.disableScissor();
-            items.clear();
-        }
     }
 
     /** How much of the rows shows {@code f} of the way from the edge: all channels, faded on a smoothstep near it. */
@@ -113,7 +86,7 @@ public final class EdgeFade {
     /** One band from {@code ya} (colour {@code ca}) to {@code yb} ({@code cb}). */
     private static void band(Mesh b, Matrix3x2fc m, float x0, float x1, float ya, float yb, float gw, float gh, int ca, int cb) {
         if (yb <= ya || x1 <= x0) return;
-        float u0 = x0 / gw, u1 = x1 / gw, va = 1 - ya / gh, vb = 1 - yb / gh;
+        float u0 = x0 / gw, u1 = x1 / gw, va = CachedLayer.v(1 - ya / gh), vb = CachedLayer.v(1 - yb / gh);
         Draw.vtx(b, m, x0, ya, u0, va, ca); Draw.vtx(b, m, x0, yb, u0, vb, cb); Draw.vtx(b, m, x1, yb, u1, vb, cb);
         Draw.vtx(b, m, x0, ya, u0, va, ca); Draw.vtx(b, m, x1, yb, u1, vb, cb); Draw.vtx(b, m, x1, ya, u1, va, ca);
     }
@@ -123,7 +96,6 @@ public final class EdgeFade {
         if (!active) return;
         active = false;
         rows.unbind();
-        items.clear();
     }
 
     /** Frees the layer (the screen is closed): a whole screen's worth of video memory. */

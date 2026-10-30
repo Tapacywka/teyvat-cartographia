@@ -52,7 +52,7 @@ public final class Backdrop {
             if (steps[i] == null) steps[i] = new CachedLayer();
             steps[i].bind(g, pw, ph, true);
             if (i == 0) behind.run();
-            else Draw.texturedQuadPremultiplied(g, steps[i - 1].tex(), 0, 0, gw, gh, 0f, 1f, 1f, 0f);
+            else Draw.texturedQuadPremultiplied(g, steps[i - 1].tex(), 0, 0, gw, gh, 0f, CachedLayer.v(1f), 1f, CachedLayer.v(0f));
             steps[i].unbind();
             pw = Math.max(1, pw / 2);
             ph = Math.max(1, ph / 2);
@@ -74,7 +74,7 @@ public final class Backdrop {
     public static void draw(GuiGraphicsExtractor g, float x0, float y0, float x1, float y1) {
         if (!ready) return;
         float gw = g.guiWidth(), gh = g.guiHeight();
-        Draw.texturedQuadPremultiplied(g, steps[shownStep].tex(), x0, y0, x1, y1, x0 / gw, 1 - y0 / gh, x1 / gw, 1 - y1 / gh);
+        Draw.texturedQuadPremultiplied(g, steps[shownStep].tex(), x0, y0, x1, y1, x0 / gw, CachedLayer.v(1 - y0 / gh), x1 / gw, CachedLayer.v(1 - y1 / gh));
     }
 
     /** The blurred backdrop over a triangle (a callout's pointer). */
@@ -83,9 +83,9 @@ public final class Backdrop {
         float gw = g.guiWidth(), gh = g.guiHeight();
         Mesh b = Draw.beginTex();
         org.joml.Matrix3x2fc m = g.pose();
-        Draw.vtx(b, m, x1, y1, x1 / gw, 1 - y1 / gh, 0xFFFFFFFF);
-        Draw.vtx(b, m, x2, y2, x2 / gw, 1 - y2 / gh, 0xFFFFFFFF);
-        Draw.vtx(b, m, x3, y3, x3 / gw, 1 - y3 / gh, 0xFFFFFFFF);
+        Draw.vtx(b, m, x1, y1, x1 / gw, CachedLayer.v(1 - y1 / gh), 0xFFFFFFFF);
+        Draw.vtx(b, m, x2, y2, x2 / gw, CachedLayer.v(1 - y2 / gh), 0xFFFFFFFF);
+        Draw.vtx(b, m, x3, y3, x3 / gw, CachedLayer.v(1 - y3 / gh), 0xFFFFFFFF);
         Draw.endPremultiplied(g, b, steps[shownStep].tex());
     }
 

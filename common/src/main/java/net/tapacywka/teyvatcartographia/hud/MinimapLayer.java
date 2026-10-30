@@ -113,7 +113,7 @@ public final class MinimapLayer {
     /** Draws the minimap prepared last (one textured quad, so the current pose may move and scale it). */
     public static void drawPrepared(GuiGraphicsExtractor g) {
         MinimapLayer m = instance;
-        Draw.texturedQuadPremultiplied(g, m.layer.tex(), m.kBx0, m.kBy0, m.kBx1, m.kBy1, 0f, 1f, 1f, 0f);
+        Draw.texturedQuadPremultiplied(g, m.layer.tex(), m.kBx0, m.kBy0, m.kBx1, m.kBy1, 0f, CachedLayer.v(1f), 1f, CachedLayer.v(0f));
     }
 
     /** The area (GUI units: left, top, right, bottom) of the minimap prepared last, with its pills. */
@@ -942,7 +942,7 @@ public final class MinimapLayer {
         gridX[i] = x;
         gridY[i] = y;
         gridU[i] = (float) ((cacheR + (view.worldX(x, y) - cacheX) * cacheZoom) / side);
-        gridV[i] = (float) (1 - (cacheR + (view.worldZ(x, y) - cacheZ) * cacheZoom) / side);
+        gridV[i] = CachedLayer.v((float) (1 - (cacheR + (view.worldZ(x, y) - cacheZ) * cacheZoom) / side));
     }
 
     private void gridVertex(Mesh b, Matrix3x2fc m, int i, int color) {
@@ -991,7 +991,7 @@ public final class MinimapLayer {
     private void discVertex(Mesh b, Matrix3x2fc m, float x, float y, int color) {
         double side = 2.0 * cacheR;
         float u = (float) ((cacheR + (view.worldX(x, y) - cacheX) * cacheZoom) / side);
-        float v = (float) (1 - (cacheR + (view.worldZ(x, y) - cacheZ) * cacheZoom) / side);
+        float v = CachedLayer.v((float) (1 - (cacheR + (view.worldZ(x, y) - cacheZ) * cacheZoom) / side));
         Draw.vtx(b, m, x, y, u, v, color);
     }
 }

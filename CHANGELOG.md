@@ -13,6 +13,9 @@ Since 0.5.0 every version comes for both Fabric and NeoForge (`+mc1.21.1-fabric`
 - Minecraft 26.1.2: Teyvat Cartographia now also comes for Minecraft 26.1.2, on Fabric and NeoForge, with everything
   the 1.21.1 version has (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`). It needs Java 25, as the game does.
 
+### Changed
+- The list of plants in the settings shows each plant's colour on the map instead of its item.
+
 ## [0.5.0] - 2026-10-27
 
 ### Added
