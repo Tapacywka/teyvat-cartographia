@@ -1454,18 +1454,18 @@ public final class WorldMapScreen extends Screen {
             // Any click closes the context menu; a left click on an enabled row runs it, a right click elsewhere opens
             // the menu there.
             boolean inside = menu.contains(mx, my);
-            MapContextMenu.Item it = button == 0 ? menu.rowAt(mx, my) : null;
+            MapContextMenu.Item it = button == InputConstants.MOUSE_BUTTON_LEFT ? menu.rowAt(mx, my) : null;
             closeMenu();
             if (it != null) it.action().run();
-            if (button != 1 || inside) return true;
+            if (button != InputConstants.MOUSE_BUTTON_RIGHT || inside) return true;
         }
-        if (button == 1) {
+        if (button == InputConstants.MOUSE_BUTTON_RIGHT) {
             if (pick != null || panel != null && panel.contains(mx, my) || overChrome(mx, my)) return true;
             if (panel != null) closePanel();
             openMenuAt(mx, my);
             return true;
         }
-        if (button != 0) return true; // otherwise the map screen reacts to the left and right buttons only
+        if (button != InputConstants.MOUSE_BUTTON_LEFT) return true; // otherwise the map screen reacts to the left and right buttons only
         if (pick != null) {
             // Any click closes the pick list; a click on a row selects that pin.
             Marker m = pick.rowAt(mx, my);
@@ -1600,7 +1600,7 @@ public final class WorldMapScreen extends Screen {
             setSliderFrom(my);
             return true;
         }
-        if (dragging && button == 0) {
+        if (dragging && button == InputConstants.MOUSE_BUTTON_LEFT) {
             if (!dragMoved && Math.hypot(mx - dragStartX, my - dragStartY) > 3) dragMoved = true;
             if (dragMoved) {
                 zoomAnchored = false;
@@ -1624,7 +1624,7 @@ public final class WorldMapScreen extends Screen {
             sliderDrag = false;
             return true;
         }
-        if (dragging && button == 0) {
+        if (dragging && button == InputConstants.MOUSE_BUTTON_LEFT) {
             dragging = false;
             if (!dragMoved) leftClick(mx, my);
             return true;
