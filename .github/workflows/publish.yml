@@ -1,8 +1,9 @@
 name: Publish
 
 # Puts the JARs of a GitHub release on Modrinth and CurseForge: every game the release has files for, the oldest first
-# (1.21.1, then 26.1.2), and for each the Fabric file first, it with Fabric API (required) and Mod Menu (optional), then
-# the NeoForge file. The game and the loader come from the file name (teyvatcartographia-v0.6.0+mc1.21.1-fabric.jar);
+# (1.21.1, then 26.1.2, 26.2, 26.3), the Fabric files of every game first, with Fabric API (required) and Mod Menu
+# (optional), then the NeoForge files in the same order (user rule 30.10.2026). The game and the loader come from the
+# file name (teyvatcartographia-v0.6.0+mc1.21.1-fabric.jar);
 # each upload is named by its version number (0.6.0+mc1.21.1-fabric), client side, with the Java its game needs and
 # the whole CHANGELOG.md as the changelog.
 # Since 0.6.0 one release holds the files of both games (user decision 30.10.2026: one version number for all).
@@ -116,8 +117,8 @@ jobs:
             echo "Modrinth: the versions cannot be listed (HTTP $code), not checked for repeats"
             existing=''
           fi
-          for game in $GAMES; do
-            for loader in $LOADERS; do
+          for loader in $LOADERS; do
+            for game in $GAMES; do
               number="$VERSION+mc$game-$loader"
               jar="dist/teyvatcartographia-v$number.jar"
               if [ ! -f "$jar" ]; then echo "Modrinth: no $jar in the release"; continue; fi
@@ -162,13 +163,18 @@ jobs:
               <<< "$versions"
           }
           client=$(pick Client environment); fabric=$(pick Fabric modloader); neoforge=$(pick NeoForge modloader)
+          # The IDs of every game first, so that a missing one stops the run before any upload.
+          declare -A gameIds javaIds
           for game in $GAMES; do
             # The Java the game needs, as CurseForge names it.
             case "$game" in 1.*) javaName="Java 21" ;; *) javaName="Java 25" ;; esac
-            gameId=$(pick "$game" minecraft-); java=$(pick "$javaName" java)
-            echo "CurseForge IDs: Minecraft $game $gameId, Client $client, $javaName $java, Fabric $fabric, NeoForge $neoforge"
-            for x in "$gameId" "$client" "$java" "$fabric" "$neoforge"; do [ -n "$x" ] || { echo "CurseForge: a game version was not found"; exit 1; }; done
-            for loader in $LOADERS; do
+            gameIds[$game]=$(pick "$game" minecraft-); javaIds[$game]=$(pick "$javaName" java)
+            echo "CurseForge IDs: Minecraft $game ${gameIds[$game]}, Client $client, $javaName ${javaIds[$game]}, Fabric $fabric, NeoForge $neoforge"
+            for x in "${gameIds[$game]}" "$client" "${javaIds[$game]}" "$fabric" "$neoforge"; do [ -n "$x" ] || { echo "CurseForge: a game version was not found"; exit 1; }; done
+          done
+          for loader in $LOADERS; do
+            for game in $GAMES; do
+              gameId=${gameIds[$game]}; java=${javaIds[$game]}
               number="$VERSION+mc$game-$loader"
               jar="dist/teyvatcartographia-v$number.jar"
               if [ ! -f "$jar" ]; then echo "CurseForge: no $jar in the release"; continue; fi

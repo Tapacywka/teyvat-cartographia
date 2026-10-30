@@ -64,9 +64,9 @@ Place pins, search for them and for biomes, track them, follow the path and find
 
 | | |
 |---|---|
-| Minecraft | **1.21.1** or **26.1.2** (Java Edition): a file of its own for each |
-| Mod loader | **Fabric** (Fabric Loader 0.16 or newer with [Fabric API](https://modrinth.com/mod/fabric-api)) or **NeoForge** (21.1 for 1.21.1, built against 21.1.257; 26.1.2 for 26.1.2, built against 26.1.2.124): one file for each, the same mod |
-| Java | **21** for 1.21.1, **25** for 26.1.2 |
+| Minecraft | **1.21.1**, **26.1.2**, **26.2** or **26.3** (Java Edition): a file of its own for each |
+| Mod loader | **Fabric** (Fabric Loader 0.16 or newer with [Fabric API](https://modrinth.com/mod/fabric-api)) or **NeoForge** (21.1 for 1.21.1, built against 21.1.257; 26.1.2, 26.2 or 26.3 for those games, built against 26.1.2.124, 26.2.0.93 and 26.3.0.99): one file for each, the same mod |
+| Java | **21** for 1.21.1, **25** for 26.1.2, 26.2 and 26.3 |
 | Side | **Client** only. Servers don't need it, so you can join vanilla and modded servers. |
 | Languages | English, Russian |
 | License | [MIT](https://github.com/Tapacywka/teyvat-cartographia/blob/main/LICENSE) |
@@ -126,14 +126,14 @@ Place pins, search for them and for biomes, track them, follow the path and find
 
 <h2 id="installation">📥 Installation</h2>
 
-1. Install a mod loader for your Minecraft (1.21.1 or 26.1.2): [Fabric](https://fabricmc.net) (Fabric Loader 0.16 or
+1. Install a mod loader for your Minecraft (1.21.1, 26.1.2, 26.2 or 26.3): [Fabric](https://fabricmc.net) (Fabric Loader 0.16 or
    newer) with [Fabric API](https://modrinth.com/mod/fabric-api), or [NeoForge](https://neoforged.net) (21.1 for
-   1.21.1, 26.1.2 for 26.1.2).
+   1.21.1, the same number as the game for 26.1.2, 26.2 and 26.3).
 2. Download the file for your game and loader from [Modrinth](https://modrinth.com/mod/teyvat-cartographia),
    [CurseForge](https://www.curseforge.com/minecraft/mc-mods/teyvat-cartographia) or the
    [GitHub releases](https://github.com/Tapacywka/teyvat-cartographia/releases):
-   the part after `+mc` names them: `teyvatcartographia-v0.6.0+mc1.21.1-fabric.jar` is for Minecraft 1.21.1 on Fabric,
-   `teyvatcartographia-v0.6.0+mc26.1.2-neoforge.jar` for 26.1.2 on NeoForge. Put it into your `mods/` folder.
+   the part after `+mc` names them: `teyvatcartographia-v0.7.0+mc1.21.1-fabric.jar` is for Minecraft 1.21.1 on Fabric,
+   `teyvatcartographia-v0.7.0+mc26.3-neoforge.jar` for 26.3 on NeoForge. Put it into your `mods/` folder.
 3. Launch the game and press **M** in a world.
 4. Optional: make the minimap round (**Settings > Minimap**) or the interface rounded (**Settings > Map**). On Fabric,
    [Mod Menu](https://modrinth.com/mod/modmenu) adds a settings button to the mod list.
@@ -379,8 +379,8 @@ The mod is meant to cost at most 2 to 3% FPS:
 
 <h2 id="building-from-source">🛠️ Building from source</h2>
 
-Requirements: JDK 21 for Minecraft 1.21.1 (branch `main`) or JDK 25 for Minecraft 26.1.2 (branch `mc26`), internet on
-the first build.
+Requirements: JDK 21 for Minecraft 1.21.1 (branch `main`) or JDK 25 for Minecraft 26.1.2, 26.2 and 26.3 (branch
+`mc26`), internet on the first build. On `mc26`, `-Pmc=26.2` or `-Pmc=26.3` builds for that game (26.1.2 without it).
 
 ```bash
 ./gradlew build

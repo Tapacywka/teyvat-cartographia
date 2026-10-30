@@ -6,9 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Each release file is built for one game and loader, named
 in the build metadata after the version: `0.2.0+mc1.21.1-neoforge` is version 0.2.0 for Minecraft 1.21.1 on NeoForge.
 Since 0.5.0 every version comes for both Fabric and NeoForge (`+mc1.21.1-fabric`, `+mc1.21.1-neoforge`), since 0.6.0
-also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`).
+also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.0 also for 26.2 and 26.3.
 
 ## [Unreleased]
+
+## [0.7.0] - 2026-10-30
+
+### Added
+- Minecraft 26.2 and 26.3: Teyvat Cartographia now also comes for both, on Fabric and NeoForge, with everything the
+  26.1.2 version has (`+mc26.2-fabric`, `+mc26.2-neoforge`, `+mc26.3-fabric`, `+mc26.3-neoforge`). Like 26.1.2 they
+  need Java 25. 26.2 works with VulkanMod, 26.3 with its own Vulkan renderer too.
+
+### Changed
+- Minecraft 1.21.1 gets version 0.7.0 too (`+mc1.21.1-fabric`, `+mc1.21.1-neoforge`), the same mod as 0.6.0.
+
+### Fixed
+- Minecraft 26.1.2 on Fabric with VulkanMod 0.6.9 or newer: the minimap and the mod's menus are no longer drawn
+  upside down.
 
 ## [0.6.0] - 2026-10-30
 
@@ -298,7 +312,8 @@ The first public release, for Minecraft 1.21.1 on NeoForge 21.1. Client only.
 - Cached HUD layers, chunk work on worker threads and path searches in short slices: the mod is meant to cost at most
   2 to 3% FPS.
 
-[Unreleased]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.4.0...v0.5.0
