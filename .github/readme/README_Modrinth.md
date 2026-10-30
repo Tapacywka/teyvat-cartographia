@@ -6,7 +6,7 @@
   <a href="https://modrinth.com/mod/teyvat-cartographia"><img src="https://img.shields.io/modrinth/dt/teyvat-cartographia?style=flat&logo=modrinth&label=modrinth&color=00AF5C" alt="Modrinth downloads"></a>
   <a href="https://www.curseforge.com/minecraft/mc-mods/teyvat-cartographia"><img src="https://img.shields.io/curseforge/dt/1764160?style=flat&logo=curseforge&label=curseforge&color=F16436" alt="CurseForge downloads"></a>
   <a href="https://github.com/Tapacywka/teyvat-cartographia/releases"><img src="https://img.shields.io/github/downloads/Tapacywka/teyvat-cartographia/total?style=flat&logo=github&label=downloads&color=4C9F70" alt="GitHub downloads"></a>
-  <a href="https://github.com/Tapacywka/teyvat-cartographia/releases/latest"><img src="https://img.shields.io/github/v/release/Tapacywka/teyvat-cartographia?style=flat&label=release&color=E6B85C" alt="Latest release"></a>
+  <a href="https://github.com/Tapacywka/teyvat-cartographia/releases"><img src="https://img.shields.io/github/v/release/Tapacywka/teyvat-cartographia?style=flat&label=release&color=E6B85C" alt="Latest release"></a>
   <img src="https://img.shields.io/badge/side-client-5B8DEF?style=flat" alt="Client side">
   <a href="https://github.com/Tapacywka/teyvat-cartographia/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-8A8F98?style=flat" alt="MIT license"></a>
 </p>
@@ -19,7 +19,7 @@
 <p align="center">
   <a href="https://modrinth.com/mod/teyvat-cartographia"><img src="https://raw.githubusercontent.com/intergrav/devins-badges/v3/assets/cozy/available/modrinth_vector.svg" alt="Available on Modrinth" height="56"></a>
   <a href="https://www.curseforge.com/minecraft/mc-mods/teyvat-cartographia"><img src="https://raw.githubusercontent.com/intergrav/devins-badges/v3/assets/cozy/available/curseforge_vector.svg" alt="Available on CurseForge" height="56"></a>
-  <a href="https://github.com/Tapacywka/teyvat-cartographia/releases/latest"><img src="https://raw.githubusercontent.com/intergrav/devins-badges/v3/assets/cozy/available/github_vector.svg" alt="Available on GitHub" height="56"></a><br>
+  <a href="https://github.com/Tapacywka/teyvat-cartographia/releases"><img src="https://raw.githubusercontent.com/intergrav/devins-badges/v3/assets/cozy/available/github_vector.svg" alt="Available on GitHub" height="56"></a><br>
   <a href="https://fabricmc.net"><img src="https://raw.githubusercontent.com/intergrav/devins-badges/v3/assets/cozy/supported/fabric_vector.svg" alt="Supported on Fabric" height="56"></a>
   <a href="https://neoforged.net"><img src="https://raw.githubusercontent.com/intergrav/devins-badges/v3/assets/cozy/supported/neoforge_vector.svg" alt="Supported on NeoForge" height="56"></a>
 </p>
@@ -64,9 +64,9 @@ Place pins, search for them and for biomes, track them, follow the path and find
 
 | | |
 |---|---|
-| Minecraft | **1.21.1** (Java Edition) |
-| Mod loader | **Fabric** (Fabric Loader 0.16 or newer with [Fabric API](https://modrinth.com/mod/fabric-api)) or **NeoForge 21.1** (built against 21.1.257): one file for each, the same mod |
-| Java | **21** |
+| Minecraft | **1.21.1** or **26.1.2** (Java Edition): a file of its own for each |
+| Mod loader | **Fabric** (Fabric Loader 0.16 or newer with [Fabric API](https://modrinth.com/mod/fabric-api)) or **NeoForge** (21.1 for 1.21.1, built against 21.1.257; 26.1.2 for 26.1.2, built against 26.1.2.124): one file for each, the same mod |
+| Java | **21** for 1.21.1, **25** for 26.1.2 |
 | Side | **Client** only. Servers don't need it, so you can join vanilla and modded servers. |
 | Languages | English, Russian |
 | License | [MIT](https://github.com/Tapacywka/teyvat-cartographia/blob/main/LICENSE) |
@@ -126,13 +126,14 @@ Place pins, search for them and for biomes, track them, follow the path and find
 
 <h2 id="installation">📥 Installation</h2>
 
-1. Install a mod loader for Minecraft 1.21.1: [Fabric](https://fabricmc.net) (Fabric Loader 0.16 or newer) with
-   [Fabric API](https://modrinth.com/mod/fabric-api), or [NeoForge](https://neoforged.net) 21.1.
-2. Download the file for your loader from [Modrinth](https://modrinth.com/mod/teyvat-cartographia),
+1. Install a mod loader for your Minecraft (1.21.1 or 26.1.2): [Fabric](https://fabricmc.net) (Fabric Loader 0.16 or
+   newer) with [Fabric API](https://modrinth.com/mod/fabric-api), or [NeoForge](https://neoforged.net) (21.1 for
+   1.21.1, 26.1.2 for 26.1.2).
+2. Download the file for your game and loader from [Modrinth](https://modrinth.com/mod/teyvat-cartographia),
    [CurseForge](https://www.curseforge.com/minecraft/mc-mods/teyvat-cartographia) or the
-   [latest GitHub release](https://github.com/Tapacywka/teyvat-cartographia/releases/latest):
-   `teyvatcartographia-v0.5.1+mc1.21.1-fabric.jar` or `teyvatcartographia-v0.5.1+mc1.21.1-neoforge.jar`, and put it
-   into your `mods/` folder.
+   [GitHub releases](https://github.com/Tapacywka/teyvat-cartographia/releases):
+   the part after `+mc` names them: `teyvatcartographia-v0.5.1+mc1.21.1-fabric.jar` is for Minecraft 1.21.1 on Fabric,
+   `teyvatcartographia-v0.6.0+mc26.1.2-neoforge.jar` for 26.1.2 on NeoForge. Put it into your `mods/` folder.
 3. Launch the game and press **M** in a world.
 4. Optional: make the minimap round (**Settings > Minimap**) or the interface rounded (**Settings > Map**). On Fabric,
    [Mod Menu](https://modrinth.com/mod/modmenu) adds a settings button to the mod list.
@@ -378,7 +379,8 @@ The mod is meant to cost at most 2 to 3% FPS:
 
 <h2 id="building-from-source">🛠️ Building from source</h2>
 
-Requirements: JDK 21 (Gradle's toolchain support will use or download one), internet on the first build.
+Requirements: JDK 21 for Minecraft 1.21.1 (branch `main`) or JDK 25 for Minecraft 26.1.2 (branch `mc26`), internet on
+the first build.
 
 ```bash
 ./gradlew build
@@ -387,8 +389,8 @@ Requirements: JDK 21 (Gradle's toolchain support will use or download one), inte
 On Windows: `gradlew.bat build`. The project follows the layout of
 [MultiLoader-Template](https://github.com/jaredlll08/MultiLoader-Template): the shared code is in `common/` (compiled
 against the game alone, with the unit tests), the loaders' own parts in `fabric/` and `neoforge/`, the shared build
-rules in `buildSrc/`. One code base builds both files: `fabric/build/libs/teyvatcartographia-v<version>+mc1.21.1-fabric.jar`
-and `neoforge/build/libs/teyvatcartographia-v<version>+mc1.21.1-neoforge.jar`.
+rules in `buildSrc/`. One code base builds both files: `fabric/build/libs/teyvatcartographia-v<version>+mc<game>-fabric.jar`
+and `neoforge/build/libs/teyvatcartographia-v<version>+mc<game>-neoforge.jar`.
 `./gradlew :fabric:runClient` or `./gradlew :neoforge:runClient` starts a development client with the mod.
 
 <h2 id="bug-reports-and-ideas">🐞 Bug reports and ideas</h2>

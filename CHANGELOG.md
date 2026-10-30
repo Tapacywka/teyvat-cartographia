@@ -5,9 +5,16 @@ All notable changes to Teyvat Cartographia are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Each release file is built for one game and loader, named
 in the build metadata after the version: `0.2.0+mc1.21.1-neoforge` is version 0.2.0 for Minecraft 1.21.1 on NeoForge.
-Since 0.5.0 every version comes for both Fabric and NeoForge (`+mc1.21.1-fabric`, `+mc1.21.1-neoforge`).
+Since 0.5.0 every version comes for both Fabric and NeoForge (`+mc1.21.1-fabric`, `+mc1.21.1-neoforge`), since 0.6.0
+also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`).
 
 ## [Unreleased]
+
+## [0.6.0] - 2026-10-30
+
+### Added
+- Minecraft 26.1.2: Teyvat Cartographia now also comes for Minecraft 26.1.2, on Fabric and NeoForge, with everything
+  the 1.21.1 version has (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`). It needs Java 25, as the game does.
 
 ## [0.5.1] - 2026-10-30
 
@@ -288,6 +295,7 @@ The first public release, for Minecraft 1.21.1 on NeoForge 21.1. Client only.
   2 to 3% FPS.
 
 [Unreleased]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.5.1...HEAD
+[0.6.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.3.0...v0.4.0
