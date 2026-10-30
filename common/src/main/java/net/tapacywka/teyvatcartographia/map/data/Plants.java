@@ -1,8 +1,10 @@
 package net.tapacywka.teyvatcartographia.map.data;
 
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.block.BambooStalkBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.VegetationBlock;
@@ -27,6 +29,9 @@ import java.util.Set;
  * its column to the ground (or water) under it, a solid one (a cactus, chorus) is looked through to the ground.
  */
 public final class Plants {
+    // By id: 26.2 keeps the saplings tag in BlockItemTags, 26.1.2 in BlockTags.
+    private static final TagKey<Block> SAPLINGS = TagKey.create(Registries.BLOCK, Identifier.withDefaultNamespace("saplings"));
+
     private Plants() {}
 
     /** The plants switched on, read again when the setting changes; read by the chunk workers. */
@@ -38,7 +43,7 @@ public final class Plants {
         boolean byClass = plantByClass(b);
         BlockState s = b.defaultBlockState();
         // Tags are bound once a world is open (at the title screen they are empty).
-        return plant(b instanceof LeavesBlock, byClass, !byClass && (s.is(BlockTags.FLOWERS) || s.is(BlockTags.SAPLINGS) || s.is(BlockTags.CROPS)));
+        return plant(b instanceof LeavesBlock, byClass, !byClass && (s.is(BlockTags.FLOWERS) || s.is(SAPLINGS) || s.is(BlockTags.CROPS)));
     }
 
     /** A plant by its class (known before a world brings the block tags). */

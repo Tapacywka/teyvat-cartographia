@@ -29,7 +29,13 @@ configurations {
 }
 
 artifacts {
-    commonJava sourceSets.main.java.sourceDirectories.singleFile
+    // main and this game's own folder (src/mc<game>/java, multiloader-common)
+    // (or, for a game with versions/<game>.renames, the renamed copy of main, made by renameSources)
+    def rename = tasks.findByName('renameSources')
+    sourceSets.main.java.srcDirs.each { dir ->
+        if (rename != null && dir == rename.destinationDir) commonJava(dir) { builtBy rename }
+        else if (dir.exists()) commonJava dir
+    }
     commonResources sourceSets.main.resources.sourceDirectories.singleFile
 }
 

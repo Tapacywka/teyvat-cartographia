@@ -18,6 +18,9 @@ public interface Platform {
     /** Whether the mod with this id is in the game (on NeoForge through Sinytra Connector Fabric's loader sees both). */
     boolean isModLoaded(String modId);
 
+    /** The version of the mod with this id as its metadata gives it (empty when it is not in the game). */
+    String modVersion(String modId);
+
     /**
      * A text field without the vanilla drop shadow, which smears the text on the chips. NeoForge has
      * {@code EditBox.setTextShadow}; on Fabric a small mixin adds it.

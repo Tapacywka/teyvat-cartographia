@@ -1,5 +1,7 @@
 package net.tapacywka.teyvatcartographia.gui;
 
+import com.mojang.blaze3d.platform.InputConstants;
+
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -13,7 +15,6 @@ import net.tapacywka.teyvatcartographia.render.Draw;
 import net.tapacywka.teyvatcartographia.render.DrawText;
 import net.tapacywka.teyvatcartographia.render.Icon;
 import net.tapacywka.teyvatcartographia.render.Theme;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.function.Consumer;
 
@@ -123,9 +124,9 @@ public final class ChipField {
      */
     public boolean keyPressed(int key, int scan, int mods, Runnable onEnter) {
         if (!box.isFocused()) return false;
-        if (key == GLFW.GLFW_KEY_ESCAPE || key == GLFW.GLFW_KEY_ENTER || key == GLFW.GLFW_KEY_KP_ENTER) {
+        if (key == InputConstants.KEY_ESCAPE || key == InputConstants.KEY_RETURN || key == InputConstants.KEY_NUMPADENTER) {
             box.setFocused(false);
-            if (key != GLFW.GLFW_KEY_ESCAPE && onEnter != null) onEnter.run();
+            if (key != InputConstants.KEY_ESCAPE && onEnter != null) onEnter.run();
             return true;
         }
         box.keyPressed(new KeyEvent(key, scan, mods));

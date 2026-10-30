@@ -1,0 +1,16 @@
+# Minecraft 26.3 moved the GPU API of blaze3d to com.mojang.renderpearl.api (see multiloader-common.gradle).
+com.mojang.blaze3d.buffers.GpuBufferSlice com.mojang.renderpearl.api.buffers.GpuBufferSlice
+com.mojang.blaze3d.pipeline.BlendFunction com.mojang.renderpearl.api.pipeline.BlendFunction
+com.mojang.blaze3d.pipeline.ColorTargetState com.mojang.renderpearl.api.pipeline.ColorTargetState
+com.mojang.blaze3d.pipeline.DepthStencilState com.mojang.renderpearl.api.pipeline.DepthStencilState
+com.mojang.blaze3d.pipeline.RenderPipeline com.mojang.renderpearl.api.pipeline.RenderPipeline
+com.mojang.blaze3d.systems.CommandEncoder com.mojang.renderpearl.api.commands.CommandEncoder
+com.mojang.blaze3d.systems.RenderPass com.mojang.renderpearl.api.commands.RenderPass
+com.mojang.blaze3d.textures.AddressMode com.mojang.renderpearl.api.textures.AddressMode
+com.mojang.blaze3d.textures.FilterMode com.mojang.renderpearl.api.textures.FilterMode
+com.mojang.blaze3d.textures.GpuSampler com.mojang.renderpearl.api.textures.GpuSampler
+com.mojang.blaze3d.textures.GpuTexture com.mojang.renderpearl.api.textures.GpuTexture
+com.mojang.blaze3d.textures.GpuTextureView com.mojang.renderpearl.api.textures.GpuTextureView
+com.mojang.blaze3d.vertex.VertexFormat com.mojang.renderpearl.api.vertex.VertexFormat
+# 26.3 named the keyboard input type KEYBOARD (InputConstants.Type.KEYSYM until 26.2).
+InputConstants.Type.KEYSYM InputConstants.Type.KEYBOARD

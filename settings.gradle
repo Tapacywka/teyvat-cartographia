@@ -26,3 +26,19 @@ rootProject.name = 'teyvat-map'
 // jaredlll08's MultiLoader-Template layout: common/ is compiled against the game alone (NeoForm, no loader), so a
 // loader's API in common code fails there; fabric/ and neoforge/ compile its code and pack its resources as their own.
 include 'common', 'fabric', 'neoforge'
+
+// One branch for every 26.x game: -Pmc=26.2 (or 26.3) takes that game's versions from versions/<mc>.properties over
+// the ones in gradle.properties (26.1.2). The differences of the game's code sit in common/src/mc<mc>/java.
+// (In tools\gradle.cmd, as cmd splits at '=': $env:ORG_GRADLE_PROJECT_mc = '26.2'.)
+def mc = startParameter.projectProperties.mc ?: System.getenv('ORG_GRADLE_PROJECT_mc')
+def file = new File(settingsDir, "versions/${mc}.properties")
+if (mc && !file.exists()) {
+    // The game of gradle.properties needs no file of its own (-Pmc=26.1.2 builds as without -Pmc).
+    def own = new Properties()
+    new File(settingsDir, 'gradle.properties').withInputStream { own.load(it) }
+    if (own.minecraft_version != mc) throw new GradleException("No versions/${mc}.properties")
+} else if (mc) {
+    def props = new Properties()
+    file.withInputStream { props.load(it) }
+    gradle.beforeProject { p -> props.each { k, v -> p.ext.set(k, v) } }
+}

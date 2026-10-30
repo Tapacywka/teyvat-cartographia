@@ -1,5 +1,7 @@
 package net.tapacywka.teyvatcartographia.render;
 
+import net.tapacywka.teyvatcartographia.version.Game;
+
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mojang.blaze3d.platform.NativeImage;
@@ -89,7 +91,7 @@ public final class FogTexture {
         Optional<Resource> res = resource(path);
         if (res.isEmpty()) return null;
         try (InputStream in = res.get().open()) {
-            return NativeImage.read(NativeImage.Format.RGBA, in);
+            return Game.readImage(in);
         } catch (Exception e) {
             TeyvatCartographia.LOGGER.warn("Could not read fog texture {}", path, e);
             return null;

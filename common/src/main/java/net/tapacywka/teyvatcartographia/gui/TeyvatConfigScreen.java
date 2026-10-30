@@ -1,5 +1,9 @@
 package net.tapacywka.teyvatcartographia.gui;
 
+import com.mojang.blaze3d.platform.InputConstants;
+
+import net.tapacywka.teyvatcartographia.version.Game;
+
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -25,7 +29,6 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.options.controls.KeyBindsScreen;
 import net.minecraft.network.chat.Component;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -1301,7 +1304,7 @@ public final class TeyvatConfigScreen extends Screen {
         }
         float bw = footerButtonW(), by = footerY();
         if (Ui.actionHit(footerButtonX(0), by, bw, mx, my)) {
-            Minecraft.getInstance().setScreen(new KeyBindsScreen(this, Minecraft.getInstance().options));
+            Game.setScreen(new KeyBindsScreen(this, Minecraft.getInstance().options));
             return true;
         }
         if (Ui.actionHit(footerButtonX(1), by, bw, mx, my)) {
@@ -1383,9 +1386,9 @@ public final class TeyvatConfigScreen extends Screen {
 
     @Override
     public boolean keyPressed(KeyEvent event) {
-        int key = event.key(), scan = event.scancode(), mods = event.modifiers();
+        int key = event.key(), scan = Game.scancode(event), mods = event.modifiers();
         if (plantList != null && plantList.keyPressed(key, scan, mods)) return true;
-        if (key == GLFW.GLFW_KEY_ESCAPE) {
+        if (key == InputConstants.KEY_ESCAPE) {
             onClose();
             return true;
         }
@@ -1403,6 +1406,6 @@ public final class TeyvatConfigScreen extends Screen {
     @Override
     public void onClose() {
         MapConfig.save();
-        Minecraft.getInstance().setScreen(parent);
+        Game.setScreen(parent);
     }
 }

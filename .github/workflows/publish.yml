@@ -1,7 +1,7 @@
 name: Publish
 
 # Puts the JARs of a GitHub release on Modrinth and CurseForge: every game the release has files for, the oldest first
-# (1.21.1, then 26.1.2), and for each the Fabric file first, it with Fabric API (required) and Mod Menu (optional), then
+# (1.21.1, then 26.1.2, 26.2, 26.3), and for each the Fabric file first, it with Fabric API (required) and Mod Menu (optional), then
 # the NeoForge file. The game and the loader come from the file name (teyvatcartographia-v0.6.0+mc1.21.1-fabric.jar);
 # each upload is named by its version number (0.6.0+mc1.21.1-fabric), client side, with the Java its game needs and
 # the whole CHANGELOG.md as the changelog.

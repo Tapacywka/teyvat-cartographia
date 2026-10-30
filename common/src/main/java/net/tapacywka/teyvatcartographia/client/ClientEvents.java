@@ -1,5 +1,7 @@
 package net.tapacywka.teyvatcartographia.client;
 
+import net.tapacywka.teyvatcartographia.version.Game;
+
 import net.tapacywka.teyvatcartographia.config.MapConfig;
 import net.tapacywka.teyvatcartographia.gui.WorldMapScreen;
 import net.tapacywka.teyvatcartographia.hud.WorldMarkerLayer;
@@ -31,7 +33,7 @@ public final class ClientEvents {
         WorldMapScreen.tickTeleport(mc);
 
         while (Keybinds.OPEN_MAP.consumeClick()) {
-            if (mc.screen == null) mc.setScreen(new WorldMapScreen());
+            if (Game.screen() == null) Game.setScreen(new WorldMapScreen());
         }
         while (Keybinds.TOGGLE_MINIMAP.consumeClick()) {
             MapConfig.MINIMAP_ENABLED.set(!MapConfig.get(MapConfig.MINIMAP_ENABLED));
@@ -57,7 +59,7 @@ public final class ClientEvents {
 
     /** The quick pin key: the world map with the new pin editor where the player stands (no star pin made at once). */
     private static void quickPin(Minecraft mc) {
-        if (mc.screen == null) mc.setScreen(WorldMapScreen.newPinHere());
+        if (Game.screen() == null) Game.setScreen(WorldMapScreen.newPinHere());
     }
 
     public static void chunkLoaded(ClientLevel level, LevelChunk chunk) {

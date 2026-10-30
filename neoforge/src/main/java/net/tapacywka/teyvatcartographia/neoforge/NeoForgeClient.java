@@ -1,5 +1,7 @@
 package net.tapacywka.teyvatcartographia.neoforge;
 
+import net.tapacywka.teyvatcartographia.version.Game;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.resources.Identifier;
@@ -52,7 +54,7 @@ final class NeoForgeClient {
         NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut e) -> ClientEvents.loggingOut());
         NeoForge.EVENT_BUS.addListener((RenderLevelStageEvent.AfterLevel e) -> {
             Minecraft mc = Minecraft.getInstance();
-            WorldMarkerLayer.afterLevel(e.getModelViewMatrix(), mc.gameRenderer.getMainCamera(), mc.getDeltaTracker());
+            WorldMarkerLayer.afterLevel(e.getModelViewMatrix(), Game.camera(), mc.getDeltaTracker());
         });
         // Development tests (package devtest) are not in the JAR: started by name, only when a test run asks.
         if (System.getProperty("teyvatcartographia.devtest") != null) {

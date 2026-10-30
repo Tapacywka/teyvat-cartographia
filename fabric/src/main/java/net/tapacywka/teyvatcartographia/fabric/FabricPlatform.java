@@ -24,6 +24,12 @@ final class FabricPlatform implements Platform {
     }
 
     @Override
+    public String modVersion(String modId) {
+        return FabricLoader.getInstance().getModContainer(modId)
+                .map(mod -> mod.getMetadata().getVersion().getFriendlyString()).orElse("");
+    }
+
+    @Override
     public void noTextShadow(EditBox box) {
         box.setTextShadow(false);
     }

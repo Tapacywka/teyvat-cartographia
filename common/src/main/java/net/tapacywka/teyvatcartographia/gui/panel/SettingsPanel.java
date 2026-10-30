@@ -1,5 +1,7 @@
 package net.tapacywka.teyvatcartographia.gui.panel;
 
+import net.tapacywka.teyvatcartographia.version.Game;
+
 import net.tapacywka.teyvatcartographia.config.ConfigSpec;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
 import net.tapacywka.teyvatcartographia.gui.TeyvatConfigScreen;
@@ -9,7 +11,6 @@ import net.tapacywka.teyvatcartographia.gui.WorldMapScreen;
 import net.tapacywka.teyvatcartographia.render.DrawText;
 import net.tapacywka.teyvatcartographia.render.Icon;
 import net.tapacywka.teyvatcartographia.render.Theme;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 
@@ -157,7 +158,7 @@ public final class SettingsPanel extends SidePanel {
             }
         }
         if (Ui.actionHit(contentX(), bottomActionY(), contentW(), mx, my)) {
-            Minecraft.getInstance().setScreen(new TeyvatConfigScreen(screen));
+            Game.setScreen(new TeyvatConfigScreen(screen));
             return true;
         }
         return contains(mx, my);

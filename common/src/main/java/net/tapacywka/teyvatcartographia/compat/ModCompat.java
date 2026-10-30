@@ -33,12 +33,29 @@ public final class ModCompat {
         return loaded("the_sift");
     }
 
-    /**
-     * VulkanMod (Fabric) in the game: its textures drawn into keep the top row first, where the game's own (OpenGL) keep
-     * the bottom row first, so the mod's layers are drawn into upside down there ({@code render/CachedLayer}).
-     */
+    /** VulkanMod (Fabric) in the game. */
     public static boolean vulkan() {
         return loaded("vulkanmod");
+    }
+
+    /**
+     * Whether the textures drawn into keep the top row first, where the game's own (OpenGL) keep the bottom row first,
+     * so the mod's layers are drawn into upside down there ({@code render/CachedLayer}): under VulkanMod before 0.6.9
+     * (0.6.8 for 26.1.2 so; 0.6.9-dev.5 for 26.2 keeps them as OpenGL does, tester report 30.10.2026).
+     */
+    public static boolean vulkanTopFirst() {
+        return vulkan() && Platform.get() != null && topFirst(Platform.get().modVersion("vulkanmod"));
+    }
+
+    /** VulkanMod's version is before 0.6.9 (its pre-releases 0.6.9-dev.N already count as 0.6.9). */
+    static boolean topFirst(String version) {
+        String[] parts = version.split("[^0-9]+", 4);
+        int[] want = {0, 6, 9};
+        for (int i = 0; i < want.length; i++) {
+            int n = i < parts.length && !parts[i].isEmpty() ? Integer.parseInt(parts[i]) : 0;
+            if (n != want[i]) return n < want[i];
+        }
+        return false;
     }
 
     /** Xaero's Minimap or Xaero's World Map in the game, or the waypoints Xaero's Minimap left in it. */

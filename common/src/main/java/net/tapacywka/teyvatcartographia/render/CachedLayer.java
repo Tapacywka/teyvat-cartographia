@@ -1,7 +1,6 @@
 package net.tapacywka.teyvatcartographia.render;
 
 import com.mojang.blaze3d.ProjectionType;
-import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.systems.CommandEncoder;
@@ -9,11 +8,8 @@ import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
-import com.mojang.blaze3d.textures.TextureFormat;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.MeshData;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.platform.Window;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -23,6 +19,7 @@ import net.minecraft.client.renderer.Projection;
 import net.minecraft.client.renderer.ProjectionMatrixBuffer;
 import net.minecraft.client.renderer.state.gui.GuiElementRenderState;
 import net.tapacywka.teyvatcartographia.compat.ModCompat;
+import net.tapacywka.teyvatcartographia.version.Gpu;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
@@ -30,7 +27,6 @@ import org.joml.Vector4f;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.OptionalInt;
 
 /**
  * An off-screen texture that a HUD or screen part is drawn into only when its inputs change, then composited every
@@ -58,9 +54,8 @@ public final class CachedLayer {
     public void bind(GuiGraphicsExtractor g, int pw, int ph, boolean linear) {
         if (texture == null || texture.getWidth(0) != pw || texture.getHeight(0) != ph) {
             destroy();
-            texture = RenderSystem.getDevice().createTexture(() -> "Teyvat Cartographia layer",
-                    GpuTexture.USAGE_RENDER_ATTACHMENT | GpuTexture.USAGE_TEXTURE_BINDING | GpuTexture.USAGE_COPY_DST,
-                    TextureFormat.RGBA8, pw, ph, 1, 1);
+            texture = Gpu.texture("Teyvat Cartographia layer",
+                    GpuTexture.USAGE_RENDER_ATTACHMENT | GpuTexture.USAGE_TEXTURE_BINDING | GpuTexture.USAGE_COPY_DST, pw, ph, 1);
             view = RenderSystem.getDevice().createTextureView(texture);
             tex = null;
         }
@@ -98,7 +93,7 @@ public final class CachedLayer {
                 RenderPipeline pipeline = first.pipeline();
                 TextureSetup textures = first.textureSetup();
                 ScreenRectangle scissor = first.scissorArea();
-                BufferBuilder buffer = Tesselator.getInstance().begin(pipeline.getVertexFormatMode(), pipeline.getVertexFormat());
+                BufferBuilder buffer = Gpu.begin(pipeline);
                 int j = i;
                 // Consecutive elements of one pipeline, texture and clip go into one draw.
                 while (j < elements.size()) {
@@ -113,7 +108,7 @@ public final class CachedLayer {
             }
             if (clearPending) {
                 // Nothing drawn after all: cleared on its own.
-                try (RenderPass pass = encoder.createRenderPass(() -> "Teyvat Cartographia layer", view, OptionalInt.of(0))) {
+                try (RenderPass pass = Gpu.pass(encoder, "Teyvat Cartographia layer", view, true)) {
                     clearPending = false;
                 }
             }
@@ -126,40 +121,34 @@ public final class CachedLayer {
     private void draw(CommandEncoder encoder, MeshData mesh, RenderPipeline pipeline, TextureSetup textures, ScreenRectangle scissor,
                       GpuBufferSlice transforms, int pw, int ph, float guiW, float guiH) {
         try (mesh) {
-            GpuBuffer vertices = pipeline.getVertexFormat().uploadImmediateVertexBuffer(mesh.vertexBuffer());
-            int count = mesh.drawState().indexCount();
-            RenderSystem.AutoStorageIndexBuffer indices = RenderSystem.getSequentialBuffer(mesh.drawState().mode());
-            GpuBuffer indexBuffer = indices.getBuffer(count);
-            VertexFormat.IndexType indexType = indices.type();
-            OptionalInt clear = clearPending ? OptionalInt.of(0) : OptionalInt.empty();
+            Gpu.upload(UPLOAD, mesh, Gpu.format(pipeline));
+            boolean clear = clearPending;
             clearPending = false;
-            try (RenderPass pass = encoder.createRenderPass(() -> "Teyvat Cartographia layer", view, clear)) {
-                pass.setPipeline(pipeline);
+            try (RenderPass pass = Gpu.pass(encoder, "Teyvat Cartographia layer", view, clear)) {
+                Gpu.use(pass, pipeline);
                 RenderSystem.bindDefaultUniforms(pass);
                 pass.setUniform("DynamicTransforms", transforms);
-                if (textures.texure0() != null) pass.bindTexture("Sampler0", textures.texure0(), textures.sampler0());
-                if (textures.texure1() != null) pass.bindTexture("Sampler1", textures.texure1(), textures.sampler1());
-                if (textures.texure2() != null) pass.bindTexture("Sampler2", textures.texure2(), textures.sampler2());
+                if (textures.texure0() != null) Gpu.bind(pass, "Sampler0", textures.texure0(), textures.sampler0());
+                if (textures.texure1() != null) Gpu.bind(pass, "Sampler1", textures.texure1(), textures.sampler1());
+                if (textures.texure2() != null) Gpu.bind(pass, "Sampler2", textures.texure2(), textures.sampler2());
                 if (scissor != null) {
                     float sx = pw / guiW, sy = ph / guiH;
                     pass.enableScissor((int) (scissor.left() * sx), (int) (ph - scissor.bottom() * sy),
                             Math.max(0, (int) (scissor.width() * sx)), Math.max(0, (int) (scissor.height() * sy)));
                 }
-                pass.setVertexBuffer(0, vertices);
-                pass.setIndexBuffer(indexBuffer, indexType);
-                pass.drawIndexed(0, 0, count, 1);
+                Gpu.draw(pass, UPLOAD);
             }
         }
     }
 
     /**
      * A texture coordinate v of a layer as OpenGL reads it (0 at the bottom row), for the texture as the renderer keeps
-     * it: VulkanMod keeps the top row first (it shows the game's own such layers unflipped; under it the settings rows
-     * came out upside down, 30.10.2026). Flipping the projection while drawing in instead lost the text (its quads
-     * turned face down and culled).
+     * it: VulkanMod before 0.6.9 keeps the top row first (it shows the game's own such layers unflipped; under it the
+     * settings rows came out upside down, 30.10.2026). Flipping the projection while drawing in instead lost the text
+     * (its quads turned face down and culled).
      */
     public static float v(float v) {
-        if (topFirst == 0) topFirst = ModCompat.vulkan() ? 1 : -1; // asked once: the mods are known from the start
+        if (topFirst == 0) topFirst = ModCompat.vulkanTopFirst() ? 1 : -1; // asked once: the mods are known from the start
         return topFirst > 0 ? 1 - v : v;
     }
 
@@ -182,6 +171,7 @@ public final class CachedLayer {
         tex = null;
     }
 
+    private static final Gpu.Upload UPLOAD = new Gpu.Upload();
     private static final Projection PROJECTION = new Projection();
     // Made on first use: the GPU device does not exist yet when the HUD layers are created.
     private static ProjectionMatrixBuffer projectionBuffer;

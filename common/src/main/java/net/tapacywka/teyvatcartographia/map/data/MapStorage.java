@@ -1,5 +1,7 @@
 package net.tapacywka.teyvatcartographia.map.data;
 
+import net.tapacywka.teyvatcartographia.version.Game;
+
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.biome.Biome;
@@ -98,7 +100,7 @@ public final class MapStorage {
         if (!Files.exists(png) || !isCurrentVersion(dat)) return null; // missing or outdated: rebuilt from the world
         NativeImage image;
         try (InputStream in = Files.newInputStream(png)) {
-            image = NativeImage.read(NativeImage.Format.RGBA, in);
+            image = Game.readImage(in);
         }
         if (image.getWidth() != MapTile.SIZE || image.getHeight() != MapTile.SIZE) {
             image.close();
@@ -219,7 +221,7 @@ public final class MapStorage {
         Path file = dir.resolve("r." + tx + "." + tz + ".lod.png");
         if (Files.exists(file)) {
             try (InputStream in = Files.newInputStream(file)) {
-                NativeImage img = NativeImage.read(NativeImage.Format.RGBA, in);
+                NativeImage img = Game.readImage(in);
                 if (img.getWidth() == THUMB && img.getHeight() == THUMB) return img;
                 img.close();
             }
@@ -228,7 +230,7 @@ public final class MapStorage {
         if (!Files.exists(png)) return null;
         NativeImage image;
         try (InputStream in = Files.newInputStream(png)) {
-            image = NativeImage.read(NativeImage.Format.RGBA, in);
+            image = Game.readImage(in);
         }
         try {
             if (image.getWidth() != MapTile.SIZE || image.getHeight() != MapTile.SIZE) return null;

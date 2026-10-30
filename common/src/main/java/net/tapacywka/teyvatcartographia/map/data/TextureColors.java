@@ -1,5 +1,7 @@
 package net.tapacywka.teyvatcartographia.map.data;
 
+import net.tapacywka.teyvatcartographia.version.Game;
+
 import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.util.Util;
 import net.minecraft.client.Minecraft;
@@ -114,7 +116,7 @@ public final class TextureColors {
      */
     public static boolean tick() {
         Minecraft mc = Minecraft.getInstance();
-        if (pending && mc.getOverlay() == null) {
+        if (pending && Game.overlay() == null) {
             pending = false;
             start(mc);
         }

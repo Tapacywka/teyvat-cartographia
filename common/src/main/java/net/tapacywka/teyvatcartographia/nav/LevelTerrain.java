@@ -1,5 +1,7 @@
 package net.tapacywka.teyvatcartographia.nav;
 
+import net.tapacywka.teyvatcartographia.version.Game;
+
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.BlockTags;
@@ -41,7 +43,7 @@ final class LevelTerrain implements Terrain {
         for (int i = 0; i < 24 && y > bottom; i++) {
             BlockState s = level.getBlockState(pos.set(x, y - 1, z));
             if (needSpace) {
-                if (s.isAir() || !s.blocksMotion() && s.getFluidState().isEmpty()) needSpace = false;
+                if (s.isAir() || !Game.blocksMotion(s) && s.getFluidState().isEmpty()) needSpace = false;
                 y--;
                 continue;
             }
@@ -51,7 +53,7 @@ final class LevelTerrain implements Terrain {
                 return y;
             }
             if (s.is(BlockTags.LOGS)) return BLOCKED;
-            if (s.is(BlockTags.LEAVES) || s.isAir() || !s.blocksMotion()) {
+            if (s.is(BlockTags.LEAVES) || s.isAir() || !Game.blocksMotion(s)) {
                 y--;
                 continue;
             }

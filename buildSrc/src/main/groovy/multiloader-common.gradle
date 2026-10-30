@@ -25,3 +25,29 @@ tasks.named('jar', Jar) {
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
+
+// What differs between the 26.x games sits beside main in src/mc<game>/java (one file per game, the same class name),
+// so `-Pmc=26.2` compiles main with src/mc26.2/java (see settings.gradle).
+sourceSets.main.java.srcDir("src/mc${minecraft_version}/java")
+// and the folders some of them share (version_sources: glfw for 26.1.2 and 26.2, sdl for 26.3)
+"${findProperty('version_sources') ?: ''}".split(',')*.trim().findAll().each { sourceSets.main.java.srcDir("src/$it/java") }
+
+// Classes a game moved to another package (26.3: blaze3d's GPU API to com.mojang.renderpearl): versions/<game>.renames
+// lists "old.package.Name new.package.Name" per line, and main is compiled from a copy with those names swapped.
+def renames = rootProject.file("versions/${minecraft_version}.renames")
+if (renames.exists()) {
+    def pairs = renames.readLines().findAll { it.trim() && !it.trim().startsWith('#') }.collect { it.trim().split(/\s+/) }
+    def renameSources = tasks.register('renameSources', Sync) {
+        from 'src/main/java'
+        into layout.buildDirectory.dir('renamedSources/java')
+        inputs.file renames
+        filteringCharset = 'UTF-8'
+        filter { String line ->
+            pairs.each { p -> line = line.replaceAll(java.util.regex.Pattern.quote(p[0]) + '(?![A-Za-z0-9_])', p[1]) }
+            line
+        }
+    }
+    def renamed = layout.buildDirectory.dir('renamedSources/java').get().asFile
+    sourceSets.main.java.srcDirs = [renamed] + sourceSets.main.java.srcDirs.findAll { it != file('src/main/java') }
+    tasks.named('compileJava') { dependsOn renameSources }
+}

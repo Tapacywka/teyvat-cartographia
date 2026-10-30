@@ -12,6 +12,11 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Every 26.x game of this branch (versions/<game>.properties; 26.1.2 is the one of gradle.properties).
+    strategy:
+      fail-fast: false
+      matrix:
+        game: ['26.1.2', '26.2', '26.3']
     steps:
       - uses: actions/checkout@v4
 
@@ -24,16 +29,16 @@ jobs:
 
       # The JARs only (Fabric and NeoForge); the unit tests run in test.yml.
       - name: Build the mod
-        run: ./gradlew assemble --no-daemon
+        run: ./gradlew assemble --no-daemon -Pmc=${{ matrix.game }}
 
       - name: Fabric JAR
         uses: actions/upload-artifact@v4
         with:
-          name: teyvatcartographia-fabric-jar
+          name: teyvatcartographia-${{ matrix.game }}-fabric-jar
           path: fabric/build/libs/teyvatcartographia-v*.jar
 
       - name: NeoForge JAR
         uses: actions/upload-artifact@v4
         with:
-          name: teyvatcartographia-neoforge-jar
+          name: teyvatcartographia-${{ matrix.game }}-neoforge-jar
           path: neoforge/build/libs/teyvatcartographia-v*.jar

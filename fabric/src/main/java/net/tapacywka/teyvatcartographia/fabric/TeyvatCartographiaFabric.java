@@ -1,5 +1,7 @@
 package net.tapacywka.teyvatcartographia.fabric;
 
+import net.tapacywka.teyvatcartographia.version.Game;
+
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientChunkEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -44,7 +46,7 @@ public final class TeyvatCartographiaFabric implements ClientModInitializer {
         ClientPlayConnectionEvents.DISCONNECT.register((handler, mc) -> ClientEvents.loggingOut());
         LevelRenderEvents.END_MAIN.register(ctx -> {
             Minecraft mc = Minecraft.getInstance();
-            WorldMarkerLayer.afterLevel(ctx.levelState().cameraRenderState.viewRotationMatrix, mc.gameRenderer.getMainCamera(), mc.getDeltaTracker());
+            WorldMarkerLayer.afterLevel(ctx.levelState().cameraRenderState.viewRotationMatrix, Game.camera(), mc.getDeltaTracker());
         });
         // Development tests (package devtest) are not in the JAR: started by name, only when a test run asks.
         if (System.getProperty("teyvatcartographia.devtest") != null) {

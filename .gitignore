@@ -9,6 +9,7 @@
 !/gradlew
 !/gradlew.bat
 !/gradle/
+!/versions/
 !/buildSrc/
 !/common/
 !/fabric/

@@ -9,8 +9,8 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.tapacywka.teyvatcartographia.TeyvatCartographia;
 import net.tapacywka.teyvatcartographia.render.Theme;
-import org.lwjgl.glfw.GLFW;
-import org.lwjgl.glfw.GLFWImage;
+import net.tapacywka.teyvatcartographia.version.Game;
+import net.tapacywka.teyvatcartographia.version.Pointer;
 import org.lwjgl.system.MemoryUtil;
 
 import java.io.InputStream;
@@ -21,7 +21,7 @@ import java.util.Locale;
 import java.util.Optional;
 
 /**
- * The mouse pointer in the mod's menus (the world map with its panels, the settings): system cursors (GLFW), so they
+ * The mouse pointer in the mod's menus (the world map with its panels, the settings): system cursors (GLFW, SDL3 on 26.3), so they
  * move without lag at any frame rate. Made from the white 64 px masks of the theme ({@code cursors/<name>.png},
  * hotspots in {@code cursors/hotspots.json}), tinted with {@link Theme#CURSOR}, outlined with
  * {@link Theme#CURSOR_OUTLINE}, sized to the interface scale. A screen calls {@link #begin} when it starts drawing,
@@ -80,7 +80,7 @@ public final class Cursors {
             wanted.made = true;
         }
         if (wanted != applied) {
-            GLFW.glfwSetCursor(mc.getWindow().handle(), wanted.handle);
+            Pointer.show(wanted.handle);
             applied = wanted;
         }
     }
@@ -88,7 +88,7 @@ public final class Cursors {
     /** The vanilla pointer again (a mod screen closed). */
     public static void reset() {
         if (applied == null) return;
-        GLFW.glfwSetCursor(Minecraft.getInstance().getWindow().handle(), 0L);
+        Pointer.show(0L);
         applied = null;
     }
 
@@ -98,10 +98,10 @@ public final class Cursors {
     }
 
     private static void destroy() {
-        GLFW.glfwSetCursor(Minecraft.getInstance().getWindow().handle(), 0L);
+        Pointer.show(0L);
         applied = null;
         for (Shape s : Shape.values()) {
-            if (s.handle != 0) GLFW.glfwDestroyCursor(s.handle);
+            if (s.handle != 0) Pointer.destroy(s.handle);
             s.handle = 0;
             s.made = false;
         }
@@ -137,10 +137,7 @@ public final class Cursors {
                     }
                 }
                 pixels.flip();
-                try (GLFWImage image = GLFWImage.malloc()) {
-                    image.set(size, size, pixels);
-                    return GLFW.glfwCreateCursor(image, hot[0] * size / 64, hot[1] * size / 64);
-                }
+                return Pointer.create(pixels, size, hot[0] * size / 64, hot[1] * size / 64);
             } finally {
                 MemoryUtil.memFree(pixels);
             }
@@ -180,7 +177,7 @@ public final class Cursors {
         Optional<Resource> res = resource(file);
         if (res.isEmpty()) return null;
         try (InputStream in = res.get().open()) {
-            return NativeImage.read(NativeImage.Format.RGBA, in);
+            return Game.readImage(in);
         }
     }
 

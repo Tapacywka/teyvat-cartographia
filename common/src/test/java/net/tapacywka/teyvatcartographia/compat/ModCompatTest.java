@@ -22,4 +22,16 @@ class ModCompatTest {
         assertEquals("JourneyMap", ModCompat.titleCase("JourneyMap"), "capitals inside a word stay");
         assertEquals("", ModCompat.titleCase(""));
     }
+
+    @Test
+    void vulkanModBefore069KeepsTheTopRowFirst() {
+        assertTrue(ModCompat.topFirst("0.6.8+26.1.2"));
+        assertTrue(ModCompat.topFirst("0.6.7+1.21.1"));
+        assertTrue(ModCompat.topFirst("0.5.4"));
+        assertFalse(ModCompat.topFirst("0.6.9-dev.5+26.2"), "a pre-release of 0.6.9 already as OpenGL");
+        assertFalse(ModCompat.topFirst("0.6.9+26.2"));
+        assertFalse(ModCompat.topFirst("0.6.10"));
+        assertFalse(ModCompat.topFirst("0.7.0"));
+        assertFalse(ModCompat.topFirst("1.0"));
+    }
 }

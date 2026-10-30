@@ -1,5 +1,7 @@
 package net.tapacywka.teyvatcartographia.hud;
 
+import net.tapacywka.teyvatcartographia.version.Game;
+
 import net.minecraft.world.level.Level;
 import net.minecraft.resources.ResourceKey;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
@@ -70,8 +72,8 @@ public final class MinimapLayer {
      * The chat is not a menu.
      */
     private static boolean visible(Minecraft mc) {
-        if (mc.player == null || mc.level == null || mc.options.hideGui || !MapConfig.get(MapConfig.MINIMAP_ENABLED)) return false;
-        boolean menu = mc.screen != null && !(mc.screen instanceof ChatScreen);
+        if (mc.player == null || mc.level == null || Game.hideGui() || !MapConfig.get(MapConfig.MINIMAP_ENABLED)) return false;
+        boolean menu = Game.screen() != null && !(Game.screen() instanceof ChatScreen);
         return !menu && !mc.getDebugOverlay().showDebugScreen();
     }
     /** North, east, south and west, clockwise. */

@@ -1,7 +1,8 @@
 package net.tapacywka.teyvatcartographia.hud;
 
+import net.tapacywka.teyvatcartographia.version.Game;
+
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import net.tapacywka.teyvatcartographia.map.data.MapDataManager;
 import net.tapacywka.teyvatcartographia.nav.Route;
 import net.tapacywka.teyvatcartographia.render.Theme;
@@ -89,7 +90,7 @@ final class PathStars {
         float time = (Util.getMillis() % 1_000_000L) / 1000f;
         int color = Theme.worldMarkerPulse(), coreColor = Theme.WORLD_MARKER_BEAM_CORE | 0xFF000000; // golden, a light core
 
-        BufferBuilder b = WorldGlow.begin(VertexFormat.Mode.TRIANGLES);
+        BufferBuilder b = WorldGlow.begin(false);
         for (int j = 0; j < SLOTS; j++) {
             float life = LIFE_MIN + (LIFE_MAX - LIFE_MIN) * unit(hash(j, -1));
             float local = time / life + unit(hash(j, -2)); // each slot starts at its own point of its life
@@ -170,7 +171,7 @@ final class PathStars {
         for (int k = 0; k < 24 && y > bottom; k++, y--) {
             BlockState st = level.getBlockState(POS.set(bx, y - 1, bz));
             // Trunks too: a sparkle beside a tree belongs at its foot, not on top of the trunk.
-            if (!st.getFluidState().isEmpty() || st.blocksMotion() && !st.is(BlockTags.LEAVES) && !st.is(BlockTags.LOGS)) return y;
+            if (!st.getFluidState().isEmpty() || Game.blocksMotion(st) && !st.is(BlockTags.LEAVES) && !st.is(BlockTags.LOGS)) return y;
         }
         return Float.NaN;
     }

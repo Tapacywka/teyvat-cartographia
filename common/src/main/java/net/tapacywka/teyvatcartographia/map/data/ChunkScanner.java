@@ -1,5 +1,7 @@
 package net.tapacywka.teyvatcartographia.map.data;
 
+import net.tapacywka.teyvatcartographia.version.Game;
+
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.BiomeColors;
@@ -399,6 +401,6 @@ public final class ChunkScanner {
 
     private static boolean isSolid(LevelChunk chunk, BlockPos pos) {
         BlockState s = chunk.getBlockState(pos);
-        return !s.isAir() && (s.blocksMotion() || !s.getFluidState().isEmpty());
+        return !s.isAir() && (Game.blocksMotion(s) || !s.getFluidState().isEmpty());
     }
 }

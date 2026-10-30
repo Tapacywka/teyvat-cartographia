@@ -1,5 +1,7 @@
 package net.tapacywka.teyvatcartographia.map.data;
 
+import net.tapacywka.teyvatcartographia.version.Game;
+
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.FluidTags;
@@ -166,7 +168,7 @@ public final class CaveScanner {
 
     /** Something to stand on or a liquid surface: the floor of a cave. */
     private static boolean solid(BlockState s) {
-        return !s.isAir() && (s.blocksMotion() || !s.getFluidState().isEmpty());
+        return !s.isAir() && (Game.blocksMotion(s) || !s.getFluidState().isEmpty());
     }
 
     private static boolean isWater(BlockState s) {

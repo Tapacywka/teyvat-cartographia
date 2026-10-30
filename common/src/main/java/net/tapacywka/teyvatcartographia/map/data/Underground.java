@@ -1,5 +1,7 @@
 package net.tapacywka.teyvatcartographia.map.data;
 
+import net.tapacywka.teyvatcartographia.version.Game;
+
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -27,7 +29,7 @@ final class Underground {
 
     /** The block is ground the world made: solid and of a natural kind (not leaves, wood, glass, bricks or furniture). */
     static boolean natural(BlockState s) {
-        if (!s.blocksMotion()) return false;
+        if (!Game.blocksMotion(s)) return false;
         return s.is(BlockTags.BASE_STONE_OVERWORLD) || s.is(BlockTags.DIRT) || s.is(BlockTags.SAND) || s.is(BlockTags.TERRACOTTA)
                 || s.is(CommonTags.STONES) || s.is(CommonTags.GRAVELS) || s.is(CommonTags.ORES) || s.is(CommonTags.SANDS)
                 || s.is(BlockTags.BASE_STONE_NETHER) || s.is(CommonTags.NETHERRACKS) || s.is(CommonTags.END_STONES)

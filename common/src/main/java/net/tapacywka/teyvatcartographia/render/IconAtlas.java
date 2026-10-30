@@ -1,12 +1,15 @@
 package net.tapacywka.teyvatcartographia.render;
 
+import net.tapacywka.teyvatcartographia.version.Game;
+
+import net.tapacywka.teyvatcartographia.version.Gpu;
+
 import net.tapacywka.teyvatcartographia.map.data.Pixels;
 import com.mojang.blaze3d.systems.CommandEncoder;
 import com.mojang.blaze3d.textures.AddressMode;
 import com.mojang.blaze3d.textures.FilterMode;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
-import com.mojang.blaze3d.textures.TextureFormat;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.tapacywka.teyvatcartographia.TeyvatCartographia;
@@ -57,14 +60,13 @@ public final class IconAtlas {
         try {
             NativeImage base = stitch();
             premultiply(base);
-            texture = RenderSystem.getDevice().createTexture(() -> "Teyvat Cartographia icons",
-                    GpuTexture.USAGE_TEXTURE_BINDING | GpuTexture.USAGE_COPY_DST, TextureFormat.RGBA8,
-                    base.getWidth(), base.getHeight(), 1, MAX_LEVEL + 1);
+            texture = Gpu.texture("Teyvat Cartographia icons", GpuTexture.USAGE_TEXTURE_BINDING | GpuTexture.USAGE_COPY_DST,
+                    base.getWidth(), base.getHeight(), MAX_LEVEL + 1);
             view = RenderSystem.getDevice().createTextureView(texture);
             CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
             NativeImage level = base;
             for (int l = 0; l <= MAX_LEVEL; l++) {
-                encoder.writeToTexture(texture, level, l, 0, 0, 0, level.getWidth(), level.getHeight(), 0, 0);
+                Gpu.write(encoder, texture, level, l);
                 if (l < MAX_LEVEL) {
                     NativeImage next = halve(level);
                     level.close();
@@ -78,8 +80,7 @@ public final class IconAtlas {
             TeyvatCartographia.LOGGER.error("Could not build the icon atlas", e);
             invalidate();
             // Draw nothing rather than fail every frame: an empty 1 x 1 texture.
-            texture = RenderSystem.getDevice().createTexture(() -> "Teyvat Cartographia icons", GpuTexture.USAGE_TEXTURE_BINDING
-                    | GpuTexture.USAGE_COPY_DST, TextureFormat.RGBA8, 1, 1, 1, 1);
+            texture = Gpu.texture("Teyvat Cartographia icons", GpuTexture.USAGE_TEXTURE_BINDING | GpuTexture.USAGE_COPY_DST, 1, 1, 1);
             view = RenderSystem.getDevice().createTextureView(texture);
             tex = Tex.clamped(view, false);
         }
@@ -102,7 +103,7 @@ public final class IconAtlas {
                 TeyvatCartographia.LOGGER.warn("Missing icon {}", loc);
                 continue;
             }
-            try (InputStream in = res.get().open(); NativeImage img = NativeImage.read(NativeImage.Format.RGBA, in)) {
+            try (InputStream in = res.get().open(); NativeImage img = Game.readImage(in)) {
                 if (img.getWidth() != cell || img.getHeight() != cell) {
                     TeyvatCartographia.LOGGER.warn("Icon {} must be {}x{} px, is {}x{}", loc, cell, cell, img.getWidth(), img.getHeight());
                     continue;

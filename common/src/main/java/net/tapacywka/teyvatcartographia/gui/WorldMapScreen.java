@@ -1,5 +1,11 @@
 package net.tapacywka.teyvatcartographia.gui;
 
+import net.tapacywka.teyvatcartographia.version.Keys;
+
+import com.mojang.blaze3d.platform.InputConstants;
+
+import net.tapacywka.teyvatcartographia.version.Game;
+
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
@@ -42,7 +48,6 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import com.mojang.blaze3d.platform.Window;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -138,7 +143,7 @@ public final class WorldMapScreen extends Screen {
     /** The mod's name for a dimension, else its id's path made readable ("the_aether" as "The Aether"). */
     private static Component buildDimensionName(ResourceKey<Level> dimension) {
         String key = net.minecraft.util.Util.makeDescriptionId("teyvatcartographia.dimension", dimension.identifier());
-        if (net.minecraft.client.resources.language.I18n.exists(key)) return Component.translatable(key);
+        if (net.minecraft.locale.Language.getInstance().has(key)) return Component.translatable(key);
         String pretty = readableName(dimension.identifier().getPath());
         return Component.literal(pretty.isEmpty() ? dimension.identifier().toString() : pretty);
     }
@@ -1696,7 +1701,7 @@ public final class WorldMapScreen extends Screen {
             landZ = bz;
             landTicks = LAND_WAIT;
         }
-        Minecraft.getInstance().setScreen(null);
+        Game.setScreen(null);
     }
 
     /** Height of the first step of a teleport to unexplored ground, and how long the second step waits (ticks). */
@@ -1746,16 +1751,16 @@ public final class WorldMapScreen extends Screen {
 
     @Override
     public boolean keyPressed(KeyEvent event) {
-        int key = event.key(), scan = event.scancode(), mods = event.modifiers();
+        int key = event.key(), scan = Game.scancode(event), mods = event.modifiers();
         if (panel != null && panel.keyPressed(key, scan, mods)) return true;
-        if (key == GLFW.GLFW_KEY_F && (mods & GLFW.GLFW_MOD_CONTROL) != 0 && (panel == null || !panel.capturesKeyboard())) {
+        if (key == InputConstants.KEY_F && (mods & InputConstants.MOD_CONTROL) != 0 && (panel == null || !panel.capturesKeyboard())) {
             // Ctrl+F: the pin list with the cursor in its search field.
             MarkerListPanel list = panel instanceof MarkerListPanel l ? l : openList();
             list.focusSearch();
             return true;
         }
         boolean typing = panel != null && panel.capturesKeyboard();
-        if (key == GLFW.GLFW_KEY_ESCAPE) {
+        if (key == InputConstants.KEY_ESCAPE) {
             if (menu != null) closeMenu();
             else if (pick != null) pick = null;
             else if (panel != null) closePanel();
@@ -1769,13 +1774,13 @@ public final class WorldMapScreen extends Screen {
         }
         pick = null; // keys move or zoom the map under it
         switch (key) {
-            case GLFW.GLFW_KEY_SPACE -> recenterOnPlayer();
-            case GLFW.GLFW_KEY_EQUAL, GLFW.GLFW_KEY_KP_ADD -> zoomAt(width / 2.0, height / 2.0, 1.5);
-            case GLFW.GLFW_KEY_MINUS, GLFW.GLFW_KEY_KP_SUBTRACT -> zoomAt(width / 2.0, height / 2.0, 1 / 1.5);
-            case GLFW.GLFW_KEY_LEFT, GLFW.GLFW_KEY_A -> flyTo(targetX - 80 / scale, targetZ);
-            case GLFW.GLFW_KEY_RIGHT, GLFW.GLFW_KEY_D -> flyTo(targetX + 80 / scale, targetZ);
-            case GLFW.GLFW_KEY_UP, GLFW.GLFW_KEY_W -> flyTo(targetX, targetZ - 80 / scale);
-            case GLFW.GLFW_KEY_DOWN, GLFW.GLFW_KEY_S -> flyTo(targetX, targetZ + 80 / scale);
+            case InputConstants.KEY_SPACE -> recenterOnPlayer();
+            case InputConstants.KEY_EQUALS, InputConstants.KEY_ADD -> zoomAt(width / 2.0, height / 2.0, 1.5);
+            case InputConstants.KEY_MINUS, Keys.KP_SUBTRACT -> zoomAt(width / 2.0, height / 2.0, 1 / 1.5);
+            case InputConstants.KEY_LEFT, InputConstants.KEY_A -> flyTo(targetX - 80 / scale, targetZ);
+            case InputConstants.KEY_RIGHT, InputConstants.KEY_D -> flyTo(targetX + 80 / scale, targetZ);
+            case InputConstants.KEY_UP, InputConstants.KEY_W -> flyTo(targetX, targetZ - 80 / scale);
+            case InputConstants.KEY_DOWN, InputConstants.KEY_S -> flyTo(targetX, targetZ + 80 / scale);
             default -> {
                 return super.keyPressed(event);
             }

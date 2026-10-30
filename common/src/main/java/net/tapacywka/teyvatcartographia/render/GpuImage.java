@@ -4,7 +4,7 @@ import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.GpuTexture;
 import com.mojang.blaze3d.textures.GpuTextureView;
-import com.mojang.blaze3d.textures.TextureFormat;
+import net.tapacywka.teyvatcartographia.version.Gpu;
 
 /**
  * The GPU copy of an image the caller keeps (a map region, a LOD tile): unlike the game's DynamicTexture it never
@@ -18,8 +18,7 @@ public final class GpuImage {
     /** A texture of the image's size with the image uploaded. */
     public GpuImage(String label, NativeImage image) {
         RenderSystem.assertOnRenderThread();
-        texture = RenderSystem.getDevice().createTexture(() -> label, GpuTexture.USAGE_TEXTURE_BINDING | GpuTexture.USAGE_COPY_DST,
-                TextureFormat.RGBA8, image.getWidth(), image.getHeight(), 1, 1);
+        texture = Gpu.texture(label, GpuTexture.USAGE_TEXTURE_BINDING | GpuTexture.USAGE_COPY_DST, image.getWidth(), image.getHeight(), 1);
         view = RenderSystem.getDevice().createTextureView(texture);
         sharp = Tex.clamped(view, false);
         smooth = Tex.clamped(view, true);

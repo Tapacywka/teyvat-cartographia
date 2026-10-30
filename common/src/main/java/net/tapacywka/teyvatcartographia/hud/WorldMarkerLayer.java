@@ -1,5 +1,7 @@
 package net.tapacywka.teyvatcartographia.hud;
 
+import net.tapacywka.teyvatcartographia.version.Game;
+
 import net.tapacywka.teyvatcartographia.config.MapConfig;
 import net.tapacywka.teyvatcartographia.gui.Ui.Grid;
 import net.tapacywka.teyvatcartographia.marker.Marker;
@@ -16,10 +18,8 @@ import net.tapacywka.teyvatcartographia.render.Icon;
 import net.tapacywka.teyvatcartographia.render.MarkerRenderer;
 import net.tapacywka.teyvatcartographia.render.Theme;
 import net.tapacywka.teyvatcartographia.render.WorldGlow;
-import com.mojang.blaze3d.pipeline.RenderTarget;
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.util.Util;
 import net.minecraft.client.Camera;
 import net.minecraft.client.DeltaTracker;
@@ -122,7 +122,7 @@ public final class WorldMarkerLayer {
      */
     public static void afterLevel(Matrix4fc levelView, Camera camera, DeltaTracker delta) {
         // The level's projection of this frame (since 26.1 kept in the camera's render state).
-        Matrix4f projection = Minecraft.getInstance().gameRenderer.getGameRenderState().levelRenderState.cameraRenderState.projectionMatrix;
+        Matrix4f projection = Game.renderState().levelRenderState.cameraRenderState.projectionMatrix;
         renderInWorld(levelView, camera, delta);
         VIEW.set(levelView);
         projection.mul(VIEW, VIEW_PROJ);
@@ -195,8 +195,8 @@ public final class WorldMarkerLayer {
         trackTimer(t);
         // The marker of the tracked pin, with its beam and the stars as the settings of its kind say.
         MapConfig.PinOptions o = MarkerVisibility.targetOptions();
-        if (!captured || mc.options.hideGui || o == null) return;
-        if (mc.screen != null && !(mc.screen instanceof ChatScreen)) return;
+        if (!captured || Game.hideGui() || o == null) return;
+        if (Game.screen() != null && !(Game.screen() instanceof ChatScreen)) return;
         if (!Navigation.inPlayerDimension(t, player)) return;
         float vis = visibility(Util.getMillis());
         if (vis <= 0.01f) return;
@@ -387,13 +387,12 @@ public final class WorldMarkerLayer {
      */
     private static void renderInWorld(Matrix4fc levelView, Camera camera, DeltaTracker delta) {
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.options.hideGui) return;
+        if (mc.player == null || Game.hideGui()) return;
         boolean stars = starsShown > 0f && Navigation.inPlayerDimension(Navigation.target(), mc.player);
         if (!stars && !beamOn) return;
         // The depth Fabulous leaves in the main target hid every star; the particles' target holds the scene's depth
         // (its own copy, plus the particles), so the light is tested against that one there.
-        RenderTarget particles = mc.levelRenderer.getParticlesTarget();
-        WorldGlow.begin(levelView, Minecraft.useShaderTransparency() && particles != null ? particles : null);
+        WorldGlow.begin(levelView, Game.particlesTarget());
         try {
             if (stars) PathStars.render(camera, starsShown);
             renderBeam(camera, delta);
@@ -412,7 +411,7 @@ public final class WorldMarkerLayer {
     private static void renderBeam(Camera camera, DeltaTracker delta) {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
-        if (player == null || mc.level == null || mc.options.hideGui || !beamOn) return;
+        if (player == null || mc.level == null || Game.hideGui() || !beamOn) return;
         Navigation.Target t = Navigation.target();
         if (!Navigation.inPlayerDimension(t, player)) return;
         float pt = delta.getGameTimeDeltaPartialTick(false);
@@ -434,7 +433,7 @@ public final class WorldMarkerLayer {
         float glow = Math.max(0.3f, dist * BEAM_GLOW_K), core = Math.max(0.06f, dist * BEAM_CORE_K);
         // Any part farther than the far plane allows (its top too, which looking up at it brings deeper into the view):
         // the same beam nearer along the line of sight, everything scaled alike.
-        float near = mc.gameRenderer.getGameRenderState().levelRenderState.cameraRenderState.depthFar * BEAM_NEAR;
+        float near = Game.renderState().levelRenderState.cameraRenderState.depthFar * BEAM_NEAR;
         float top = BEAM_Y[BeamShape.ROWS - 1];
         float reach = (float) Math.sqrt(len * len + Math.max(y0 * y0, top * top));
         if (reach > near) {
@@ -445,10 +444,10 @@ public final class WorldMarkerLayer {
 
         // An amber tint laid over the scene first, so the beam stays golden on a bright sky (added light alone turned
         // white on blue), then the glow and the light core added to it, the glow at half strength.
-        BufferBuilder tint = WorldGlow.begin(VertexFormat.Mode.QUADS);
+        BufferBuilder tint = WorldGlow.begin(true);
         beamLayer(tint, bx, bz, rx, rz, glow, Theme.withAlpha(Theme.WORLD_MARKER_BEAM_TINT, a));
         WorldGlow.draw(tint, false);
-        BufferBuilder b = WorldGlow.begin(VertexFormat.Mode.QUADS);
+        BufferBuilder b = WorldGlow.begin(true);
         beamLayer(b, bx, bz, rx, rz, glow, Theme.withAlpha(Theme.WORLD_MARKER_BEAM, a * BEAM_ADDED));
         beamLayer(b, bx, bz, rx, rz, core, Theme.withAlpha(Theme.WORLD_MARKER_BEAM_CORE, a));
         WorldGlow.draw(b);

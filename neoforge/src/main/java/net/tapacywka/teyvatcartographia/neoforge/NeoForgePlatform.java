@@ -26,6 +26,12 @@ final class NeoForgePlatform implements Platform {
     }
 
     @Override
+    public String modVersion(String modId) {
+        ModList mods = ModList.get();
+        return mods == null ? "" : mods.getModContainerById(modId).map(mod -> mod.getModInfo().getVersion().toString()).orElse("");
+    }
+
+    @Override
     public void noTextShadow(EditBox box) {
         box.setTextShadow(false);
     }
