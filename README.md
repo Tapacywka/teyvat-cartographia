@@ -132,7 +132,7 @@ Place pins, search for them and for biomes, track them, follow the path and find
 2. Download the file for your game and loader from [Modrinth](https://modrinth.com/mod/teyvat-cartographia),
    [CurseForge](https://www.curseforge.com/minecraft/mc-mods/teyvat-cartographia) or the
    [GitHub releases](https://github.com/Tapacywka/teyvat-cartographia/releases):
-   the part after `+mc` names them: `teyvatcartographia-v0.5.1+mc1.21.1-fabric.jar` is for Minecraft 1.21.1 on Fabric,
+   the part after `+mc` names them: `teyvatcartographia-v0.6.0+mc1.21.1-fabric.jar` is for Minecraft 1.21.1 on Fabric,
    `teyvatcartographia-v0.6.0+mc26.1.2-neoforge.jar` for 26.1.2 on NeoForge. Put it into your `mods/` folder.
 3. Launch the game and press **M** in a world.
 4. Optional: make the minimap round (**Settings > Minimap**) or the interface rounded (**Settings > Map**). On Fabric,
