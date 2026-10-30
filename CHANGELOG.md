@@ -16,6 +16,10 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`).
 - Minecraft 26.1.2: Teyvat Cartographia now also comes for Minecraft 26.1.2, on Fabric and NeoForge, with everything
   the 1.21.1 version has (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`). It needs Java 25, as the game does.
 
+### Changed
+- Minecraft 1.21.1 gets version 0.6.0 too (`+mc1.21.1-fabric`, `+mc1.21.1-neoforge`), the same mod as 0.5.1: from
+  now on every version comes for both games under one number.
+
 ## [0.5.1] - 2026-10-30
 
 ### Changed
