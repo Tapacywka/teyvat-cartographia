@@ -55,11 +55,20 @@ final class WaystonesBridge {
         try {
             java.lang.reflect.Field field = type.getField("EVENT");
             Object event = field.get(null);
-            // Through the field's declared (public) type: the object itself may be of a class that is not.
+            // Through the field's declared (public) type: the object itself may be of a class that is not. Its register
+            // takes the callback as a type parameter (erased to Object; Balm's EventMapper<Consumer<TEvent>>), so the
+            // listener's type comes from the field's generic type; a listener interface of its own is answered by a proxy.
+            Class<?> listener = callbackType(field);
             for (Method m : field.getType().getMethods()) {
-                if (!m.getName().equals("register") || m.getParameterCount() != 1 || !m.getParameterTypes()[0].isInterface()) continue;
-                Class<?> listener = m.getParameterTypes()[0];
-                Object proxy = Proxy.newProxyInstance(listener.getClassLoader(), new Class<?>[]{listener}, (p, method, args) -> {
+                if (!m.getName().equals("register") || m.getParameterCount() != 1) continue;
+                Class<?> param = m.getParameterTypes()[0];
+                Class<?> type2 = param.isInterface() ? param : listener;
+                if (type2 == null || !param.isAssignableFrom(type2)) continue;
+                if (type2 == Consumer.class) {
+                    m.invoke(event, onMain);
+                    return;
+                }
+                Object proxy = Proxy.newProxyInstance(type2.getClassLoader(), new Class<?>[]{type2}, (p, method, args) -> {
                     if (method.getDeclaringClass() == Object.class) return objectMethod(p, method, args);
                     if (args != null && args.length == 1) onMain.accept(args[0]);
                     return null;
@@ -67,12 +76,23 @@ final class WaystonesBridge {
                 m.invoke(event, proxy);
                 return;
             }
+            throw new NoSuchMethodException(eventClass + ".EVENT has no register for a listener");
         } catch (NoSuchFieldException ignored) {
             // Waystones for 1.21.1: Balm's event bus.
         }
         Class<?> balm = Class.forName("net.blay09.mods.balm.api.Balm");
         Object events = balm.getMethod("getEvents").invoke(null);
         events.getClass().getMethod("onEvent", Class.class, Consumer.class).invoke(events, type, onMain);
+    }
+
+    /** The interface of the callback an event field takes ({@code Consumer} for {@code EventMapper<Consumer<E>>}), or null. */
+    private static Class<?> callbackType(java.lang.reflect.Field field) {
+        if (field.getGenericType() instanceof java.lang.reflect.ParameterizedType p && p.getActualTypeArguments().length == 1) {
+            java.lang.reflect.Type arg = p.getActualTypeArguments()[0];
+            if (arg instanceof java.lang.reflect.ParameterizedType pa) arg = pa.getRawType();
+            if (arg instanceof Class<?> c && c.isInterface()) return c;
+        }
+        return null;
     }
 
     private static Object objectMethod(Object proxy, Method method, Object[] args) {
