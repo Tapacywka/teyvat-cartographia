@@ -86,7 +86,7 @@ class ImportRulesTest {
         net.minecraft.nbt.ListTag pins = (net.minecraft.nbt.ListTag) Marker.CODEC.listOf().encodeStart(net.minecraft.nbt.NbtOps.INSTANCE,
                 List.of(star, pin("Statue", MarkerType.STAR, 5))).getOrThrow();
         // The second one a statue of 0.1.2, an interactive type: left out since 0.8.0.
-        pins.getCompound(1).putString("type", "STATUE");
+        pins.getCompound(1).orElseThrow().putString("type", "STATUE");
         data.put("pins", pins);
         net.minecraft.nbt.CompoundTag root = new net.minecraft.nbt.CompoundTag();
         root.putInt("DataVersion", 3955);

@@ -172,7 +172,7 @@ public final class WaystonesCompat {
 
     private static Marker marker(Stone s, String name, boolean inactive) {
         UUID id = s.id() != null ? s.id()
-                : UUID.nameUUIDFromBytes(("waystones:" + s.dimension().location() + ":" + s.key()).getBytes(StandardCharsets.UTF_8));
+                : UUID.nameUUIDFromBytes(("waystones:" + s.dimension().identifier() + ":" + s.key()).getBytes(StandardCharsets.UTF_8));
         Marker m = new Marker(id, name, typeOf(s), s.dimension(), s.pos().getX(), s.pos().getY(), s.pos().getZ(), 0L, true);
         m.inactive = inactive;
         return m;
@@ -219,7 +219,7 @@ public final class WaystonesCompat {
             found.add(new Stone(dimension, be.getBlockPos().immutable(), kind, dungeon, null, null));
         }
         Map<Long, Stone> before = SEEN.getOrDefault(dimension, Map.of());
-        int cx = chunk.getPos().x, cz = chunk.getPos().z;
+        int cx = chunk.getPos().x(), cz = chunk.getPos().z();
         boolean hadAny = before.values().stream().anyMatch(s -> (s.pos().getX() >> 4) == cx && (s.pos().getZ() >> 4) == cz);
         if (found.isEmpty() && !hadAny) return;
         Map<Long, Stone> after = replaceChunk(before, cx, cz, found);
@@ -316,7 +316,7 @@ public final class WaystonesCompat {
             for (var e : arr) {
                 JsonObject o = e.getAsJsonObject();
                 ResourceKey<Level> dim = ResourceKey.create(Registries.DIMENSION,
-                        net.minecraft.resources.ResourceLocation.parse(o.get("dimension").getAsString()));
+                        net.minecraft.resources.Identifier.parse(o.get("dimension").getAsString()));
                 Kind kind = Kind.valueOf(o.get("kind").getAsString());
                 BlockPos pos = new BlockPos(o.get("x").getAsInt(), o.get("y").getAsInt(), o.get("z").getAsInt());
                 Stone s = new Stone(dim, pos, kind, o.has("dungeon") && o.get("dungeon").getAsBoolean(), null, null);
@@ -335,7 +335,7 @@ public final class WaystonesCompat {
         for (Map<Long, Stone> m : SEEN.values()) {
             for (Stone s : m.values()) {
                 JsonObject o = new JsonObject();
-                o.addProperty("dimension", s.dimension().location().toString());
+                o.addProperty("dimension", s.dimension().identifier().toString());
                 o.addProperty("kind", s.kind().name());
                 o.addProperty("x", s.pos().getX());
                 o.addProperty("y", s.pos().getY());
