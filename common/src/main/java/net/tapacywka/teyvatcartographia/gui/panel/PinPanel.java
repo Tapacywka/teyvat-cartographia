@@ -21,7 +21,6 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -31,18 +30,12 @@ import java.util.List;
  *   <li>existing pin (opened by clicking it): the same editor plus "Track", delete in the total-pins bar;</li>
  *   <li>read-only view (automatic points): coordinates and "Track" only.</li>
  * </ul>
- * The type grid has two sections, "Custom" and "Interactive", both for every player (the interactive pins were for
- * operators only, shared by the server, until 24.10.2026).
+ * The type grid holds the custom types alone, without a heading (since 0.8.0, user decision 31.10.2026: the
+ * interactive types and their section went, so "Custom" over the only section said nothing).
  */
 public final class PinPanel extends SidePanel {
-    private static final List<MarkerType.Category> SECTIONS = List.of(MarkerType.Category.EXPLORATION);
-    private static final java.util.Map<MarkerType.Category, List<MarkerType>> SECTION_TYPES = new java.util.EnumMap<>(MarkerType.Category.class);
-    static {
-        for (MarkerType.Category c : SECTIONS) SECTION_TYPES.put(c, Arrays.stream(MarkerType.values()).filter(t -> t.category == c).toList());
-    }
+    private static final List<MarkerType> TYPES = MarkerType.customTypes();
     private static final int CELL = Grid.SLOT + Grid.GAP;
-    /** Section header: one text line above the section's tiles. */
-    private static final int SECTION_HEAD = DrawText.LINE + Grid.GAP;
 
     private enum Action { TRACK, CONFIRM }
 
@@ -131,13 +124,6 @@ public final class PinPanel extends SidePanel {
         return coordsY() + Grid.CHIP_H + Grid.PAD;
     }
 
-    private List<MarkerType.Category> sections() {
-        return SECTIONS;
-    }
-
-    private List<MarkerType> types(int section) {
-        return SECTION_TYPES.get(sections().get(section));
-    }
 
     /** The total bar: the pins against their limit. */
     private Component totalText() {
@@ -159,23 +145,14 @@ public final class PinPanel extends SidePanel {
         return contentX() + (contentW() - (cols * CELL - Grid.GAP)) / 2f;
     }
 
-    /** Top of section {@code k} (its header line), scrolled; sections are stacked with PAD between them. */
-    private float sectionY(int k) {
-        float y = gridY() - gridScroll;
-        int cols = columns();
-        for (int j = 0; j < k; j++) {
-            int rows = (types(j).size() + cols - 1) / cols;
-            y += SECTION_HEAD + rows * CELL - Grid.GAP + Grid.PAD;
-        }
-        return y;
-    }
 
     private float slotX(int i) {
         return gridX() + (i % columns()) * CELL;
     }
 
-    private float slotY(int k, int i) {
-        return sectionY(k) + SECTION_HEAD + (i / columns()) * CELL;
+    /** Top of tile {@code i}, scrolled. */
+    private float slotY(int i) {
+        return gridY() - gridScroll + (i / columns()) * CELL;
     }
 
     private float totalY() {
@@ -186,11 +163,10 @@ public final class PinPanel extends SidePanel {
         return contentX() + contentW() - Grid.TOOL;
     }
 
-    /** Height of the type grid (all visible sections, headers included). */
+    /** Height of the type grid. */
     private float gridHeight() {
-        int last = sections().size() - 1, cols = columns();
-        int rows = (types(last).size() + cols - 1) / cols;
-        return sectionY(last) + gridScroll - gridY() + SECTION_HEAD + rows * CELL - Grid.GAP;
+        int cols = columns();
+        return (TYPES.size() + cols - 1) / cols * CELL - Grid.GAP;
     }
 
     // ------------------------------------------------------------------ grid scrolling (short screens, B20)
@@ -232,44 +208,33 @@ public final class PinPanel extends SidePanel {
         float cy = coordsY();
         Ui.chip(g, bx, cy, bw, Grid.CHIP_H, readOnly ? Theme.PANEL_LIGHT_CHIP : Theme.PANEL_LIGHT_CHIP_EDIT);
         Draw.icon(g, Icon.LOCATE, bx + Grid.CHIP_H / 2f, cy + Grid.CHIP_H / 2f, Grid.ICON, Theme.CHIP_ICON);
-        // Too long with the dimension (always the one on the map): the coordinates alone.
-        String coords = DrawText.fitFirst(maxText,
-                Component.translatable("teyvatcartographia.pin.coords", px, pz, WorldMapScreen.dimensionName(dimension)).getString(),
-                Component.translatable("teyvatcartographia.pin.coords_short", px, pz).getString());
+        // The coordinates alone: the dimension is always the one on the map (user request 31.10.2026, shown until then).
+        String coords = DrawText.fit(Component.translatable("teyvatcartographia.pin.coords_short", px, pz).getString(), maxText);
         DrawText.text(g, coords,bx + Grid.CHIP_H, DrawText.textY(cy, Grid.CHIP_H), Theme.TEXT_DARK, false);
 
         if (!readOnly) {
-            // Type grid by section (header line, then tiles): the same tiles as in the pin list. Where it does not fit
+            // Type grid: the same tiles as in the pin list. Where it does not fit
             // above the total bar it scrolls, clipped to its room, with a thin bar in the panel's right padding.
             float max = maxGridScroll();
             if (!gridShown) {
-                // Opened scrolled just enough to show the selected type (an interactive one is in the last section).
+                // Opened scrolled just enough to show the selected type.
                 gridShown = true;
-                for (int k = 0; k < sections().size(); k++) {
-                    int i = types(k).indexOf(type);
-                    if (i >= 0) gridScroller.jump(slotY(k, i) + Grid.SLOT - gridViewBottom());
-                }
+                int i = TYPES.indexOf(type);
+                if (i >= 0) gridScroller.jump(slotY(i) + Grid.SLOT - gridViewBottom());
             }
             gridScroll = gridScroller.update(max);
             float viewTop = gridY(), viewBottom = gridViewBottom();
             if (max > 0) g.enableScissor((int) Math.floor(x), (int) viewTop, (int) Math.ceil(x + w), (int) viewBottom);
             boolean hoverGrid = max == 0 || inGridView(my);
-            List<MarkerType.Category> sections = sections();
-            for (int k = 0; k < sections.size(); k++) {
-                Component head = Component.translatable(sections.get(k).langKey());
-                DrawText.room(head, bx + bw - gridX());
-                DrawText.text(g, head, gridX(), sectionY(k), Theme.TEXT_DARK_SOFT, false);
-                List<MarkerType> types = types(k);
-                for (int i = 0; i < types.size(); i++) {
-                    MarkerType t = types.get(i);
-                    float sx = slotX(i), sy = slotY(k, i), s = Grid.SLOT;
-                    boolean hover = hoverGrid && Draw.inRect(mx, my, sx, sy, s, s);
-                    if (hover) {
-                        hoveredType = t;
-                        Cursors.want(Cursors.Shape.HAND);
-                    }
-                    MarkerRenderer.badge(g, t.icon, sx + s / 2f, sy + s / 2f, s, t == type, hover, 1f);
+            for (int i = 0; i < TYPES.size(); i++) {
+                MarkerType t = TYPES.get(i);
+                float sx = slotX(i), sy = slotY(i), s = Grid.SLOT;
+                boolean hover = hoverGrid && Draw.inRect(mx, my, sx, sy, s, s);
+                if (hover) {
+                    hoveredType = t;
+                    Cursors.want(Cursors.Shape.HAND);
                 }
+                MarkerRenderer.badge(g, t.icon, sx + s / 2f, sy + s / 2f, s, t == type, hover, 1f);
             }
             if (max > 0) {
                 g.disableScissor();
@@ -329,13 +294,10 @@ public final class PinPanel extends SidePanel {
         }
         if (readOnly()) return true;
         if (name.click(mx, my, button)) return true;
-        for (int k = 0; k < sections().size() && inGridView(my); k++) {
-            List<MarkerType> types = types(k);
-            for (int i = 0; i < types.size(); i++) {
-                if (Draw.inRect(mx, my, slotX(i), slotY(k, i), Grid.SLOT, Grid.SLOT)) {
-                    type = types.get(i);
-                    return true;
-                }
+        for (int i = 0; i < TYPES.size() && inGridView(my); i++) {
+            if (Draw.inRect(mx, my, slotX(i), slotY(i), Grid.SLOT, Grid.SLOT)) {
+                type = TYPES.get(i);
+                return true;
             }
         }
         if (editing != null && Draw.inRect(mx, my, trashX(), totalY(), Grid.TOOL, Grid.TOOL)) {

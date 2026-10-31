@@ -35,12 +35,7 @@ public enum MarkerType {
     WARP_PLATE(Icon.WARP_PLATE, Category.INTERACTION);
 
     public enum Category {
-        EXPLORATION, INTERACTION, AUTO;
-
-        /** Translation key of the section header in the pin editor. */
-        public String langKey() {
-            return "teyvatcartographia.pin.category." + name().toLowerCase(java.util.Locale.ROOT);
-        }
+        EXPLORATION, INTERACTION, AUTO
     }
 
     public final Icon icon;
