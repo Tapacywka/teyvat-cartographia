@@ -22,8 +22,10 @@ public final class Marker {
     public final long created;
     /** The cave layer the pin belongs to (a band of {@code CaveScanner}), or null for the surface. */
     public Integer band;
-    /** True for automatic, non-persisted points (spawn, last death). */
+    /** True for automatic, non-persisted points (spawn, last death, waystones). */
     public final boolean automatic;
+    /** An automatic point the player has not activated yet (a waystone seen but not used): drawn grey, only tracked. */
+    public boolean inactive;
 
     public Marker(UUID id, String name, MarkerType type, ResourceKey<Level> dimension, int x, int y, int z, long created, boolean automatic) {
         this.id = id;

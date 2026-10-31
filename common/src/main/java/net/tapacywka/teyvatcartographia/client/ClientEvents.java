@@ -2,6 +2,7 @@ package net.tapacywka.teyvatcartographia.client;
 
 import net.tapacywka.teyvatcartographia.version.Game;
 
+import net.tapacywka.teyvatcartographia.compat.WaystonesCompat;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
 import net.tapacywka.teyvatcartographia.gui.WorldMapScreen;
 import net.tapacywka.teyvatcartographia.hud.WorldMarkerLayer;
@@ -25,6 +26,7 @@ public final class ClientEvents {
         MapDataManager data = MapDataManager.get();
         data.tick();
         MarkerStore.switchWorld(data.worldId());
+        WaystonesCompat.tick(data.worldId(), data.worldId() == null ? null : data.worldDir());
         Navigation.tick();
         PathFinder.tick();
         FarPath.tick();
@@ -64,10 +66,12 @@ public final class ClientEvents {
 
     public static void chunkLoaded(ClientLevel level, LevelChunk chunk) {
         MapDataManager.get().onChunkLoaded(chunk);
+        WaystonesCompat.chunkLoaded(level.dimension(), chunk);
     }
 
     public static void loggingOut() {
         MapDataManager.get().closeAll(true);
         MarkerStore.switchWorld(null);
+        WaystonesCompat.leave();
     }
 }

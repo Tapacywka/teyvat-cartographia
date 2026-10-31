@@ -10,13 +10,14 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** The kinds of pins: custom and interactive for every player, and the automatic points. */
+/** The kinds of pins: the player's custom ones, the interactive stones of Waystones, and the automatic points. */
 class MarkerTypeTest {
     @Test
-    void threeInteractiveTypes() {
+    void theInteractiveTypesAreTheStonesOfWaystones() {
         Set<MarkerType> interactive = EnumSet.noneOf(MarkerType.class);
         for (MarkerType t : MarkerType.values()) if (t.category == MarkerType.Category.INTERACTION) interactive.add(t);
-        assertEquals(EnumSet.of(MarkerType.SIGN, MarkerType.PARTY, MarkerType.STRUCTURE), interactive);
+        assertEquals(EnumSet.of(MarkerType.WAYSTONE, MarkerType.DUNGEON, MarkerType.SHARESTONE, MarkerType.WARP_PLATE), interactive);
+        for (MarkerType t : interactive) assertFalse(t.custom, t + " is an automatic point, not a pin the player makes");
     }
 
     @Test
@@ -32,7 +33,6 @@ class MarkerTypeTest {
         assertFalse(MarkerType.SPAWN.custom);
         assertFalse(MarkerType.DEATH.custom);
         assertTrue(MarkerType.STAR.custom);
-        assertTrue(MarkerType.SIGN.custom);
     }
 
     @Test
@@ -45,10 +45,9 @@ class MarkerTypeTest {
 
     @Test
     void theTypesOfOldVersionsReadAsTheNewOnes() {
-        // Up to 0.1.2: WAYPOINT, STATUE and DOMAIN (files, exports and a server's shared pins).
-        assertEquals(MarkerType.SIGN, parse("WAYPOINT"));
-        assertEquals(MarkerType.PARTY, parse("STATUE"));
-        assertEquals(MarkerType.STRUCTURE, parse("DOMAIN"));
+        // The interactive pin types, removed in 0.8.0 with every such pin (and their names up to 0.1.2): no type.
+        for (String removed : new String[]{"SIGN", "PARTY", "STRUCTURE", "WAYPOINT", "STATUE", "DOMAIN"})
+            assertTrue(MarkerType.PIN_CODEC.parse(com.mojang.serialization.JsonOps.INSTANCE, new com.google.gson.JsonPrimitive(removed)).error().isPresent(), removed);
         // And the custom ones, named by what they show since 0.2.0.
         assertEquals(MarkerType.DEMON, parse("BOSS"));
         assertEquals(MarkerType.MEAT, parse("FOOD"));
@@ -56,7 +55,7 @@ class MarkerTypeTest {
         assertEquals(MarkerType.PICKAXE, parse("MINE"));
         assertEquals(MarkerType.HOOK, parse("FISHING"));
         for (MarkerType t : MarkerType.values()) if (t.custom) assertEquals(t, parse(t.name()), "the new names read back");
-        assertEquals("PARTY", MarkerType.PIN_CODEC.encodeStart(com.mojang.serialization.JsonOps.INSTANCE, MarkerType.PARTY)
+        assertEquals("FLOWER", MarkerType.PIN_CODEC.encodeStart(com.mojang.serialization.JsonOps.INSTANCE, MarkerType.FLOWER)
                 .getOrThrow().getAsString(), "written with the new name");
     }
 
@@ -67,6 +66,5 @@ class MarkerTypeTest {
     @Test
     void sectionHeadersHaveTexts() {
         assertEquals("teyvatcartographia.pin.category.exploration", MarkerType.Category.EXPLORATION.langKey());
-        assertEquals("teyvatcartographia.pin.category.interaction", MarkerType.Category.INTERACTION.langKey());
     }
 }

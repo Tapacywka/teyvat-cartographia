@@ -11,12 +11,12 @@ public enum Icon {
     LIST, LAYERS, PENCIL, TRASH, CHECK, EXPORT, IMPORT, SEARCH, EARTH, KEYBOARD, RESET, VIEW, NEW_PIN,
     // Custom pin types (the seven Genshin Impact custom pins)
     DEMON, QUEST, STAR, MEAT, FLOWER, PICKAXE, HOOK,
-    // Operator pin types
-    PARTY, STRUCTURE, SIGN,
     // Automatic points
     SPAWN, DEATH,
     // The path over deep water (where a crossing begins) and by air (where the straight line begins)
-    SEA, CLOUD;
+    SEA, CLOUD,
+    // Waystones (compat/WaystonesCompat): a waystone, one of a dungeon, a sharestone, a warp plate
+    WAYSTONE, DUNGEON, SHARESTONE, WARP_PLATE;
 
     public static final int COLUMNS = 8, CELL = 64, ATLAS_W = 512, ATLAS_H = 512;
 

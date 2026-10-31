@@ -9,14 +9,22 @@ public final class MarkerVisibility {
 
     /** The kind of pin {@code m}: its settings ({@link MapConfig#pins}). */
     public static MapConfig.PinKind kind(Marker m) {
-        if (m.automatic) return MapConfig.PinKind.SYSTEM;
-        return m.type.category == MarkerType.Category.EXPLORATION ? MapConfig.PinKind.CUSTOM : MapConfig.PinKind.INTERACTIVE;
+        return kind(m.type);
+    }
+
+    /** The kind of a type: the player's own pins, the stones of Waystones (interactive), the spawn and death points. */
+    public static MapConfig.PinKind kind(MarkerType type) {
+        return switch (type.category) {
+            case EXPLORATION -> MapConfig.PinKind.CUSTOM;
+            case INTERACTION -> MapConfig.PinKind.INTERACTIVE;
+            case AUTO -> MapConfig.PinKind.SYSTEM;
+        };
     }
 
     /** The kind of the tracked pin {@code t}, or null without a target (or when its pin is gone). */
     public static MapConfig.PinKind kind(Navigation.Target t) {
         if (t == null) return null;
-        if (t.auto() != null) return MapConfig.PinKind.SYSTEM;
+        if (t.auto() != null) return kind(t.auto());
         Marker m = MarkerStore.find(t.markerId());
         return m == null ? null : kind(m);
     }

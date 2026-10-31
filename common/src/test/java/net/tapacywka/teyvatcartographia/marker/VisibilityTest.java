@@ -15,7 +15,8 @@ class VisibilityTest {
     @Test
     void eachPinBelongsToItsKind() {
         assertEquals(MapConfig.PinKind.CUSTOM, MarkerVisibility.kind(Marker.custom("a", MarkerType.DEMON, Level.OVERWORLD, 0, 64, 0)));
-        assertEquals(MapConfig.PinKind.INTERACTIVE, MarkerVisibility.kind(Marker.custom("b", MarkerType.PARTY, Level.OVERWORLD, 0, 64, 0)));
+        Marker waystone = new Marker(UUID.randomUUID(), "Waystone", MarkerType.WAYSTONE, Level.OVERWORLD, 0, 64, 0, 0, true);
+        assertEquals(MapConfig.PinKind.INTERACTIVE, MarkerVisibility.kind(waystone), "the stones of Waystones are the interactive pins");
         Marker spawn = new Marker(UUID.randomUUID(), "Spawn", MarkerType.SPAWN, Level.OVERWORLD, 0, 64, 0, 0, true);
         assertEquals(MapConfig.PinKind.SYSTEM, MarkerVisibility.kind(spawn));
     }

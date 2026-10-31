@@ -35,7 +35,7 @@ import java.util.List;
  * operators only, shared by the server, until 24.10.2026).
  */
 public final class PinPanel extends SidePanel {
-    private static final List<MarkerType.Category> SECTIONS = List.of(MarkerType.Category.EXPLORATION, MarkerType.Category.INTERACTION);
+    private static final List<MarkerType.Category> SECTIONS = List.of(MarkerType.Category.EXPLORATION);
     private static final java.util.Map<MarkerType.Category, List<MarkerType>> SECTION_TYPES = new java.util.EnumMap<>(MarkerType.Category.class);
     static {
         for (MarkerType.Category c : SECTIONS) SECTION_TYPES.put(c, Arrays.stream(MarkerType.values()).filter(t -> t.category == c).toList());
