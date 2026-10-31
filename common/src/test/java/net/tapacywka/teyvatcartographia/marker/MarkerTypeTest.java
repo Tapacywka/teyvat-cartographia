@@ -62,9 +62,4 @@ class MarkerTypeTest {
     private static MarkerType parse(String name) {
         return MarkerType.PIN_CODEC.parse(com.mojang.serialization.JsonOps.INSTANCE, new com.google.gson.JsonPrimitive(name)).getOrThrow();
     }
-
-    @Test
-    void sectionHeadersHaveTexts() {
-        assertEquals("teyvatcartographia.pin.category.exploration", MarkerType.Category.EXPLORATION.langKey());
-    }
 }

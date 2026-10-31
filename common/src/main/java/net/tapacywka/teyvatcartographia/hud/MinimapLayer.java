@@ -54,6 +54,8 @@ import java.util.TimeZone;
 public final class MinimapLayer implements LayeredDraw.Layer {
     /** Info pills under/over the minimap: one text line with 4 units of padding = 16. */
     private static final int PILL_H = 16;
+    /** How far the frame reaches out of the map's radius (the square's 1-unit line, the circle's 1.5-unit one), rounded up. */
+    private static final int FRAME_OUT = 1;
     private static final float ARROW = 16;
     /** Smallest radius a minimap shrunk to fit the screen gets (the setting's own minimum). */
     private static final int MIN_RADIUS = 24;
@@ -127,7 +129,8 @@ public final class MinimapLayer implements LayeredDraw.Layer {
     /** The map of the minimap prepared last, with its frame: its centre and half its width (GUI units). */
     public static float[] preparedMap() {
         MinimapLayer m = instance;
-        return new float[] {m.kCx, m.kCy, m.kR + 4};
+        // Out to the frame's outer edge only: the pills may start right there (a line spacing of 0) and stay out.
+        return new float[] {m.kCx, m.kCy, m.kR + FRAME_OUT};
     }
 
     /** Brings both cached layers up to date; {@code preview}: for the settings, not the HUD (the HUD area is not touched). */
@@ -183,28 +186,31 @@ public final class MinimapLayer implements LayeredDraw.Layer {
         boolean textBelow;
 
         int ox = MapConfig.get(MapConfig.MINIMAP_OFFSET_X), oy = MapConfig.get(MapConfig.MINIMAP_OFFSET_Y);
+        MapConfig.Corner corner = MapConfig.get(MapConfig.MINIMAP_CORNER);
+        // Clear of Sodium Extra's FPS overlay when it writes in the same corner.
+        int overlay = net.tapacywka.teyvatcartographia.compat.SodiumExtraOverlay.clearance(corner);
         float cx, cy;
-        switch (MapConfig.get(MapConfig.MINIMAP_CORNER)) {
+        switch (corner) {
             case TOP_RIGHT -> {
                 // Keep clear of the vanilla status-effect icons in the top right corner.
                 int effectRows = player.getActiveEffects().isEmpty() ? 0 : 2;
                 cx = g.guiWidth() - ox - r;
-                cy = oy + r + effectRows * 25;
+                cy = oy + r + Math.max(effectRows * 25, overlay);
                 textBelow = true;
             }
             case BOTTOM_LEFT -> {
                 cx = ox + r;
-                cy = g.guiHeight() - oy - r;
+                cy = g.guiHeight() - oy - r - overlay;
                 textBelow = false;
             }
             case BOTTOM_RIGHT -> {
                 cx = g.guiWidth() - ox - r;
-                cy = g.guiHeight() - oy - r;
+                cy = g.guiHeight() - oy - r - overlay;
                 textBelow = false;
             }
             default -> {
                 cx = ox + r;
-                cy = oy + r;
+                cy = oy + r + overlay;
                 textBelow = true;
             }
         }
@@ -307,16 +313,16 @@ public final class MinimapLayer implements LayeredDraw.Layer {
     private float kFadeStart, kFadeEdge;
     private long kDrawnNs;
     // The pill texts, minimap radius, text scale and gap they were laid out for, their lines; the GUI width the pills
-    // keep inside. The clock row may hold two pills (game and real time): timeW is the whole row.
+    // keep inside. With both clocks the real time has a row of its own (time2).
     private Component pillCoords, pillBiome, pillTime, pillTime2;
     private Component[] coordsLines, biomeLines, timeLines, time2Lines;
     private int pillR, pillGap = -1, screenW;
-    private float coordsW, biomeW, timeW, time1W, time2W, pillScale = 1, laidScale;
+    private float coordsW, biomeW, time1W, time2W, pillScale = 1, laidScale;
     private boolean timeWrap; // the real time in a row of its own
 
     /** Width of one of the laid-out pill rows (measured in {@link #layoutPills}), in GUI units. */
     private float widthOf(Component[] lines) {
-        return lines == coordsLines ? coordsW : lines == biomeLines ? biomeW : lines == time2Lines ? time2W : timeW;
+        return lines == coordsLines ? coordsW : lines == biomeLines ? biomeW : lines == time2Lines ? time2W : time1W;
     }
 
     /** Height of a pill with {@code lines} text lines at the text scale (0 for none), in GUI units. */
@@ -350,8 +356,9 @@ public final class MinimapLayer implements LayeredDraw.Layer {
             time1W = pillWidth(timeLines) * pillScale;
             time2W = pillWidth(time2Lines) * pillScale;
             // Wider than the map, the real time goes to a row of its own under the clock row.
-            timeWrap = time2Lines != null && MinimapFit.clockWraps(time1W, infoGap, time2W, 2 * r);
-            timeW = time2Lines == null || timeWrap ? time1W : time1W + infoGap + time2W;
+            // Both times shown: the real time always in a row of its own under the clock (user decision 31.10.2026;
+            // beside it while the two fitted the map's width, so the line spacing moved it from row to row).
+            timeWrap = time2Lines != null;
         }
         int pills = (coordsLine != null ? 1 : 0) + (biomeLine != null ? 1 : 0) + (timeLine != null ? 1 : 0) + (timeWrap ? 1 : 0);
         return pills == 0 ? 0 : (int) Math.ceil(infoGap + heightOf(coordsLines) + heightOf(biomeLines) + heightOf(timeLines)
@@ -454,7 +461,11 @@ public final class MinimapLayer implements LayeredDraw.Layer {
         order[1] = biomeLine == null ? null : biomeLines;
         order[2] = timeLine == null ? null : timeLines;
         order[3] = timeWrap && timeLine != null ? time2Lines : null;
-        float ty = textBelow ? cy + r + 3 + infoGap : cy - r - 3 - textBlock + infoGap;
+        // From the outer edge of the frame: at a gap of 0 the first pill touches the map (user report 31.10.2026: 3 units
+        // were always added). Bare text under the map keeps one font pixel from it, as each line keeps one under its
+        // letters from the next (user request 31.10.2026); over the map the bottom line's own pixel does that.
+        float lead = textBelow && pillOpacity <= 0 ? pillScale : 0;
+        float ty = textBelow ? cy + r + FRAME_OUT + lead + infoGap : cy - r - FRAME_OUT - textBlock + infoGap;
         for (int i = 0; i < order.length; i++) ty = pill(g, cx, ty, order[textBelow ? i : order.length - 1 - i], Theme.WHITE, alpha);
     }
     /** The pill rows in their order from the map outwards, reused. */
@@ -713,9 +724,18 @@ public final class MinimapLayer implements LayeredDraw.Layer {
         return PILL_H + w;
     }
 
-    /** Height of a pill with {@code lines} text lines (0 for none). */
-    private static int pillHeight(Component[] lines) {
-        return lines == null ? 0 : PILL_H + (lines.length - 1) * DrawText.LINE;
+    /**
+     * Height of a pill with {@code lines} text lines (0 for none). With the pills see-through (opacity 0) a row is only
+     * as high as its text, so the line spacing is between the texts and 0 sets them line under line (user report
+     * 31.10.2026: the invisible pill around each line kept them apart).
+     */
+    private int pillHeight(Component[] lines) {
+        return lines == null ? 0 : rowHeight() + (lines.length - 1) * DrawText.LINE;
+    }
+
+    /** One text row: the pill's height, or the text's alone while the pills cannot be seen. */
+    private int rowHeight() {
+        return pillOpacity > 0 ? PILL_H : DrawText.LINE;
     }
 
     /**
@@ -738,18 +758,12 @@ public final class MinimapLayer implements LayeredDraw.Layer {
     private static final int MIN_WRAP = 60;
 
     /**
-     * Pill row centred on cx at y, if there are lines; returns the y of the next row. The clock row holds the game
-     * time and, when both are shown, the real time to its right.
+     * Pill row centred on cx at y, if there are lines; returns the y of the next row.
      */
     private float pill(GuiGraphics g, float cx, float y, Component[] lines, int color, float alpha) {
         if (lines == null) return y;
         float x = pillX(lines, cx);
-        if (lines == timeLines && time2Lines != null && !timeWrap) {
-            pillAt(g, x, y, lines, time1W, color, alpha);
-            pillAt(g, Draw.snap(x + time1W + infoGap), y, time2Lines, time2W, color, alpha);
-        } else {
-            pillAt(g, x, y, lines, widthOf(lines), color, alpha);
-        }
+        pillAt(g, x, y, lines, widthOf(lines), color, alpha);
         return y + heightOf(lines) + infoGap;
     }
 
@@ -764,7 +778,7 @@ public final class MinimapLayer implements LayeredDraw.Layer {
         // Several lines: rounded like the one-line capsule, not a taller capsule.
         if (lines.length > 1 && !Theme.Style.squareUi) Draw.roundRect(g, 0, 0, w0, h0, PILL_H / 2f, fill);
         else Ui.pillShape(g, 0, 0, w0, h0, fill, 0);
-        float ty = DrawText.textY(0, PILL_H);
+        float ty = DrawText.textY(0, rowHeight());
         for (Component line : lines) {
             DrawText.text(g, line, (w0 - DrawText.width(line)) / 2f, ty, Theme.withAlpha(color, alpha), false);
             ty += DrawText.LINE;

@@ -15,17 +15,40 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
   minimap with their names, like the teleport waypoints of Genshin Impact. Stones you have seen in the world but not
   activated yet show grey until you use them. A waystone a structure placed in a dungeon shows as a dungeon. Every
   stone can be tracked, with its path and beam, and found by name in the pin list. Teleporting stays with Waystones
-  and its own rules. Settings in Compatibility > Waystones choose which stones show; the tab appears only with
-  Waystones in the game. The stones are the interactive pins now: Pins > Interactive pins and the path to them decide
-  where they show (the map, the minimap, the marker, the beam, the stars), shown only with Waystones in the game.
+  and its own rules. All their settings are in Compatibility > Waystones, shown only with Waystones in the game:
+  which stones show, and where they and the path to them show (the map, the minimap, the marker, the beam, the
+  stars). The stones are the interactive pins now.
+- Sodium Extra support: when its FPS counter (or its coordinates) is shown in the same corner as the minimap, the
+  minimap moves clear of it, down from a top corner and up from a bottom one.
 
 ### Changed
 - The settings preview shows its pictures at the same place for every setting, right under a description of at most
   three lines; the longest descriptions (the route, plants, the pin and path rows and a few more) are shorter.
+- The preview of the cave map setting is a picture now: on, a mapped cave with the layer buttons beside it as the
+  world map shows them; off, the map around you alone.
+- The Plants setting has a preview too: the map around you, where plants switched on or off in their list appear or
+  go a moment later.
+- With both clocks on, the real time is always on a line of its own under the game time; it went beside it when the
+  two fitted the minimap's width, so changing the line spacing moved it from line to line.
+- The pin panel shows a pin's coordinates without the name of the dimension (always the one on the map).
+- The arrows of the minimap's Position go round the screen clockwise: top left, top right, bottom right, bottom left.
+- The settings screen is never larger than GUI scale 3 is at 1080p: at GUI 4 on a 1080p screen it looks as at GUI 3,
+  with its preview beside it, and on a 1440p screen GUI 5 to 8 show it as GUI 4. Smaller scales are unchanged.
 
 ### Removed
-- The interactive pin types sign, party and structure, and the Interactive section of the pin editor: their place
+- The interactive pin types sign, party and structure, and the Interactive section of the pin editor (its custom
+  types are now one grid without a heading): their place
   went to the stones of Waystones. Pins of these types are removed from your maps and left out of imported files.
+
+### Fixed
+- In the settings, the sliders of where pins show ended a little short of the sliders of the path; all now end at
+  the same place.
+- The minimap's Line spacing at 0 still left room: the first line kept a fixed gap below the map, and with
+  see-through backgrounds the invisible pills kept the lines apart. At 0 the lines now sit right under the map and
+  right under each other.
+- With plants off (or sea grass and kelp switched off in their list), the sea floor under them showed as dots of sand
+  in the water; those spots stay water now. Places already mapped change when you pass by again.
+- A click on the zoom slider of the world map moved its handle there at once; it now glides there with the map.
 
 ## [0.7.0] - 2026-10-30
 

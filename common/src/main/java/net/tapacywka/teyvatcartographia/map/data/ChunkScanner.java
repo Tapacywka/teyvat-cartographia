@@ -106,8 +106,10 @@ public final class ChunkScanner {
                     pos.set(wx, y, wz);
                     state = chunk.getBlockState(pos);
                     mc = state.getMapColor(level, pos);
-                    // A solid plant the list leaves out (a cactus, chorus) is looked through to the ground under it.
-                    if (!ceiling && Plants.hidden(state.getBlock(), plantSet)) continue;
+                    // A solid plant the list leaves out (a cactus, chorus) is looked through to the ground under it; not
+                    // one holding water (seagrass, kelp): its column stays water, as with the plants on (user report
+                    // 31.10.2026: with the plants off, sea grass showed the sea floor's sand as dots in the water).
+                    if (!ceiling && state.getFluidState().isEmpty() && Plants.hidden(state.getBlock(), plantSet)) continue;
                     if (mc != MapColor.NONE || !state.getFluidState().isEmpty()) break;
                 }
                 if (y < minY) {

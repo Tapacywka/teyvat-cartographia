@@ -56,10 +56,12 @@ final class SettingsPreview {
         return net.tapacywka.teyvatcartographia.marker.MarkerVisibility.kind(t);
     }
 
-    /** The types of the sample ring: the stones of Waystones only with Waystones in the game (so no gap without it). */
-    private static MarkerType[] sampleTypes() {
-        boolean waystones = net.tapacywka.teyvatcartographia.compat.ModCompat.waystones();
-        return java.util.Arrays.stream(MarkerType.values()).filter(t -> waystones || t.category != MarkerType.Category.INTERACTION).toArray(MarkerType[]::new);
+    /**
+     * The types of the sample ring: the stones of Waystones only for their own rows (in Compatibility > Waystones since
+     * 31.10.2026), so the Pins tab shows its own kinds alone, with the mod or without it.
+     */
+    private static MarkerType[] sampleTypes(boolean stones) {
+        return java.util.Arrays.stream(MarkerType.values()).filter(t -> stones || t.category != MarkerType.Category.INTERACTION).toArray(MarkerType[]::new);
     }
 
     /**
@@ -76,12 +78,13 @@ final class SettingsPreview {
      * ("By air"); the choices not taken darkened, each with its name under it.
      */
     static void route(GuiGraphics g, float x, float y, float w, float h) {
+        // One under another across the whole width, filling the area like the terrain detail strips (user request
+        // 31.10.2026; side by side until then, small in the middle of the card).
         int frames = MapConfig.Route.values().length;
-        float label = Grid.GAP + DrawText.LINE, fw = (w - (frames - 1) * Grid.GAP) / frames, fh = Math.min(h - label, fw * 0.8f);
-        float top = Draw.snap(y + (h - fh - label) / 2f);
+        float label = Grid.GAP + DrawText.LINE, fw = w, fh = (h - frames * label - (frames - 1) * Grid.GAP) / frames;
         MapConfig.Route chosen = MapConfig.PATH_ROUTE.get();
         for (MapConfig.Route r : MapConfig.Route.values()) {
-            float fx = Draw.snap(x + r.ordinal() * (fw + Grid.GAP));
+            float fx = Draw.snap(x), top = Draw.snap(y + r.ordinal() * (fh + label + Grid.GAP));
             Draw.rect(g, fx, top, fx + fw, top + fh, LAND);
             // The lake across the middle, the player left of it, the pin right of it.
             float lx0 = fx + fw * 0.32f, lx1 = fx + fw * 0.68f, ly0 = top + fh * 0.12f, ly1 = top + fh * 0.72f;
@@ -206,7 +209,6 @@ final class SettingsPreview {
     static void minimap(GuiGraphics g, float x, float y, float w, float h) {
         float[] m = net.tapacywka.teyvatcartographia.hud.MinimapLayer.preparedMap();
         float side = Draw.snap(Math.min(w, h)), sx = Draw.snap(x + (w - side) / 2f), sy = Draw.snap(y + (h - side) / 2f), s = side / (2 * m[2]);
-        Draw.rect(g, x, y, x + w, y + h, Theme.PANEL_DARK_HEADER);
         g.enableScissor((int) sx, (int) sy, (int) (sx + side), (int) (sy + side));
         g.pose().pushPose();
         g.pose().translate(sx, sy, 0);
@@ -229,11 +231,13 @@ final class SettingsPreview {
 
     /**
      * Sample pins in a ring around (cx, cy) in an area {@code size} across. Without a kind: a pin of every type and a
-     * path to one of each kind, faint where the world map does not show them. With one: its pins ({@code path}: only
-     * the one its path leads to, as a tracked pin always shows) and its path.
+     * path to one of each kind, faint where the world map does not show them. With one: every pin, the kind's own
+     * white and the others grey, and with {@code path} the path to its pin.
      */
     private static void samplePins(GuiGraphics g, float cx, float cy, float size, MapConfig.PinKind only, boolean path) {
-        MarkerType[] types = sampleTypes();
+        // The stones of Waystones: every type, a stone every third place so they spread round the ring (in the order of
+        // the types they sat close together).
+        MarkerType[] types = only == MapConfig.PinKind.INTERACTIVE ? stonesAmongAll() : sampleTypes(false);
         List<MarkerType> ring = List.of(types);
         float r = size * 0.34f, pin = Math.min(MarkerRenderer.SIZE, size / 7f);
         for (MarkerType to : PATH_TO) {
@@ -256,11 +260,22 @@ final class SettingsPreview {
         }
         for (int i = 0; i < types.length; i++) {
             MarkerType t = types[i];
-            if (only != null && (kind(t) != only || path && t != PATH_TO[only.ordinal()])) continue;
             double a = angle(i, types.length);
             float alpha = only != null || MapConfig.pins(kind(t)).onMap() ? 1f : 0.3f;
-            MarkerRenderer.draw(g, t, Draw.snap(cx + (float) Math.cos(a) * r), Draw.snap(cy + (float) Math.sin(a) * r), pin, false, false, alpha);
+            // With a kind: every pin of the ring, its own white and the other kinds grey like stones not activated yet
+            // (user request 31.10.2026; until then the other kinds were left out).
+            boolean other = only != null && kind(t) != only;
+            MarkerRenderer.draw(g, t, Draw.snap(cx + (float) Math.cos(a) * r), Draw.snap(cy + (float) Math.sin(a) * r), pin, false, false, alpha, 0, other);
         }
+    }
+
+    /** Every type for the ring of the stones' rows: a stone at the top and every third place, the other kinds between. */
+    private static MarkerType[] stonesAmongAll() {
+        java.util.Deque<MarkerType> stones = new java.util.ArrayDeque<>(), others = new java.util.ArrayDeque<>();
+        for (MarkerType t : MarkerType.values()) (t.category == MarkerType.Category.INTERACTION ? stones : others).add(t);
+        MarkerType[] ring = new MarkerType[stones.size() + others.size()];
+        for (int k = 0; k < ring.length; k++) ring[k] = k % 3 == 0 && !stones.isEmpty() || others.isEmpty() ? stones.poll() : others.poll();
+        return ring;
     }
 
     /** The place of pin {@code i} of {@code n} in the ring: the first at the top, clockwise. */
@@ -358,87 +373,65 @@ final class SettingsPreview {
     }
 
     private static final int CAVE_BIG = 28, CAVE_SMALL_MAX = 5, CAVE_STEP = 28;
-    /** The layer the cave preview shows (null: the surface) and whether its field is open. */
-    private static Integer caveBand;
-    private static boolean caveOpen;
-    /** Where the field was drawn last, for clicks: its items (null for the surface) and their centres. */
-    private static final List<Integer> caveItems = new java.util.ArrayList<>();
-    private static float[] caveY = new float[0];
-    private static float caveX;
+    /** Layers drawn in the field when no cave is mapped yet: only for the look, they show nothing. */
+    private static final List<Integer> SAMPLE_BANDS = List.of(-1, -2, -3, -4);
 
-    /**
-     * Cave map: the map around the player over the whole area with the layer field inside it at the right edge, as on
-     * the world map: the large button
-     * is the surface; a click opens the cave layers mapped in this dimension (at most five, in height order around the
-     * surface), a click on one shows it, a click on the large button goes back to the surface and then closes the
-     * field. Under the map the layer shown.
-     */
     /** "Height 64 to 79" from the heights of {@code CaveScanner.heights}. */
     private static Component heightsText(int[] h) {
         return Component.translatable("teyvatcartographia.map.caves", h[0], h[1]);
     }
 
-    static void caves(GuiGraphics g, float x, float y, float w, float h, LayerArea map, int mx, int my) {
-        java.util.NavigableSet<Integer> bands = MapDataManager.get().caveBands();
-        if (caveBand != null && !bands.contains(caveBand)) caveBand = null;
+    /**
+     * Cave map, a picture only (user request 31.10.2026; until then its layer field could be clicked). On: the first
+     * cave layer under the surface mapped here, with the layer field at the right edge as the world map shows it open
+     * (the large surface button and the cave layers around it, the shown one lit); with no cave mapped yet the map
+     * around the player under sample buttons. Off: the map around the player alone. Under it the layer shown.
+     */
+    static void caves(GuiGraphics g, float x, float y, float w, float h, LayerArea map) {
         float label = Grid.GAP + DrawText.LINE;
         float mw = w, mh = h - label;
-        map.draw(g, x, y, mw, mh, caveBand);
-        // The field's items from top to bottom: the bands above the sea level, the surface, the bands under it.
-        caveItems.clear();
         var level = Minecraft.getInstance().level;
-        caveItems.addAll(net.tapacywka.teyvatcartographia.map.data.CaveScanner.layerOrder(bands, level == null ? 63 : level.getSeaLevel()));
-        // Closed: the large button alone; open: up to five layers around the surface.
-        int surface = caveItems.indexOf(null), from = surface, to = surface + 1;
-        if (caveOpen) {
-            from = Math.max(0, surface - CAVE_SMALL_MAX / 2);
-            to = Math.min(caveItems.size(), from + CAVE_SMALL_MAX + 1);
-            from = Math.max(0, to - CAVE_SMALL_MAX - 1);
+        int sea = level == null ? 63 : level.getSeaLevel();
+        if (!MapConfig.get(MapConfig.CAVES_ENABLED)) {
+            map.draw(g, x, y, mw, mh, null);
+            caveCaption(g, Component.translatable("teyvatcartographia.map.layer.surface"), x, y + mh, mw);
+            return;
         }
-        caveItems.subList(to, caveItems.size()).clear();
-        caveItems.subList(0, from).clear();
-        caveX = Draw.snap(x + mw - CAVE_BIG / 2f - Grid.PAD); // inside the map, at its right edge like on the world map
-        caveY = new float[caveItems.size()];
-        float total = 0;
-        for (Integer it : caveItems) total += it == null ? CAVE_BIG + 2 * Grid.GAP : CAVE_STEP;
+        java.util.NavigableSet<Integer> bands = MapDataManager.get().caveBands();
+        List<Integer> items = new java.util.ArrayList<>(net.tapacywka.teyvatcartographia.map.data.CaveScanner.layerOrder(bands.isEmpty() ? SAMPLE_BANDS : bands, sea));
+        // The shown layer: the first one under the surface (else the one over it), or the surface with no cave mapped.
+        int surface = items.indexOf(null);
+        Integer shown = bands.isEmpty() ? null : surface + 1 < items.size() ? items.get(surface + 1) : surface > 0 ? items.get(surface - 1) : null;
+        map.draw(g, x, y, mw, mh, shown);
+        // Up to five layers around the surface, as the open field of the world map.
+        int from = Math.max(0, surface - CAVE_SMALL_MAX / 2), to = Math.min(items.size(), from + CAVE_SMALL_MAX + 1);
+        from = Math.max(0, to - CAVE_SMALL_MAX - 1);
+        items = items.subList(from, to);
+        float fx = Draw.snap(x + mw - CAVE_BIG / 2f - Grid.PAD), total = 0;
+        for (Integer it : items) total += it == null ? CAVE_BIG + 2 * Grid.GAP : CAVE_STEP;
         float cy = Draw.snap(y + mh / 2f - total / 2f);
-        for (int i = 0; i < caveItems.size(); i++) {
-            float slot = caveItems.get(i) == null ? CAVE_BIG + 2 * Grid.GAP : CAVE_STEP;
-            caveY[i] = cy + slot / 2f;
+        float[] ys = new float[items.size()];
+        for (int i = 0; i < items.size(); i++) {
+            float slot = items.get(i) == null ? CAVE_BIG + 2 * Grid.GAP : CAVE_STEP;
+            ys[i] = cy + slot / 2f;
             cy += slot;
         }
-        if (caveItems.size() > 1) Draw.rect(g, caveX - 0.75f, caveY[0], caveX + 0.75f, caveY[caveY.length - 1], Theme.PANEL_LINE);
-        for (int i = 0; i < caveItems.size(); i++) {
-            Integer it = caveItems.get(i);
-            if (it == null) Ui.iconButton(g, caveX, caveY[i], CAVE_BIG, Grid.ICON_L, net.tapacywka.teyvatcartographia.render.Icon.LAYERS, caveBand == null, mx, my);
-            else Ui.iconButton(g, caveX, caveY[i], net.tapacywka.teyvatcartographia.render.Icon.LAYERS, it.equals(caveBand), mx, my);
+        if (items.size() > 1) Draw.rect(g, fx - 0.75f, ys[0], fx + 0.75f, ys[ys.length - 1], Theme.PANEL_LINE);
+        for (int i = 0; i < items.size(); i++) {
+            Integer it = items.get(i);
+            boolean lit = java.util.Objects.equals(it, shown);
+            // The pointer far away: no button looks hovered, none can be pressed.
+            if (it == null) Ui.iconButton(g, fx, ys[i], CAVE_BIG, Grid.ICON_L, net.tapacywka.teyvatcartographia.render.Icon.LAYERS, lit, -1000, -1000);
+            else Ui.iconButton(g, fx, ys[i], net.tapacywka.teyvatcartographia.render.Icon.LAYERS, lit, -1000, -1000);
         }
-        Component caption = bands.isEmpty() ? Component.translatable("teyvatcartographia.config.preview.caves_none")
-                : caveBand == null ? Component.translatable("teyvatcartographia.map.layer.surface")
-                : heightsText(net.tapacywka.teyvatcartographia.map.data.CaveScanner.heights(caveBand, level == null ? 63 : level.getSeaLevel()));
-        DrawText.room(caption, mw);
-        DrawText.textCentered(g, Component.literal(DrawText.fit(caption.getString(), (int) mw)), Draw.snap(x + mw / 2f), y + mh + Grid.GAP, Theme.CREAM, false);
+        caveCaption(g, bands.isEmpty() ? Component.translatable("teyvatcartographia.config.preview.caves_none")
+                : heightsText(net.tapacywka.teyvatcartographia.map.data.CaveScanner.heights(shown, sea)), x, y + mh, mw);
     }
 
-    /** A click on the cave preview's layer field (as laid out when last drawn); true when it took it. */
-    static boolean cavesClick(double mx, double my) {
-        for (int i = 0; i < caveItems.size(); i++) {
-            Integer it = caveItems.get(i);
-            if (it == null && Ui.buttonHit(caveX, caveY[i], CAVE_BIG, mx, my)) {
-                // Open the field; on a cave layer go back to the surface; on the surface close it.
-                if (!caveOpen) caveOpen = !MapDataManager.get().caveBands().isEmpty();
-                else if (caveBand != null) caveBand = null;
-                else caveOpen = false;
-                return true;
-            }
-            if (it != null && Ui.iconButtonHit(caveX, caveY[i], mx, my)) {
-                caveBand = it;
-                return true;
-            }
-        }
-        return false;
+    private static void caveCaption(GuiGraphics g, Component caption, float x, float y, float w) {
+        DrawText.room(caption, w);
+        DrawText.textCentered(g, Component.literal(DrawText.fit(caption.getString(), (int) w)), Draw.snap(x + w / 2f), y + Grid.GAP, Theme.CREAM, false);
     }
-
     // ------------------------------------------------------------------ Terrain detail
 
     /** Chunks east and west, and north and south, of the player's in the detail samples (11 x 3 chunks, 176 x 48 blocks). */
@@ -493,11 +486,12 @@ final class SettingsPreview {
             float fy = Draw.snap(y + i * (sh + label + Grid.GAP));
             FogTexture.draw(g, fx, fy, fx + sw, fy + sh, 0, 0, Theme.WHITE);
             if (DETAIL_TEX[i] != null && detailShown != null) Draw.texturedQuad(g, DETAIL_TEX[i].getId(), fx, fy, fx + sw, fy + sh, u0, v0, u1, v1, 0xFFFFFFFF);
-            Draw.frame(g, fx, fy, sw, sh, 1, i == chosen ? Theme.GOLD : Theme.PANEL_LINE);
+            // The choices not taken darkened, as the route's pictures (user request 31.10.2026; a gold frame until then).
+            if (i != chosen) Draw.rect(g, fx, fy, fx + sw, fy + sh, OFF_DIM);
             Component c = Component.translatable(DETAIL_KEYS[i]);
             DrawText.room(c, sw);
             DrawText.textCentered(g, Component.literal(DrawText.fit(c.getString(), (int) sw)), Draw.snap(fx + sw / 2f), fy + sh + Grid.GAP,
-                    i == chosen ? Theme.CREAM : Theme.TEXT_MUTED, false);
+                    i == chosen ? Theme.CREAM : Theme.withAlpha(Theme.CREAM, 0.5f), false);
         }
     }
 
@@ -623,8 +617,8 @@ final class SettingsPreview {
      * The stones of the sample (user decision 31.10.2026: on the real map like the other pins), in a ring around the
      * player as the Pins preview places its pins: type, and whether it is activated (the two waystones apart).
      */
-    private static final MarkerType[] STONE_TYPE = {MarkerType.WAYSTONE, MarkerType.SHARESTONE, MarkerType.WAYSTONE, MarkerType.WARP_PLATE, MarkerType.DUNGEON};
-    private static final boolean[] STONE_INACTIVE = {false, false, true, false, true};
+    private static final MarkerType[] STONE_TYPE = {MarkerType.WAYSTONE, MarkerType.SHARESTONE, MarkerType.WAYSTONE, MarkerType.DUNGEON, MarkerType.WARP_PLATE};
+    private static final boolean[] STONE_INACTIVE = {false, false, true, true, false};
 
     /**
      * Waystones: the map around the player (the fog without a world) with a stone of every kind in a ring, as the maps

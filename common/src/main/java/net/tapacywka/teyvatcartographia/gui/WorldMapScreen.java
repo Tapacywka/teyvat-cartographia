@@ -1487,6 +1487,9 @@ public final class WorldMapScreen extends Screen {
         if (Draw.inRect(mx, my, sx - 9, sliderTop() - 4, 18, sliderBottom() - sliderTop() + 8)) {
             sliderDrag = true;
             setSliderFrom(my);
+            // A click on the track: the thumb eases there with the map, as the settings sliders do (user report
+            // 31.10.2026: it jumped); dragging it further holds it under the pointer again.
+            thumbAtTarget = false;
             return true;
         }
         if (panel == null) {

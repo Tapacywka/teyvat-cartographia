@@ -82,8 +82,6 @@ public final class TeyvatConfigScreen extends Screen {
     private final MapView previewView = new MapView();
     /** The setting the preview shows: the one under the pointer (kept while the pointer goes right, to the preview), or null. */
     private Row previewRow;
-    /** The mouse in this frame, for the parts of the preview that can be pointed at and clicked. */
-    private int pointerX, pointerY;
     private int blurW = -1, blurH = -1, blurTheme = -1, blurFrames;
 
     private abstract static class Row {
@@ -415,9 +413,13 @@ public final class TeyvatConfigScreen extends Screen {
         void render(GuiGraphics g, float x, float w, int mx, int my) {
             renderLabel(g, x, w);
             if (stepKeys != null) {
-                // The value column fits the longest step name (in the current language).
+                // The value column fits the longest step name (in the current language); the pin and path rows share
+                // one, so their tracks end at the same place (user report 31.10.2026: the pin rows with "In the world"
+                // ended short of the path rows).
+                boolean pinOrPath = stepKeys == PIN_STEPS || stepKeys == PATH_STEPS;
                 int widest = 0;
-                for (String k : stepKeys) widest = Math.max(widest, DrawText.width(Component.translatable(k)));
+                for (String[] keys : pinOrPath ? new String[][]{PIN_STEPS, PATH_STEPS} : new String[][]{stepKeys})
+                    for (String k : keys) widest = Math.max(widest, DrawText.width(Component.translatable(k)));
                 valueW = Math.max(VALUE_W, widest + Grid.GAP); // a gap between the knob at the end and the word
             }
             float tx0 = trackX(x, w), tw0 = trackW(w), cy = y + Grid.ROW / 2f;
@@ -629,6 +631,25 @@ public final class TeyvatConfigScreen extends Screen {
         world.set(StepChoice.world(step));
     }
 
+    /** Where a kind of pins shows: off, the map, both maps, in the world with the marker, everywhere with the beam. */
+    private static Row pinRow(MapConfig.PinKind kind) {
+        MapConfig.PinOptions o = MapConfig.pins(kind);
+        return SliderRow.ofSteps("teyvatcartographia.config.pins." + kind.id, PIN_STEPS,
+                () -> StepChoice.level(MapConfig.get(o.enabled), MapConfig.get(o.map), MapConfig.get(o.minimap), MapConfig.get(o.marker), MapConfig.get(o.beam)),
+                s -> {
+                    setSteps(Math.min(s, StepChoice.IN_WORLD), o.enabled, o.map, o.minimap, o.marker);
+                    if (StepChoice.on(s)) o.beam.set(StepChoice.beam(s));
+                });
+    }
+
+    /** Where the path to a tracked pin of a kind shows: off, the map, both maps, everywhere with the stars. */
+    private static Row pathRow(MapConfig.PinKind kind) {
+        MapConfig.PinOptions o = MapConfig.pins(kind);
+        return SliderRow.ofSteps("teyvatcartographia.config.path." + kind.id, PATH_STEPS,
+                () -> StepChoice.level(MapConfig.get(o.path), MapConfig.get(o.pathMap), MapConfig.get(o.pathMinimap), MapConfig.get(o.pathWorld)),
+                s -> setSteps(s, o.path, o.pathMap, o.pathMinimap, o.pathWorld));
+    }
+
     public TeyvatConfigScreen(Screen parent) {
         super(Component.translatable("teyvatcartographia.config.title"));
         this.parent = parent;
@@ -667,7 +688,9 @@ public final class TeyvatConfigScreen extends Screen {
         SliderRow radius = SliderRow.ofInt("teyvatcartographia.config.minimap_radius", MapConfig.MINIMAP_RADIUS, 24, 110);
         radius.maxNow = () -> MinimapLayer.maxRadius(width, height);
         minimap.add(radius);
-        minimap.add(new EnumRow<>("teyvatcartographia.config.minimap_corner", MapConfig.MINIMAP_CORNER, MapConfig.Corner.values(), null));
+        // The corners clockwise from the top left, as the arrows go round the screen (user request 31.10.2026).
+        minimap.add(new EnumRow<>("teyvatcartographia.config.minimap_corner", MapConfig.MINIMAP_CORNER, new MapConfig.Corner[]{
+                MapConfig.Corner.TOP_LEFT, MapConfig.Corner.TOP_RIGHT, MapConfig.Corner.BOTTOM_RIGHT, MapConfig.Corner.BOTTOM_LEFT}, null));
         minimap.add(SliderRow.ofInt("teyvatcartographia.config.minimap_offset_x", MapConfig.MINIMAP_OFFSET_X, 0, 64));
         minimap.add(SliderRow.ofInt("teyvatcartographia.config.minimap_offset_y", MapConfig.MINIMAP_OFFSET_Y, 0, 64));
         minimap.add(new Section("teyvatcartographia.config.section.minimap_look"));
@@ -695,26 +718,13 @@ public final class TeyvatConfigScreen extends Screen {
         minimap.add(SliderRow.ofInt("teyvatcartographia.config.minimap_info_gap", MapConfig.MINIMAP_INFO_GAP, 0, 8));
         // Pins: each kind as one choice (off, the map, both maps, in the world with the marker, everywhere with the beam);
         // then the path to a tracked pin of each kind (off, the map, both maps, everywhere with the stars).
-        // The interactive pins are the stones of Waystones: their rows only with Waystones in the game.
-        List<MapConfig.PinKind> kinds = java.util.Arrays.stream(MapConfig.PinKind.values())
-                .filter(k -> k != MapConfig.PinKind.INTERACTIVE || ModCompat.waystones()).toList();
+        // The interactive pins are the stones of Waystones: their two rows are in Compatibility > Waystones (user
+        // decision 31.10.2026), so this tab is the same with the mod or without it.
+        List<MapConfig.PinKind> kinds = List.of(MapConfig.PinKind.CUSTOM, MapConfig.PinKind.SYSTEM);
         pins.add(new Section("teyvatcartographia.config.subsection.pins_display"));
-        for (MapConfig.PinKind kind : kinds) {
-            MapConfig.PinOptions o = MapConfig.pins(kind);
-            pins.add(SliderRow.ofSteps("teyvatcartographia.config.pins." + kind.id, PIN_STEPS,
-                    () -> StepChoice.level(MapConfig.get(o.enabled), MapConfig.get(o.map), MapConfig.get(o.minimap), MapConfig.get(o.marker), MapConfig.get(o.beam)),
-                    s -> {
-                        setSteps(Math.min(s, StepChoice.IN_WORLD), o.enabled, o.map, o.minimap, o.marker);
-                        if (StepChoice.on(s)) o.beam.set(StepChoice.beam(s));
-                    }));
-        }
+        for (MapConfig.PinKind kind : kinds) pins.add(pinRow(kind));
         pins.add(new Section("teyvatcartographia.config.subsection.pins_path"));
-        for (MapConfig.PinKind kind : kinds) {
-            MapConfig.PinOptions o = MapConfig.pins(kind);
-            pins.add(SliderRow.ofSteps("teyvatcartographia.config.path." + kind.id, PATH_STEPS,
-                    () -> StepChoice.level(MapConfig.get(o.path), MapConfig.get(o.pathMap), MapConfig.get(o.pathMinimap), MapConfig.get(o.pathWorld)),
-                    s -> setSteps(s, o.path, o.pathMap, o.pathMinimap, o.pathWorld)));
-        }
+        for (MapConfig.PinKind kind : kinds) pins.add(pathRow(kind));
         // How the path goes: on land round deep water, or by boat across it (user decision 26.10.2026); a new search.
         pins.add(new EnumRow<>("teyvatcartographia.config.path_route", MapConfig.PATH_ROUTE, MapConfig.Route.values(),
                 net.tapacywka.teyvatcartographia.nav.Navigation::requestPath));
@@ -743,7 +753,8 @@ public final class TeyvatConfigScreen extends Screen {
                 new BoolRow("teyvatcartographia.config.compat.waystones_show", MapConfig.WAYSTONES_SHOW),
                 new BoolRow("teyvatcartographia.config.compat.waystones_sharestones", MapConfig.WAYSTONES_SHARESTONES),
                 new BoolRow("teyvatcartographia.config.compat.waystones_warp_plates", MapConfig.WAYSTONES_WARP_PLATES),
-                new BoolRow("teyvatcartographia.config.compat.waystones_inactive", MapConfig.WAYSTONES_INACTIVE))));
+                new BoolRow("teyvatcartographia.config.compat.waystones_inactive", MapConfig.WAYSTONES_INACTIVE),
+                pinRow(MapConfig.PinKind.INTERACTIVE), pathRow(MapConfig.PinKind.INTERACTIVE))));
         mods.sort(Comparator.comparing(ModPart::name, String.CASE_INSENSITIVE_ORDER));
         // The game's own dimensions first, always there (user decision 24.10.2026).
         mods.add(0, new ModPart("teyvatcartographia.config.subsection.compat_minecraft", List.of(
@@ -975,6 +986,11 @@ public final class TeyvatConfigScreen extends Screen {
     }
 
     /** The translation key of a row's name ("teyvatcartographia.config.plants"), or "" for a name of its own. */
+    /** A row of where a kind of pins or its path shows: the frames of the Pins tab, also for the stones of Waystones in Compatibility. */
+    private static boolean pinKindRow(String rk) {
+        return rk.startsWith("teyvatcartographia.config.pins.") || rk.startsWith("teyvatcartographia.config.path.");
+    }
+
     private static String rowKey(Row r) {
         return r != null && r.label.getContents() instanceof net.minecraft.network.chat.contents.TranslatableContents tc ? tc.getKey() : "";
     }
@@ -989,7 +1005,7 @@ public final class TeyvatConfigScreen extends Screen {
 
     /** Settings whose preview is their description alone (nothing on the map to show for them). */
     private static final java.util.Set<String> DESCRIPTION_ONLY = java.util.Set.of("teyvatcartographia.config.theme",
-            "teyvatcartographia.config.interface_style", "teyvatcartographia.config.plants");
+            "teyvatcartographia.config.interface_style");
 
     /**
      * The card: a dark panel with its title, then for the setting pointed at its pictures at the top (a caption with
@@ -1027,7 +1043,7 @@ public final class TeyvatConfigScreen extends Screen {
         float top = Draw.snap(cy + descriptionRoom(cw) + Grid.PAD);
         boolean single = (key.equals("teyvatcartographia.config.tab.map") || key.equals("teyvatcartographia.config.tab.minimap")
                 || key.equals("teyvatcartographia.config.tab.compat"))
-                && !rk.equals("teyvatcartographia.config.detail") && !rk.equals("teyvatcartographia.config.caves"); // captions of their own
+                && !rk.equals("teyvatcartographia.config.detail") && !rk.equals("teyvatcartographia.config.caves") && !pinKindRow(rk); // captions of their own
         float captionH = single ? DrawText.LINE + Grid.GAP : 0;
         float vh = Draw.snap(cy + ch - top - captionH);
         previewPicture(g, cx, top, cw, vh, pt, key, rk);
@@ -1073,8 +1089,7 @@ public final class TeyvatConfigScreen extends Screen {
         g.enableScissor((int) cx, (int) cy, (int) (cx + cw), (int) (cy + ch)); // nothing spills out of the area
         if (rk.equals("teyvatcartographia.config.caves") && world) {
             SettingsPreview.caves(g, cx, cy, cw, ch, (g2, mx, my, mw, mh, band) -> previewMap(g2, mx, my, mw, mh,
-                    MapView.snapZoom(MapConfig.get(MapConfig.MAP_DEFAULT_ZOOM)), pt, band == null ? MapDataManager.get().active() : MapDataManager.get().caveStore(band)),
-                    pointerX, pointerY);
+                    MapView.snapZoom(MapConfig.get(MapConfig.MAP_DEFAULT_ZOOM)), pt, band == null ? MapDataManager.get().active() : MapDataManager.get().caveStore(band)));
         } else if (rk.equals("teyvatcartographia.config.detail")) {
             if (world) SettingsPreview.detail(g, cx, cy, cw, ch);
             else previewNote(g, cx, cy, cw, ch, "teyvatcartographia.config.preview.no_world");
@@ -1098,7 +1113,7 @@ public final class TeyvatConfigScreen extends Screen {
             else previewMinimap(g, cx, cy, cw, ch);
         } else if (rk.equals("teyvatcartographia.config.path_route")) {
             SettingsPreview.route(g, cx, cy, cw, ch);
-        } else if (key.equals("teyvatcartographia.config.tab.pins")) {
+        } else if (key.equals("teyvatcartographia.config.tab.pins") || pinKindRow(rk)) {
             SettingsPreview.pins(g, cx, cy, cw, ch, (g2, mx, my, mw, mh, zoom) -> previewMap(g2, mx, my, mw, mh, zoom, pt), rk);
         } else if (key.equals("teyvatcartographia.config.tab.system")) {
             if (world) SettingsPreview.system(g, cx, cy, cw, ch);
@@ -1220,8 +1235,6 @@ public final class TeyvatConfigScreen extends Screen {
 
     @Override
     public void render(GuiGraphics g, int mx, int my, float pt) {
-        pointerX = mx;
-        pointerY = my;
         Cursors.begin();
         renderBackground(g, mx, my, pt);
         layout();
@@ -1290,8 +1303,6 @@ public final class TeyvatConfigScreen extends Screen {
     public boolean mouseClicked(double mx, double my, int button) {
         layout();
         if (plantList != null && plantList.click(mx, my, button)) return true;
-        // The cave map's preview has a layer field of its own to click.
-        if (previewCard && mx >= previewX && rowKey(previewRow).equals("teyvatcartographia.config.caves") && SettingsPreview.cavesClick(mx, my)) return true;
         if (Ui.closeHit(panelX, panelY, panelW, mx, my)) {
             onClose();
             return true;
@@ -1396,11 +1407,43 @@ public final class TeyvatConfigScreen extends Screen {
         return super.keyPressed(key, scan, mods);
     }
 
+    /** The screen holds the GUI scale at its cap (see {@link #init()}); the game's own is given back when it closes. */
+    private boolean scaleCapped;
+
+    /**
+     * The settings are never larger than GUI 3 at 1080p (user decision 31.10.2026): the scale is at most the window's
+     * height over 360, whole, so GUI 4 at 1080p shows them as GUI 3 does, and GUI 5 to 8 at
+     * 1440p as GUI 4, the same look. Smaller scales stay as chosen. Also called again on every resize of the window.
+     */
+    @Override
+    protected void init() {
+        com.mojang.blaze3d.platform.Window window = Minecraft.getInstance().getWindow();
+        int cap = scaleCap(window.getWidth(), window.getHeight());
+        if (window.getGuiScale() > cap) {
+            window.setGuiScale(cap);
+            width = window.getGuiScaledWidth();
+            height = window.getGuiScaledHeight();
+            scaleCapped = true;
+        }
+    }
+
+    /** The largest GUI scale of the settings for a window of {@code w} x {@code h} pixels: 3 at 1080p, 4 at 1440p, 6 at 2160p. */
+    static int scaleCap(int w, int h) {
+        // The height alone: the game's own scale already keeps a narrow window at least 320 units wide.
+        return Math.max(1, h / 360);
+    }
+
     @Override
     public void removed() {
         closePlants();
         Cursors.reset();
         EdgeFade.dispose();
+        if (scaleCapped) {
+            // Back to the scale the game's options ask for, before the next screen lays itself out.
+            Minecraft mc = Minecraft.getInstance();
+            mc.getWindow().setGuiScale(mc.getWindow().calculateScale(mc.options.guiScale().get(), mc.options.forceUnicodeFont().get()));
+            scaleCapped = false;
+        }
     }
 
     @Override

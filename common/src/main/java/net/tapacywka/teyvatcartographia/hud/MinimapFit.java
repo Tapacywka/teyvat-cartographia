@@ -41,14 +41,6 @@ final class MinimapFit {
     }
 
     /**
-     * Whether the second pill of the clock row (the real time) goes to a row of its own: when the two pills
-     * ({@code w1} and {@code w2}, {@code gap} apart) are wider than the minimap ({@code mapW}).
-     */
-    static boolean clockWraps(float w1, float gap, float w2, float mapW) {
-        return w1 + gap + w2 > mapW;
-    }
-
-    /**
      * A time of day ({@code minute} 0 to 1439 after midnight) as the clock writes it: "14:35" (24 hours), "2:35"
      * (12 hours, midnight and noon as 12) or "2:35 PM" (12 hours with AM/PM).
      */
