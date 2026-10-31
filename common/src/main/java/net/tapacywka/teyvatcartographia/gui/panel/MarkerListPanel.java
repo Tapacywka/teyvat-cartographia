@@ -397,7 +397,7 @@ public final class MarkerListPanel extends SidePanel {
             Marker m = r.marker();
             if (Navigation.isTracking(m)) Draw.rect(g, bx, ry, bx + 3, ry + ROW_H, Theme.worldMarkerPulse());
             // Symbol centred in the row's leading 28 x 28 square; text starts right after it.
-            MarkerRenderer.drawCentered(g, m.type, cx, cy, SYMBOL, 1f);
+            MarkerRenderer.drawCentered(g, m.type, cx, cy, SYMBOL, 1f, m.inactive);
         } else {
             // The biome's colour on the map: a square in the rectangular style, a disc in the rounded one.
             int c = r.biome().color == 0 ? Theme.TEXT_MUTED : r.biome().color;

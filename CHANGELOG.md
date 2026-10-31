@@ -10,6 +10,23 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 
 ## [Unreleased]
 
+### Added
+- Waystones support: the waystones, sharestones and warp plates you have activated show on the world map and the
+  minimap with their names, like the teleport waypoints of Genshin Impact. Stones you have seen in the world but not
+  activated yet show grey until you use them. A waystone a structure placed in a dungeon shows as a dungeon. Every
+  stone can be tracked, with its path and beam, and found by name in the pin list. Teleporting stays with Waystones
+  and its own rules. Settings in Compatibility > Waystones choose which stones show; the tab appears only with
+  Waystones in the game. The stones are the interactive pins now: Pins > Interactive pins and the path to them decide
+  where they show (the map, the minimap, the marker, the beam, the stars), shown only with Waystones in the game.
+
+### Changed
+- The settings preview shows its pictures at the same place for every setting, right under a description of at most
+  three lines; the longest descriptions (the route, plants, the pin and path rows and a few more) are shorter.
+
+### Removed
+- The interactive pin types sign, party and structure, and the Interactive section of the pin editor: their place
+  went to the stones of Waystones. Pins of these types are removed from your maps and left out of imported files.
+
 ## [0.7.0] - 2026-10-30
 
 ### Added

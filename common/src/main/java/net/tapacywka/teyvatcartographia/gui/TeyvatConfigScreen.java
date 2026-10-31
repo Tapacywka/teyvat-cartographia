@@ -695,8 +695,11 @@ public final class TeyvatConfigScreen extends Screen {
         minimap.add(SliderRow.ofInt("teyvatcartographia.config.minimap_info_gap", MapConfig.MINIMAP_INFO_GAP, 0, 8));
         // Pins: each kind as one choice (off, the map, both maps, in the world with the marker, everywhere with the beam);
         // then the path to a tracked pin of each kind (off, the map, both maps, everywhere with the stars).
+        // The interactive pins are the stones of Waystones: their rows only with Waystones in the game.
+        List<MapConfig.PinKind> kinds = java.util.Arrays.stream(MapConfig.PinKind.values())
+                .filter(k -> k != MapConfig.PinKind.INTERACTIVE || ModCompat.waystones()).toList();
         pins.add(new Section("teyvatcartographia.config.subsection.pins_display"));
-        for (MapConfig.PinKind kind : MapConfig.PinKind.values()) {
+        for (MapConfig.PinKind kind : kinds) {
             MapConfig.PinOptions o = MapConfig.pins(kind);
             pins.add(SliderRow.ofSteps("teyvatcartographia.config.pins." + kind.id, PIN_STEPS,
                     () -> StepChoice.level(MapConfig.get(o.enabled), MapConfig.get(o.map), MapConfig.get(o.minimap), MapConfig.get(o.marker), MapConfig.get(o.beam)),
@@ -706,7 +709,7 @@ public final class TeyvatConfigScreen extends Screen {
                     }));
         }
         pins.add(new Section("teyvatcartographia.config.subsection.pins_path"));
-        for (MapConfig.PinKind kind : MapConfig.PinKind.values()) {
+        for (MapConfig.PinKind kind : kinds) {
             MapConfig.PinOptions o = MapConfig.pins(kind);
             pins.add(SliderRow.ofSteps("teyvatcartographia.config.path." + kind.id, PATH_STEPS,
                     () -> StepChoice.level(MapConfig.get(o.path), MapConfig.get(o.pathMap), MapConfig.get(o.pathMinimap), MapConfig.get(o.pathWorld)),
@@ -736,6 +739,11 @@ public final class TeyvatConfigScreen extends Screen {
                         MarkerType.customTypes().toArray(new MarkerType[0]), null).named(t -> Component.translatable(t.langKey())),
                 new BoolRow("teyvatcartographia.config.compat.xaero_hidden", MapConfig.XAERO_HIDDEN),
                 new BoolRow("teyvatcartographia.config.compat.xaero_deaths", MapConfig.XAERO_DEATHS))));
+        if (ModCompat.waystones()) mods.add(new ModPart("teyvatcartographia.config.subsection.compat_waystones", List.of(
+                new BoolRow("teyvatcartographia.config.compat.waystones_show", MapConfig.WAYSTONES_SHOW),
+                new BoolRow("teyvatcartographia.config.compat.waystones_sharestones", MapConfig.WAYSTONES_SHARESTONES),
+                new BoolRow("teyvatcartographia.config.compat.waystones_warp_plates", MapConfig.WAYSTONES_WARP_PLATES),
+                new BoolRow("teyvatcartographia.config.compat.waystones_inactive", MapConfig.WAYSTONES_INACTIVE))));
         mods.sort(Comparator.comparing(ModPart::name, String.CASE_INSENSITIVE_ORDER));
         // The game's own dimensions first, always there (user decision 24.10.2026).
         mods.add(0, new ModPart("teyvatcartographia.config.subsection.compat_minecraft", List.of(
@@ -1014,9 +1022,9 @@ public final class TeyvatConfigScreen extends Screen {
             ty += DrawText.LINE + 2;
         }
         if (DESCRIPTION_ONLY.contains(rk)) return;
-        // The pictures under it, from where the longest description of the tab ends: the same size for every setting
-        // of the tab, whatever the length of its own text (user decision 24.10.2026).
-        float top = Draw.snap(cy + descriptionRoom(key, cw) + Grid.PAD);
+        // The pictures under it, from where the longest description of all ends: the same place and size for every
+        // setting, whatever the length of its own text (user decisions 24 and 31.10.2026).
+        float top = Draw.snap(cy + descriptionRoom(cw) + Grid.PAD);
         boolean single = (key.equals("teyvatcartographia.config.tab.map") || key.equals("teyvatcartographia.config.tab.minimap")
                 || key.equals("teyvatcartographia.config.tab.compat"))
                 && !rk.equals("teyvatcartographia.config.detail") && !rk.equals("teyvatcartographia.config.caves"); // captions of their own
@@ -1030,18 +1038,26 @@ public final class TeyvatConfigScreen extends Screen {
         }
     }
 
-    private String roomTab;
+    private String roomLanguage;
     private float roomW, roomH;
 
-    /** Height of the longest description (name, line and text) among the settings of tab {@code key} that have pictures, {@code w} wide. */
-    private float descriptionRoom(String key, float w) {
-        if (key.equals(roomTab) && w == roomW) return roomH;
+    /**
+     * Height of the longest description (name, line and text) among the settings of every tab that have pictures,
+     * {@code w} wide: the pictures start at the same place for every setting (user request 31.10.2026; per tab until
+     * then, and the long Route text pushed the pictures of the Pins tab far down). Every description takes at most 3
+     * lines on the card at 1080p GUI 3; the suite checks it in English and Russian.
+     */
+    private float descriptionRoom(float w) {
+        String language = Minecraft.getInstance().options.languageCode;
+        if (language.equals(roomLanguage) && w == roomW) return roomH;
         int most = 0;
-        for (Row r : rows) {
-            if (r.tooltip == null || DESCRIPTION_ONLY.contains(rowKey(r))) continue;
-            most = Math.max(most, DrawText.font().split(r.tooltip, (int) w).size());
+        for (Tab t : tabs) {
+            for (Row r : t.rows()) {
+                if (r.tooltip == null || DESCRIPTION_ONLY.contains(rowKey(r))) continue;
+                most = Math.max(most, DrawText.font().split(r.tooltip, (int) w).size());
+            }
         }
-        roomTab = key;
+        roomLanguage = language;
         roomW = w;
         roomH = DrawText.LINE + 2 * Grid.GAP + 1 + most * (DrawText.LINE + 2) - 2;
         return roomH;
@@ -1088,7 +1104,7 @@ public final class TeyvatConfigScreen extends Screen {
             if (world) SettingsPreview.system(g, cx, cy, cw, ch);
             else previewNote(g, cx, cy, cw, ch, "teyvatcartographia.config.preview.no_world");
         } else {
-            SettingsPreview.compatSample(g, cx, cy, cw, ch, rk); // this setting's mod alone
+            SettingsPreview.compatSample(g, cx, cy, cw, ch, rk, (g2, mx, my, mw, mh, zoom) -> previewMap(g2, mx, my, mw, mh, zoom, pt)); // this setting's mod alone
         }
         g.disableScissor();
     }

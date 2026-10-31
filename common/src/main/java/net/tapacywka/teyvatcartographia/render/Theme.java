@@ -201,6 +201,9 @@ public final class Theme {
     // Markers (pin glyphs) and the player arrow
     public static int MARKER_ICON = 0xFFF4F1EA;
     public static int MARKER_ICON_HOVER = 0xFFFFFFFF;
+    /** The glyph of an automatic point not activated yet (a Waystones waystone seen but not used), and pointed at. */
+    public static int MARKER_ICON_INACTIVE = 0xFF8C95A3;
+    public static int MARKER_ICON_INACTIVE_HOVER = 0xFFB4BBC6;
     /** The spiked ring around map pins, and the pulse a tracked pin sends out. */
     public static int MARKER_RING = 0xD8E8EEF0;
     public static int MARKER_PULSE = 0xFFF4F1EA;

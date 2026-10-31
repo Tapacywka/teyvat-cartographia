@@ -605,7 +605,7 @@ public final class MinimapLayer implements LayeredDraw.Layer {
         if (Theme.Style.squareMap ? Math.abs(sx - cx) <= inner && Math.abs(sy - cy) <= inner : Draw.inCircle(sx, sy, cx, cy, inner)) {
             // Pins on another layer than the one shown (the cave band the player is in, or the surface) get an arrow.
             MarkerRenderer.draw(g, m.type, sx, sy, MarkerRenderer.SIZE_SMALL, false, false, alpha,
-                    MarkerVisibility.layerRelation(m, MapDataManager.get().undergroundBand()));
+                    MarkerVisibility.layerRelation(m, MapDataManager.get().undergroundBand()), m.inactive);
         }
     }
 

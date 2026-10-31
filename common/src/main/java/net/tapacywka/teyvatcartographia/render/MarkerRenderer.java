@@ -39,6 +39,11 @@ public final class MarkerRenderer {
      * ring. Tracking is shown separately by {@link #pulse}.
      */
     public static void pin(GuiGraphics g, Icon icon, float cx, float cy, float size, boolean selected, boolean hovered, float alpha) {
+        pin(g, icon, cx, cy, size, selected, hovered, alpha, false);
+    }
+
+    /** As above; an {@code inactive} point (a waystone not activated yet) has a grey glyph. */
+    public static void pin(GuiGraphics g, Icon icon, float cx, float cy, float size, boolean selected, boolean hovered, float alpha, boolean inactive) {
         float k = size / SIZE, r = size * RING;
         if (selected) {
             int ring = Theme.withAlpha(Theme.MARKER_RING, alpha);
@@ -51,7 +56,8 @@ public final class MarkerRenderer {
                 Draw.triangle(g, bx - dy * sw, by + dx * sw, bx + dy * sw, by - dx * sw, bx + dx * sl, by + dy * sl, ring);
             }
         }
-        int tint = hovered ? Theme.MARKER_ICON_HOVER : Theme.MARKER_ICON;
+        int tint = inactive ? (hovered ? Theme.MARKER_ICON_INACTIVE_HOVER : Theme.MARKER_ICON_INACTIVE)
+                : hovered ? Theme.MARKER_ICON_HOVER : Theme.MARKER_ICON;
         Draw.icon(g, icon, cx, cy, size * ICON, Theme.withAlpha(tint, alpha));
     }
     /**
@@ -133,6 +139,11 @@ public final class MarkerRenderer {
 
     /** Menu style: the glyph on a tile with outer size {@code size} (pin type grid, pin list). */
     public static void badge(GuiGraphics g, Icon icon, float cx, float cy, float size, boolean selected, boolean hovered, float alpha) {
+        badge(g, icon, cx, cy, size, selected, hovered, alpha, false);
+    }
+
+    /** As above; an {@code inactive} point (a waystone not activated yet) has a grey glyph. */
+    public static void badge(GuiGraphics g, Icon icon, float cx, float cy, float size, boolean selected, boolean hovered, float alpha, boolean inactive) {
         float h = size / 2f, k = size / SIZE;
         float radius = 2.5f * k, frame = Math.max(1f, (selected ? 1.5f : 1f) * k);
         int fill = Theme.withAlpha(hovered ? Theme.MARKER_TILE_HOVER : Theme.MARKER_TILE, alpha);
@@ -149,7 +160,7 @@ public final class MarkerRenderer {
             float t = 3.5f * k;
             Draw.triangle(g, cx - t, cy - h, cx + t, cy - h, cx, cy - h + t, Theme.withAlpha(Theme.MARKER_TILE_FRAME_SELECTED, alpha));
         }
-        Draw.icon(g, icon, cx, cy, size * 0.6f, Theme.withAlpha(Theme.MARKER_ICON, alpha));
+        Draw.icon(g, icon, cx, cy, size * 0.6f, Theme.withAlpha(inactive ? Theme.MARKER_ICON_INACTIVE : Theme.MARKER_ICON, alpha));
     }
 
     /** Draws a marker on the map, centred on its position (x, y). */
@@ -166,14 +177,25 @@ public final class MarkerRenderer {
      * arrow up or down at its top right, like the pins of other floors on the Genshin Impact map.
      */
     public static void draw(GuiGraphics g, MarkerType type, float x, float y, float size, boolean selected, boolean hovered, float alpha, int layer) {
+        draw(g, type, x, y, size, selected, hovered, alpha, layer, false);
+    }
+
+    /** As above; an {@code inactive} point (a waystone not activated yet) has a grey glyph. */
+    public static void draw(GuiGraphics g, MarkerType type, float x, float y, float size, boolean selected, boolean hovered, float alpha, int layer,
+                            boolean inactive) {
         float s = hovered ? size * 1.1f : size;
-        pin(g, type.icon, x, y, s, selected, hovered, layer == 0 ? alpha : alpha * OTHER_LAYER_ALPHA);
+        pin(g, type.icon, x, y, s, selected, hovered, layer == 0 ? alpha : alpha * OTHER_LAYER_ALPHA, inactive);
         if (layer != 0) levelArrow(g, x + s * 0.38f, y - s * 0.3f, Math.max(4f, s * 0.32f), layer > 0, Theme.WORLD_MARKER_LEVEL, alpha);
     }
 
     /** Draws a marker's menu badge centred at (cx, cy), for lists and grids. */
     public static void drawCentered(GuiGraphics g, MarkerType type, float cx, float cy, float size, float alpha) {
         badge(g, type.icon, cx, cy, size, false, false, alpha);
+    }
+
+    /** As above; an {@code inactive} point (a waystone not activated yet) has a grey glyph. */
+    public static void drawCentered(GuiGraphics g, MarkerType type, float cx, float cy, float size, float alpha, boolean inactive) {
+        badge(g, type.icon, cx, cy, size, false, false, alpha, inactive);
     }
 
     /** Player arrow with soft glow (off with the view cone); {@code angle} radians clockwise from up. */

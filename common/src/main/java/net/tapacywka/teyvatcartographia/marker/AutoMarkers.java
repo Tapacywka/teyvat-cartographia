@@ -7,6 +7,8 @@ import net.minecraft.core.GlobalPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
+import net.tapacywka.teyvatcartographia.compat.WaystonesCompat;
+import net.tapacywka.teyvatcartographia.config.MapConfig;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +34,7 @@ public final class AutoMarkers {
     private static BlockPos cachedSpawn;
     private static GlobalPos cachedDeath;
     private static String cachedLanguage;
+    private static int cachedWaystones = Integer.MIN_VALUE;
 
     /** Read-only list of automatic markers in the given dimension. */
     public static List<Marker> forDimension(ResourceKey<Level> dimension) {
@@ -44,9 +47,16 @@ public final class AutoMarkers {
         BlockPos spawn = dimension == Level.OVERWORLD && level.dimension() == Level.OVERWORLD ? level.getSharedSpawnPos() : null;
         GlobalPos death = mc.player.getLastDeathLocation().filter(d -> d.dimension() == dimension).orElse(null);
         String language = mc.getLanguageManager().getSelected();
+        // The Waystones stones: their own changes and the four settings that show them.
+        int waystones = WaystonesCompat.version() * 16 + (MapConfig.get(MapConfig.WAYSTONES_SHOW) ? 1 : 0)
+                + (MapConfig.get(MapConfig.WAYSTONES_SHARESTONES) ? 2 : 0) + (MapConfig.get(MapConfig.WAYSTONES_WARP_PLATES) ? 4 : 0)
+                + (MapConfig.get(MapConfig.WAYSTONES_INACTIVE) ? 8 : 0);
         if (level == cachedLevel && dimension == cachedDim && Objects.equals(spawn, cachedSpawn) && Objects.equals(death, cachedDeath)
-                && language.equals(cachedLanguage)) return cached;
-        List<Marker> fresh = List.copyOf(build(dimension, spawn, death));
+                && language.equals(cachedLanguage) && waystones == cachedWaystones) return cached;
+        List<Marker> fresh = new ArrayList<>(build(dimension, spawn, death));
+        fresh.addAll(WaystonesCompat.forDimension(dimension));
+        fresh = List.copyOf(fresh);
+        cachedWaystones = waystones;
         if (!samePlaces(fresh, cached) || dimension != cachedDim) version++;
         cached = fresh;
         cachedLevel = level;
@@ -68,6 +78,7 @@ public final class AutoMarkers {
         List<Marker> out = new ArrayList<>(2);
         if (level.dimension() == Level.OVERWORLD) out.addAll(build(Level.OVERWORLD, level.getSharedSpawnPos(), null));
         mc.player.getLastDeathLocation().ifPresent(d -> out.addAll(build(d.dimension(), null, d)));
+        out.addAll(WaystonesCompat.everywhere());
         return out;
     }
 
@@ -82,7 +93,7 @@ public final class AutoMarkers {
         if (a.size() != b.size()) return false;
         for (int i = 0; i < a.size(); i++) {
             Marker x = a.get(i), y = b.get(i);
-            if (x.type != y.type || x.x != y.x || x.y != y.y || x.z != y.z) return false;
+            if (x.type != y.type || x.x != y.x || x.y != y.y || x.z != y.z || x.inactive != y.inactive || !x.name.equals(y.name)) return false;
         }
         return true;
     }

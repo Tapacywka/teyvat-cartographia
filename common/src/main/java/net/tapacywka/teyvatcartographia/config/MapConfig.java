@@ -165,6 +165,7 @@ public final class MapConfig {
     public static final ConfigSpec.EnumValue<net.tapacywka.teyvatcartographia.marker.MarkerType> XAERO_PIN_TYPE;
     public static final ConfigSpec.BooleanValue XAERO_HIDDEN;
     public static final ConfigSpec.BooleanValue XAERO_DEATHS;
+    public static final ConfigSpec.BooleanValue WAYSTONES_SHOW, WAYSTONES_SHARESTONES, WAYSTONES_WARP_PLATES, WAYSTONES_INACTIVE;
 
     public enum Detail { LOW, MEDIUM, HIGH }
 
@@ -263,6 +264,12 @@ public final class MapConfig {
         XAERO_HIDDEN = b.comment("Xaero's Minimap: import its hidden (disabled) waypoints too").translation("teyvatcartographia.config.compat.xaero_hidden").define("hidden", true);
         XAERO_DEATHS = b.comment("Xaero's Minimap: import its death points too").translation("teyvatcartographia.config.compat.xaero_deaths").define("deaths", false);
         b.pop();
+        b.push("waystones");
+        WAYSTONES_SHOW = b.comment("Waystones: its waystones (and those of dungeons) on the maps").translation("teyvatcartographia.config.compat.waystones_show").define("waystones", true);
+        WAYSTONES_SHARESTONES = b.comment("Waystones: its sharestones on the maps").translation("teyvatcartographia.config.compat.waystones_sharestones").define("sharestones", true);
+        WAYSTONES_WARP_PLATES = b.comment("Waystones: its warp plates on the maps").translation("teyvatcartographia.config.compat.waystones_warp_plates").define("warpPlates", true);
+        WAYSTONES_INACTIVE = b.comment("Waystones: the stones seen but not activated yet too, grey").translation("teyvatcartographia.config.compat.waystones_inactive").define("inactive", true);
+        b.pop();
         b.pop();
 
         SPEC = b.build();
@@ -290,6 +297,7 @@ public final class MapConfig {
         resetValue(WATER_DEPTH); resetValue(SHALLOW_WATER);
         resetValue(NETHER_FOG); resetValue(END_FOG); resetValue(AETHER_FOG); resetValue(SIFT_ICHOR_SHIMMER); resetValue(SIFT_SNOW_SHIMMER); resetValue(SIFT_FOG);
         resetValue(XAERO_PIN_TYPE); resetValue(XAERO_HIDDEN); resetValue(XAERO_DEATHS);
+        resetValue(WAYSTONES_SHOW); resetValue(WAYSTONES_SHARESTONES); resetValue(WAYSTONES_WARP_PLATES); resetValue(WAYSTONES_INACTIVE);
         save();
     }
 

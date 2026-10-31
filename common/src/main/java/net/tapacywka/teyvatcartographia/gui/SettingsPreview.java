@@ -44,7 +44,7 @@ final class SettingsPreview {
     // ------------------------------------------------------------------ Pins
 
     /** The pin that each kind's sample path leads to. */
-    private static final MarkerType[] PATH_TO = {MarkerType.DEMON, MarkerType.SIGN, MarkerType.SPAWN};
+    private static final MarkerType[] PATH_TO = {MarkerType.DEMON, MarkerType.WAYSTONE, MarkerType.SPAWN};
     private static final float[] ROUTE = new float[6];
     private static final boolean[] NO_FOG = new boolean[3];
     /** The illustration of the world under the beam and the stars: sky to the horizon, then the ground. */
@@ -53,11 +53,13 @@ final class SettingsPreview {
     private static final int OFF_DIM = 0xB0222A35;
 
     private static MapConfig.PinKind kind(MarkerType t) {
-        return switch (t.category) {
-            case EXPLORATION -> MapConfig.PinKind.CUSTOM;
-            case INTERACTION -> MapConfig.PinKind.INTERACTIVE;
-            case AUTO -> MapConfig.PinKind.SYSTEM;
-        };
+        return net.tapacywka.teyvatcartographia.marker.MarkerVisibility.kind(t);
+    }
+
+    /** The types of the sample ring: the stones of Waystones only with Waystones in the game (so no gap without it). */
+    private static MarkerType[] sampleTypes() {
+        boolean waystones = net.tapacywka.teyvatcartographia.compat.ModCompat.waystones();
+        return java.util.Arrays.stream(MarkerType.values()).filter(t -> waystones || t.category != MarkerType.Category.INTERACTION).toArray(MarkerType[]::new);
     }
 
     /**
@@ -231,12 +233,13 @@ final class SettingsPreview {
      * the one its path leads to, as a tracked pin always shows) and its path.
      */
     private static void samplePins(GuiGraphics g, float cx, float cy, float size, MapConfig.PinKind only, boolean path) {
-        MarkerType[] types = MarkerType.values();
+        MarkerType[] types = sampleTypes();
+        List<MarkerType> ring = List.of(types);
         float r = size * 0.34f, pin = Math.min(MarkerRenderer.SIZE, size / 7f);
         for (MarkerType to : PATH_TO) {
             MapConfig.PinKind k = kind(to);
-            if (only != null && (k != only || !path)) continue;
-            double a = angle(to.ordinal(), types.length);
+            if (!ring.contains(to) || only != null && (k != only || !path)) continue;
+            double a = angle(ring.indexOf(to), types.length);
             float ex = cx + (float) Math.cos(a) * (r - pin / 2f), ey = cy + (float) Math.sin(a) * (r - pin / 2f);
             // A gentle bend half way, like a walking path.
             float bx = (cx + ex) / 2f - (ey - cy) * 0.18f, by = (cy + ey) / 2f + (ex - cx) * 0.18f;
@@ -251,9 +254,10 @@ final class SettingsPreview {
             Draw.route(g, ROUTE, NO_FOG, 3, 2.4f, shadow, shadow);
             Draw.route(g, ROUTE, NO_FOG, 3, 1.4f, c, c);
         }
-        for (MarkerType t : types) {
+        for (int i = 0; i < types.length; i++) {
+            MarkerType t = types[i];
             if (only != null && (kind(t) != only || path && t != PATH_TO[only.ordinal()])) continue;
-            double a = angle(t.ordinal(), types.length);
+            double a = angle(i, types.length);
             float alpha = only != null || MapConfig.pins(kind(t)).onMap() ? 1f : 0.3f;
             MarkerRenderer.draw(g, t, Draw.snap(cx + (float) Math.cos(a) * r), Draw.snap(cy + (float) Math.sin(a) * r), pin, false, false, alpha);
         }
@@ -570,7 +574,7 @@ final class SettingsPreview {
      * (the theme's fog while it is off), a field of ichor or of ichor snow as the map colours them (shimmering or
      * plain), or for Xaero's Minimap how many waypoints the import takes, with their pin.
      */
-    static void compatSample(GuiGraphics g, float x, float y, float w, float h, String key) {
+    static void compatSample(GuiGraphics g, float x, float y, float w, float h, String key, MapArea map) {
         x = Draw.snap(x);
         y = Draw.snap(y);
         w = Draw.snap(w);
@@ -605,6 +609,8 @@ final class SettingsPreview {
             float side = Math.max(w, h);
             Draw.texturedQuad(g, SIFT_TEX[i].getId(), x, y, x + w, y + h, 0, 0, w / side, h / side, 0xFFFFFFFF);
             Draw.frame(g, x, y, w, h, 1, Theme.PANEL_LINE);
+        } else if (key.contains("compat.waystones")) {
+            waystones(g, x, y, w, h, key, map);
         } else if (key.contains("compat.xaero")) {
             Component line = xaeroLine();
             float lw = Math.min(w, Grid.ROW + Grid.GAP + DrawText.width(line)), lx = Draw.snap(x + (w - lw) / 2f), ly = Draw.snap(y + (h - Grid.ROW) / 2f);
@@ -612,6 +618,46 @@ final class SettingsPreview {
             label(g, line, lx + Grid.ROW + Grid.GAP, ly, lw - Grid.ROW - Grid.GAP, Grid.ROW);
         }
     }
+
+    /**
+     * The stones of the sample (user decision 31.10.2026: on the real map like the other pins), in a ring around the
+     * player as the Pins preview places its pins: type, and whether it is activated (the two waystones apart).
+     */
+    private static final MarkerType[] STONE_TYPE = {MarkerType.WAYSTONE, MarkerType.SHARESTONE, MarkerType.WAYSTONE, MarkerType.WARP_PLATE, MarkerType.DUNGEON};
+    private static final boolean[] STONE_INACTIVE = {false, false, true, false, true};
+
+    /**
+     * Waystones: the map around the player (the fog without a world) with a stone of every kind in a ring, as the maps
+     * show them now (a kind switched off is gone, grey ones only while not activated stones show); the stones the
+     * pointed row is about are bright, the others faint.
+     */
+    private static void waystones(GuiGraphics g, float x, float y, float w, float h, String key, MapArea map) {
+        float s = Draw.snap(Math.min(w, h)), mx = Draw.snap(x + (w - s) / 2f), my = Draw.snap(y + (h - s) / 2f);
+        mapArea(g, mx, my, s, s, map, MapView.snapZoom(MapConfig.get(MapConfig.MAP_DEFAULT_ZOOM)));
+        boolean show = MapConfig.get(MapConfig.WAYSTONES_SHOW), shares = MapConfig.get(MapConfig.WAYSTONES_SHARESTONES),
+                plates = MapConfig.get(MapConfig.WAYSTONES_WARP_PLATES), grey = MapConfig.get(MapConfig.WAYSTONES_INACTIVE);
+        float cx = mx + s / 2f, cy = my + s / 2f, r = s * 0.34f, pin = Math.min(MarkerRenderer.SIZE, s / 7f);
+        for (int i = 0; i < STONE_TYPE.length; i++) {
+            MarkerType t = STONE_TYPE[i];
+            boolean kindShown = t == MarkerType.SHARESTONE ? shares : t == MarkerType.WARP_PLATE ? plates : show;
+            if (!kindShown || STONE_INACTIVE[i] && !grey) continue;
+            boolean lit = key.endsWith("waystones_sharestones") ? t == MarkerType.SHARESTONE
+                    : key.endsWith("waystones_warp_plates") ? t == MarkerType.WARP_PLATE
+                    : key.endsWith("waystones_inactive") ? STONE_INACTIVE[i]
+                    : t == MarkerType.WAYSTONE || t == MarkerType.DUNGEON;
+            double a = angle(i, STONE_TYPE.length);
+            float alpha = lit ? 1f : 0.3f, px = Draw.snap(cx + (float) Math.cos(a) * r), py = Draw.snap(cy + (float) Math.sin(a) * r);
+            MarkerRenderer.draw(g, t, px, py, pin, false, false, alpha, 0, STONE_INACTIVE[i]);
+            if (i == 0) {
+                // The activated waystone carries its name, as a waystone's own name shows in the pin list.
+                Component name = Component.translatable("teyvatcartographia.config.preview.waystones.name");
+                float nw = DrawText.width(name) + 4, ny = py + pin / 2f + 2;
+                Draw.rect(g, px - nw / 2f, ny, px + nw / 2f, ny + DrawText.LINE + 2, Theme.withAlpha(Theme.PANEL_DARK_HEADER, 0.8f * alpha));
+                DrawText.textCentered(g, name, px, ny + 1, Theme.withAlpha(Theme.CREAM, alpha), false);
+            }
+        }
+    }
+
     /** How many waypoints the import would take from Xaero's folder of this world (read again on a change of the options or every 5 s). */
     private static Component xaeroLine() {
         Minecraft mc = Minecraft.getInstance();

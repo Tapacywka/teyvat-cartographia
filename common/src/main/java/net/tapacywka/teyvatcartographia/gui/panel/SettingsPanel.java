@@ -79,15 +79,22 @@ public final class SettingsPanel extends SidePanel {
     }
 
     /** Quick switches for what the map shows; everything else is on the full settings screen. */
-    private final List<Row> rows = List.of(
-            section("teyvatcartographia.settings.section.display"),
-            pins("teyvatcartographia.settings.custom_pins", MapConfig.PinKind.CUSTOM),
-            pins("teyvatcartographia.settings.interactive_pins", MapConfig.PinKind.INTERACTIVE),
-            pins("teyvatcartographia.settings.system_pins", MapConfig.PinKind.SYSTEM),
-            path(),
-            plants(),
-            option("teyvatcartographia.settings.labels", "map_labels", MapConfig.MAP_SHOW_LABELS),
-            option("teyvatcartographia.settings.grid", "map_grid", MapConfig.MAP_SHOW_GRID));
+    private final List<Row> rows = rows();
+
+    /** The interactive pins (the stones of Waystones) only with Waystones in the game. */
+    private static List<Row> rows() {
+        List<Row> out = new java.util.ArrayList<>();
+        out.add(section("teyvatcartographia.settings.section.display"));
+        out.add(pins("teyvatcartographia.settings.custom_pins", MapConfig.PinKind.CUSTOM));
+        if (net.tapacywka.teyvatcartographia.compat.ModCompat.waystones())
+            out.add(pins("teyvatcartographia.settings.interactive_pins", MapConfig.PinKind.INTERACTIVE));
+        out.add(pins("teyvatcartographia.settings.system_pins", MapConfig.PinKind.SYSTEM));
+        out.add(path());
+        out.add(plants());
+        out.add(option("teyvatcartographia.settings.labels", "map_labels", MapConfig.MAP_SHOW_LABELS));
+        out.add(option("teyvatcartographia.settings.grid", "map_grid", MapConfig.MAP_SHOW_GRID));
+        return List.copyOf(out);
+    }
 
     public SettingsPanel(WorldMapScreen screen) {
         super(screen);

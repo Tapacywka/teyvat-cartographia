@@ -60,6 +60,11 @@ public final class ModCompat {
         }
     }
 
+    /** Waystones (BlayTheNinth): its stones on the maps ({@link WaystonesCompat}). */
+    public static boolean waystones() {
+        return loaded(WaystonesCompat.MOD_ID);
+    }
+
     /** Xaero's Minimap or Xaero's World Map in the game, or the waypoints Xaero's Minimap left in it. */
     public static boolean xaero() {
         return loaded("xaerominimap") || loaded("xaeroworldmap") || !XaeroWaypoints.roots().isEmpty();

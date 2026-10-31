@@ -89,6 +89,8 @@
     "indicator_icon": "#FFFFFFFF",
     "marker_icon": "#FFF4F1EA",
     "marker_icon_hover": "#FFFFFFFF",
+    "marker_icon_inactive": "#FF8C95A3",
+    "marker_icon_inactive_hover": "#FFB4BBC6",
     "marker_ring": "#D8E8EEF0",
     "marker_pulse": "#FFF4F1EA",
     "marker_tile": "#FF4F5566",

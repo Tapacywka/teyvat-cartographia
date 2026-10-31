@@ -794,7 +794,7 @@ public final class WorldMapScreen extends Screen {
         boolean sel = selected != null && selected.id.equals(m.id);
         boolean tracked = Navigation.isTracking(m);
         if (tracked) MarkerRenderer.pulse(g, sx, sy, size, pulsePhase(), Theme.MARKER_PULSE, 1f);
-        MarkerRenderer.draw(g, m.type, sx, sy, size, sel, hover, 1f, MarkerVisibility.layerRelation(m, shownBand));
+        MarkerRenderer.draw(g, m.type, sx, sy, size, sel, hover, 1f, MarkerVisibility.layerRelation(m, shownBand), m.inactive);
     }
 
     /** Seconds into the current pulse period of a tracked pin (a pulse starts every 2.5 s). */
@@ -805,7 +805,7 @@ public final class WorldMapScreen extends Screen {
 
     private void drawSelectedAgain(GuiGraphics g) {
         float sx = view.screenX(selected.centerX(), selected.centerZ()), sy = view.screenY(selected.centerX(), selected.centerZ());
-        MarkerRenderer.draw(g, selected.type, sx, sy, markerSize(), true, false, 1f, MarkerVisibility.layerRelation(selected, viewedBand()));
+        MarkerRenderer.draw(g, selected.type, sx, sy, markerSize(), true, false, 1f, MarkerVisibility.layerRelation(selected, viewedBand()), selected.inactive);
     }
 
     private void drawSelectedPoint(GuiGraphics g) {
