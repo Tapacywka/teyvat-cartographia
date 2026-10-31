@@ -132,8 +132,8 @@ Place pins, search for them and for biomes, track them, follow the path and find
 2. Download the file for your game and loader from [Modrinth](https://modrinth.com/mod/teyvat-cartographia),
    [CurseForge](https://www.curseforge.com/minecraft/mc-mods/teyvat-cartographia) or the
    [GitHub releases](https://github.com/Tapacywka/teyvat-cartographia/releases):
-   the part after `+mc` names them: `teyvatcartographia-v0.7.0+mc1.21.1-fabric.jar` is for Minecraft 1.21.1 on Fabric,
-   `teyvatcartographia-v0.7.0+mc26.3-neoforge.jar` for 26.3 on NeoForge. Put it into your `mods/` folder.
+   the part after `+mc` names them: `teyvatcartographia-v0.8.0+mc1.21.1-fabric.jar` is for Minecraft 1.21.1 on Fabric,
+   `teyvatcartographia-v0.8.0+mc26.3-neoforge.jar` for 26.3 on NeoForge. Put it into your `mods/` folder.
 3. Launch the game and press **M** in a world.
 4. Optional: make the minimap round (**Settings > Minimap**) or the interface rounded (**Settings > Map**). On Fabric,
    [Mod Menu](https://modrinth.com/mod/modmenu) adds a settings button to the mod list.
@@ -208,7 +208,8 @@ adds its settings button to NeoForge's mod list), but on NeoForge the NeoForge f
 * Three kinds of pins:
   * **Custom**, for every player: demon, quest, star, meat, flower, pickaxe and hook (the name of each shows when you
     point at its tile);
-  * **Interactive**, for every player too: sign, party and structure;
+  * **Interactive**: the waystones, dungeons, sharestones and warp plates of [Waystones](https://modrinth.com/mod/waystones),
+    when it is in the game (see [Compatibility with mods](#compatibility));
   * **System**: automatic points from real data, the world spawn and your last death location.
 * Rename, retype, delete; up to 300 pins per world, a pin list sorted by distance, saved per world and dimension.
 * A right click on the world map opens a small menu: **New pin** on empty ground, **Edit** and **Track** on a pin.
@@ -250,16 +251,17 @@ adds its settings button to NeoForge's mod list), but on NeoForge the NeoForge f
 
 <h3 id="settings">Settings</h3>
 
-* The gear on the map holds quick switches: the three pin kinds, the path to the target, plants, biome names, chunk grid.
+* The gear on the map holds quick switches: custom and system pins, the path to the target, plants, biome names, chunk grid.
 * The full settings screen (also from the mod list: NeoForge's, or Mod Menu's on Fabric) has a tab for each part: *Map* (appearance; what the
   map shows: plants, caves; colours; the world map), *Minimap* (display, size and position, look, extra
-  information), *Pins* (display and path to the target for each kind), *System* (performance) and
+  information), *Pins* (display and path to the target for custom and system pins), *System* (performance) and
   *Compatibility* (The Nether and End fogs, and the supported mods in the game: see [Compatibility with mods](#compatibility)).
 * **Live preview**: point at a setting and the card beside the list shows it, with what it does. The map around you
   as it will look, the minimap at its real size and where it sits, the three terrain detail modes, the
-  cave layers with their buttons to click, each pin kind on the world map, the minimap and in the world, the mapping
-  speed and memory, the mods' fogs and samples. It changes as you move a slider. Without room for the card (GUI 4 on
-  a 1080p screen) the setting under the mouse shows its description as a tooltip instead.
+  cave layers, the plants, each pin kind on the world map, the minimap and in the world, the mapping
+  speed and memory, the mods' fogs and samples. It changes as you move a slider. The settings screen is never larger
+  than GUI 3 on a 1080p screen (GUI 4 there shows it as GUI 3); in a narrow window without room for the card the
+  setting under the mouse shows its description as a tooltip instead.
 * A setting with parts is one slider in steps: each pin kind goes Off, Map, Both maps, In the world (the marker over a
   tracked pin), Everywhere (its beam too); its path Off, Map, Both maps, Everywhere (the stars); the clock Off, Game,
   Real, Both.
@@ -336,12 +338,14 @@ world map, so most mods work without anything special. A few get more: with one 
 
 | Mod | What it gets |
 |---|---|
+| [Waystones](https://modrinth.com/mod/waystones) | Its **waystones, sharestones and warp plates** on the world map and the minimap, like the teleport waypoints of Genshin Impact: the ones you have activated with their names, the ones you have only seen in grey, a waystone of a dungeon as a dungeon. Track them like any pin; teleporting stays with Waystones. Which stones show, and where they and the path to them show, are in its part. |
 | [Xaero's Minimap](https://modrinth.com/mod/xaeros-minimap) | **Import** of its waypoints (also those of Xaero's World Map) into your pins: the current world's are found on their own. The pin type they get, and whether hidden waypoints and death points come too, are in its part. |
 | [The Aether](https://modrinth.com/mod/aether) | A Fog of War of its own, a **sea of clouds** seen from above, with the floating islands casting a soft shadow on it (on the world map and the minimap). No cave layers under the islands. |
 | [Mielon's The Sift](https://modrinth.com/mod/mielons-the-sift) | A **pearly haze** in the colours of its ichor as the Fog of War; its **rainbow ichor** and **ichor snow** shimmer on the map in their own colours (each can be switched off); its cyan willows keep their colour. |
 | [Biomes O' Plenty](https://modrinth.com/mod/biomes-o-plenty), [Regions Unexplored](https://modrinth.com/mod/regions-unexplored) | Their biomes, leaves, grass and plants in their own colours (compared side by side with Xaero's Minimap in 16 places); their plants in the Plants list. |
 | [Vanilla Backport](https://modrinth.com/mod/vanillabackport), [Tiny Takeover Backport](https://modrinth.com/mod/tiny-takeover-backport) | The pale garden, leaf litter, bushes and the other new blocks in the colours the game gives them. |
 | [Sodium](https://modrinth.com/mod/sodium), [Iris](https://modrinth.com/mod/iris) | Work alongside (checked on Fabric and on NeoForge): the minimap, the map, the beam and the path sparkles draw as without them. |
+| [Sodium Extra](https://modrinth.com/mod/sodium-extra) | When its FPS counter (or coordinates) is shown in the minimap's corner, the minimap moves clear of it. |
 | [Mod Menu](https://modrinth.com/mod/modmenu) | On Fabric, a settings button for the mod in its list. |
 | [VulkanMod](https://modrinth.com/mod/vulkanmod) (Fabric), [VulkanMod Reforged](https://modrinth.com/mod/vulkanmod-reforged) (NeoForge) | Work with their Vulkan renderer: the map, the minimap, the path with its sparkles and the beam look as with OpenGL, the lists dissolve at their edges and the blur under the menus works. |
 

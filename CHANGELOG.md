@@ -10,6 +10,8 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-31
+
 ### Added
 - Waystones support: the waystones, sharestones and warp plates you have activated show on the world map and the
   minimap with their names, like the teleport waypoints of Genshin Impact. Stones you have seen in the world but not
@@ -24,6 +26,8 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 ### Changed
 - The settings preview shows its pictures at the same place for every setting, right under a description of at most
   three lines; the longest descriptions (the route, plants, the pin and path rows and a few more) are shorter.
+- The previews of the pin and path settings show every pin: the kind pointed at in white, the others grey. The route
+  and terrain detail pictures stand one under another across the card, the choices not taken darkened.
 - The preview of the cave map setting is a picture now: on, a mapped cave with the layer buttons beside it as the
   world map shows them; off, the map around you alone.
 - The Plants setting has a preview too: the map around you, where plants switched on or off in their list appear or
@@ -37,8 +41,8 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 
 ### Removed
 - The interactive pin types sign, party and structure, and the Interactive section of the pin editor (its custom
-  types are now one grid without a heading): their place
-  went to the stones of Waystones. Pins of these types are removed from your maps and left out of imported files.
+  types are now one grid without a heading): their place went to the stones of Waystones. Pins of these types are
+  removed from your maps and left out of imported files.
 
 ### Fixed
 - In the settings, the sliders of where pins show ended a little short of the sliders of the path; all now end at
@@ -352,7 +356,8 @@ The first public release, for Minecraft 1.21.1 on NeoForge 21.1. Client only.
 - Cached HUD layers, chunk work on worker threads and path searches in short slices: the mod is meant to cost at most
   2 to 3% FPS.
 
-[Unreleased]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.5.1...v0.6.0
 [0.5.1]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.5.0...v0.5.1
