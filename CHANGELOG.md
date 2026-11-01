@@ -10,6 +10,9 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 
 ## [Unreleased]
 
+### Changed
+- A new mod icon in the mod list.
+
 ## [0.8.0] - 2026-10-31
 
 ### Added
