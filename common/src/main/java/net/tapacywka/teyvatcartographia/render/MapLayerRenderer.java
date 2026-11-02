@@ -33,6 +33,13 @@ public final class MapLayerRenderer {
      */
     private static final float EDGE = 0.5f / MapTile.SIZE;
 
+    /**
+     * Without smoothing a sliver of a texel is enough: at the very edge (a coordinate of exactly 1) VulkanMod-Reforged
+     * took the opposite edge of the region for a row of pixels wherever a region border fell between pixels, a dark
+     * line across the map at zoom 1 (tester report 02.11.2026, a flight to a far pin; the suite's category flight).
+     */
+    private static final float NEAR_EDGE = 1f / 64 / MapTile.SIZE;
+
     /** Texture coordinate {@code t} (0..1 across the texture) moved {@code edge} inside both edges. */
     private static float in(float t, float edge) {
         return edge + t * (1 - 2 * edge);
@@ -66,7 +73,7 @@ public final class MapLayerRenderer {
         int lightColor = Theme.withAlpha(Theme.WHITE, lightAlpha);
         int uploads = UPLOADS_PER_CALL;
         boolean blur = blurFor(view);
-        float edge = blur ? EDGE : 0f;
+        float edge = blur ? EDGE : NEAR_EDGE;
         if (!store.cave && FogTexture.shadow(store.dimension)) {
             // Floating land: its shadow on the fog below, the regions drawn dark and shifted down-right first.
             for (int tz = tz0; tz <= tz1; tz++) {
