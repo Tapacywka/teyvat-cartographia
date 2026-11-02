@@ -22,6 +22,14 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
+      # Actually Amazing Config Screen (the settings screen packed into both JARs), at the version gradle.properties
+      # names, into the local Maven repository the build reads it from.
+      - name: Actually Amazing Config Screen
+        run: |
+          v=$(grep '^aacs_version=' gradle.properties | cut -d= -f2 | tr -d '\r')
+          git clone --depth 1 --branch "v$v" https://github.com/Tapacywka/actually-amazing-config-screen.git ../aacs
+          cd ../aacs && chmod +x gradlew && ./gradlew publishToMavenLocal --no-daemon
+
       # The JARs only (Fabric and NeoForge); the unit tests run in test.yml.
       - name: Build the mod
         run: ./gradlew assemble --no-daemon

@@ -1,6 +1,5 @@
 package net.tapacywka.teyvatcartographia.gui.panel;
 
-import net.tapacywka.teyvatcartographia.config.ConfigSpec;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
 import net.tapacywka.teyvatcartographia.gui.TeyvatConfigScreen;
 import net.tapacywka.teyvatcartographia.gui.Ui;
@@ -25,7 +24,7 @@ public final class SettingsPanel extends SidePanel {
     }
 
     /** {@code tooltipKey}: the matching full-settings option, whose description is reused as tooltip. */
-    private static Row option(String key, String tooltipKey, ConfigSpec.BooleanValue v) {
+    private static Row option(String key, String tooltipKey, net.tapacywka.aacs.api.BoolValue v) {
         return new Row(Component.translatable(key), Component.translatable("teyvatcartographia.config." + tooltipKey + ".tooltip"), false, () -> MapConfig.get(v), () -> {
             v.set(!MapConfig.get(v));
             MapConfig.save();
@@ -159,7 +158,7 @@ public final class SettingsPanel extends SidePanel {
             }
         }
         if (Ui.actionHit(contentX(), bottomActionY(), contentW(), mx, my)) {
-            Minecraft.getInstance().setScreen(new TeyvatConfigScreen(screen));
+            Minecraft.getInstance().setScreen(TeyvatConfigScreen.open(screen));
             return true;
         }
         return contains(mx, my);

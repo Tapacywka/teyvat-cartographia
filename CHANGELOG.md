@@ -10,8 +10,14 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 
 ## [Unreleased]
 
+### Added
+- Settings: a small reset icon beside a setting you changed, shown while you point at it; a click puts its default
+  back.
+
 ### Changed
 - A new mod icon in the mod list.
+- The settings screen comes from Actually Amazing Config Screen, a library of the same author packed inside the mod
+  (nothing to install). It looks and works as before, and the settings file stays the same.
 
 ## [0.8.0] - 2026-10-31
 

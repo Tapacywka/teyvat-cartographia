@@ -29,6 +29,9 @@ dependencies {
     modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
     // The settings button in the mod list (Mod Menu on Fabric, Connector Extras' bridge on NeoForge).
     modCompileOnly "com.terraformersmc:modmenu:${modmenu_version}"
+    // The settings screen and file (Actually Amazing Config Screen), inside the JAR.
+    modImplementation "net.tapacywka.aacs:aacs-fabric:${aacs_version}+mc${minecraft_version}-fabric"
+    include "net.tapacywka.aacs:aacs-fabric:${aacs_version}+mc${minecraft_version}-fabric"
 }
 
 processResources {

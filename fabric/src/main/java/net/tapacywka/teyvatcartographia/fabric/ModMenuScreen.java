@@ -8,6 +8,6 @@ import net.tapacywka.teyvatcartographia.gui.TeyvatConfigScreen;
 public final class ModMenuScreen implements ModMenuApi {
     @Override
     public ConfigScreenFactory<?> getModConfigScreenFactory() {
-        return TeyvatConfigScreen::new;
+        return TeyvatConfigScreen::open;
     }
 }

@@ -35,6 +35,9 @@ artifacts {
 }
 
 dependencies {
+    // The settings screen and file (Actually Amazing Config Screen); each loader packs its own build of it.
+    compileOnly "net.tapacywka.aacs:aacs-common:${aacs_version}+mc${minecraft_version}"
+    testImplementation "net.tapacywka.aacs:aacs-common:${aacs_version}+mc${minecraft_version}"
     // Unit tests of the mod's logic: run by `gradlew build` and on GitHub.
     testImplementation platform('org.junit:junit-bom:5.11.4')
     testImplementation 'org.junit.jupiter:junit-jupiter'

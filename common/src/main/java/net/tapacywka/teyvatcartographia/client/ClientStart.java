@@ -13,6 +13,6 @@ public final class ClientStart {
         Platform.set(platform);
         // The settings file; the TOML NeoForge wrote up to 0.4 is taken over once.
         Path config = platform.configDir();
-        MapConfig.SPEC.load(config.resolve("teyvatcartographia-client.json"), config.resolve("teyvatcartographia-client.toml"));
+        MapConfig.load(config.resolve("teyvatcartographia-client.json"), config.resolve("teyvatcartographia-client.toml"));
     }
 }

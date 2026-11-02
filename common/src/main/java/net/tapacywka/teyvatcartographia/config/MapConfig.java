@@ -1,8 +1,17 @@
 package net.tapacywka.teyvatcartographia.config;
 
+import net.tapacywka.aacs.api.BoolValue;
+import net.tapacywka.aacs.api.ConfigFile;
+import net.tapacywka.aacs.api.DoubleValue;
+import net.tapacywka.aacs.api.EnumValue;
+import net.tapacywka.aacs.api.IntValue;
+import net.tapacywka.aacs.api.ListValue;
+import net.tapacywka.aacs.api.StringValue;
+import net.tapacywka.aacs.api.Value;
+
 
 /**
- * Client-side user settings (UI only). Stored in {@code config/teyvatcartographia-client.json} ({@link ConfigSpec}).
+ * Client-side user settings (UI only). Stored in {@code config/teyvatcartographia-client.json} (AACS {@link ConfigFile}).
  * Explored map data and markers are stored separately under {@code <gameDir>/teyvatcartographia/}.
  */
 public final class MapConfig {
@@ -28,44 +37,44 @@ public final class MapConfig {
         }
     }
 
-    public static final ConfigSpec SPEC;
+    public static final ConfigFile FILE;
 
     // Appearance
-    public static final ConfigSpec.ConfigValue<String> THEME;
-    public static final ConfigSpec.EnumValue<MinimapShape> MINIMAP_SHAPE;
-    public static final ConfigSpec.EnumValue<InterfaceStyle> INTERFACE_STYLE;
+    public static final StringValue THEME;
+    public static final EnumValue<MinimapShape> MINIMAP_SHAPE;
+    public static final EnumValue<InterfaceStyle> INTERFACE_STYLE;
 
     // Minimap
-    public static final ConfigSpec.BooleanValue MINIMAP_ENABLED;
-    public static final ConfigSpec.IntValue MINIMAP_RADIUS;
-    public static final ConfigSpec.EnumValue<Corner> MINIMAP_CORNER;
-    public static final ConfigSpec.IntValue MINIMAP_OFFSET_X;
-    public static final ConfigSpec.IntValue MINIMAP_OFFSET_Y;
-    public static final ConfigSpec.DoubleValue MINIMAP_OPACITY;
+    public static final BoolValue MINIMAP_ENABLED;
+    public static final IntValue MINIMAP_RADIUS;
+    public static final EnumValue<Corner> MINIMAP_CORNER;
+    public static final IntValue MINIMAP_OFFSET_X;
+    public static final IntValue MINIMAP_OFFSET_Y;
+    public static final DoubleValue MINIMAP_OPACITY;
     /** Gap between the frame and the map inside it (GUI units). */
-    public static final ConfigSpec.IntValue MINIMAP_PADDING;
+    public static final IntValue MINIMAP_PADDING;
     /** The faded edge of the map: its width (percent of the radius) and how transparent the very edge gets (percent). */
-    public static final ConfigSpec.IntValue MINIMAP_FADE_WIDTH;
-    public static final ConfigSpec.IntValue MINIMAP_FADE_STRENGTH;
+    public static final IntValue MINIMAP_FADE_WIDTH;
+    public static final IntValue MINIMAP_FADE_STRENGTH;
     /** Gap between the map and the info pills under or over it (GUI units). */
-    public static final ConfigSpec.IntValue MINIMAP_INFO_GAP;
+    public static final IntValue MINIMAP_INFO_GAP;
     /** Size of the text under the minimap: 0 "Auto", else screen pixels per font pixel. */
-    public static final ConfigSpec.IntValue MINIMAP_TEXT_SIZE;
-    public static final ConfigSpec.IntValue MINIMAP_PILL_OPACITY;
-    public static final ConfigSpec.DoubleValue MINIMAP_ZOOM;
-    public static final ConfigSpec.EnumValue<Orientation> MINIMAP_ORIENTATION;
-    public static final ConfigSpec.EnumValue<UpdateRate> MINIMAP_UPDATE_RATE;
-    public static final ConfigSpec.BooleanValue MINIMAP_SHOW_COORDS;
-    public static final ConfigSpec.BooleanValue MINIMAP_SHOW_BIOME;
-    public static final ConfigSpec.BooleanValue MINIMAP_SHOW_TIME;
-    public static final ConfigSpec.EnumValue<TimeSource> MINIMAP_TIME_SOURCE;
-    public static final ConfigSpec.EnumValue<TimeFormat> MINIMAP_TIME_FORMAT;
-    public static final ConfigSpec.BooleanValue MINIMAP_SHOW_DAY;
+    public static final IntValue MINIMAP_TEXT_SIZE;
+    public static final IntValue MINIMAP_PILL_OPACITY;
+    public static final DoubleValue MINIMAP_ZOOM;
+    public static final EnumValue<Orientation> MINIMAP_ORIENTATION;
+    public static final EnumValue<UpdateRate> MINIMAP_UPDATE_RATE;
+    public static final BoolValue MINIMAP_SHOW_COORDS;
+    public static final BoolValue MINIMAP_SHOW_BIOME;
+    public static final BoolValue MINIMAP_SHOW_TIME;
+    public static final EnumValue<TimeSource> MINIMAP_TIME_SOURCE;
+    public static final EnumValue<TimeFormat> MINIMAP_TIME_FORMAT;
+    public static final BoolValue MINIMAP_SHOW_DAY;
 
     // World map
-    public static final ConfigSpec.BooleanValue MAP_SHOW_LABELS;
-    public static final ConfigSpec.BooleanValue MAP_SHOW_GRID;
-    public static final ConfigSpec.DoubleValue MAP_DEFAULT_ZOOM;
+    public static final BoolValue MAP_SHOW_LABELS;
+    public static final BoolValue MAP_SHOW_GRID;
+    public static final DoubleValue MAP_DEFAULT_ZOOM;
 
     /**
      * The three kinds of pins, each with its own settings: the players' own (custom), the operators' signs,
@@ -88,19 +97,19 @@ public final class MapConfig {
      * the methods.
      */
     public static final class PinOptions {
-        public final ConfigSpec.BooleanValue enabled, map, minimap, marker, beam, path, pathMap, pathMinimap, pathWorld;
+        public final BoolValue enabled, map, minimap, marker, beam, path, pathMap, pathMinimap, pathWorld;
 
-        private PinOptions(ConfigSpec.Builder b, PinKind kind) {
+        private PinOptions(ConfigFile.Builder b, PinKind kind) {
             b.push(kind.id);
-            enabled = b.comment("Show these pins").translation("teyvatcartographia.config.pins." + kind.id).define("enabled", true);
-            map = b.comment("On the world map").translation("teyvatcartographia.config.pins.map").define("map", true);
-            minimap = b.comment("On the minimap").translation("teyvatcartographia.config.pins.minimap").define("minimap", true);
-            marker = b.comment("The marker over a tracked pin of this kind in the world (its glyph and distance)").translation("teyvatcartographia.config.pins.marker").define("marker", true);
-            beam = b.comment("A beam of light over a tracked pin in the world").translation("teyvatcartographia.config.pins.beam").define("beam", true);
-            path = b.comment("Show the path to a tracked pin of this kind").translation("teyvatcartographia.config.path." + kind.id).define("path", true);
-            pathMap = b.comment("The path on the world map (dash-dot line)").translation("teyvatcartographia.config.path.map").define("pathMap", true);
-            pathMinimap = b.comment("The path on the minimap (dash-dot line)").translation("teyvatcartographia.config.path.minimap").define("pathMinimap", true);
-            pathWorld = b.comment("The path in the world (stars)").translation("teyvatcartographia.config.path.world").define("pathWorld", true);
+            enabled = b.bool("enabled", true);
+            map = b.bool("map", true);
+            minimap = b.bool("minimap", true);
+            marker = b.bool("marker", true);
+            beam = b.bool("beam", true);
+            path = b.bool("path", true);
+            pathMap = b.bool("pathMap", true);
+            pathMinimap = b.bool("pathMinimap", true);
+            pathWorld = b.bool("pathWorld", true);
             b.pop();
         }
 
@@ -134,7 +143,7 @@ public final class MapConfig {
         }
 
         private void reset() {
-            for (ConfigSpec.BooleanValue v : new ConfigSpec.BooleanValue[]{enabled, map, minimap, marker, beam, path, pathMap, pathMinimap, pathWorld}) resetValue(v);
+            for (BoolValue v : new BoolValue[]{enabled, map, minimap, marker, beam, path, pathMap, pathMinimap, pathWorld}) resetValue(v);
         }
     }
     private static final PinOptions[] PINS = new PinOptions[PinKind.values().length];
@@ -144,28 +153,28 @@ public final class MapConfig {
     }
 
     // Cartography
-    public static final ConfigSpec.IntValue CHUNKS_PER_TICK;
-    public static final ConfigSpec.IntValue SCAN_RADIUS;
-    public static final ConfigSpec.IntValue MAX_CACHED_TILES;
-    public static final ConfigSpec.EnumValue<Detail> DETAIL;
-    public static final ConfigSpec.BooleanValue CAVES_ENABLED;
-    public static final ConfigSpec.BooleanValue MAP_PLANTS;
-    public static final ConfigSpec.BooleanValue PLAYER_CONE;
-    public static final ConfigSpec.ConfigValue<java.util.List<? extends String>> PLANTS_HIDDEN;
-    public static final ConfigSpec.IntValue WATER_DEPTH;
-    public static final ConfigSpec.IntValue SHALLOW_WATER;
+    public static final IntValue CHUNKS_PER_TICK;
+    public static final IntValue SCAN_RADIUS;
+    public static final IntValue MAX_CACHED_TILES;
+    public static final EnumValue<Detail> DETAIL;
+    public static final BoolValue CAVES_ENABLED;
+    public static final BoolValue MAP_PLANTS;
+    public static final BoolValue PLAYER_CONE;
+    public static final ListValue PLANTS_HIDDEN;
+    public static final IntValue WATER_DEPTH;
+    public static final IntValue SHALLOW_WATER;
 
     // Compatibility with other mods (shown in the settings only while that mod is there).
-    public static final ConfigSpec.BooleanValue SIFT_ICHOR_SHIMMER;
-    public static final ConfigSpec.BooleanValue SIFT_SNOW_SHIMMER;
-    public static final ConfigSpec.BooleanValue SIFT_FOG;
-    public static final ConfigSpec.BooleanValue AETHER_FOG;
-    public static final ConfigSpec.BooleanValue NETHER_FOG;
-    public static final ConfigSpec.BooleanValue END_FOG;
-    public static final ConfigSpec.EnumValue<net.tapacywka.teyvatcartographia.marker.MarkerType> XAERO_PIN_TYPE;
-    public static final ConfigSpec.BooleanValue XAERO_HIDDEN;
-    public static final ConfigSpec.BooleanValue XAERO_DEATHS;
-    public static final ConfigSpec.BooleanValue WAYSTONES_SHOW, WAYSTONES_SHARESTONES, WAYSTONES_WARP_PLATES, WAYSTONES_INACTIVE;
+    public static final BoolValue SIFT_ICHOR_SHIMMER;
+    public static final BoolValue SIFT_SNOW_SHIMMER;
+    public static final BoolValue SIFT_FOG;
+    public static final BoolValue AETHER_FOG;
+    public static final BoolValue NETHER_FOG;
+    public static final BoolValue END_FOG;
+    public static final EnumValue<net.tapacywka.teyvatcartographia.marker.MarkerType> XAERO_PIN_TYPE;
+    public static final BoolValue XAERO_HIDDEN;
+    public static final BoolValue XAERO_DEATHS;
+    public static final BoolValue WAYSTONES_SHOW, WAYSTONES_SHARESTONES, WAYSTONES_WARP_PLATES, WAYSTONES_INACTIVE;
 
     public enum Detail { LOW, MEDIUM, HIGH }
 
@@ -175,7 +184,7 @@ public final class MapConfig {
      */
     public enum Route { LAND, WATER, AIR }
 
-    public static final ConfigSpec.EnumValue<Route> PATH_ROUTE;
+    public static final EnumValue<Route> PATH_ROUTE;
 
     /** Clock under the minimap: the time of day in the game world, or the real time of the player's computer. */
     public enum TimeSource { GAME_TIME, REAL_TIME, BOTH }
@@ -184,101 +193,106 @@ public final class MapConfig {
     public enum TimeFormat { HOURS_24, HOURS_12, HOURS_12_AM_PM }
 
     static {
-        ConfigSpec.Builder b = new ConfigSpec.Builder();
+        ConfigFile.Builder b = ConfigFile.builder();
 
         b.push("appearance");
-        THEME = b.comment("Theme (colours, icons, Fog of War): the id of a folder in assets/teyvatcartographia/themes/ (built in: default; enabled resource packs may add more)")
-                .translation("teyvatcartographia.config.theme").define("theme", "default", o -> o instanceof String s && s.matches("[a-z0-9_.-]+"));
-        MINIMAP_SHAPE = b.comment("Shape of the minimap: SQUARE or ROUND").translation("teyvatcartographia.config.minimap_shape").defineEnum("minimapShape", MinimapShape.SQUARE);
-        INTERFACE_STYLE = b.comment("Look of the panels, buttons and tiles: RECTANGULAR (square corners) or ROUNDED (circles, capsules, rounded corners)").translation("teyvatcartographia.config.interface_style").defineEnum("interfaceStyle", InterfaceStyle.RECTANGULAR);
+        THEME = b.text("theme", "default", s -> s.matches("[a-z0-9_.-]+"));
+        MINIMAP_SHAPE = b.choice("minimapShape", MinimapShape.SQUARE);
+        INTERFACE_STYLE = b.choice("interfaceStyle", InterfaceStyle.RECTANGULAR);
         b.pop();
 
         b.push("minimap");
-        MINIMAP_ENABLED = b.comment("Show the minimap on the HUD").translation("teyvatcartographia.config.minimap_enabled").define("enabled", true);
-        MINIMAP_RADIUS = b.comment("Minimap radius in GUI pixels").translation("teyvatcartographia.config.minimap_radius").defineInRange("radius", 48, 24, 110);
-        MINIMAP_CORNER = b.comment("Screen corner the minimap is anchored to").translation("teyvatcartographia.config.minimap_corner").defineEnum("corner", Corner.TOP_LEFT);
-        MINIMAP_OFFSET_X = b.comment("Horizontal distance from the anchored corner").translation("teyvatcartographia.config.minimap_offset_x").defineInRange("offsetX", 4, 0, 64);
-        MINIMAP_OFFSET_Y = b.comment("Vertical distance from the anchored corner").translation("teyvatcartographia.config.minimap_offset_y").defineInRange("offsetY", 4, 0, 64);
-        MINIMAP_OPACITY = b.comment("Minimap opacity").translation("teyvatcartographia.config.minimap_opacity").defineInRange("opacity", 0.85, 0.2, 1.0);
-        MINIMAP_PADDING = b.comment("Gap between the frame and the map inside it, in GUI pixels").translation("teyvatcartographia.config.minimap_padding").defineInRange("padding", 0, 0, 16);
-        MINIMAP_FADE_WIDTH = b.comment("Width of the faded edge of the map, in percent of its radius (0: a sharp edge)").translation("teyvatcartographia.config.minimap_fade_width").defineInRange("fadeWidth", 15, 0, 50);
-        MINIMAP_FADE_STRENGTH = b.comment("How transparent the very edge of the map gets, in percent (0: no fading)").translation("teyvatcartographia.config.minimap_fade_strength").defineInRange("fadeStrength", 100, 0, 100);
-        MINIMAP_INFO_GAP = b.comment("Gap between the minimap and the lines under it (coordinates, biome, clock, day) and between those lines, in GUI pixels").translation("teyvatcartographia.config.minimap_info_gap").defineInRange("infoGap", 0, 0, 8);
-        MINIMAP_TEXT_SIZE = b.comment("Size of the text under the minimap and of its compass letters: 0 = Auto (a step below the GUI scale), else 1 to 4 screen pixels per font pixel, at most the GUI scale").translation("teyvatcartographia.config.minimap_text_size").defineInRange("textSize", 0, 0, 4);
-        MINIMAP_PILL_OPACITY = b.comment("Opacity of the background of the lines under the minimap, in percent (0: text only)").translation("teyvatcartographia.config.minimap_pill_opacity").defineInRange("pillOpacity", 0, 0, 100);
-        MINIMAP_ZOOM = b.comment("Minimap scale in GUI pixels per block: 1/32, 1/16, 1/8, 1/4, 1/2, 1, 2, 4, 8, 16 or 32 (other values snap to the nearest). At 1/16 and 1/32 only the tracked target keeps its pin").translation("teyvatcartographia.config.minimap_zoom").defineInRange("zoom", 1.0, 1 / 32.0, 32.0);
-        MINIMAP_ORIENTATION = b.comment("NORTH_UP: north is always up. PLAYER_UP: the map rotates with the view direction").translation("teyvatcartographia.config.minimap_orientation").defineEnum("orientation", Orientation.NORTH_UP);
-        MINIMAP_UPDATE_RATE = b.comment("How many times per second the minimap is redrawn while you move or turn: RATE_10, RATE_20, RATE_30, RATE_60 or UNLIMITED (every frame). Lower gives more FPS").translation("teyvatcartographia.config.minimap_rate").defineEnum("updateRate", UpdateRate.RATE_30);
-        MINIMAP_SHOW_COORDS = b.comment("Show player coordinates under the minimap").translation("teyvatcartographia.config.minimap_coords").define("showCoordinates", true);
-        MINIMAP_SHOW_BIOME = b.comment("Show the biome you are in under the minimap").translation("teyvatcartographia.config.minimap_biome").define("showBiome", true);
-        MINIMAP_SHOW_TIME = b.comment("Show a clock under the minimap").translation("teyvatcartographia.config.minimap_time").define("showTime", true);
-        MINIMAP_TIME_SOURCE = b.comment("Clock under the minimap: GAME_TIME = time of day in the world, REAL_TIME = your computer's clock, BOTH = both side by side (game on the left)").translation("teyvatcartographia.config.minimap_time_source").defineEnum("timeSource", TimeSource.GAME_TIME);
-        MINIMAP_TIME_FORMAT = b.comment("How the clock writes the time, game and real: HOURS_24 = 14:35, HOURS_12 = 2:35, HOURS_12_AM_PM = 2:35 PM").translation("teyvatcartographia.config.minimap_time_format").defineEnum("timeFormat", TimeFormat.HOURS_24);
-        MINIMAP_SHOW_DAY = b.comment("Show the day of the world under the minimap, with the game time when the clock shows it").translation("teyvatcartographia.config.minimap_day").define("showDay", true);
+        MINIMAP_ENABLED = b.bool("enabled", true);
+        MINIMAP_RADIUS = b.integer("radius", 48, 24, 110);
+        MINIMAP_CORNER = b.choice("corner", Corner.TOP_LEFT);
+        MINIMAP_OFFSET_X = b.integer("offsetX", 4, 0, 64);
+        MINIMAP_OFFSET_Y = b.integer("offsetY", 4, 0, 64);
+        MINIMAP_OPACITY = b.decimal("opacity", 0.85, 0.2, 1.0);
+        MINIMAP_PADDING = b.integer("padding", 0, 0, 16);
+        MINIMAP_FADE_WIDTH = b.integer("fadeWidth", 15, 0, 50);
+        MINIMAP_FADE_STRENGTH = b.integer("fadeStrength", 100, 0, 100);
+        MINIMAP_INFO_GAP = b.integer("infoGap", 0, 0, 8);
+        MINIMAP_TEXT_SIZE = b.integer("textSize", 0, 0, 4);
+        MINIMAP_PILL_OPACITY = b.integer("pillOpacity", 0, 0, 100);
+        MINIMAP_ZOOM = b.decimal("zoom", 1.0, 1 / 32.0, 32.0);
+        MINIMAP_ORIENTATION = b.choice("orientation", Orientation.NORTH_UP);
+        MINIMAP_UPDATE_RATE = b.choice("updateRate", UpdateRate.RATE_30);
+        MINIMAP_SHOW_COORDS = b.bool("showCoordinates", true);
+        MINIMAP_SHOW_BIOME = b.bool("showBiome", true);
+        MINIMAP_SHOW_TIME = b.bool("showTime", true);
+        MINIMAP_TIME_SOURCE = b.choice("timeSource", TimeSource.GAME_TIME);
+        MINIMAP_TIME_FORMAT = b.choice("timeFormat", TimeFormat.HOURS_24);
+        MINIMAP_SHOW_DAY = b.bool("showDay", true);
         b.pop();
 
         // Below scale 1 the maps show only the tracked target; the tracked target is always shown on them.
         b.push("pins");
         for (PinKind kind : PinKind.values()) PINS[kind.ordinal()] = new PinOptions(b, kind);
-        PATH_ROUTE = b.comment("LAND: the path walks round deep water (swimming across up to 16 blocks of it). WATER: it goes by boat across deep water. AIR: a straight line to the pin, whatever lies between (for flying)").translation("teyvatcartographia.config.path_route").defineEnum("route", Route.LAND);
+        PATH_ROUTE = b.choice("route", Route.LAND);
         b.pop();
 
         b.push("worldmap");
-        MAP_SHOW_LABELS = b.comment("Show biome name labels").translation("teyvatcartographia.config.map_labels").define("showLabels", false);
-        MAP_SHOW_GRID = b.comment("Show the chunk/region grid when zoomed in").translation("teyvatcartographia.config.map_grid").define("showGrid", false);
+        MAP_SHOW_LABELS = b.bool("showLabels", false);
+        MAP_SHOW_GRID = b.bool("showGrid", false);
 
-        MAP_DEFAULT_ZOOM = b.comment("Initial world map scale (GUI pixels per block): 1/32, 1/16, 1/8, 1/4, 1/2, 1, 2, 4, 8, 16 or 32 (other values snap to the nearest)").translation("teyvatcartographia.config.map_zoom").defineInRange("defaultZoom", 1.0, 1 / 32.0, 32.0);
+        MAP_DEFAULT_ZOOM = b.decimal("defaultZoom", 1.0, 1 / 32.0, 32.0);
         b.pop();
 
         b.push("cartography");
-        CHUNKS_PER_TICK = b.comment("Maximum number of chunks sampled per client tick").translation("teyvatcartographia.config.chunks_per_tick").defineInRange("chunksPerTick", 6, 1, 32);
-        SCAN_RADIUS = b.comment("Maximum mapping radius around the player, in chunks (limited by the render distance)").translation("teyvatcartographia.config.scan_radius").defineInRange("scanRadius", 16, 2, 32);
-        MAX_CACHED_TILES = b.comment("Maximum number of 256x256 map regions kept in memory").translation("teyvatcartographia.config.max_tiles").defineInRange("maxCachedTiles", 160, 32, 1024);
-        DETAIL = b.comment("Terrain detail: LOW = flat colours, MEDIUM = relief shading, HIGH = relief + contour lines").translation("teyvatcartographia.config.detail").defineEnum("detail", Detail.HIGH);
-        CAVES_ENABLED = b.comment("Map the caves around you while underground, in layers of 16 blocks; the world map and the minimap switch to the layer you are in").translation("teyvatcartographia.config.caves").define("caves", true);
-        MAP_PLANTS = b.comment("Show plants on the map: every plant but those of plantsHidden").translation("teyvatcartographia.config.plants").define("plants", true);
-        PLAYER_CONE = b.comment("The view cone and the glow under the player arrow, on the world map and the minimap").translation("teyvatcartographia.config.player_cone").define("playerCone", true);
+        CHUNKS_PER_TICK = b.integer("chunksPerTick", 6, 1, 32);
+        SCAN_RADIUS = b.integer("scanRadius", 16, 2, 32);
+        MAX_CACHED_TILES = b.integer("maxCachedTiles", 160, 32, 1024);
+        DETAIL = b.choice("detail", Detail.HIGH);
+        CAVES_ENABLED = b.bool("caves", true);
+        MAP_PLANTS = b.bool("plants", true);
+        PLAYER_CONE = b.bool("playerCone", true);
         // The plants switched off (user decision 24.10.2026: every plant on by default, also those of mods added later);
         // until then the list held the ones switched on (plantsShown, cactus, dead bush and chorus by default).
-        PLANTS_HIDDEN = b.comment("The plants the map leaves out, by block id (Settings > Map > Plants, its list): looked through to the ground; every other plant is shown").translation("teyvatcartographia.config.plants_list")
-                .defineListAllowEmpty("plantsHidden", java.util.List.of(), () -> "", o -> o instanceof String);
-        WATER_DEPTH = b.comment("How much deep water darkens, in percent (0: all water the same colour)").translation("teyvatcartographia.config.water_depth").defineInRange("waterDepthShading", 100, 0, 100);
-        SHALLOW_WATER = b.comment("How much of the ground shows through shallow water, in percent (0: none)").translation("teyvatcartographia.config.shallow_water").defineInRange("shallowWater", 0, 0, 100);
+        PLANTS_HIDDEN = b.list("plantsHidden", java.util.List.of(), id -> true);
+        WATER_DEPTH = b.integer("waterDepthShading", 100, 0, 100);
+        SHALLOW_WATER = b.integer("shallowWater", 0, 0, 100);
         b.pop();
 
         b.push("compat");
         b.push("minecraft");
-        NETHER_FOG = b.comment("The Nether: its own Fog of War, smoke and embers (else the theme fog)").translation("teyvatcartographia.config.compat.nether_fog").define("netherFog", true);
-        END_FOG = b.comment("The End: its own Fog of War, a starry void the islands cast a shadow on (else the theme fog)").translation("teyvatcartographia.config.compat.end_fog").define("endFog", true);
+        NETHER_FOG = b.bool("netherFog", true);
+        END_FOG = b.bool("endFog", true);
         b.pop();
         b.push("aether");
-        AETHER_FOG = b.comment("The Aether: its own Fog of War, a sea of clouds the islands cast a shadow on (else the theme fog)").translation("teyvatcartographia.config.compat.aether_fog").define("fog", true);
+        AETHER_FOG = b.bool("fog", true);
         b.pop();
         b.push("the_sift");
-        SIFT_ICHOR_SHIMMER = b.comment("The Sift: its rainbow ichor shimmers on the map (else the average colour of its texture)").translation("teyvatcartographia.config.compat.sift_ichor").define("ichorShimmer", true);
-        SIFT_SNOW_SHIMMER = b.comment("The Sift: its ichor snow shimmers on the map (else the average colour of its texture)").translation("teyvatcartographia.config.compat.sift_snow").define("snowShimmer", true);
-        SIFT_FOG = b.comment("The Sift: its own Fog of War, a pearly haze in the colours of its ichor (else the theme fog)").translation("teyvatcartographia.config.compat.sift_fog").define("fog", true);
+        SIFT_ICHOR_SHIMMER = b.bool("ichorShimmer", true);
+        SIFT_SNOW_SHIMMER = b.bool("snowShimmer", true);
+        SIFT_FOG = b.bool("fog", true);
         b.pop();
         b.push("xaero");
-        XAERO_PIN_TYPE = b.comment("Xaero's Minimap: the pin type imported waypoints get (a custom type)").translation("teyvatcartographia.config.compat.xaero_type").defineEnum("pinType", net.tapacywka.teyvatcartographia.marker.MarkerType.STAR, net.tapacywka.teyvatcartographia.marker.MarkerType.customTypes());
-        XAERO_HIDDEN = b.comment("Xaero's Minimap: import its hidden (disabled) waypoints too").translation("teyvatcartographia.config.compat.xaero_hidden").define("hidden", true);
-        XAERO_DEATHS = b.comment("Xaero's Minimap: import its death points too").translation("teyvatcartographia.config.compat.xaero_deaths").define("deaths", false);
+        XAERO_PIN_TYPE = b.choice("pinType", net.tapacywka.teyvatcartographia.marker.MarkerType.STAR, java.util.List.copyOf(net.tapacywka.teyvatcartographia.marker.MarkerType.customTypes()));
+        XAERO_HIDDEN = b.bool("hidden", true);
+        XAERO_DEATHS = b.bool("deaths", false);
         b.pop();
         b.push("waystones");
-        WAYSTONES_SHOW = b.comment("Waystones: its waystones (and those of dungeons) on the maps").translation("teyvatcartographia.config.compat.waystones_show").define("waystones", true);
-        WAYSTONES_SHARESTONES = b.comment("Waystones: its sharestones on the maps").translation("teyvatcartographia.config.compat.waystones_sharestones").define("sharestones", true);
-        WAYSTONES_WARP_PLATES = b.comment("Waystones: its warp plates on the maps").translation("teyvatcartographia.config.compat.waystones_warp_plates").define("warpPlates", true);
-        WAYSTONES_INACTIVE = b.comment("Waystones: the stones seen but not activated yet too, grey").translation("teyvatcartographia.config.compat.waystones_inactive").define("inactive", true);
+        WAYSTONES_SHOW = b.bool("waystones", true);
+        WAYSTONES_SHARESTONES = b.bool("sharestones", true);
+        WAYSTONES_WARP_PLATES = b.bool("warpPlates", true);
+        WAYSTONES_INACTIVE = b.bool("inactive", true);
         b.pop();
         b.pop();
 
-        SPEC = b.build();
+        FILE = b.build();
     }
 
     private MapConfig() {}
 
+    /** Reads the settings file (the TOML NeoForge wrote up to 0.4 taken over once) and writes it back complete. */
+    public static void load(java.nio.file.Path json, java.nio.file.Path oldToml) {
+        OldToml.takeOver(json, oldToml);
+        FILE.load(json);
+        FILE.save();
+    }
+
     public static void save() {
-        SPEC.save();
+        FILE.save();
     }
 
     /** Resets every value to its default and saves. */
@@ -301,12 +315,12 @@ public final class MapConfig {
         save();
     }
 
-    private static <T> void resetValue(ConfigSpec.ConfigValue<T> value) {
-        value.set(value.getDefault());
+    private static void resetValue(Value<?> value) {
+        value.reset();
     }
 
     /** Safe read: config values throw if read before the config file was loaded. */
-    public static <T> T get(ConfigSpec.ConfigValue<T> value) {
+    public static <T> T get(Value<T> value) {
         try {
             return value.get();
         } catch (IllegalStateException e) {
