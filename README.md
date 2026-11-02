@@ -68,7 +68,7 @@ Place pins, search for them and for biomes, track them, follow the path and find
 | Mod loader | **Fabric** (Fabric Loader 0.16 or newer with [Fabric API](https://github.com/FabricMC/fabric-api)) or **NeoForge** (21.1 for 1.21.1, built against 21.1.257; 26.1.2, 26.2 or 26.3 for those games, built against 26.1.2.124, 26.2.0.93 and 26.3.0.99): one file for each, the same mod |
 | Java | **21** for 1.21.1, **25** for 26.1.2, 26.2 and 26.3 |
 | Side | **Client** only. Servers don't need it, so you can join vanilla and modded servers. |
-| Beta | **0.9.0-beta.2** for 1.21.1 only: the settings screen now comes from the library [Actually Amazing Config Screen](https://github.com/Tapacywka/actually-amazing-config-screen), packed inside the mod (nothing to install). Please try it and [report](https://github.com/Tapacywka/teyvat-cartographia/issues/new/choose) what you find; 26.1.2, 26.2 and 26.3 stay on 0.8.0 until it comes there too. |
+| Beta | **0.9.0-beta.3** for every game (1.21.1, 26.1.2, 26.2 and 26.3): the settings screen now comes from the library [Actually Amazing Config Screen](https://github.com/Tapacywka/actually-amazing-config-screen), packed inside the mod (nothing to install). Please try it and [report](https://github.com/Tapacywka/teyvat-cartographia/issues/new/choose) what you find. |
 | Languages | English, Russian |
 | License | [MIT](https://github.com/Tapacywka/teyvat-cartographia/blob/main/LICENSE) |
 
@@ -133,8 +133,8 @@ Place pins, search for them and for biomes, track them, follow the path and find
 2. Download the file for your game and loader from [Modrinth](https://modrinth.com/mod/teyvat-cartographia),
    [CurseForge](https://www.curseforge.com/minecraft/mc-mods/teyvat-cartographia) or the
    [GitHub releases](https://github.com/Tapacywka/teyvat-cartographia/releases):
-   the part after `+mc` names them: `teyvatcartographia-v0.8.0+mc1.21.1-fabric.jar` is for Minecraft 1.21.1 on Fabric,
-   `teyvatcartographia-v0.8.0+mc26.3-neoforge.jar` for 26.3 on NeoForge. Put it into your `mods/` folder.
+   the part after `+mc` names them: `teyvatcartographia-v0.9.0-beta.3+mc1.21.1-fabric.jar` is for Minecraft 1.21.1 on Fabric,
+   `teyvatcartographia-v0.9.0-beta.3+mc26.3-neoforge.jar` for 26.3 on NeoForge. Put it into your `mods/` folder.
 3. Launch the game and press **M** in a world.
 4. Optional: make the minimap round (**Settings > Minimap**) or the interface rounded (**Settings > Map**). On Fabric,
    [Mod Menu](https://github.com/TerraformersMC/ModMenu) adds a settings button to the mod list.
