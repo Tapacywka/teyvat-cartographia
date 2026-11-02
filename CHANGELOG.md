@@ -10,9 +10,15 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 
 ## [Unreleased]
 
+## [0.9.0-beta.1] - 2026-11-02
+
+A beta for Minecraft 1.21.1 only: please try it and report what you find. Minecraft 26.1.2, 26.2 and 26.3 stay on
+0.8.0 until the settings library comes there too.
+
 ### Added
 - Settings: a small reset icon beside a setting you changed, shown while you point at it; a click puts its default
   back.
+- Other mods can add their own part to Settings > Compatibility.
 
 ### Changed
 - A new mod icon in the mod list.
@@ -365,7 +371,8 @@ The first public release, for Minecraft 1.21.1 on NeoForge 21.1. Client only.
 - Cached HUD layers, chunk work on worker threads and path searches in short slices: the mod is meant to cost at most
   2 to 3% FPS.
 
-[Unreleased]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.9.0-beta.1...HEAD
+[0.9.0-beta.1]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.8.0...v0.9.0-beta.1
 [0.8.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.5.1...v0.6.0
