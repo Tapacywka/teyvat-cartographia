@@ -27,6 +27,15 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
+      # Actually Amazing Config Screen (the settings screen packed into both JARs), at the version gradle.properties
+      # names (its mc26 branch, tag v<version>+mc26, built for this job's game), into the local Maven repository the build
+      # reads it from.
+      - name: Actually Amazing Config Screen
+        run: |
+          v=$(grep '^aacs_version=' gradle.properties | cut -d= -f2 | tr -d '\r')
+          git clone --depth 1 --branch "v$v+mc26" https://github.com/Tapacywka/actually-amazing-config-screen.git ../aacs
+          cd ../aacs && chmod +x gradlew && ./gradlew publishToMavenLocal --no-daemon -Pmc=${{ matrix.game }}
+
       - name: Run the unit tests
         run: ./gradlew test --no-daemon -Pmc=${{ matrix.game }}
 
