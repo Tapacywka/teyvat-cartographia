@@ -11,6 +11,9 @@ displayURL="https://modrinth.com/project/teyvat-cartographia"
 authors="${mod_authors}"
 description='''${mod_description}'''
 logoFile="logo.png"
+# The square icon of the mod list (NeoForge 26.2 and later; earlier ones read logoFile only)
+iconFile="logo.png"
+iconBlur=true
 
 [[dependencies.${mod_id}]]
     modId="minecraft"
