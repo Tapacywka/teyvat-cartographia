@@ -14,5 +14,9 @@ public final class ClientStart {
         // The settings file; the TOML NeoForge wrote up to 0.4 is taken over once.
         Path config = platform.configDir();
         MapConfig.load(config.resolve("teyvatcartographia-client.json"), config.resolve("teyvatcartographia-client.toml"));
+        // The sub-sections of Compatibility for the supported mods, added as other mods add theirs (shown only with the mod).
+        net.tapacywka.teyvatcartographia.compat.ModCompat.settings();
+        net.tapacywka.teyvatcartographia.compat.XaeroWaypoints.settings();
+        net.tapacywka.teyvatcartographia.compat.WaystonesCompat.settings();
     }
 }
