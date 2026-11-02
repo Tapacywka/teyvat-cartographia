@@ -44,6 +44,22 @@ import java.util.UUID;
 public final class WaystonesCompat {
     private WaystonesCompat() {}
 
+    /**
+     * The sub-section of Compatibility for Waystones (shown only with it): which stones show, and where they and the
+     * path to them show (the interactive pins, user decision 31.10.2026).
+     */
+    public static void settings() {
+        String k = "teyvatcartographia.config.";
+        net.tapacywka.teyvatcartographia.gui.TeyvatConfigScreen.compatPart("compat_waystones", ModCompat::waystones, t -> {
+            t.toggle(k + "compat.waystones_show", MapConfig.WAYSTONES_SHOW)
+                    .toggle(k + "compat.waystones_sharestones", MapConfig.WAYSTONES_SHARESTONES)
+                    .toggle(k + "compat.waystones_warp_plates", MapConfig.WAYSTONES_WARP_PLATES)
+                    .toggle(k + "compat.waystones_inactive", MapConfig.WAYSTONES_INACTIVE);
+            net.tapacywka.teyvatcartographia.gui.TeyvatConfigScreen.pinRow(t, MapConfig.PinKind.INTERACTIVE);
+            net.tapacywka.teyvatcartographia.gui.TeyvatConfigScreen.pathRow(t, MapConfig.PinKind.INTERACTIVE);
+        });
+    }
+
     public static final String MOD_ID = "waystones";
 
     /** What a stone of Waystones is on the map. */

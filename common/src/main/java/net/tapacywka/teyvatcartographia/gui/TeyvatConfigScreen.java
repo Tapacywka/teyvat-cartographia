@@ -9,14 +9,12 @@ import net.minecraft.resources.Identifier;
 import net.tapacywka.aacs.api.AacsScreen;
 import net.tapacywka.aacs.api.BoolValue;
 import net.tapacywka.aacs.api.Palette;
-import net.tapacywka.teyvatcartographia.compat.ModCompat;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
 import net.tapacywka.teyvatcartographia.config.StepChoice;
 import net.tapacywka.teyvatcartographia.hud.MinimapLayer;
 import net.tapacywka.teyvatcartographia.map.MapView;
 import net.tapacywka.teyvatcartographia.map.data.MapDataManager;
 import net.tapacywka.teyvatcartographia.map.data.Plants;
-import net.tapacywka.teyvatcartographia.marker.MarkerType;
 import net.tapacywka.teyvatcartographia.nav.Navigation;
 import net.tapacywka.teyvatcartographia.render.Draw;
 import net.tapacywka.teyvatcartographia.render.FogTexture;
@@ -63,7 +61,7 @@ public final class TeyvatConfigScreen {
     }
 
     /** Where a kind of pins shows: off, the map, both maps, in the world with the marker, everywhere with the beam. */
-    private static void pinRow(AacsScreen.Tab t, MapConfig.PinKind kind) {
+    public static void pinRow(AacsScreen.Tab t, MapConfig.PinKind kind) {
         MapConfig.PinOptions o = MapConfig.pins(kind);
         t.steps(K + "pins." + kind.id, PIN_STEPS,
                 () -> StepChoice.level(o.enabled.get(), o.map.get(), o.minimap.get(), o.marker.get(), o.beam.get()),
@@ -74,15 +72,13 @@ public final class TeyvatConfigScreen {
     }
 
     /** Where the path to a tracked pin of a kind shows: off, the map, both maps, everywhere with the stars. */
-    private static void pathRow(AacsScreen.Tab t, MapConfig.PinKind kind) {
+    public static void pathRow(AacsScreen.Tab t, MapConfig.PinKind kind) {
         MapConfig.PinOptions o = MapConfig.pins(kind);
         t.steps(K + "path." + kind.id, PATH_STEPS,
                 () -> StepChoice.level(o.path.get(), o.pathMap.get(), o.pathMinimap.get(), o.pathWorld.get()),
                 s -> setSteps(s, o.path, o.pathMap, o.pathMinimap, o.pathWorld));
     }
 
-    /** One sub-section of Compatibility: a mod's name and its rows. */
-    private record ModPart(String key, String name, Consumer<AacsScreen.Tab> rows) {}
 
     private static AacsScreen build() {
         Runnable remap = () -> MapDataManager.get().remapLoaded(); // the chunks around mapped again in the new way
@@ -187,46 +183,36 @@ public final class TeyvatConfigScreen {
             t.slider(K + "max_tiles", MapConfig.MAX_CACHED_TILES, s -> {});
             t.choice(K + "minimap_rate", MapConfig.MINIMAP_UPDATE_RATE, c -> {});
         });
-        // Compatibility: Minecraft first (the fogs of its own dimensions), then a sub-section per mod, only for the mods
-        // in the game, in the alphabetical order of their names like the modded dimensions of the dimensions panel;
-        // everything made for one mod is there, its fog of war too.
-        List<ModPart> mods = new ArrayList<>();
-        if (ModCompat.aether()) mods.add(part("compat_aether", t -> t.toggle(K + "compat.aether_fog", MapConfig.AETHER_FOG).then(Theme.Style::update)));
-        if (ModCompat.sift()) mods.add(part("compat_sift", t -> t
-                .toggle(K + "compat.sift_fog", MapConfig.SIFT_FOG).then(Theme.Style::update)
-                .toggle(K + "compat.sift_ichor", MapConfig.SIFT_ICHOR_SHIMMER).then(remap)
-                .toggle(K + "compat.sift_snow", MapConfig.SIFT_SNOW_SHIMMER).then(remap)));
-        if (ModCompat.xaero()) mods.add(part("compat_xaero", t -> t
-                .choice(K + "compat.xaero_type", MapConfig.XAERO_PIN_TYPE, c -> c.names((MarkerType m) -> Component.translatable(m.langKey())))
-                .toggle(K + "compat.xaero_hidden", MapConfig.XAERO_HIDDEN)
-                .toggle(K + "compat.xaero_deaths", MapConfig.XAERO_DEATHS)));
-        if (ModCompat.waystones()) mods.add(part("compat_waystones", t -> {
-            t.toggle(K + "compat.waystones_show", MapConfig.WAYSTONES_SHOW)
-                    .toggle(K + "compat.waystones_sharestones", MapConfig.WAYSTONES_SHARESTONES)
-                    .toggle(K + "compat.waystones_warp_plates", MapConfig.WAYSTONES_WARP_PLATES)
-                    .toggle(K + "compat.waystones_inactive", MapConfig.WAYSTONES_INACTIVE);
-            pinRow(t, MapConfig.PinKind.INTERACTIVE);
-            pathRow(t, MapConfig.PinKind.INTERACTIVE);
-        }));
-        mods.sort(Comparator.comparing(ModPart::name, String.CASE_INSENSITIVE_ORDER));
-        // The game's own dimensions first, always there (user decision 24.10.2026).
-        mods.add(0, part("compat_minecraft", t -> t
-                .toggle(K + "compat.nether_fog", MapConfig.NETHER_FOG).then(Theme.Style::update)
-                .toggle(K + "compat.end_fog", MapConfig.END_FOG).then(Theme.Style::update)));
+        // Compatibility: Minecraft first (the fogs of its own dimensions, always there, user decision 24.10.2026), then a
+        // sub-section per mod in the game, by name: the mod's own ones (compatPart) and those other mods add, open to
+        // them as "compatibility" (user decision 02.11.2026); everything made for one mod is there, its fog of war too.
         b.tab(K + "tab.compat", t -> {
-            t.defaultPreview(new Pictures(K + "tab.compat"));
-            // Rows after a sub-heading (up to the next heading) fold with it.
-            for (ModPart m : mods) {
-                t.subSection(m.key(), Component.translatable(m.key()));
-                m.rows().accept(t);
-            }
+            t.openTo(COMPATIBILITY).defaultPreview(COMPAT_PICTURES);
+            t.subSection(K + "subsection.compat_minecraft")
+                    .toggle(K + "compat.nether_fog", MapConfig.NETHER_FOG).then(Theme.Style::update)
+                    .toggle(K + "compat.end_fog", MapConfig.END_FOG).then(Theme.Style::update);
         });
         return b.build();
     }
 
-    private static ModPart part(String id, Consumer<AacsScreen.Tab> rows) {
-        String key = K + "subsection." + id;
-        return new ModPart(key, Component.translatable(key).getString(), rows);
+    /** The name the Compatibility tab is open to other mods under. */
+    public static final String COMPATIBILITY = "compatibility";
+    private static final Pictures COMPAT_PICTURES = new Pictures(K + "tab.compat");
+
+    /**
+     * A sub-section of Compatibility for a supported mod ({@code id}: its title {@code subsection.<id>}), shown only
+     * while {@code loaded}; added the way other mods add theirs, its values in the mod's own settings file.
+     */
+    public static void compatPart(String id, java.util.function.BooleanSupplier loaded, Consumer<AacsScreen.Tab> rows) {
+        AacsScreen.extend("teyvatcartographia", COMPATIBILITY, "teyvatcartographia", MapConfig.FILE, t -> {
+            t.defaultPreview(COMPAT_PICTURES);
+            rows.accept(t);
+        }).title(K + "subsection." + id).shownIf(loaded);
+    }
+
+    /** The chunks around mapped again in the new way (a setting of the map's colours changed). */
+    public static void remap() {
+        MapDataManager.get().remapLoaded();
     }
 
     /** A zoom setting: the steps of MapView.ZOOM_STEPS, shown as "1/4", "1", "8". */
@@ -234,12 +220,28 @@ public final class TeyvatConfigScreen {
         s.steps(MapView.ZOOM_STEPS).label(MapView::zoomLabel);
     }
 
+    /**
+     * The plant's colour on the map (user request 30.10.2026: instead of its item): its texture colour, grass and foliage
+     * tinted with the game's default tints, as no biome is at hand (also in the title screen). The list's texts are the
+     * mod's own (the library reads them by the row's key): teyvatcartographia.config.plants.find,
+     * teyvatcartographia.config.plants.count, teyvatcartographia.config.plants.none.
+     */
+    private static int plantColour(net.minecraft.world.level.block.Block b) {
+        var c = net.tapacywka.teyvatcartographia.map.data.TextureColors.get(b);
+        if (c == null) return Theme.PANEL_LINE;
+        return switch (c.tint()) {
+            case GRASS -> net.tapacywka.teyvatcartographia.map.data.TextureColors.multiply(c.argb(), net.minecraft.world.level.GrassColor.getDefaultColor());
+            case FOLIAGE -> net.tapacywka.teyvatcartographia.map.data.TextureColors.multiply(c.argb(), net.minecraft.world.level.FoliageColor.FOLIAGE_DEFAULT);
+            default -> c.argb();
+        };
+    }
+
     /** The plants of the Plants row's list: every plant by name, its colour on the map. */
     private static List<AacsScreen.ListEntry> plants() {
         List<AacsScreen.ListEntry> out = new ArrayList<>();
         for (var block : Plants.all()) {
             out.add(new AacsScreen.ListEntry(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(block).toString(),
-                    block.getName(), PlantList.mapColour(block)));
+                    block.getName(), plantColour(block)));
         }
         out.sort(Comparator.comparing(e -> e.name().getString().toLowerCase(Locale.ROOT)));
         return out;

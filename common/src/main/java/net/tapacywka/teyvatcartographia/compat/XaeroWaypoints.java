@@ -10,6 +10,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.storage.LevelResource;
 import net.tapacywka.teyvatcartographia.platform.Platform;
 import net.tapacywka.teyvatcartographia.marker.Marker;
+import net.tapacywka.teyvatcartographia.config.MapConfig;
 import net.tapacywka.teyvatcartographia.marker.MarkerType;
 
 import java.io.IOException;
@@ -30,6 +31,15 @@ import java.util.stream.Stream;
  */
 public final class XaeroWaypoints {
     private XaeroWaypoints() {}
+
+    /** The sub-section of Compatibility for Xaero's Minimap (shown only with it): how its waypoints are imported. */
+    public static void settings() {
+        String k = "teyvatcartographia.config.";
+        net.tapacywka.teyvatcartographia.gui.TeyvatConfigScreen.compatPart("compat_xaero", ModCompat::xaero, t -> t
+                .choice(k + "compat.xaero_type", MapConfig.XAERO_PIN_TYPE, c -> c.names((MarkerType m) -> net.minecraft.network.chat.Component.translatable(m.langKey())))
+                .toggle(k + "compat.xaero_hidden", MapConfig.XAERO_HIDDEN)
+                .toggle(k + "compat.xaero_deaths", MapConfig.XAERO_DEATHS));
+    }
 
     private static final String DIM_PREFIX = "dim%";
 

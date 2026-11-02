@@ -21,6 +21,20 @@ import net.tapacywka.teyvatcartographia.config.MapConfig;
 public final class ModCompat {
     private ModCompat() {}
 
+    /**
+     * The sub-sections of Compatibility for the Aether and The Sift (shown only with them): their fogs of war and The
+     * Sift's shimmers.
+     */
+    public static void settings() {
+        String k = "teyvatcartographia.config.";
+        net.tapacywka.teyvatcartographia.gui.TeyvatConfigScreen.compatPart("compat_aether", ModCompat::aether, t -> t
+                .toggle(k + "compat.aether_fog", MapConfig.AETHER_FOG).then(net.tapacywka.teyvatcartographia.render.Theme.Style::update));
+        net.tapacywka.teyvatcartographia.gui.TeyvatConfigScreen.compatPart("compat_sift", ModCompat::sift, t -> t
+                .toggle(k + "compat.sift_fog", MapConfig.SIFT_FOG).then(net.tapacywka.teyvatcartographia.render.Theme.Style::update)
+                .toggle(k + "compat.sift_ichor", MapConfig.SIFT_ICHOR_SHIMMER).then(net.tapacywka.teyvatcartographia.gui.TeyvatConfigScreen::remap)
+                .toggle(k + "compat.sift_snow", MapConfig.SIFT_SNOW_SHIMMER).then(net.tapacywka.teyvatcartographia.gui.TeyvatConfigScreen::remap));
+    }
+
     public static final String AETHER = "aether";
     public static final ResourceKey<Level> AETHER_DIMENSION =
             ResourceKey.create(Registries.DIMENSION, Identifier.fromNamespaceAndPath(AETHER, "the_aether"));
