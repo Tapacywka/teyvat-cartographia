@@ -68,6 +68,7 @@ Place pins, search for them and for biomes, track them, follow the path and find
 | Mod loader | **Fabric** (Fabric Loader 0.16 or newer with [Fabric API](https://github.com/FabricMC/fabric-api)) or **NeoForge** (21.1 for 1.21.1, built against 21.1.257; 26.1.2, 26.2 or 26.3 for those games, built against 26.1.2.124, 26.2.0.93 and 26.3.0.99): one file for each, the same mod |
 | Java | **21** for 1.21.1, **25** for 26.1.2, 26.2 and 26.3 |
 | Side | **Client** only. Servers don't need it, so you can join vanilla and modded servers. |
+| Beta | **0.9.0-beta.1** for 1.21.1 only: the settings screen now comes from the library [Actually Amazing Config Screen](https://github.com/Tapacywka/actually-amazing-config-screen), packed inside the mod (nothing to install). Please try it and [report](https://github.com/Tapacywka/teyvat-cartographia/issues/new/choose) what you find; 26.1.2, 26.2 and 26.3 stay on 0.8.0 until it comes there too. |
 | Languages | English, Russian |
 | License | [MIT](https://github.com/Tapacywka/teyvat-cartographia/blob/main/LICENSE) |
 
@@ -261,7 +262,11 @@ adds its settings button to NeoForge's mod list), but on NeoForge the NeoForge f
   cave layers, the plants, each pin kind on the world map, the minimap and in the world, the mapping
   speed and memory, the mods' fogs and samples. It changes as you move a slider. The settings screen is never larger
   than GUI 3 on a 1080p screen (GUI 4 there shows it as GUI 3); in a narrow window without room for the card the
-  setting under the mouse shows its description as a tooltip instead.
+  setting under the mouse shows its description as a tooltip instead. A small reset icon beside a setting you changed
+  puts its default back (since 0.9.0).
+* Other mods can add their own part to *Compatibility* (since 0.9.0, through
+  [Actually Amazing Config Screen](https://github.com/Tapacywka/actually-amazing-config-screen), the library the settings
+  screen is made with).
 * A setting with parts is one slider in steps: each pin kind goes Off, Map, Both maps, In the world (the marker over a
   tracked pin), Everywhere (its beam too); its path Off, Map, Both maps, Everywhere (the stars); the clock Off, Game,
   Real, Both.
@@ -385,6 +390,9 @@ The mod is meant to cost at most 2 to 3% FPS:
 
 Requirements: JDK 21 for Minecraft 1.21.1 (branch `main`) or JDK 25 for Minecraft 26.1.2, 26.2 and 26.3 (branch
 `mc26`), internet on the first build. On `mc26`, `-Pmc=26.2` or `-Pmc=26.3` builds for that game (26.1.2 without it).
+On `main` the build reads [Actually Amazing Config Screen](https://github.com/Tapacywka/actually-amazing-config-screen)
+from the local Maven repository: build it first (`./gradlew publishToMavenLocal` in its repository, at the tag
+`v<aacs_version>` named in `gradle.properties`), as the GitHub workflows do.
 
 ```bash
 ./gradlew build
@@ -422,3 +430,5 @@ Source code: [github.com/Tapacywka/teyvat-cartographia](https://github.com/Tapac
   [Game Icon Pack](https://nieobie.itch.io/free-icons) by Nieobie, released under
   [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/). Thank you!
 * All text uses the vanilla Minecraft font. No Genshin Impact assets are included.
+* The settings screen is made with [Actually Amazing Config Screen](https://github.com/Tapacywka/actually-amazing-config-screen)
+  (MIT, by the same author), packed inside the mod.
