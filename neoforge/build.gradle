@@ -63,3 +63,8 @@ tasks.withType(JavaCompile).configureEach {
     // 58 KB less in the JAR.
     options.debugOptions.debugLevel = 'source,lines'
 }
+
+dependencies {
+    // The settings screen and file (Actually Amazing Config Screen), inside the JAR.
+    jarJar(implementation("net.tapacywka.aacs:aacs-neoforge:${aacs_version}+mc${minecraft_version}-neoforge"))
+}

@@ -16,6 +16,11 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(25)
 
 repositories {
     mavenCentral()
+    // Actually Amazing Config Screen, published to the local Maven by its own repository.
+    exclusiveContent {
+        forRepository { mavenLocal() }
+        filter { includeGroup('net.tapacywka.aacs') }
+    }
 }
 
 tasks.named('jar', Jar) {

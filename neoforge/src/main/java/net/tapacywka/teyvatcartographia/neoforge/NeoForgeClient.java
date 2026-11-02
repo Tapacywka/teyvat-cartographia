@@ -35,7 +35,7 @@ final class NeoForgeClient {
 
     static void init(IEventBus modBus, ModContainer container) {
         ClientStart.start(new NeoForgePlatform());
-        container.registerExtensionPoint(IConfigScreenFactory.class, (mod, parent) -> new TeyvatConfigScreen(parent));
+        container.registerExtensionPoint(IConfigScreenFactory.class, (mod, parent) -> TeyvatConfigScreen.open(parent));
         modBus.addListener((RegisterKeyMappingsEvent e) -> {
             e.registerCategory(Keybinds.CATEGORY);
             Keybinds.ALL.forEach(e::register);

@@ -63,7 +63,7 @@ final class PlantList {
      * before the first world, its components not bound yet): its texture colour, grass and foliage tinted with the
      * game's default tints, as no biome is at hand (also in the title screen).
      */
-    private static int mapColour(Block b) {
+    static int mapColour(Block b) {
         TextureColors.Entry c = TextureColors.get(b);
         if (c == null) return Theme.PANEL_LINE;
         return switch (c.tint()) {
