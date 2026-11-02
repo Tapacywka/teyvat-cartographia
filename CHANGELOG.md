@@ -10,6 +10,10 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 
 ## [Unreleased]
 
+### Fixed
+- VulkanMod: a thin dark line across the world map at zoom 1 along a region border (seen while the map flew to a
+  far pin).
+
 ## [0.9.0-beta.3] - 2026-11-02
 
 A beta for every game: Minecraft 1.21.1, 26.1.2, 26.2 and 26.3. Please try it and report what you find.
