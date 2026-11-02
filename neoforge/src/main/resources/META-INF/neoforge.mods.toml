@@ -32,6 +32,6 @@ file="META-INF/accesstransformer.cfg"
 [[dependencies.${mod_id}]]
     modId="aacs"
     type="required"
-    versionRange="[0.1.0-dev.1,)"
+    versionRange="[0.1.0-beta.1,)"
     ordering="NONE"
     side="BOTH"
