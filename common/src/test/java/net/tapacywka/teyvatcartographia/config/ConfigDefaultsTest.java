@@ -53,8 +53,8 @@ class ConfigDefaultsTest {
     void everyPinKindAndItsPathAreOn() {
         for (MapConfig.PinKind kind : MapConfig.PinKind.values()) {
             MapConfig.PinOptions o = MapConfig.pins(kind);
-            for (var v : new ConfigSpec.BooleanValue[]{o.enabled, o.map, o.minimap, o.marker, o.beam, o.path, o.pathMap, o.pathMinimap, o.pathWorld}) {
-                assertTrue(v.getDefault(), kind + " " + v.getPath());
+            for (var v : new net.tapacywka.aacs.api.BoolValue[]{o.enabled, o.map, o.minimap, o.marker, o.beam, o.path, o.pathMap, o.pathMinimap, o.pathWorld}) {
+                assertTrue(v.getDefault(), kind + " " + v.path());
             }
         }
     }
@@ -93,10 +93,10 @@ class ConfigDefaultsTest {
     @Test
     void rangesOfTheMinimapSliders() {
         // Since 24.10.2026: offsets 0 to 64, the gap of the lines 0 to 8, the text size Auto and 1 to 4.
-        assertTrue(MapConfig.MINIMAP_OFFSET_X.getSpec().test(64) && !MapConfig.MINIMAP_OFFSET_X.getSpec().test(65));
-        assertTrue(MapConfig.MINIMAP_OFFSET_Y.getSpec().test(64) && !MapConfig.MINIMAP_OFFSET_Y.getSpec().test(65));
-        assertTrue(MapConfig.MINIMAP_INFO_GAP.getSpec().test(8) && !MapConfig.MINIMAP_INFO_GAP.getSpec().test(9));
-        assertTrue(MapConfig.MINIMAP_TEXT_SIZE.getSpec().test(4) && !MapConfig.MINIMAP_TEXT_SIZE.getSpec().test(5));
+        assertEquals(64, MapConfig.MINIMAP_OFFSET_X.max());
+        assertEquals(64, MapConfig.MINIMAP_OFFSET_Y.max());
+        assertEquals(8, MapConfig.MINIMAP_INFO_GAP.max());
+        assertEquals(4, MapConfig.MINIMAP_TEXT_SIZE.max());
     }
 
     @Test
