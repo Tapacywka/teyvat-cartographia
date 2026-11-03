@@ -89,7 +89,6 @@
   "teyvatcartographia.settings.system_pins.tooltip": "World spawn and last death on the world map. Where else they show (the minimap, the marker and the beam in the world): All settings > Pins.",
   "teyvatcartographia.settings.path": "Path to the target",
   "teyvatcartographia.settings.path.tooltip": "The path to a tracked custom or system pin on the world map. All settings set it for each kind separately.",
-  "teyvatcartographia.settings.section.compat": "Mods compat",
   "teyvatcartographia.settings.stones": "Show stones",
   "teyvatcartographia.settings.stones.tooltip": "The stones of Waystones on the world map. Where else they show (the minimap, the marker and the beam in the world): All settings > Compatibility > Waystones.",
   "teyvatcartographia.settings.stones_path": "Path to stones",

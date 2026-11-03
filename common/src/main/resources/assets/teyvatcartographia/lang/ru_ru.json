@@ -89,7 +89,6 @@
   "teyvatcartographia.settings.system_pins.tooltip": "Точка возрождения и место гибели на карте мира. Где ещё их показывать (мини-карта, значок и луч в мире): Все настройки > Метки.",
   "teyvatcartographia.settings.path": "Путь к цели",
   "teyvatcartographia.settings.path.tooltip": "Путь к отслеживаемой пользовательской или системной метке на карте мира. Во «Всех настройках» он задаётся для каждого вида отдельно.",
-  "teyvatcartographia.settings.section.compat": "Совместимость с модами",
   "teyvatcartographia.settings.stones": "Показ камней",
   "teyvatcartographia.settings.stones.tooltip": "Камни мода Waystones на карте мира. Где ещё их показывать (мини-карта, значок и луч в мире): Все настройки > Совместимость > Waystones.",
   "teyvatcartographia.settings.stones_path": "Путь к камням",

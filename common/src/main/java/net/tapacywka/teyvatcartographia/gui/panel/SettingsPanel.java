@@ -81,7 +81,7 @@ public final class SettingsPanel extends SidePanel {
     private final List<Row> rows = rows();
 
     /**
-     * The interactive pins (the stones of Waystones) have their own section, Mods compat, only with Waystones (user
+     * The interactive pins (the stones of Waystones) have their own section, named after the mod, only with Waystones (user
      * request 03.11.2026); the rest of their settings are in Compatibility > Waystones of the full settings screen.
      */
     private static List<Row> rows() {
@@ -92,7 +92,7 @@ public final class SettingsPanel extends SidePanel {
                 option("teyvatcartographia.settings.labels", "map_labels", MapConfig.MAP_SHOW_LABELS),
                 option("teyvatcartographia.settings.grid", "map_grid", MapConfig.MAP_SHOW_GRID)));
         if (ModCompat.waystones()) {
-            out.add(section("teyvatcartographia.settings.section.compat"));
+            out.add(section("teyvatcartographia.config.subsection.compat_waystones"));
             out.add(pins("teyvatcartographia.settings.stones", MapConfig.PinKind.INTERACTIVE));
             out.add(path("teyvatcartographia.settings.stones_path", MapConfig.PinKind.INTERACTIVE));
         }
