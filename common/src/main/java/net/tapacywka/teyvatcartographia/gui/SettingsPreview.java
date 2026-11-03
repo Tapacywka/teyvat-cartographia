@@ -604,52 +604,11 @@ final class SettingsPreview {
             float side = Math.max(w, h);
             Draw.texturedQuad(g, Tex.clamped(SIFT_TEX[i], false), x, y, x + w, y + h, 0, 0, w / side, h / side, 0xFFFFFFFF);
             Draw.frame(g, x, y, w, h, 1, Theme.PANEL_LINE);
-        } else if (key.contains("compat.waystones")) {
-            waystones(g, x, y, w, h, key, map);
         } else if (key.contains("compat.xaero")) {
             Component line = xaeroLine();
             float lw = Math.min(w, Grid.ROW + Grid.GAP + DrawText.width(line)), lx = Draw.snap(x + (w - lw) / 2f), ly = Draw.snap(y + (h - Grid.ROW) / 2f);
             MarkerRenderer.drawCentered(g, MapConfig.get(MapConfig.XAERO_PIN_TYPE), lx + Grid.ROW / 2f, ly + Grid.ROW / 2f, Grid.ROW, 1f);
             label(g, line, lx + Grid.ROW + Grid.GAP, ly, lw - Grid.ROW - Grid.GAP, Grid.ROW);
-        }
-    }
-
-    /**
-     * The stones of the sample (user decision 31.10.2026: on the real map like the other pins), in a ring around the
-     * player as the Pins preview places its pins: type, and whether it is activated (the two waystones apart).
-     */
-    private static final MarkerType[] STONE_TYPE = {MarkerType.WAYSTONE, MarkerType.SHARESTONE, MarkerType.WAYSTONE, MarkerType.DUNGEON, MarkerType.WARP_PLATE};
-    private static final boolean[] STONE_INACTIVE = {false, false, true, true, false};
-
-    /**
-     * Waystones: the map around the player (the fog without a world) with a stone of every kind in a ring, as the maps
-     * show them now (a kind switched off is gone, grey ones only while not activated stones show); the stones the
-     * pointed row is about are bright, the others faint.
-     */
-    private static void waystones(GuiGraphicsExtractor g, float x, float y, float w, float h, String key, MapArea map) {
-        float s = Draw.snap(Math.min(w, h)), mx = Draw.snap(x + (w - s) / 2f), my = Draw.snap(y + (h - s) / 2f);
-        mapArea(g, mx, my, s, s, map, MapView.snapZoom(MapConfig.get(MapConfig.MAP_DEFAULT_ZOOM)));
-        boolean show = MapConfig.get(MapConfig.WAYSTONES_SHOW), shares = MapConfig.get(MapConfig.WAYSTONES_SHARESTONES),
-                plates = MapConfig.get(MapConfig.WAYSTONES_WARP_PLATES), grey = MapConfig.get(MapConfig.WAYSTONES_INACTIVE);
-        float cx = mx + s / 2f, cy = my + s / 2f, r = s * 0.34f, pin = Math.min(MarkerRenderer.SIZE, s / 7f);
-        for (int i = 0; i < STONE_TYPE.length; i++) {
-            MarkerType t = STONE_TYPE[i];
-            boolean kindShown = t == MarkerType.SHARESTONE ? shares : t == MarkerType.WARP_PLATE ? plates : show;
-            if (!kindShown || STONE_INACTIVE[i] && !grey) continue;
-            boolean lit = key.endsWith("waystones_sharestones") ? t == MarkerType.SHARESTONE
-                    : key.endsWith("waystones_warp_plates") ? t == MarkerType.WARP_PLATE
-                    : key.endsWith("waystones_inactive") ? STONE_INACTIVE[i]
-                    : t == MarkerType.WAYSTONE || t == MarkerType.DUNGEON;
-            double a = angle(i, STONE_TYPE.length);
-            float alpha = lit ? 1f : 0.3f, px = Draw.snap(cx + (float) Math.cos(a) * r), py = Draw.snap(cy + (float) Math.sin(a) * r);
-            MarkerRenderer.draw(g, t, px, py, pin, false, false, alpha, 0, STONE_INACTIVE[i]);
-            if (i == 0) {
-                // The activated waystone carries its name, as a waystone's own name shows in the pin list.
-                Component name = Component.translatable("teyvatcartographia.config.preview.waystones.name");
-                float nw = DrawText.width(name) + 4, ny = py + pin / 2f + 2;
-                Draw.rect(g, px - nw / 2f, ny, px + nw / 2f, ny + DrawText.LINE + 2, Theme.withAlpha(Theme.PANEL_DARK_HEADER, 0.8f * alpha));
-                DrawText.textCentered(g, name, px, ny + 1, Theme.withAlpha(Theme.CREAM, alpha), false);
-            }
         }
     }
 

@@ -170,7 +170,6 @@ public final class MapConfig {
     public static final EnumValue<net.tapacywka.teyvatcartographia.marker.MarkerType> XAERO_PIN_TYPE;
     public static final BoolValue XAERO_HIDDEN;
     public static final BoolValue XAERO_DEATHS;
-    public static final BoolValue WAYSTONES_SHOW, WAYSTONES_SHARESTONES, WAYSTONES_WARP_PLATES, WAYSTONES_INACTIVE;
 
     public enum Detail { LOW, MEDIUM, HIGH }
 
@@ -266,12 +265,6 @@ public final class MapConfig {
         XAERO_PIN_TYPE = b.choice("pinType", net.tapacywka.teyvatcartographia.marker.MarkerType.STAR, java.util.List.copyOf(net.tapacywka.teyvatcartographia.marker.MarkerType.customTypes()));
         XAERO_HIDDEN = b.bool("hidden", true);
         XAERO_DEATHS = b.bool("deaths", false);
-        b.pop();
-        b.push("waystones");
-        WAYSTONES_SHOW = b.bool("waystones", true);
-        WAYSTONES_SHARESTONES = b.bool("sharestones", true);
-        WAYSTONES_WARP_PLATES = b.bool("warpPlates", true);
-        WAYSTONES_INACTIVE = b.bool("inactive", true);
         b.pop();
         b.pop();
 

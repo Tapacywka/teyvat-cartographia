@@ -798,7 +798,7 @@ public final class MinimapLayer {
             sx = cx + dx / d * r;
             sy = cy + dy / d * r;
         }
-        MarkerRenderer.draw(g, type, sx, sy, size, false, false, alpha);
+        MarkerRenderer.draw(g, type, sx, sy, size, false, false, alpha, 0, Navigation.inactive(t));
     }
 
     /** Radius of the inner circle bounding the markers: a marker's half-size inside the frame (the "N" sits at {@link #TARGET_EDGE}). */

@@ -16,10 +16,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Waystones on the maps: which blocks and types are stones, dungeons, the seen stones of a chunk, what shows. */
+/** Waystones on the maps: which blocks and types are stones, dungeons, the seen stones of a chunk, what the maps show. */
 class WaystonesCompatTest {
-    private static final WaystonesCompat.Shown ALL = new WaystonesCompat.Shown(true, true, true, true);
-
     private static WaystonesCompat.Stone seen(int x, int z, WaystonesCompat.Kind kind, boolean dungeon) {
         return new WaystonesCompat.Stone(Level.OVERWORLD, new BlockPos(x, 70, z), kind, dungeon, null, null);
     }
@@ -28,8 +26,8 @@ class WaystonesCompatTest {
         return new WaystonesCompat.Stone(Level.OVERWORLD, new BlockPos(x, 70, z), kind, false, UUID.randomUUID(), name);
     }
 
-    private static List<Marker> markers(Map<Long, WaystonesCompat.Stone> seen, List<WaystonesCompat.Stone> active, WaystonesCompat.Shown shown) {
-        return WaystonesCompat.markers(Level.OVERWORLD, seen, active, shown, s -> s.name() == null ? "unnamed" : s.name());
+    private static List<Marker> markers(Map<Long, WaystonesCompat.Stone> seen, List<WaystonesCompat.Stone> active) {
+        return WaystonesCompat.markers(Level.OVERWORLD, seen, active, s -> s.name() == null ? "unnamed" : s.name());
     }
 
     @Test
@@ -77,7 +75,7 @@ class WaystonesCompatTest {
         WaystonesCompat.Stone other = seen(40, 40, WaystonesCompat.Kind.WAYSTONE, true);
         seen.put(sameSpot.key(), sameSpot);
         seen.put(other.key(), other);
-        List<Marker> ms = markers(seen, List.of(a), ALL);
+        List<Marker> ms = markers(seen, List.of(a));
         assertEquals(2, ms.size(), "the seen stone at the activated one's place is not shown twice");
         Marker home = ms.stream().filter(m -> !m.inactive).findFirst().orElseThrow();
         assertEquals("Home", home.name);
@@ -88,25 +86,21 @@ class WaystonesCompatTest {
     }
 
     @Test
-    void theSettingsChooseWhatShows() {
+    void everyKindShowsAndTheGreyOnes() {
         Map<Long, WaystonesCompat.Stone> seen = new HashMap<>();
         WaystonesCompat.Stone grey = seen(1, 1, WaystonesCompat.Kind.WAYSTONE, false);
         seen.put(grey.key(), grey);
         List<WaystonesCompat.Stone> act = List.of(active(20, 20, WaystonesCompat.Kind.SHARESTONE, "S"),
                 active(30, 30, WaystonesCompat.Kind.WARP_PLATE, "P"));
-        assertEquals(3, markers(seen, act, ALL).size());
-        assertEquals(2, markers(seen, act, new WaystonesCompat.Shown(true, true, true, false)).size(), "no grey ones");
-        assertEquals(2, markers(seen, act, new WaystonesCompat.Shown(true, false, true, true)).size(), "no sharestones");
-        assertEquals(2, markers(seen, act, new WaystonesCompat.Shown(true, true, false, true)).size(), "no warp plates");
-        assertEquals(2, markers(seen, act, new WaystonesCompat.Shown(false, true, true, true)).size(), "no waystones");
-        assertEquals(0, markers(null, List.of(), ALL).size(), "a dimension without stones");
+        assertEquals(3, markers(seen, act).size(), "a waystone not activated, a sharestone and a warp plate");
+        assertEquals(0, markers(null, List.of()).size(), "a dimension without stones");
     }
 
     @Test
     void stonesOfAnotherDimensionStayThere() {
         WaystonesCompat.Stone nether = new WaystonesCompat.Stone(Level.NETHER, new BlockPos(0, 64, 0), WaystonesCompat.Kind.WAYSTONE, false,
                 UUID.randomUUID(), "N");
-        assertEquals(0, markers(null, List.of(nether), ALL).size());
+        assertEquals(0, markers(null, List.of(nether)).size());
     }
 
     @Test
@@ -139,7 +133,7 @@ class WaystonesCompatTest {
         Map<Long, WaystonesCompat.Stone> seen = new HashMap<>();
         WaystonesCompat.Stone s = seen(3, 4, WaystonesCompat.Kind.WAYSTONE, false);
         seen.put(s.key(), s);
-        assertEquals(markers(seen, List.of(), ALL).get(0).id, markers(seen, List.of(), ALL).get(0).id,
+        assertEquals(markers(seen, List.of()).get(0).id, markers(seen, List.of()).get(0).id,
                 "the same id every time, so a selected or tracked stone stays the same");
     }
 }

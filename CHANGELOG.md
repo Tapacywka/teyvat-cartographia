@@ -10,6 +10,21 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 
 ## [Unreleased]
 
+### Added
+- The quick settings of the world map have a section "Mods compat" with Waystones: "Show stones" and "Path to stones".
+
+### Changed
+- "Path to the target" in the quick settings of the world map is for custom and system pins; the stones of Waystones
+  have their own switch.
+- Settings > Compatibility: The Sift is named "The Sift" and sorted by name with the other mods (Minecraft stays first).
+
+### Removed
+- The switches Waystones, Sharestones, Warp Plates and Not activated in Settings > Compatibility > Waystones: every
+  stone shows, the ones not activated yet in grey; "Show stones" decides where.
+
+### Fixed
+- Waystones: a tracked stone not activated yet stays grey on the minimap and in the world, as on the world map.
+
 ## [0.9.0-beta.4] - 2026-11-03
 
 A beta for every game: Minecraft 1.21.1, 26.1.2, 26.2 and 26.3. Please try it and report what you find.

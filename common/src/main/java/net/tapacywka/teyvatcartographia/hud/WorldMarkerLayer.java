@@ -276,11 +276,12 @@ public final class WorldMarkerLayer {
         int level = inView ? Navigation.level(player) : 0;
         Component text = inView && alpha > 0.03f ? distanceText(Math.round(shownDist)) : null;
         Icon icon = targetIcon(t);
+        boolean inactive = Navigation.inactive(t);
         if (pulsing) {
             // The glow changes every frame for less than a second: drawn directly.
-            drawMarker(g, icon, MarkerRenderer.worldPulseGlow(pulseSeconds), pulseColor, level, text, sx, sy, alpha);
+            drawMarker(g, icon, inactive, MarkerRenderer.worldPulseGlow(pulseSeconds), pulseColor, level, text, sx, sy, alpha);
         } else {
-            drawSprite(g, icon, level, text, sx, sy, alpha);
+            drawSprite(g, icon, inactive, level, text, sx, sy, alpha);
         }
 
         // 3. Pointer towards the target while held at the edge
@@ -297,10 +298,10 @@ public final class WorldMarkerLayer {
      * Halo and glyph (glowing gold when the pulse diamond arrives), the white above / below arrow close to the glyph,
      * and the distance under it ({@code text}, may be null).
      */
-    private static void drawMarker(GuiGraphicsExtractor g, Icon icon, float glow, int glowColor, int level, Component text, float sx, float sy, float alpha) {
+    private static void drawMarker(GuiGraphicsExtractor g, Icon icon, boolean inactive, float glow, int glowColor, int level, Component text, float sx, float sy, float alpha) {
         int halo = Theme.WORLD_MARKER_HALO;
         Draw.ring(g, sx, sy, 0f, HALO, Theme.withAlpha(halo, alpha), Theme.withAlpha(halo, 0f));
-        int tint = Theme.lerp(Theme.MARKER_ICON, glowColor, glow);
+        int tint = Theme.lerp(inactive ? Theme.MARKER_ICON_INACTIVE : Theme.MARKER_ICON, glowColor, glow);
         Draw.icon(g, icon, sx, sy, ICON, Theme.withAlpha(tint, alpha));
         float glyphHalf = ICON / 2f, below = sy + glyphHalf + 1;
         if (level > 0) MarkerRenderer.levelArrow(g, sx, sy - glyphHalf - LEVEL_GAP - LEVEL_ARROW / 2f, LEVEL_ARROW, true, Theme.WORLD_MARKER_LEVEL, alpha);
@@ -339,17 +340,18 @@ public final class WorldMarkerLayer {
     // text, the theme or the GUI scale change; every frame it is one textured quad at the marker's place, faded there.
     private static final CachedLayer sprite = new CachedLayer();
     private static Icon kIcon;
+    private static boolean kInactive;
     private static int kLevel, kTheme;
     private static Component kText;
     private static double kScale;
     /** The layer's extent around the glyph centre, whole GUI units so it stays on the pixel grid. */
     private static int spriteHalfW, spriteTop, spriteBottom;
 
-    private static void drawSprite(GuiGraphicsExtractor g, Icon icon, int level, Component text, float sx, float sy, float alpha) {
+    private static void drawSprite(GuiGraphicsExtractor g, Icon icon, boolean inactive, int level, Component text, float sx, float sy, float alpha) {
         Minecraft mc = Minecraft.getInstance();
         Window w = mc.getWindow();
         double scale = w.getGuiScale();
-        if (!sprite.exists() || icon != kIcon || level != kLevel || text != kText || Theme.generation() != kTheme || scale != kScale) {
+        if (!sprite.exists() || icon != kIcon || inactive != kInactive || level != kLevel || text != kText || Theme.generation() != kTheme || scale != kScale) {
             float glyphHalf = ICON / 2f, k = textScale();
             spriteHalfW = (int) Math.ceil(Math.max(HALO, (text == null ? 0 : DrawText.width(text)) * k / 2f + 1)) + 1;
             spriteTop = (int) Math.ceil(Math.max(HALO, glyphHalf + LEVEL_GAP + LEVEL_ARROW + 1)) + 1;
@@ -362,12 +364,13 @@ public final class WorldMarkerLayer {
             g.pose().pushMatrix();
             g.pose().scale(guiW / bw, guiH / bh);
             try {
-                drawMarker(g, icon, 0f, 0, level, text, spriteHalfW, spriteTop, 1f);
+                drawMarker(g, icon, inactive, 0f, 0, level, text, spriteHalfW, spriteTop, 1f);
             } finally {
                 g.pose().popMatrix();
                 sprite.unbind();
             }
             kIcon = icon;
+            kInactive = inactive;
             kLevel = level;
             kText = text;
             kTheme = Theme.generation();
