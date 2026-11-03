@@ -301,7 +301,26 @@ public final class Draw {
 
     public static void roundRect(GuiGraphics g, float x, float y, float w, float h, float r, int argb) {
         if (w <= 0 || h <= 0) return;
-        fillConvex(g, roundRectPath(snap(x), snap(y), snap(x + w) - snap(x), snap(y + h) - snap(y), r), argb);
+        fillConvex(g, distinct(roundRectPath(snap(x), snap(y), snap(x + w) - snap(x), snap(y + h) - snap(y), r)), argb);
+    }
+
+    /**
+     * The loop in PX/PY without a point a rounding error from the one before it (also the last against the first);
+     * returns the new count. In a capsule (the radius half its width) a corner starts where the last one ended, and
+     * the two points a rounding error apart left a sliver that both fan triangles covered: a lighter line down the
+     * middle of a translucent capsule (the rounded scroll bars, user report 03.11.2026). Not for the outlines, which
+     * pair the points of two loops by their index.
+     */
+    private static int distinct(int n) {
+        int m = 0;
+        for (int i = 0; i < n; i++) {
+            if (m > 0 && Math.abs(PX[i] - PX[m - 1]) < 1e-3f && Math.abs(PY[i] - PY[m - 1]) < 1e-3f) continue;
+            PX[m] = PX[i];
+            PY[m] = PY[i];
+            m++;
+        }
+        if (m > 1 && Math.abs(PX[m - 1] - PX[0]) < 1e-3f && Math.abs(PY[m - 1] - PY[0]) < 1e-3f) m--;
+        return m;
     }
 
     /**
