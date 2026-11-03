@@ -4,11 +4,14 @@ import net.tapacywka.teyvatcartographia.compat.ModCompat;
 import net.tapacywka.teyvatcartographia.version.Game;
 
 import net.tapacywka.teyvatcartographia.config.MapConfig;
+import net.tapacywka.teyvatcartographia.gui.SmoothScroll;
 import net.tapacywka.teyvatcartographia.gui.TeyvatConfigScreen;
 import net.tapacywka.teyvatcartographia.gui.Ui;
 import net.tapacywka.teyvatcartographia.gui.Ui.Grid;
 import net.tapacywka.teyvatcartographia.gui.WorldMapScreen;
+import net.tapacywka.teyvatcartographia.render.Draw;
 import net.tapacywka.teyvatcartographia.render.DrawText;
+import net.tapacywka.teyvatcartographia.render.EdgeFade;
 import net.tapacywka.teyvatcartographia.render.Icon;
 import net.tapacywka.teyvatcartographia.render.Theme;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
@@ -119,12 +122,52 @@ public final class SettingsPanel extends SidePanel {
         return Icon.GEAR;
     }
 
+    // ------------------------------------------------------------------ scrolling
+
+    /**
+     * How far the rows are scrolled, without steps: like the pin list, the rows scroll above the All settings button
+     * when they do not fit (GUI 4 at 1080p with Waystones, user request 03.11.2026).
+     */
+    private final SmoothScroll scroller = new SmoothScroll();
+    private static final float BAR_W = 2;
+    /** Height of the dissolving edges of the rows, GUI units. */
+    private static final float FADE = 10;
+
+    private float listTop() {
+        return contentY();
+    }
+
+    private float listHeight() {
+        return Math.max(Grid.ROW, bottomActionY() - Grid.PAD - listTop());
+    }
+
+    private float maxScroll() {
+        return Math.max(0, rows.size() * Grid.ROW - listHeight());
+    }
+
+    private boolean scrollable() {
+        return maxScroll() > 0.01f;
+    }
+
+    /** Whether the point is over the rows' area (rows scrolled out of it are neither drawn nor clicked). */
+    private boolean inList(double mx, double my) {
+        return my >= listTop() && my < listTop() + listHeight() && mx >= contentX() && mx < contentX() + contentW();
+    }
+
     private float rowY(int i) {
-        return contentY() + i * Grid.ROW;
+        return listTop() + i * Grid.ROW - scroller.pos();
+    }
+
+    /**
+     * The rows' width: the whole content, the scroll bar sits in the panel's right margin (taken from the rows, the
+     * longest Russian label was cut at GUI 4).
+     */
+    private float rowsW() {
+        return contentW();
     }
 
     private float toggleX() {
-        return contentX() + contentW() - Grid.TOGGLE_W;
+        return contentX() + rowsW() - Grid.TOGGLE_W;
     }
 
     private float toggleY(int i) {
@@ -133,20 +176,38 @@ public final class SettingsPanel extends SidePanel {
 
     @Override
     protected void renderBody(GuiGraphicsExtractor g, int mx, int my, float bx, float by, float bw) {
+        float s = scroller.update(maxScroll()), top = listTop(), h = listHeight(), rw = rowsW();
+        boolean inside = inList(mx, my);
+        int hx = inside ? mx : -10_000, hy = inside ? my : -10_000;
+        EdgeFade.capture(g);
+        g.enableScissor((int) bx, (int) top, (int) Math.ceil(bx + bw), (int) Math.ceil(top + h));
         for (int i = 0; i < rows.size(); i++) {
+            float ry = rowY(i);
+            if (ry + Grid.ROW <= top || ry >= top + h) continue;
             Row r = rows.get(i);
-            float ty = DrawText.textY(rowY(i), Grid.ROW);
+            float ty = DrawText.textY(ry, Grid.ROW);
             if (r.section) {
-                DrawText.room(r.label, bw);
+                DrawText.room(r.label, rw);
                 DrawText.text(g, r.label, bx, ty, Theme.GOLD, false);
             } else {
-                DrawText.text(g, DrawText.fit(r.label.getString(), (int) (bw - Grid.TOGGLE_W - Grid.GAP)), bx, ty, Theme.WHITE, false);
-                Ui.toggle(g, toggleX(), toggleY(i), r.get.getAsBoolean(), mx, my);
+                DrawText.text(g, DrawText.fit(r.label.getString(), (int) (rw - Grid.TOGGLE_W - Grid.GAP)), bx, ty, Theme.WHITE, false);
+                Ui.toggle(g, toggleX(), toggleY(i), r.get.getAsBoolean(), hx, hy);
             }
+        }
+        g.disableScissor();
+        EdgeFade.draw(g, bx, bx + rw, top, top + h, FADE, Math.min(1, s / FADE), Math.min(1, (scroller.max() - s) / FADE));
+        EdgeFade.release();
+        if (scrollable()) {
+            // Track over the rows' area in the right margin, thumb over the visible part (as in the pin list).
+            float barX = bx + bw + (Grid.PAD - BAR_W) / 2f, total = rows.size() * Grid.ROW;
+            Draw.rect(g, barX, top, barX + BAR_W, top + h, Theme.SCROLL_TRACK);
+            float th = Math.max(8, h * h / total);
+            float thy = top + (h - th) * scroller.fraction();
+            Draw.rect(g, barX, thy, barX + BAR_W, thy + th, Theme.SCROLL_THUMB);
         }
         Ui.actionButton(g, bx, bottomActionY(), bw, Component.translatable("teyvatcartographia.settings.all"), Icon.GEAR, true, mx, my);
         // Tooltip for the option whose label is under the cursor.
-        if (mx >= bx && mx < toggleX() - Grid.GAP) {
+        if (inside && mx < toggleX() - Grid.GAP) {
             for (int i = 0; i < rows.size(); i++) {
                 Row r = rows.get(i);
                 if (r.tooltip != null && my >= rowY(i) && my < rowY(i) + Grid.ROW) {
@@ -160,11 +221,13 @@ public final class SettingsPanel extends SidePanel {
     @Override
     public boolean mouseClicked(double mx, double my, int button) {
         if (closeClicked(mx, my)) return true;
-        for (int i = 0; i < rows.size(); i++) {
-            Row r = rows.get(i);
-            if (!r.section && Ui.toggleHit(toggleX(), toggleY(i), mx, my)) {
-                r.toggle.run();
-                return true;
+        if (inList(mx, my)) {
+            for (int i = 0; i < rows.size(); i++) {
+                Row r = rows.get(i);
+                if (!r.section && Ui.toggleHit(toggleX(), toggleY(i), mx, my)) {
+                    r.toggle.run();
+                    return true;
+                }
             }
         }
         if (Ui.actionHit(contentX(), bottomActionY(), contentW(), mx, my)) {
@@ -172,5 +235,12 @@ public final class SettingsPanel extends SidePanel {
             return true;
         }
         return contains(mx, my);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mx, double my, double amount) {
+        if (!contains(mx, my)) return false;
+        scroller.wheel(amount, Grid.ROW);
+        return true;
     }
 }
