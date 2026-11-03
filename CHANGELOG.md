@@ -16,6 +16,8 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 ### Changed
 - "Path to the target" in the quick settings of the world map is for custom and system pins; the stones of Waystones
   have their own switch.
+- The quick settings of the world map scroll when their rows do not fit above the All settings button (GUI 4 with
+  Waystones), with a scroll bar like the pin list.
 - Settings > Compatibility: The Sift is named "The Sift" and sorted by name with the other mods (Minecraft stays first).
 
 ### Removed
