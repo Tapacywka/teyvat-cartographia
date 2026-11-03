@@ -1,13 +1,12 @@
 name: Modrinth description
 
 # Sets the Modrinth project's description to .github/readme/README_Modrinth.md (written from README.md by the local
-# readme script, then copied here). Runs on a push to main that changes it, or by hand; a dry run only shows the text.
+# readme script, then copied here). Runs when a release is published (user rule 03.11.2026), or by hand; a dry run only shows the text.
 # Secret: MODRINTH_TOKEN (a personal access token with Write projects).
 
 on:
-  push:
-    branches: [main]
-    paths: [.github/readme/README_Modrinth.md]
+  release:
+    types: [published]
   workflow_dispatch:
     inputs:
       dry_run:
