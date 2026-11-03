@@ -105,21 +105,6 @@ public final class ModCompat {
         return dimension != AETHER_DIMENSION;
     }
 
-    /**
-     * A mod's name as its sub-section shows it: every word starts with a capital letter, the rest stays as written
-     * ("xaero's minimap": "Xaero's Minimap", "The Aether" unchanged).
-     */
-    public static String titleCase(String name) {
-        StringBuilder out = new StringBuilder(name.length());
-        boolean start = true;
-        for (int i = 0; i < name.length(); i++) {
-            char c = name.charAt(i);
-            out.append(start ? Character.toUpperCase(c) : c);
-            start = Character.isWhitespace(c);
-        }
-        return out.toString();
-    }
-
     private static boolean loaded(String modId) {
         return Platform.get() != null && Platform.get().isModLoaded(modId);
     }

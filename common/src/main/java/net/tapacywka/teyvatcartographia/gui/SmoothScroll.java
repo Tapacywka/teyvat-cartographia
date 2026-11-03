@@ -55,11 +55,6 @@ public final class SmoothScroll {
         shown = target = Math.max(0, to);
     }
 
-    /** The scroll bar's thumb at {@code t} (0 to 1) of its track. */
-    public void toFraction(float t) {
-        target = Math.max(0, Math.min(1, t)) * max;
-    }
-
     /** Where the shown position is, 0 to 1 of the way (for the thumb). */
     public float fraction() {
         return max <= 0 ? 0 : shown / max;

@@ -87,22 +87,4 @@ public final class Plants {
         return out;
     }
 
-    /** Switches a plant on or off in the list (saved). */
-    public static void set(Block b, boolean on) {
-        MapConfig.PLANTS_HIDDEN.set(toggled(MapConfig.get(MapConfig.PLANTS_HIDDEN), BuiltInRegistries.BLOCK.getKey(b).toString(), !on));
-        MapConfig.save();
-    }
-
-    /** The list of ids with {@code id} added (once, at the end) or taken out (every time it is there). */
-    static List<String> toggled(List<? extends String> ids, String id, boolean add) {
-        List<String> out = new ArrayList<>(ids);
-        out.removeIf(id::equals);
-        if (add) out.add(id);
-        return out;
-    }
-
-    /** Whether a plant is switched on in the list (whatever the plants switch). */
-    public static boolean listed(Block b) {
-        return !MapConfig.get(MapConfig.PLANTS_HIDDEN).contains(BuiltInRegistries.BLOCK.getKey(b).toString());
-    }
 }

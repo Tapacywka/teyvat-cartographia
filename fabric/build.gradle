@@ -35,3 +35,9 @@ processResources {
     inputs.properties props
     filesMatching('fabric.mod.json') { expand props }
 }
+
+tasks.withType(JavaCompile).configureEach {
+    // Source file names and line numbers (crash reports still point at the line), no tables of local variable names:
+    // no mixins on this branch, the only classes Sinytra Connector needs them in (03.11.2026).
+    options.debugOptions.debugLevel = 'source,lines'
+}
