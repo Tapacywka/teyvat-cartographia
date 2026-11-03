@@ -11,6 +11,8 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 ## [Unreleased]
 
 ### Fixed
+- The rounded interface: a lighter line no longer runs down the middle of the scroll bars (the settings and the
+  lists of the world map).
 - VulkanMod: a thin dark line across the world map at zoom 1 along a region border (seen while the map flew to a
   far pin).
 
