@@ -1,0 +1,73 @@
+name: Cleanup for 1.0.0
+
+# Leaves only version 1.0.0 to download (decision of 03.11.2026): the JARs come off every older GitHub release (tags
+# and source code stay), every Actions run but those of the 1.0.0 tags and of this workflow goes, and every Modrinth
+# version but 1.0.0 is deleted. CurseForge has no API to delete files: there by hand. Run by hand only; a dry run (the
+# default) only lists what it would remove. Modrinth needs MODRINTH_TOKEN with "Delete versions".
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Only list, remove nothing
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+  actions: write
+
+env:
+  MODRINTH_PROJECT: teyvat-cartographia
+  KEEP: v1.0.0
+  USER_AGENT: Tapacywka/teyvat-cartographia (cleanup workflow)
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: GitHub releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          set -uo pipefail
+          for tag in $(gh release list -R "$GITHUB_REPOSITORY" --limit 200 --json tagName --jq '.[].tagName'); do
+            [ "$tag" = "$KEEP" ] && continue
+            for asset in $(gh release view "$tag" -R "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name'); do
+              echo "release $tag: $asset"
+              [ "$DRY_RUN" = true ] || gh release delete-asset "$tag" "$asset" -R "$GITHUB_REPOSITORY" -y
+            done
+          done
+      - name: GitHub Actions runs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          set -uo pipefail
+          gh api --paginate "repos/$GITHUB_REPOSITORY/actions/runs?per_page=100" \
+            --jq '.workflow_runs[] | "\(.id) \(.head_branch) \(.path) \(.name)"' |
+          while read -r id branch path name; do
+            case "$branch" in "$KEEP"|"$KEEP+mc26") continue ;; esac
+            case "$path" in .github/workflows/cleanup.yml*) continue ;; esac
+            echo "run $id $branch $name"
+            [ "$DRY_RUN" = true ] || gh api -X DELETE "repos/$GITHUB_REPOSITORY/actions/runs/$id" --silent || echo "  refused"
+          done
+      - name: Modrinth versions
+        env:
+          TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          set -uo pipefail
+          api=https://api.modrinth.com/v2
+          code=$(curl -s -o versions.json -w '%{http_code}' -H "Authorization: $TOKEN" -H "User-Agent: $USER_AGENT" "$api/project/$MODRINTH_PROJECT/version")
+          [ "$code" = 200 ] || { echo "Modrinth: the versions cannot be read with this token (HTTP $code)"; exit 1; }
+          keep=${KEEP#v}
+          jq -r '.[] | "\(.id) \(.version_number)"' versions.json | while read -r id number; do
+            case "$number" in "$keep+"*) continue ;; esac
+            echo "Modrinth $number"
+            [ "$DRY_RUN" = true ] && continue
+            code=$(curl -s -o response.json -w '%{http_code}' -X DELETE -H "Authorization: $TOKEN" -H "User-Agent: $USER_AGENT" "$api/version/$id")
+            [ "$code" = 204 ] || { echo "  refused (HTTP $code): $(cat response.json)"; }
+          done
+          echo "CurseForge: by hand, every file but $keep (Files > the file > Delete)."
