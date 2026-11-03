@@ -11,7 +11,7 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 ## [Unreleased]
 
 ### Added
-- The quick settings of the world map have a section "Mods compat" with Waystones: "Show stones" and "Path to stones".
+- The quick settings of the world map have a section "Waystones" when the mod is in the game: "Show stones" and "Path to stones".
 
 ### Changed
 - "Path to the target" in the quick settings of the world map is for custom and system pins; the stones of Waystones
