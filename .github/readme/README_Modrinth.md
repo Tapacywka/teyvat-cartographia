@@ -68,7 +68,7 @@ Place pins, search for them and for biomes, track them, follow the path and find
 | Mod loader | **Fabric** (Fabric Loader 0.16 or newer with [Fabric API](https://modrinth.com/mod/fabric-api)) or **NeoForge** (21.1 for 1.21.1, built against 21.1.257; 26.1.2, 26.2 or 26.3 for those games, built against 26.1.2.124, 26.2.0.93 and 26.3.0.99): one file for each, the same mod |
 | Java | **21** for 1.21.1, **25** for 26.1.2, 26.2 and 26.3 |
 | Side | **Client** only. Servers don't need it, so you can join vanilla and modded servers. |
-| Beta | **0.9.0-beta.4** for every game (1.21.1, 26.1.2, 26.2 and 26.3): the settings screen now comes from the library [Actually Amazing Config Screen](https://github.com/Tapacywka/actually-amazing-config-screen), packed inside the mod (nothing to install). Please try it and [report](https://github.com/Tapacywka/teyvat-cartographia/issues/new/choose) what you find. |
+| Beta | **0.9.0-beta.5** for every game (1.21.1, 26.1.2, 26.2 and 26.3): the settings screen now comes from the library [Actually Amazing Config Screen](https://github.com/Tapacywka/actually-amazing-config-screen), packed inside the mod (nothing to install). Please try it and [report](https://github.com/Tapacywka/teyvat-cartographia/issues/new/choose) what you find. |
 | Languages | English, Russian |
 | License | [MIT](https://github.com/Tapacywka/teyvat-cartographia/blob/main/LICENSE) |
 
@@ -133,8 +133,8 @@ Place pins, search for them and for biomes, track them, follow the path and find
 2. Download the file for your game and loader from [Modrinth](https://modrinth.com/mod/teyvat-cartographia),
    [CurseForge](https://www.curseforge.com/minecraft/mc-mods/teyvat-cartographia) or the
    [GitHub releases](https://github.com/Tapacywka/teyvat-cartographia/releases):
-   the part after `+mc` names them: `teyvatcartographia-v0.9.0-beta.4+mc1.21.1-fabric.jar` is for Minecraft 1.21.1 on Fabric,
-   `teyvatcartographia-v0.9.0-beta.4+mc26.3-neoforge.jar` for 26.3 on NeoForge. Put it into your `mods/` folder.
+   the part after `+mc` names them: `teyvatcartographia-v0.9.0-beta.5+mc1.21.1-fabric.jar` is for Minecraft 1.21.1 on Fabric,
+   `teyvatcartographia-v0.9.0-beta.5+mc26.3-neoforge.jar` for 26.3 on NeoForge. Put it into your `mods/` folder.
 3. Launch the game and press **M** in a world.
 4. Optional: make the minimap round (**Settings > Minimap**) or the interface rounded (**Settings > Map**). On Fabric,
    [Mod Menu](https://modrinth.com/mod/modmenu) adds a settings button to the mod list.
@@ -343,7 +343,7 @@ world map, so most mods work without anything special. A few get more: with one 
 
 | Mod | What it gets |
 |---|---|
-| [Waystones](https://modrinth.com/mod/waystones) | Its **waystones, sharestones and warp plates** on the world map and the minimap, like the teleport waypoints of Genshin Impact: the ones you have activated with their names, the ones you have only seen in grey, a waystone of a dungeon as a dungeon. Track them like any pin; teleporting stays with Waystones. Which stones show, and where they and the path to them show, are in its part. |
+| [Waystones](https://modrinth.com/mod/waystones) | Its **waystones, sharestones and warp plates** on the world map and the minimap, like the teleport waypoints of Genshin Impact: the ones you have activated with their names, the ones you have only seen in grey, a waystone of a dungeon as a dungeon. Track them like any pin; teleporting stays with Waystones. Where the stones and the path to them show is in its part, and both switch on or off in the world map's quick settings. |
 | [Xaero's Minimap](https://modrinth.com/mod/xaeros-minimap) | **Import** of its waypoints (also those of Xaero's World Map) into your pins: the current world's are found on their own. The pin type they get, and whether hidden waypoints and death points come too, are in its part. |
 | [The Aether](https://modrinth.com/mod/aether) | A Fog of War of its own, a **sea of clouds** seen from above, with the floating islands casting a soft shadow on it (on the world map and the minimap). No cave layers under the islands. |
 | [Mielon's The Sift](https://modrinth.com/mod/mielons-the-sift) | A **pearly haze** in the colours of its ichor as the Fog of War; its **rainbow ichor** and **ichor snow** shimmer on the map in their own colours (each can be switched off); its cyan willows keep their colour. |
