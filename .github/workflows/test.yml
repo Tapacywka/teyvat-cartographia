@@ -1,9 +1,9 @@
 name: Test
 
 on:
+  # Only for a release (user rule 03.11.2026): the version tags, main's v<version> and mc26's v<version>+mc26, or by hand.
   push:
-    branches: [main]
-  pull_request:
+    tags: [v*]
   workflow_dispatch:
 
 permissions:
