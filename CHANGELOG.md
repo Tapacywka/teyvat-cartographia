@@ -10,6 +10,9 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 
 ## [Unreleased]
 
+### Changed
+- The mod list shows the earlier mod icon again, a much smaller file (the download is lighter).
+
 ### Fixed
 - The rounded interface: a lighter line no longer runs down the middle of the scroll bars (the settings and the
   lists of the world map).

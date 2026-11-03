@@ -127,14 +127,6 @@ public final class Ui {
         Draw.icon(g, icon, cx, cy, Grid.ICON, Theme.YELLOW);
     }
 
-    /** How much darker an inactive control is (a choice with one option). */
-    public static final float INACTIVE = 0.4f;
-
-    /** {@code c} darkened for an inactive control. */
-    public static int inactive(int c) {
-        return Theme.lerp(c, c & 0xFF000000, INACTIVE);
-    }
-
     /** Toggle switch ({@link Grid#TOGGLE_W} x {@link Grid#TOGGLE_H}) in the style of the "Map Settings" switches. */
     public static void toggle(GuiGraphics g, float x, float y, boolean on, int mx, int my) {
         float w = Grid.TOGGLE_W, h = Grid.TOGGLE_H, r = h / 2f;

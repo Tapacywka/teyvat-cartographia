@@ -141,10 +141,6 @@ public final class MapConfig {
         public boolean pathInWorld() {
             return get(path) && get(pathWorld);
         }
-
-        private void reset() {
-            for (BoolValue v : new BoolValue[]{enabled, map, minimap, marker, beam, path, pathMap, pathMinimap, pathWorld}) resetValue(v);
-        }
     }
     private static final PinOptions[] PINS = new PinOptions[PinKind.values().length];
 
@@ -293,30 +289,6 @@ public final class MapConfig {
 
     public static void save() {
         FILE.save();
-    }
-
-    /** Resets every value to its default and saves. */
-    public static void resetAll() {
-        resetValue(THEME); resetValue(MINIMAP_SHAPE); resetValue(INTERFACE_STYLE);
-        resetValue(MINIMAP_ENABLED); resetValue(MINIMAP_RADIUS); resetValue(MINIMAP_CORNER);
-        resetValue(MINIMAP_OFFSET_X); resetValue(MINIMAP_OFFSET_Y); resetValue(MINIMAP_OPACITY);
-        resetValue(MINIMAP_PADDING); resetValue(MINIMAP_FADE_WIDTH); resetValue(MINIMAP_FADE_STRENGTH); resetValue(MINIMAP_INFO_GAP); resetValue(MINIMAP_TEXT_SIZE); resetValue(MINIMAP_PILL_OPACITY);
-        resetValue(MINIMAP_ZOOM); resetValue(MINIMAP_ORIENTATION); resetValue(MINIMAP_UPDATE_RATE); resetValue(MINIMAP_SHOW_COORDS);
-        resetValue(MINIMAP_SHOW_BIOME); resetValue(MINIMAP_SHOW_TIME); resetValue(MINIMAP_TIME_SOURCE); resetValue(MINIMAP_TIME_FORMAT); resetValue(MINIMAP_SHOW_DAY);
-        for (PinOptions o : PINS) o.reset();
-        resetValue(PATH_ROUTE);
-        resetValue(MAP_SHOW_LABELS); resetValue(MAP_SHOW_GRID); resetValue(MAP_DEFAULT_ZOOM);
-        resetValue(CHUNKS_PER_TICK); resetValue(SCAN_RADIUS); resetValue(MAX_CACHED_TILES); resetValue(DETAIL); resetValue(CAVES_ENABLED);
-        resetValue(MAP_PLANTS); resetValue(PLAYER_CONE); resetValue(PLANTS_HIDDEN);
-        resetValue(WATER_DEPTH); resetValue(SHALLOW_WATER);
-        resetValue(NETHER_FOG); resetValue(END_FOG); resetValue(AETHER_FOG); resetValue(SIFT_ICHOR_SHIMMER); resetValue(SIFT_SNOW_SHIMMER); resetValue(SIFT_FOG);
-        resetValue(XAERO_PIN_TYPE); resetValue(XAERO_HIDDEN); resetValue(XAERO_DEATHS);
-        resetValue(WAYSTONES_SHOW); resetValue(WAYSTONES_SHARESTONES); resetValue(WAYSTONES_WARP_PLATES); resetValue(WAYSTONES_INACTIVE);
-        save();
-    }
-
-    private static void resetValue(Value<?> value) {
-        value.reset();
     }
 
     /** Safe read: config values throw if read before the config file was loaded. */

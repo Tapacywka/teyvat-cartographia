@@ -53,8 +53,31 @@ tasks.named('remapJar') {
     archiveVersion = "v${project.version}"
 }
 
-tasks.withType(JavaCompile).configureEach {
-    // Full debug information: Sinytra Connector's mixin adapter reads the local variable tables of the mixin's methods
-    // and stopped the game without them (26.10.2026; until 0.4 'source,lines' saved 58 KB).
+tasks.named('compileJava', JavaCompile) {
+    // Source file names and line numbers (crash reports still point at the line), no tables of local variable names
+    // but in the mixins (below): about 60 KB less (03.11.2026).
+    options.debugOptions.debugLevel = 'source,lines'
+}
+
+// Sinytra Connector's mixin adapter reads the local variable tables of a mixin's methods and stopped the game without
+// them (26.10.2026): the mixins compiled once more with them (no annotation processing, the refmap is compileJava's),
+// and these classes go into the JAR instead (also the test JAR of the Connector runs, devtest-fabric.gradle).
+def mixinSources = 'net/tapacywka/teyvatcartographia/fabric/mixin/'
+def mixinsWithVars = tasks.register('compileMixinsWithVars', JavaCompile) {
+    dependsOn tasks.named('compileJava')
+    source = sourceSets.main.java.matching { include "${mixinSources}**" }
+    classpath = sourceSets.main.compileClasspath + sourceSets.main.output.classesDirs
+    destinationDirectory = layout.buildDirectory.dir('mixinsWithVars')
+    options.encoding = 'UTF-8'
+    options.compilerArgs += ['-proc:none']
     options.debugOptions.debugLevel = 'source,lines,vars'
 }
+ext.mixinsWithVars = mixinsWithVars
+ext.withMixinVars = { Jar jar ->
+    def mainClasses = sourceSets.main.output.classesDirs.files
+    jar.dependsOn mixinsWithVars
+    jar.exclude { e -> e.path.startsWith(mixinSources) && mainClasses.any { e.file.toPath().startsWith(it.toPath()) } }
+    // The classes folder only: the task's outputs also hold the compiler's incremental data (167 KB).
+    jar.from(mixinsWithVars.flatMap { it.destinationDirectory })
+}
+tasks.named('jar', Jar) { withMixinVars(it) }
