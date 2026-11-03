@@ -8,7 +8,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 import net.tapacywka.teyvatcartographia.compat.WaystonesCompat;
-import net.tapacywka.teyvatcartographia.config.MapConfig;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,10 +46,8 @@ public final class AutoMarkers {
         BlockPos spawn = dimension == Level.OVERWORLD && level.dimension() == Level.OVERWORLD ? level.getSharedSpawnPos() : null;
         GlobalPos death = mc.player.getLastDeathLocation().filter(d -> d.dimension() == dimension).orElse(null);
         String language = mc.getLanguageManager().getSelected();
-        // The Waystones stones: their own changes and the four settings that show them.
-        int waystones = WaystonesCompat.version() * 16 + (MapConfig.get(MapConfig.WAYSTONES_SHOW) ? 1 : 0)
-                + (MapConfig.get(MapConfig.WAYSTONES_SHARESTONES) ? 2 : 0) + (MapConfig.get(MapConfig.WAYSTONES_WARP_PLATES) ? 4 : 0)
-                + (MapConfig.get(MapConfig.WAYSTONES_INACTIVE) ? 8 : 0);
+        // The Waystones stones: their own changes.
+        int waystones = WaystonesCompat.version();
         if (level == cachedLevel && dimension == cachedDim && Objects.equals(spawn, cachedSpawn) && Objects.equals(death, cachedDeath)
                 && language.equals(cachedLanguage) && waystones == cachedWaystones) return cached;
         List<Marker> fresh = new ArrayList<>(build(dimension, spawn, death));

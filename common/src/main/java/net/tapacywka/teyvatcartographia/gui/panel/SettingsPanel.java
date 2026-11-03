@@ -1,5 +1,6 @@
 package net.tapacywka.teyvatcartographia.gui.panel;
 
+import net.tapacywka.teyvatcartographia.compat.ModCompat;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
 import net.tapacywka.teyvatcartographia.gui.TeyvatConfigScreen;
 import net.tapacywka.teyvatcartographia.gui.Ui;
@@ -46,20 +47,19 @@ public final class SettingsPanel extends SidePanel {
     }
 
     /**
-     * The path to the tracked pin on the world map, for every kind at once: on while any kind shows it there; turning
-     * it off turns off the map switch of every kind, turning it on turns on the path and its map switch of every kind.
+     * The path to the tracked pin on the world map, for the given kinds at once: on while any of them shows it there;
+     * turning it off turns off the map switch of each, turning it on turns on the path and its map switch of each.
      */
-    private static Row path() {
-        return new Row(Component.translatable("teyvatcartographia.settings.path"), Component.translatable("teyvatcartographia.settings.path.tooltip"),
-                false, SettingsPanel::anyPathOnMap, () -> {
-                    boolean on = !anyPathOnMap();
-                    for (MapConfig.PinKind kind : MapConfig.PinKind.values()) {
-                        MapConfig.PinOptions o = MapConfig.pins(kind);
-                        o.pathMap.set(on);
-                        if (on) o.path.set(true);
-                    }
-                    MapConfig.save();
-                });
+    private static Row path(String key, MapConfig.PinKind... kinds) {
+        return new Row(Component.translatable(key), Component.translatable(key + ".tooltip"), false, () -> anyPathOnMap(kinds), () -> {
+            boolean on = !anyPathOnMap(kinds);
+            for (MapConfig.PinKind kind : kinds) {
+                MapConfig.PinOptions o = MapConfig.pins(kind);
+                o.pathMap.set(on);
+                if (on) o.path.set(true);
+            }
+            MapConfig.save();
+        });
     }
 
     /** Plants on the map (the list of which ones is on the full settings screen, which its tooltip names); the chunks around are mapped again. */
@@ -72,22 +72,31 @@ public final class SettingsPanel extends SidePanel {
                 });
     }
 
-    private static boolean anyPathOnMap() {
-        for (MapConfig.PinKind kind : MapConfig.PinKind.values()) if (MapConfig.pins(kind).pathOnMap()) return true;
+    private static boolean anyPathOnMap(MapConfig.PinKind... kinds) {
+        for (MapConfig.PinKind kind : kinds) if (MapConfig.pins(kind).pathOnMap()) return true;
         return false;
     }
 
     /** Quick switches for what the map shows; everything else is on the full settings screen. */
     private final List<Row> rows = rows();
 
-    /** The interactive pins (the stones of Waystones) are set in Compatibility > Waystones of the full settings screen. */
+    /**
+     * The interactive pins (the stones of Waystones) have their own section, Mods compat, only with Waystones (user
+     * request 03.11.2026); the rest of their settings are in Compatibility > Waystones of the full settings screen.
+     */
     private static List<Row> rows() {
-        return List.of(section("teyvatcartographia.settings.section.display"),
+        List<Row> out = new java.util.ArrayList<>(List.of(section("teyvatcartographia.settings.section.display"),
                 pins("teyvatcartographia.settings.custom_pins", MapConfig.PinKind.CUSTOM),
                 pins("teyvatcartographia.settings.system_pins", MapConfig.PinKind.SYSTEM),
-                path(), plants(),
+                path("teyvatcartographia.settings.path", MapConfig.PinKind.CUSTOM, MapConfig.PinKind.SYSTEM), plants(),
                 option("teyvatcartographia.settings.labels", "map_labels", MapConfig.MAP_SHOW_LABELS),
-                option("teyvatcartographia.settings.grid", "map_grid", MapConfig.MAP_SHOW_GRID));
+                option("teyvatcartographia.settings.grid", "map_grid", MapConfig.MAP_SHOW_GRID)));
+        if (ModCompat.waystones()) {
+            out.add(section("teyvatcartographia.settings.section.compat"));
+            out.add(pins("teyvatcartographia.settings.stones", MapConfig.PinKind.INTERACTIVE));
+            out.add(path("teyvatcartographia.settings.stones_path", MapConfig.PinKind.INTERACTIVE));
+        }
+        return List.copyOf(out);
     }
 
     public SettingsPanel(WorldMapScreen screen) {

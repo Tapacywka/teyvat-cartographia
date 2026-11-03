@@ -45,16 +45,11 @@ public final class WaystonesCompat {
     private WaystonesCompat() {}
 
     /**
-     * The sub-section of Compatibility for Waystones (shown only with it): which stones show, and where they and the
+     * The sub-section of Compatibility for Waystones (shown only with it): where the stones and the
      * path to them show (the interactive pins, user decision 31.10.2026).
      */
     public static void settings() {
-        String k = "teyvatcartographia.config.";
         net.tapacywka.teyvatcartographia.gui.TeyvatConfigScreen.compatPart("compat_waystones", ModCompat::waystones, t -> {
-            t.toggle(k + "compat.waystones_show", MapConfig.WAYSTONES_SHOW)
-                    .toggle(k + "compat.waystones_sharestones", MapConfig.WAYSTONES_SHARESTONES)
-                    .toggle(k + "compat.waystones_warp_plates", MapConfig.WAYSTONES_WARP_PLATES)
-                    .toggle(k + "compat.waystones_inactive", MapConfig.WAYSTONES_INACTIVE);
             net.tapacywka.teyvatcartographia.gui.TeyvatConfigScreen.pinRow(t, MapConfig.PinKind.INTERACTIVE);
             net.tapacywka.teyvatcartographia.gui.TeyvatConfigScreen.pathRow(t, MapConfig.PinKind.INTERACTIVE);
         });
@@ -142,34 +137,22 @@ public final class WaystonesCompat {
         return out;
     }
 
-    /** The settings that decide which stones show. */
-    record Shown(boolean waystones, boolean sharestones, boolean warpPlates, boolean inactive) {
-        boolean kind(Kind k) {
-            return switch (k) {
-                case WAYSTONE -> waystones;
-                case SHARESTONE -> sharestones;
-                case WARP_PLATE -> warpPlates;
-            };
-        }
-    }
-
     /**
      * The points of one dimension: every activated stone there, then every stone seen but not activated (none at the
-     * place of an activated one), each kind only when shown.
+     * place of an activated one).
      */
-    static List<Marker> markers(ResourceKey<Level> dimension, Map<Long, Stone> seen, Iterable<Stone> active, Shown shown,
+    static List<Marker> markers(ResourceKey<Level> dimension, Map<Long, Stone> seen, Iterable<Stone> active,
                                 java.util.function.Function<Stone, String> nameOf) {
         List<Marker> out = new ArrayList<>();
         java.util.Set<Long> activePlaces = new java.util.HashSet<>();
         for (Stone s : active) {
             if (s.dimension() != dimension) continue;
             activePlaces.add(s.key());
-            if (!shown.kind(s.kind())) continue;
             out.add(marker(s, nameOf.apply(s), false));
         }
-        if (shown.inactive() && seen != null) {
+        if (seen != null) {
             for (Stone s : seen.values()) {
-                if (activePlaces.contains(s.key()) || !shown.kind(s.kind())) continue;
+                if (activePlaces.contains(s.key())) continue;
                 out.add(marker(s, nameOf.apply(s), true));
             }
         }
@@ -196,10 +179,10 @@ public final class WaystonesCompat {
 
     // ------------------------------------------------------------------ the game
 
-    /** The points of the stones in a dimension, as the settings show them (empty without Waystones). */
+    /** The points of the stones in a dimension (empty without Waystones). */
     public static List<Marker> forDimension(ResourceKey<Level> dimension) {
         if (!loaded() || (SEEN.isEmpty() && ACTIVE.isEmpty())) return List.of();
-        return markers(dimension, SEEN.get(dimension), ACTIVE.values(), shown(), WaystonesCompat::nameOf);
+        return markers(dimension, SEEN.get(dimension), ACTIVE.values(), WaystonesCompat::nameOf);
     }
 
     /** The points of the stones of every known dimension (for the map search). */
@@ -210,11 +193,6 @@ public final class WaystonesCompat {
         List<Marker> out = new ArrayList<>();
         for (ResourceKey<Level> d : dims) out.addAll(forDimension(d));
         return out;
-    }
-
-    private static Shown shown() {
-        return new Shown(MapConfig.get(MapConfig.WAYSTONES_SHOW), MapConfig.get(MapConfig.WAYSTONES_SHARESTONES),
-                MapConfig.get(MapConfig.WAYSTONES_WARP_PLATES), MapConfig.get(MapConfig.WAYSTONES_INACTIVE));
     }
 
     /** An activated stone's own name; else the name of its kind ("Waystone", "Dungeon" ...). */
@@ -284,7 +262,7 @@ public final class WaystonesCompat {
         version++;
     }
 
-    /** For the unit tests: forget everything, see a stone, and the points of a dimension with every kind shown. */
+    /** For the unit tests: forget everything, see a stone, and the points of a dimension. */
     static void clearForTest() {
         SEEN.clear();
         ACTIVE.clear();
@@ -296,7 +274,7 @@ public final class WaystonesCompat {
     }
 
     static List<Marker> markersForTest(ResourceKey<Level> dimension) {
-        return markers(dimension, SEEN.get(dimension), ACTIVE.values(), new Shown(true, true, true, true), s -> "stone");
+        return markers(dimension, SEEN.get(dimension), ACTIVE.values(), s -> "stone");
     }
 
     /** Every client tick: the world's file read on a new world, written now and then while stones were seen. */

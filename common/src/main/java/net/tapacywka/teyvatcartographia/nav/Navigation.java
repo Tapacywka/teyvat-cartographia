@@ -1,5 +1,6 @@
 package net.tapacywka.teyvatcartographia.nav;
 
+import net.tapacywka.teyvatcartographia.marker.AutoMarkers;
 import net.tapacywka.teyvatcartographia.marker.Marker;
 import net.tapacywka.teyvatcartographia.marker.MarkerStore;
 import net.tapacywka.teyvatcartographia.marker.MarkerType;
@@ -13,6 +14,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -62,7 +64,22 @@ public final class Navigation {
     }
 
     public static boolean isTracking(Marker m) {
-        Target t = target();
+        return isOf(target(), m);
+    }
+
+    /**
+     * Whether the target is an automatic point drawn grey (a waystone not activated yet), so the minimap and the
+     * marker in the world show it as the world map does.
+     */
+    public static boolean inactive(Target t) {
+        if (t == null || t.auto() == null) return false;
+        List<Marker> auto = AutoMarkers.forDimension(t.dimension());
+        for (int i = 0; i < auto.size(); i++) if (isOf(t, auto.get(i))) return auto.get(i).inactive;
+        return false;
+    }
+
+    /** Whether {@code t} is the target of the pin or automatic point {@code m}. */
+    private static boolean isOf(Target t, Marker m) {
         if (t == null || m == null) return false;
         if (m.automatic) {
             // Automatic points (spawn, last death) are not stored: match by type and position.
