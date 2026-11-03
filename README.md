@@ -252,7 +252,8 @@ adds its settings button to NeoForge's mod list), but on NeoForge the NeoForge f
 
 <h3 id="settings">Settings</h3>
 
-* The gear on the map holds quick switches: custom and system pins, the path to the target, plants, biome names, chunk grid.
+* The gear on the map holds quick switches: custom and system pins, the path to the target, plants, biome names, chunk grid,
+  and with [Waystones](https://github.com/TwelveIterations/Waystones) its stones and the path to them. The list scrolls when it does not fit.
 * The full settings screen (also from the mod list: NeoForge's, or Mod Menu's on Fabric) has a tab for each part: *Map* (appearance; what the
   map shows: plants, caves; colours; the world map), *Minimap* (display, size and position, look, extra
   information), *Pins* (display and path to the target for custom and system pins), *System* (performance) and
