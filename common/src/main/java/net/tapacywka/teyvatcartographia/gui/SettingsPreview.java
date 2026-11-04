@@ -1,7 +1,6 @@
 package net.tapacywka.teyvatcartographia.gui;
 
 import net.tapacywka.teyvatcartographia.compat.ModCompat;
-import net.tapacywka.teyvatcartographia.compat.XaeroWaypoints;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
 import net.tapacywka.teyvatcartographia.gui.Ui.Grid;
 import net.tapacywka.teyvatcartographia.map.MapView;
@@ -22,10 +21,8 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.level.block.Block;
 
-import java.nio.file.Path;
 import java.util.List;
 
 /**
@@ -540,24 +537,6 @@ final class SettingsPreview {
     // ------------------------------------------------------------------ Compatibility
 
     private static final Block ICHOR_SNOW = BuiltInRegistries.BLOCK.getOptional(Identifier.fromNamespaceAndPath("the_sift", "ichor_snow_block")).orElse(null);
-    private static XaeroWaypoints.Options xaeroFor;
-    private static Path xaeroFolder;
-    private static int xaeroCount = -1;
-    private static long xaeroAt;
-
-    /** A text {@code w} wide beside a sample {@code h} high, wrapped onto as many lines as fit and centred on it. */
-    private static void label(GuiGraphicsExtractor g, Component text, float x, float y, float w, float h) {
-        List<FormattedCharSequence> lines = DrawText.font().split(text, (int) w);
-        int n = Math.min(lines.size(), Math.max(1, (int) ((h + 2) / LINE)));
-        DrawText.room(text, w * n);
-        float ty = Draw.snap(y + (h - (n * LINE - 2)) / 2f);
-        for (int i = 0; i < n; i++) {
-            g.pose().pushMatrix();
-            g.pose().translate(Draw.snap(x), ty + i * LINE);
-            g.text(DrawText.font(), lines.get(i), 0, 0, Theme.CREAM, false);
-            g.pose().popMatrix();
-        }
-    }
 
     /** Blocks across the large sample of ichor or snow, and its pictures (ichor, snow), drawn again when a switch changes. */
     private static final int SIFT_BLOCKS = 48;
@@ -567,7 +546,7 @@ final class SettingsPreview {
     /**
      * Compatibility: the sample of the setting {@code key} alone, over the whole area: a piece of the dimension's fog of war
      * (the theme's fog while it is off), a field of ichor or of ichor snow as the map colours them (shimmering or
-     * plain), or for Xaero's Minimap how many waypoints the import takes, with their pin.
+     * plain); Xaero's rows have no picture, only their description (user request 04.11.2026).
      */
     static void compatSample(GuiGraphicsExtractor g, float x, float y, float w, float h, String key, MapArea map) {
         x = Draw.snap(x);
@@ -604,31 +583,6 @@ final class SettingsPreview {
             float side = Math.max(w, h);
             Draw.texturedQuad(g, Tex.clamped(SIFT_TEX[i], false), x, y, x + w, y + h, 0, 0, w / side, h / side, 0xFFFFFFFF);
             Draw.frame(g, x, y, w, h, 1, Theme.PANEL_LINE);
-        } else if (key.contains("compat.xaero")) {
-            Component line = xaeroLine();
-            float lw = Math.min(w, Grid.ROW + Grid.GAP + DrawText.width(line)), lx = Draw.snap(x + (w - lw) / 2f), ly = Draw.snap(y + (h - Grid.ROW) / 2f);
-            MarkerRenderer.drawCentered(g, MapConfig.get(MapConfig.XAERO_PIN_TYPE), lx + Grid.ROW / 2f, ly + Grid.ROW / 2f, Grid.ROW, 1f);
-            label(g, line, lx + Grid.ROW + Grid.GAP, ly, lw - Grid.ROW - Grid.GAP, Grid.ROW);
         }
-    }
-
-    /** How many waypoints the import would take from Xaero's folder of this world (read again on a change of the options or every 5 s). */
-    private static Component xaeroLine() {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null) return Component.translatable("teyvatcartographia.config.preview.no_world");
-        XaeroWaypoints.Options o = PinTransfer.xaeroOptions();
-        long now = System.currentTimeMillis();
-        if (!o.equals(xaeroFor) || now - xaeroAt > 5000) {
-            xaeroFor = o;
-            xaeroAt = now;
-            xaeroFolder = XaeroWaypoints.currentWorldFolder();
-            try {
-                xaeroCount = xaeroFolder == null ? 0 : XaeroWaypoints.read(xaeroFolder, o).size();
-            } catch (java.io.IOException e) {
-                xaeroCount = 0;
-            }
-        }
-        if (xaeroCount <= 0) return Component.translatable("teyvatcartographia.config.preview.xaero.none");
-        return Component.translatable("teyvatcartographia.config.preview.xaero.count", xaeroCount);
     }
 }

@@ -32,13 +32,19 @@ import java.util.stream.Stream;
 public final class XaeroWaypoints {
     private XaeroWaypoints() {}
 
-    /** The sub-section of Compatibility for Xaero's Minimap (shown only with it): how its waypoints are imported. */
+    /** The sub-section of Compatibility for Xaero's mods ("Xaero's Map", shown only with them): the imports; the card shows only the descriptions (user request 04.11.2026). */
     public static void settings() {
         String k = "teyvatcartographia.config.";
         net.tapacywka.teyvatcartographia.gui.TeyvatConfigScreen.compatPart("compat_xaero", ModCompat::xaero, t -> t
                 .choice(k + "compat.xaero_type", MapConfig.XAERO_PIN_TYPE, c -> c.names((MarkerType m) -> net.minecraft.network.chat.Component.translatable(m.langKey())))
+                .preview(net.tapacywka.aacs.api.AacsScreen.Preview.NONE)
                 .toggle(k + "compat.xaero_hidden", MapConfig.XAERO_HIDDEN)
-                .toggle(k + "compat.xaero_deaths", MapConfig.XAERO_DEATHS));
+                .preview(net.tapacywka.aacs.api.AacsScreen.Preview.NONE)
+                .toggle(k + "compat.xaero_deaths", MapConfig.XAERO_DEATHS)
+                .preview(net.tapacywka.aacs.api.AacsScreen.Preview.NONE)
+                .action(k + "compat.xaero_map", k + "compat.xaero_map.button",
+                        parent -> net.tapacywka.teyvatcartographia.version.Game.setScreen(new net.tapacywka.teyvatcartographia.gui.XaeroImportScreen(parent)))
+                .preview(net.tapacywka.aacs.api.AacsScreen.Preview.NONE));
     }
 
     private static final String DIM_PREFIX = "dim%";
@@ -70,7 +76,7 @@ public final class XaeroWaypoints {
     }
 
     /** The names Xaero gives the current world's folder (with and without the server port). */
-    private static List<String> currentWorldNames() {
+    static List<String> currentWorldNames() {
         Minecraft mc = Minecraft.getInstance();
         IntegratedServer server = mc.getSingleplayerServer();
         if (server != null) {
