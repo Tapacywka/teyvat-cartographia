@@ -280,9 +280,28 @@ public final class MapDataManager {
 
     // ------------------------------------------------------------------ lifecycle
 
+    /** Set while an import writes this world's map itself ({@link XaeroImport}): no mapping, the map closed. */
+    private volatile boolean importing;
+
+    /** Saves and closes the map and stops mapping until {@link #resumeAfterImport} (main thread). */
+    public void pauseForImport() {
+        closeAll(true);
+        importing = true;
+    }
+
+    /** Mapping goes on: the next tick opens the map again, with what the import wrote. */
+    public void resumeAfterImport() {
+        importing = false;
+    }
+
+    public boolean importing() {
+        return importing;
+    }
+
     public void tick() {
         Minecraft mc = Minecraft.getInstance();
         if (TextureColors.tick()) remapLoaded(); // the texture colours were read (again): the chunks around in them
+        if (importing) return;
         ClientLevel lvl = mc.level;
         LocalPlayer player = mc.player;
         if (lvl == null || player == null) {
@@ -437,7 +456,7 @@ public final class MapDataManager {
     }
 
     /** Folder of a dimension's map: its id with ':' as '_' (as in earlier versions, so old maps stay). */
-    private Path dimDir(ResourceKey<Level> dimension) {
+    public Path dimDir(ResourceKey<Level> dimension) {
         return WorldId.root().resolve(worldId).resolve(WorldId.sanitize(dimension.location().toString().replace(':', '_')));
     }
 

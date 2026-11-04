@@ -10,6 +10,16 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 
 ## [Unreleased]
 
+### Added
+- Settings > Compatibility > Xaero's Map: "Explored map from Xaero" brings the land you explored with Xaero's World Map onto
+  this map: the Overworld's surface, so it does not have to be explored again (its caves, the Nether and the other
+  dimensions are mapped as you go). Its window lists Xaero's map folders of this world with a switch each (the same server
+  under another address, say); places already on this map stay as they are.
+
+### Changed
+- Settings > Compatibility: the sub-section of Xaero's mods is named "Xaero's Map", and its preview shows only the
+  description of the setting under the pointer (no count of waypoints).
+
 ## [1.0.0] - 2026-11-03
 
 The first stable release, for Minecraft 1.21.1, 26.1.2, 26.2 and 26.3 on Fabric and NeoForge.
