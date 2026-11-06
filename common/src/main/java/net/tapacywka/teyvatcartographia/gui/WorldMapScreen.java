@@ -100,8 +100,19 @@ public final class WorldMapScreen extends Screen {
 
     private final MapPicture picture = new MapPicture();
 
+    // What slides (user request 06.11.2026, see Slide): the map itself, dissolving into the game and back, with the zoom
+    // slider; the other buttons and texts, away while a side panel is open, those of the right side (rightBars) also
+    // while the pick list is; the small buttons of the layer field.
+    private final Slide entry = new Slide(), bars = new Slide(), rightBars = new Slide(), layerSlide = new Slide();
+    /** The map is closing: everything slides out, input is over, and the screen goes when {@link #entry} is gone. */
+    private boolean exiting;
+    /** Client ticks of a closing map without a frame (a minimised window draws none): it then goes at once. */
+    private int exitTicks;
+    private static final int EXIT_TICKS = 20;
+
     public WorldMapScreen() {
         super(Component.translatable("teyvatcartographia.map.title"));
+        entry.show();
         LocalPlayer p = Minecraft.getInstance().player;
         if (p != null) {
             centerX = targetX = p.getX();
@@ -126,6 +137,7 @@ public final class WorldMapScreen extends Screen {
     /** The new pin editor at a block of the viewed dimension, the spot marked on the map. */
     private void newPinAt(int bx, int y, int bz) {
         selected = null;
+        selectionGoing = false;
         selX = bx + 0.5;
         selZ = bz + 0.5;
         openPanel(new PinPanel(this, viewedDim, bx, y, bz));
@@ -190,29 +202,118 @@ public final class WorldMapScreen extends Screen {
 
     // ================================================================== panel API
 
-    /** Open list of overlapping pins to choose from, or null. */
-    private MarkerPickList pick;
+    /** Open list of overlapping pins to choose from, or null; the one sliding out, drawn until gone, takes no input. */
+    private MarkerPickList pick, pickOut;
 
-    /** Open context menu of a right click on the map, or null. */
-    private MapContextMenu menu;
+    /** Open context menu of a right click on the map, or null; the one sliding out, drawn until gone, takes no input. */
+    private MapContextMenu menu, menuOut;
+
+    /**
+     * Side panels on their way, drawn until gone, without input. Under the open panel: the ones it is covering (a new
+     * panel comes in over the old one, which goes once it is covered) and any still sliding out when it came. Over it:
+     * the one sliding out to show it again (a pin panel going back to the pin list).
+     */
+    private final List<SidePanel> under = new ArrayList<>(), over = new ArrayList<>();
 
     /** The pin list a pin panel was opened from: closing that pin panel goes back to it (same search and scroll). */
     private MarkerListPanel backToList;
 
-    private void openPanel(SidePanel p) {
-        pick = null;
+    /** Opens {@code p}, or closes the panel for null; returns the panel now open (one sliding out turns back instead of a copy). */
+    private SidePanel openPanel(SidePanel p) {
+        closePick();
+        SidePanel back = backToList, old = panel;
         backToList = null;
-        if (panel != null) panel.onClose();
+        if (p == old) return p;
+        if (old != null) old.onClose();
+        if (p == null || p == back) {
+            // Nothing covers the old panel: it slides out, and whatever it was covering with it.
+            for (int i = 0; i < under.size(); i++) if (under.get(i) != p) under.get(i).slideOut();
+            under.remove(p);
+            if (old != null) {
+                old.slideOut();
+                over.add(old);
+            }
+        } else {
+            SidePanel same = slidingOutLike(p);
+            if (same != null) p = same;
+            under.addAll(over);
+            over.clear();
+            if (old != null) under.add(old);
+        }
         panel = p;
-        if (p != null) p.layout(width, height);
+        if (p != null) {
+            p.slideIn();
+            p.layout(width, height);
+        }
+        return p;
+    }
+
+    /** The panel sliding out that shows the same as {@code p}, taken out of the lists, or null. */
+    private SidePanel slidingOutLike(SidePanel p) {
+        for (List<SidePanel> list : List.of(under, over)) {
+            for (int i = 0; i < list.size(); i++) {
+                if (list.get(i).slidingOut() && list.get(i).sameContent(p)) return list.remove(i);
+            }
+        }
+        return null;
+    }
+
+    /** Whether any side panel is on the screen. */
+    private boolean panelsShown() {
+        return panel != null || !under.isEmpty() || !over.isEmpty();
+    }
+
+    /** How far in the panel furthest in is, 0 to 1: the map behind them dims with it. */
+    private float panelsAmount() {
+        float a = panel != null ? panel.shown() : 0;
+        for (int i = 0; i < under.size(); i++) a = Math.max(a, under.get(i).shown());
+        for (int i = 0; i < over.size(); i++) a = Math.max(a, over.get(i).shown());
+        return a;
+    }
+
+    /** The left edge of the side panels on the screen (the screen's width without any). */
+    private float panelEdge() {
+        float e = panel != null ? panel.left() : width;
+        for (int i = 0; i < under.size(); i++) e = Math.min(e, under.get(i).left());
+        for (int i = 0; i < over.size(); i++) e = Math.min(e, over.get(i).left());
+        return e;
+    }
+
+    /** Over a side panel, the open one or one on its way. */
+    private boolean overPanels(double mx, double my) {
+        return panelsShown() && mx >= panelEdge();
+    }
+
+    /** Over something on its way out: it takes no click, and nothing under it gets one either. */
+    private boolean overLeaving(double mx, double my) {
+        float edge = width;
+        for (int i = 0; i < over.size(); i++) edge = Math.min(edge, over.get(i).left());
+        if (panel == null || !panel.contains(mx, my)) {
+            for (int i = 0; i < under.size(); i++) edge = Math.min(edge, under.get(i).left());
+        }
+        return edge < width && mx >= edge || pickOut != null && pickOut.contains(mx, my) || menuOut != null && menuOut.contains(mx, my);
+    }
+
+    /** Sends the pick list out, if one is open. */
+    private void closePick() {
+        if (pick == null) return;
+        pick.slideOut();
+        pickOut = pick;
+        pick = null;
+    }
+
+    private void openPick(List<Marker> hits) {
+        pick = new MarkerPickList(hits, width, height, INDICATOR_EDGE - INDICATOR_R); // like Genshin Impact
+        if (pickOut != null) {
+            pick.goOnFrom(pickOut);
+            pickOut = null;
+        }
     }
 
     /** Opens the pin list (the list button, Ctrl+F); a pin panel it replaces takes its highlight along. */
     private MarkerListPanel openList() {
         if (panel instanceof PinPanel) clearSelection();
-        MarkerListPanel list = new MarkerListPanel(this);
-        openPanel(list);
-        return list;
+        return (MarkerListPanel) openPanel(new MarkerListPanel(this));
     }
 
     /**
@@ -221,17 +322,33 @@ public final class WorldMapScreen extends Screen {
      */
     public void closePanel() {
         openPanel(panel instanceof PinPanel ? backToList : null);
-        clearSelection(); // the highlight belongs to the open pin panel; it goes away together with it
+        releaseSelection(); // the highlight belongs to the open pin panel; it goes away together with it
     }
 
     private void clearSelection() {
         selected = null;
         selX = selZ = null;
+        selectionGoing = false;
+    }
+
+    /** The highlight or the marked spot is fading out with the panel or menu it belonged to. */
+    private boolean selectionGoing;
+
+    /** Lets the highlight and the marked spot go: with the panel or menu sliding out, at once without one. */
+    private void releaseSelection() {
+        if (panel == null && (panelsShown() || menuOut != null)) selectionGoing = selected != null || selX != null;
+        else clearSelection();
+    }
+
+    /** How much of the highlight and the marked spot shows. */
+    private float selectionAlpha() {
+        return selectionGoing ? Math.max(panelsAmount(), menuOut != null ? menuOut.shown() : 0) : 1;
     }
 
     private void selectMarker(Marker m) {
         selected = m;
         selX = selZ = null;
+        selectionGoing = false;
         openPanel(new PinPanel(this, m));
     }
 
@@ -332,8 +449,48 @@ public final class WorldMapScreen extends Screen {
 
     @Override
     protected void init() {
-        if (panel != null) panel.layout(width, height);
+        // Also called on every resize of the window, which puts the player's scale back.
+        Window window = Minecraft.getInstance().getWindow();
+        int cap = ScaleCap.of(window.getHeight());
+        if (window.getGuiScale() > cap) {
+            window.setGuiScale(cap);
+            width = window.getGuiScaledWidth();
+            height = window.getGuiScaledHeight();
+            scaleCapped = true;
+        }
+        layoutPanels(width, height);
         lastFrameNs = System.nanoTime();
+    }
+
+    /** The map while it dissolves in or out. */
+    private final CachedLayer dissolve = new CachedLayer();
+    /** The window's GUI scale is lowered to {@link ScaleCap} while the map is open. */
+    private boolean scaleCapped;
+
+    private void layoutPanels(int w, int h) {
+        if (panel != null) panel.layout(w, h);
+        for (int i = 0; i < under.size(); i++) under.get(i).layout(w, h);
+        for (int i = 0; i < over.size(); i++) over.get(i).layout(w, h);
+    }
+
+    /** Closes the map: everything slides out first, and the screen goes at the end of that ({@link #extractRenderState}). */
+    @Override
+    public void onClose() {
+        if (exiting) return;
+        exiting = true;
+        exitTicks = 0;
+        dragging = sliderDrag = false;
+        closeMenu();
+        closePick();
+        backToList = null;
+        closePanel();
+        entry.hide();
+    }
+
+    /** The map key on a closing map: it turns back from where it is. */
+    private void reopen() {
+        exiting = false;
+        entry.show();
     }
 
     @Override
@@ -348,16 +505,41 @@ public final class WorldMapScreen extends Screen {
         MapDataManager.get().releaseViewStores();
         chrome.destroy();
         picture.destroy();
+        dissolve.destroy();
         Backdrop.dispose();
         EdgeFade.dispose(); // the pin list's and pick list's dissolving edges
+        if (scaleCapped) {
+            Minecraft mc = Minecraft.getInstance();
+            mc.getWindow().setGuiScale(mc.getWindow().calculateScale(mc.options.guiScale().get(), mc.options.forceUnicodeFont().get()));
+            scaleCapped = false;
+        }
     }
 
     @Override
     public void tick() {
-        if (Minecraft.getInstance().player == null || Minecraft.getInstance().level == null) onClose();
+        if (Minecraft.getInstance().player == null || Minecraft.getInstance().level == null) super.onClose(); // no world to slide into
+        else if (exiting && ++exitTicks > EXIT_TICKS) super.onClose();
     }
 
     // ================================================================== animation
+
+    /** One frame of everything that slides; what has finished sliding out goes. */
+    private void updateSlides(float dt) {
+        entry.update(dt);
+        bars.set(panel == null && !exiting);
+        bars.update(dt);
+        rightBars.set(bars.in() && pick == null);
+        rightBars.update(dt);
+        layerSlide.set(layersOpen);
+        layerSlide.update(dt);
+        for (int i = under.size() - 1; i >= 0; i--) {
+            if (under.get(i).gone() || panel != null && panel.inPlace()) under.remove(i);
+        }
+        for (int i = over.size() - 1; i >= 0; i--) if (over.get(i).gone()) over.remove(i);
+        if (pickOut != null && pickOut.gone()) pickOut = null;
+        if (menuOut != null && menuOut.gone()) menuOut = null;
+        if (selectionGoing && !panelsShown() && menuOut == null) clearSelection();
+    }
 
     private void animate(float dt) {
         if (flying) {
@@ -415,16 +597,31 @@ public final class WorldMapScreen extends Screen {
 
     @Override
     public void extractRenderState(GuiGraphicsExtractor g, int mx, int my, float pt) {
+        // The end of the slide: at the start of a frame, as the frame's GUI is drawn only after it is collected and
+        // closing frees textures. At the end of one the draw then met them closed and the game crashed.
+        if (exiting && entry.gone()) {
+            super.onClose();
+            return;
+        }
         long now = System.nanoTime();
         float dt = Math.min(0.1f, (now - lastFrameNs) / 1e9f);
         lastFrameNs = now;
         time += dt;
+        exitTicks = 0;
         Cursors.begin();
         animate(dt);
+        updateSlides(dt);
         view.set(centerX, centerZ, scale, 0, width / 2f, height / 2f);
 
         TileStore store = store();
         Navigation.setPathWanted(Navigation.PATH_MAP, pathShown());
+        // The map dissolves in and out over the game: drawn into a layer, laid over the frame with the slide's alpha (the
+        // GUI is collected before it is drawn, so 1.21.1's copy of the frame has nothing to copy here).
+        boolean dissolving = !entry.settled();
+        if (dissolving) {
+            Window window = Minecraft.getInstance().getWindow();
+            dissolve.bind(g, window.getWidth(), window.getHeight(), false);
+        }
         // 1-2. Fog-of-war backdrop with gentle parallax (follows panning, stays still while zooming) and the map
         // regions lit by the time of day, cached together while the view and the map data stay the same
         picture.draw(g, store, view, centerX, centerZ, scale, width, height, pt);
@@ -432,20 +629,25 @@ public final class WorldMapScreen extends Screen {
         if (MapConfig.get(MapConfig.MAP_SHOW_GRID)) drawGrid(g);
         // 4. Labels
         if (MapConfig.get(MapConfig.MAP_SHOW_LABELS)) {
-            MapLayerRenderer.drawBiomeLabels(g, store, view, 0, 0, width, height, panel == null ? uiRects(store, mx, my) : List.of());
+            MapLayerRenderer.drawBiomeLabels(g, store, view, 0, 0, width, height, bars.visible() ? uiRects(store, mx, my) : List.of());
         }
         // 5. Path to the navigation target
         drawRoute(g);
         // 6. Markers
         hovered = null;
         drawMarkers(g, mx, my);
-        if (panel == null) drawFound(g);
+        boolean panels = panelsShown();
+        if (!panels) drawFound(g);
         // 7. Off-screen indicator of the tracked pin, then the player
         drawTargetIndicator(g, mx, my);
         drawPlayer(g, mx, my, pt);
+        if (dissolving) {
+            dissolve.unbind();
+            Draw.texturedQuadPremultiplied(g, dissolve.tex(), 0, 0, width, height, 0f, CachedLayer.v(1f), 1f, CachedLayer.v(0f), entry.amount());
+        }
 
-        // 8. Panel (dims the map behind it, like the references; the panel itself is frosted glass)
-        if (panel != null) {
+        // 8. Panels (they dim the map behind them, like the references; a panel itself is frosted glass)
+        if (panels) {
             // Re-blur only when the map behind the panel moved, and a few times a second for its animations.
             boolean moved = centerX != blurX || centerZ != blurZ || scale != blurScale;
             Backdrop.capture(g, pt, moved || time - blurTime > 0.25f, this,
@@ -456,19 +658,28 @@ public final class WorldMapScreen extends Screen {
                 blurScale = scale;
                 blurTime = time;
             }
-            Draw.rect(g, 0, 0, width, height, Theme.SCREEN_DIM);
+            Draw.rect(g, 0, 0, width, height, Theme.withAlpha(Theme.SCREEN_DIM, panelsAmount()));
             if (selected != null) drawSelectedAgain(g);
             if (selX != null) drawSelectedPoint(g);
             drawFound(g);
-            panel.render(g, mx, my, dt, width);
-            Backdrop.release();
         }
 
-        // 9. Chrome (the references hide the top bar while a side panel is open)
+        // 9. The pick list, under the chrome: sliding in from the right edge its rows pass behind the layer button
+        if (pickOut != null) pickOut.render(g, -1, -1, time, dt);
+        if (pick != null) pick.render(g, mx, my, time, dt);
+
+        // 10. Chrome (the references hide the top bar while a side panel is open), under the panels: the buttons at the
+        // right edge come back under the panel sliding off them, not over it
         drawChrome(g, mx, my, store);
-        if (pick != null) pick.render(g, mx, my, time);
-        else if (menu != null) menu.render(g, mx, my, time);
-        else if (panel == null && !dragging && !drawLayerTooltip(g, mx, my)) {
+        if (panels) {
+            for (int i = 0; i < under.size(); i++) under.get(i).render(g, -1, -1, dt, width);
+            if (panel != null) panel.render(g, mx, my, dt, width);
+            for (int i = 0; i < over.size(); i++) over.get(i).render(g, -1, -1, dt, width);
+            Backdrop.release();
+        }
+        if (menuOut != null) menuOut.render(g, -1, -1, time, dt);
+        if (menu != null) menu.render(g, mx, my, time, dt);
+        else if (pick == null && panel == null && !exiting && entry.settled() && !dragging && !drawLayerTooltip(g, mx, my)) {
             if (hovered != null) drawTooltip(g, hovered, mx, my);
             // The sea icon where a crossing of the path begins (user requests 25 and 26.10.2026).
             else if (overSeaIcon(mx, my)) Ui.tooltip(g, Component.translatable("teyvatcartographia.nav.sea").getString(), null, mx, my, width, height);
@@ -482,6 +693,10 @@ public final class WorldMapScreen extends Screen {
      * the zoom slider, the buttons of the map, a pin; the arrow with an hourglass while the search reads the biomes.
      */
     private void pointer(int mx, int my) {
+        if (exiting) {
+            Cursors.apply();
+            return;
+        }
         int hover = chromeHover(mx, my, panel != null, viewingPlayerDim());
         float sx = leftColumnX();
         if (sliderDrag || (hover & 4) != 0 || Draw.inRect(mx, my, sx - 9, sliderTop() - 4, 18, sliderBottom() - sliderTop() + 8)) {
@@ -757,7 +972,7 @@ public final class WorldMapScreen extends Screen {
     private void drawMarkers(GuiGraphicsExtractor g, int mx, int my) {
         float size = markerSize();
         shownBand = viewedBand();
-        boolean overUi = panel != null && panel.contains(mx, my) || pick != null && pick.contains(mx, my) || menu != null && menu.contains(mx, my);
+        boolean overUi = exiting || overPanels(mx, my) || pick != null && pick.contains(mx, my) || menu != null && menu.contains(mx, my);
         // No list building per frame: custom pins straight from the store, then the automatic points. The pin whose
         // panel is open stays visible whatever the filters.
         if (viewedDim != null) {
@@ -771,7 +986,7 @@ public final class WorldMapScreen extends Screen {
                 if (MarkerVisibility.shown(m, false) || isSelected(m)) drawMarker(g, m, size, mx, my, overUi);
             }
         }
-        if (selX != null && panel == null) drawSelectedPoint(g);
+        if (selX != null && !panelsShown()) drawSelectedPoint(g);
     }
 
     /** Rings from a search result for {@link #FOUND_PULSES} seconds after the flight; a biome place also gets a point. */
@@ -796,7 +1011,7 @@ public final class WorldMapScreen extends Screen {
         if (sx < -size || sy < -size || sx > width + size || sy > height + size) return;
         boolean hover = !overUi && !dragging && Draw.inCircle(mx, my, sx, sy, size * 0.6f);
         if (hover) hovered = m;
-        boolean sel = selected != null && selected.id.equals(m.id);
+        boolean sel = !selectionGoing && selected != null && selected.id.equals(m.id);
         boolean tracked = Navigation.isTracking(m);
         if (tracked) MarkerRenderer.pulse(g, sx, sy, size, pulsePhase(), Theme.MARKER_PULSE, 1f);
         MarkerRenderer.draw(g, m.type, sx, sy, size, sel, hover, 1f, MarkerVisibility.layerRelation(m, shownBand), m.inactive);
@@ -810,16 +1025,16 @@ public final class WorldMapScreen extends Screen {
 
     private void drawSelectedAgain(GuiGraphicsExtractor g) {
         float sx = view.screenX(selected.centerX(), selected.centerZ()), sy = view.screenY(selected.centerX(), selected.centerZ());
-        MarkerRenderer.draw(g, selected.type, sx, sy, markerSize(), true, false, 1f, MarkerVisibility.layerRelation(selected, viewedBand()), selected.inactive);
+        MarkerRenderer.draw(g, selected.type, sx, sy, markerSize(), true, false, selectionAlpha(), MarkerVisibility.layerRelation(selected, viewedBand()), selected.inactive);
     }
 
     private void drawSelectedPoint(GuiGraphicsExtractor g) {
         float sx = view.screenX(selX, selZ), sy = view.screenY(selX, selZ);
-        float pulse = 1f + (float) Math.sin(time * 5) * 0.08f;
-        Draw.ring(g, sx, sy, 0, 14 * pulse, Theme.PING_GLOW, Theme.withAlpha(Theme.PING_GLOW, 0f));
-        Draw.circleOutline(g, sx, sy, 10 * pulse, 1.5f, Theme.PING_RING);
-        Draw.diamond(g, sx, sy, 5, Theme.PING_CORE);
-        Draw.diamond(g, sx, sy, 3.5f, Theme.PLAYER_CYAN);
+        float pulse = 1f + (float) Math.sin(time * 5) * 0.08f, a = selectionAlpha();
+        Draw.ring(g, sx, sy, 0, 14 * pulse, Theme.withAlpha(Theme.PING_GLOW, a), Theme.withAlpha(Theme.PING_GLOW, 0f));
+        Draw.circleOutline(g, sx, sy, 10 * pulse, 1.5f, Theme.withAlpha(Theme.PING_RING, a));
+        Draw.diamond(g, sx, sy, 5, Theme.withAlpha(Theme.PING_CORE, a));
+        Draw.diamond(g, sx, sy, 3.5f, Theme.withAlpha(Theme.PLAYER_CYAN, a));
     }
 
     private float indicatorX = Float.NaN, indicatorY;
@@ -837,14 +1052,14 @@ public final class WorldMapScreen extends Screen {
     /** Whether the player / a pin at (sx, sy) is on screen (left of an open panel); otherwise it gets an indicator. */
     private boolean inArea(float sx, float sy) {
         float m = ON_SCREEN_MARGIN;
-        return sx >= m && sy >= m && sx <= (panel != null ? panel.left() : width) - m && sy <= height - m;
+        return sx >= m && sy >= m && sx <= panelEdge() - m && sy <= height - m;
     }
 
     /** Where the line from the screen centre to (sx, sy) leaves the indicator area; result in {@link #edgePoint}. */
     private void clampToEdge(float sx, float sy) {
         float inset = INDICATOR_EDGE;
         float left = inset, top = inset;
-        float right = (panel != null ? panel.left() : width) - inset, bottom = height - inset;
+        float right = panelEdge() - inset, bottom = height - inset;
         float cx = width / 2f, cy = height / 2f;
         float dx = sx - cx, dy = sy - cy;
         float tx = dx == 0 ? Float.MAX_VALUE : ((dx > 0 ? right : left) - cx) / dx;
@@ -935,7 +1150,7 @@ public final class WorldMapScreen extends Screen {
     private Component exploredLine;
 
     private Component cursorText(int mx, int my) {
-        if (panel != null && panel.contains(mx, my)) return null;
+        if (overPanels(mx, my)) return null;
         if (mx < 0 || my < 0 || mx >= width || my >= height) return null; // the pointer is off the window
         long x = (long) Math.floor(view.worldX(mx, my)), z = (long) Math.floor(view.worldZ(mx, my));
         if (cursorLine == null || x != cursorBX || z != cursorBZ) {
@@ -965,7 +1180,7 @@ public final class WorldMapScreen extends Screen {
     private Component areaText(TileStore store, int mx, int my) {
         // A cave layer has no biomes of its own: the biome comes from the surface map.
         if (store != null && store.cave && viewedDim != null) store = MapDataManager.get().viewStore(viewedDim);
-        boolean overMap = panel == null || !panel.contains(mx, my);
+        boolean overMap = !overPanels(mx, my);
         ResourceKey<Biome> biome = store == null || !overMap ? null
                 : store.biomeAt((int) Math.floor(view.worldX(mx, my)), (int) Math.floor(view.worldZ(mx, my)));
         return biome != null ? MapLayerRenderer.biomeName(biome) : dimensionName(viewedDim == null ? Level.OVERWORLD : viewedDim);
@@ -996,7 +1211,10 @@ public final class WorldMapScreen extends Screen {
         float pad = Grid.GAP;
         // Top bar: pills + close button
         float barLeft = closeX() - BIG_R - Grid.PAD;
-        Component cursor = cursorText(mx, my), player = playerText();
+        // Sliding away they keep the texts they were last drawn with.
+        boolean live = bars.in();
+        Component cursor = live ? cursorText(mx, my) : kCursor, player = live ? playerText() : kPlayer;
+        Component area = live ? areaText(store, mx, my) : kArea, explored = live ? exploredText(store) : kExplored;
         if (cursor != null) barLeft -= Ui.pillWidth(cursor, true) + Grid.GAP;
         if (player != null) barLeft -= Ui.pillWidth(player, true);
         setRect(0, barLeft - pad, 0, width, M + COMPASS_D + pad);
@@ -1006,10 +1224,10 @@ public final class WorldMapScreen extends Screen {
         setRect(2, 0, height - M - COMPASS_D - pad, rowButtonX(2) + R + pad, height);
         // Bottom-right: area name, explored line, compass button
         // The area name follows the cursor; a fixed minimum width keeps map labels from jumping as it changes.
-        float textW = Math.max(AREA_TEXT_RESERVE, Math.max(DrawText.width(areaText(store, mx, my)), DrawText.width(exploredText(store))));
+        float textW = Math.max(AREA_TEXT_RESERVE, Math.max(area == null ? 0 : DrawText.width(area), explored == null ? 0 : DrawText.width(explored)));
         setRect(3, compassX() - COMPASS_D / 2f - Grid.PAD - textW - pad, height - M - COMPASS_D - pad, width, height);
         // Layer buttons on the right (empty when not shown)
-        if (layersShown()) {
+        if (layersOn()) {
             float top = layerItemY(layerShownFrom()) - LAYER_BIG_SLOT / 2f, bottom = layerItemY(layerShownTo() - 1) + LAYER_BIG_SLOT / 2f;
             setRect(4, layerX() - BIG_R - pad, top - 2 * LAYER_ARROW - pad, width, bottom + 2 * LAYER_ARROW + pad);
         } else {
@@ -1036,9 +1254,10 @@ public final class WorldMapScreen extends Screen {
     // rarely change, so it lives in a screen-sized layer redrawn only when something on it changes: a hovered button,
     // the scale, a text, the panel, the screen size or the theme. Every frame it is one textured quad.
     private final CachedLayer chrome = new CachedLayer();
-    private boolean chromeValid, kPanelOpen, kLocate;
+    private boolean chromeValid, kBars, kLocate;
     private int kHover, kWidth, kHeight, kChromeTheme;
     private double kScale, kGuiScale;
+    private float kLayerAmount;
     private Component kCursor, kPlayer, kArea, kExplored;
     private ResourceKey<Level> kDim;
     private Integer kBand;
@@ -1046,31 +1265,39 @@ public final class WorldMapScreen extends Screen {
     private boolean kLayersOpen;
 
     private void drawChrome(GuiGraphicsExtractor g, int mx, int my, TileStore store) {
-        boolean panelOpen = panel != null, locate = viewingPlayerDim();
+        // Sliding away the bars stay as they are: no hover, the texts they had.
+        boolean live = bars.in(), barsOn = live || bars.visible(), locate = viewingPlayerDim();
         Component cursor = null, player = null, area = null, explored = null;
-        if (!panelOpen) {
+        if (live) {
             cursor = cursorText(mx, my);
             player = playerText();
             area = areaText(store, mx, my);
             explored = exploredText(store);
+        } else if (barsOn) {
+            cursor = kCursor;
+            player = kPlayer;
+            area = kArea;
+            explored = kExplored;
         }
-        int hover = chromeHover(mx, my, panelOpen, locate);
+        int hover = chromeHover(mx, my, !live, locate);
         Window w = Minecraft.getInstance().getWindow();
         double guiScale = w.getGuiScale();
-        boolean dirty = !chrome.exists() || !chromeValid || hover != kHover || scale != kScale || panelOpen != kPanelOpen
+        boolean dirty = !chrome.exists() || !chromeValid || hover != kHover || scale != kScale || barsOn != kBars
                 || locate != kLocate || width != kWidth || height != kHeight || guiScale != kGuiScale || Theme.generation() != kChromeTheme
                 || cursor != kCursor || player != kPlayer || explored != kExplored || !java.util.Objects.equals(area, kArea)
                 || viewedDim != kDim || !java.util.Objects.equals(viewedBand, kBand)
-                || MapDataManager.get().caveBands().size() != kBandCount || layerShownFrom() != kLayerFirst || layersOpen != kLayersOpen;
+                || MapDataManager.get().caveBands().size() != kBandCount || layerShownFrom() != kLayerFirst || layersOpen != kLayersOpen
+                || layerSlide.amount() != kLayerAmount;
         if (dirty) {
             chrome.bind(g, w.getWidth(), w.getHeight(), false);
             try {
-                drawZoomSlider(g, mx, my);
-                if (!panelOpen) {
-                    drawTopBar(g, mx, my);
-                    drawBottomLeft(g, mx, my);
-                    drawBottomRight(g, mx, my, store);
-                    drawLayers(g, mx, my);
+                drawZoomSlider(g, exiting ? -1 : mx, exiting ? -1 : my);
+                if (barsOn) {
+                    int bx = live ? mx : -1, by = live ? my : -1;
+                    drawTopBar(g, bx, by, cursor, player);
+                    drawBottomLeft(g, bx, by);
+                    drawBottomRight(g, bx, by, area, explored);
+                    drawLayers(g, bx, by);
                 }
             } finally {
                 chrome.unbind();
@@ -1078,7 +1305,7 @@ public final class WorldMapScreen extends Screen {
             chromeValid = true;
             kHover = hover;
             kScale = scale;
-            kPanelOpen = panelOpen;
+            kBars = barsOn;
             kLocate = locate;
             kWidth = width;
             kHeight = height;
@@ -1093,30 +1320,33 @@ public final class WorldMapScreen extends Screen {
             kBandCount = MapDataManager.get().caveBands().size();
             kLayerFirst = layerShownFrom();
             kLayersOpen = layersOpen;
+            kLayerAmount = layerSlide.amount();
             // Composited only where the chrome is (the UI rectangles, which include a margin), not over the whole
             // screen: the rest of the layer is empty.
             List<float[]> rects = uiRects(store, mx, my);
-            chromeRectCount = 0;
-            for (int i = 0; i < rects.size(); i++) {
-                if (panelOpen && i != 1) continue; // with a panel open only the zoom slider (rectangle 1) is shown
-                System.arraycopy(rects.get(i), 0, chromeRects[chromeRectCount++], 0, 4);
-            }
+            for (int i = 0; i < chromeRects.length; i++) System.arraycopy(rects.get(i), 0, chromeRects[i], 0, 4);
         }
-        for (int i = 0; i < chromeRectCount; i++) {
+        // Each group slides out over its own edge of the screen by moving where its part of the layer is laid.
+        for (int i = 0; i < chromeRects.length; i++) {
+            if (i != CHROME_ZOOM && !barsOn) continue; // with a panel open only the zoom slider is shown
             float[] r = chromeRects[i];
             float x0 = Math.max(0, r[0]), y0 = Math.max(0, r[1]), x1 = Math.min(width, r[2]), y1 = Math.min(height, r[3]);
             if (x1 <= x0 || y1 <= y0) continue;
-            Draw.texturedQuadPremultiplied(g, chrome.tex(), x0, y0, x1, y1,
+            float away = 1 - (i == CHROME_ZOOM ? entry : i == CHROME_LEFT ? bars : rightBars).amount();
+            float dx = Draw.snap(i == CHROME_ZOOM ? -x1 * away : i == CHROME_LAYERS ? (width - x0) * away : 0);
+            float dy = Draw.snap(i == CHROME_TOP ? -y1 * away : i == CHROME_ZOOM || i == CHROME_LAYERS ? 0 : (height - y0) * away);
+            Draw.texturedQuadPremultiplied(g, chrome.tex(), x0 + dx, y0 + dy, x1 + dx, y1 + dy,
                     x0 / width, CachedLayer.v(1f - y0 / height), x1 / width, CachedLayer.v(1f - y1 / height));
         }
     }
 
-    // Where the cached chrome was drawn, composited every frame.
+    // Where the cached chrome was drawn, composited every frame: the rectangles of uiRects.
     private final float[][] chromeRects = new float[5][4];
-    private int chromeRectCount;
+    private static final int CHROME_TOP = 0, CHROME_ZOOM = 1, CHROME_LEFT = 2, CHROME_LAYERS = 4;
 
     /** Which chrome controls are under the mouse, one bit each, with the same hit tests as their drawing. */
     private int chromeHover(int mx, int my, boolean panelOpen, boolean locate) {
+        if (exiting) return 0;
         float x = leftColumnX();
         float ty = (float) (sliderBottom() - scaleToT(scale) * (sliderBottom() - sliderTop()));
         int h = 0;
@@ -1124,10 +1354,11 @@ public final class WorldMapScreen extends Screen {
         if (Draw.inCircle(mx, my, x, sliderMinusY(), 9)) h |= 2;
         if (sliderDrag || Draw.inCircle(mx, my, x, ty, 9)) h |= 4;
         if (panelOpen) return h;
-        if (Ui.buttonHit(closeX(), closeY(), COMPASS_D, mx, my)) h |= 8;
         if (Ui.buttonHit(rowButtonX(0), rowButtonY(), COMPASS_D, mx, my)) h |= 16;
         if (Ui.iconButtonHit(rowButtonX(1), rowButtonY(), mx, my)) h |= 32;
         if (locate && Ui.iconButtonHit(rowButtonX(2), rowButtonY(), mx, my)) h |= 64;
+        if (pick != null) return h; // the right side has slid away
+        if (Ui.buttonHit(closeX(), closeY(), COMPASS_D, mx, my)) h |= 8;
         if (Ui.buttonHit(compassX(), compassY(), COMPASS_D, mx, my)) h |= 128;
         if (layerButtonHit(mx, my)) h |= 256;
         int row = layerRowAt(mx, my);
@@ -1135,11 +1366,10 @@ public final class WorldMapScreen extends Screen {
         return h;
     }
 
-    private void drawTopBar(GuiGraphicsExtractor g, int mx, int my) {
+    private void drawTopBar(GuiGraphicsExtractor g, int mx, int my, Component cursor, Component player) {
         Ui.iconButton(g, closeX(), closeY(), COMPASS_D, BIG_ICON, Icon.CLOSE, true, mx, my);
         float right = closeX() - BIG_R - Grid.PAD;
         float y = BAR_Y;
-        Component cursor = cursorText(mx, my), player = playerText();
         if (DrawText.probe != null && cursor != null && player != null) {
             // Both pills side by side, up to the screen's left margin (nothing else is up there).
             DrawText.room(player.getString() + cursor.getString(),
@@ -1226,14 +1456,13 @@ public final class WorldMapScreen extends Screen {
         if (viewingPlayerDim()) Ui.iconButton(g, rowButtonX(2), y, Icon.LOCATE, false, mx, my);
     }
 
-    private void drawBottomRight(GuiGraphicsExtractor g, int mx, int my, TileStore store) {
+    private void drawBottomRight(GuiGraphicsExtractor g, int mx, int my, Component area, Component explored) {
         Ui.iconButton(g, compassX(), compassY(), COMPASS_D, COMPASS_ICON, Icon.COMPASS, true, mx, my);
         float right = compassX() - COMPASS_D / 2f - Grid.PAD;
         // Two lines (8 + 8 glyph height, 8 gap) span the compass button's height: cy - 12 .. cy + 12.
         float cy = compassY();
         // Room: up to the bottom-left buttons, on the same height.
         float room = right - (rowButtonX(2) + Grid.BUTTON / 2f + Grid.PAD);
-        Component area = areaText(store, mx, my), explored = exploredText(store);
         DrawText.room(area, room);
         DrawText.room(explored, room);
         DrawText.textRight(g, area, right, cy - 12, Theme.WHITE, true);
@@ -1273,9 +1502,14 @@ public final class WorldMapScreen extends Screen {
         return layerItems;
     }
 
-    /** The field is there in the player's dimension once it has cave layers, while no side panel is open. */
+    /** The field is there in the player's dimension once it has cave layers. */
+    private boolean layersOn() {
+        return viewingPlayerDim() && MapDataManager.get().cavesSupported() && !MapDataManager.get().caveBands().isEmpty();
+    }
+
+    /** It takes the mouse while no side panel is open. */
     private boolean layersShown() {
-        return panel == null && viewingPlayerDim() && MapDataManager.get().cavesSupported() && !MapDataManager.get().caveBands().isEmpty();
+        return panel == null && !exiting && layersOn();
     }
 
     private float layerX() {
@@ -1300,13 +1534,18 @@ public final class WorldMapScreen extends Screen {
         return first;
     }
 
+    /** The small buttons are out, or on their way in or out. */
+    private boolean layersUnfolded() {
+        return layersOpen || layerSlide.visible();
+    }
+
     /** Items shown: only the large button while the field is closed. */
     private int layerShownFrom() {
-        return layersOpen ? Math.max(0, Math.min(layerMaxFirst(), layerFirst)) : surfaceIndex();
+        return layersUnfolded() ? Math.max(0, Math.min(layerMaxFirst(), layerFirst)) : surfaceIndex();
     }
 
     private int layerShownTo() {
-        return layersOpen ? layerEnd(layerShownFrom()) : surfaceIndex() + 1;
+        return layersUnfolded() ? layerEnd(layerShownFrom()) : surfaceIndex() + 1;
     }
 
     private int surfaceIndex() {
@@ -1330,6 +1569,14 @@ public final class WorldMapScreen extends Screen {
         return Draw.snap(height / 2f - total / 2f) + before + slotHeight(item) / 2f;
     }
 
+    /** Centre Y of the large button: on the screen's height with the field closed, moving to its place among the bands. */
+    private float surfaceY() {
+        float closed = Draw.snap(height / 2f - LAYER_BIG_SLOT / 2f) + LAYER_BIG_SLOT / 2f;
+        int s = surfaceIndex();
+        if (s < layerShownFrom() || s >= layerShownTo()) return closed;
+        return closed + (layerItemY(s) - closed) * layerSlide.amount();
+    }
+
     /** Opens the field with the shown layer in view (the scroll position puts it near the middle). */
     private void openLayers() {
         layersOpen = true;
@@ -1342,7 +1589,7 @@ public final class WorldMapScreen extends Screen {
     private boolean layerButtonHit(double mx, double my) {
         if (!layersShown()) return false;
         int s = surfaceIndex();
-        return s >= layerShownFrom() && s < layerShownTo() && Ui.buttonHit(layerX(), layerItemY(s), COMPASS_D, mx, my);
+        return s >= layerShownFrom() && s < layerShownTo() && Ui.buttonHit(layerX(), surfaceY(), COMPASS_D, mx, my);
     }
 
     /** The small button (cave band) under the mouse, as an item index, or -1. */
@@ -1363,20 +1610,22 @@ public final class WorldMapScreen extends Screen {
     }
 
     private void drawLayers(GuiGraphicsExtractor g, int mx, int my) {
-        if (!layersShown()) return;
+        if (!layersOn()) return;
         int[] it = items();
-        int from = layerShownFrom(), to = layerShownTo();
-        float x = layerX();
-        if (to - from > 1) Draw.rect(g, x - 0.75f, layerItemY(from), x + 0.75f, layerItemY(to - 1), Theme.PANEL_LINE);
+        int from = layerShownFrom(), to = layerShownTo(), surface = surfaceIndex();
+        float x = layerX(), e = layerSlide.amount(), travel = width - x + BIG_R;
+        if (to - from > 1) Draw.rect(g, x - 0.75f, layerItemY(from), x + 0.75f, layerItemY(to - 1), Theme.withAlpha(Theme.PANEL_LINE, e));
+        // Scrolled away from the large button, it leaves over the edge as the small ones come.
+        if (surface < from || surface >= to) Ui.iconButton(g, x + travel * e, surfaceY(), COMPASS_D, BIG_ICON, Icon.LAYERS, viewedBand == null, mx, my);
         for (int i = from; i < to; i++) {
-            float y = layerItemY(i);
-            // The shown layer is a light button (like the large one on the Genshin Impact map), the others dark.
-            if (it[i] == SURFACE_ITEM) Ui.iconButton(g, x, y, COMPASS_D, BIG_ICON, Icon.LAYERS, viewedBand == null, mx, my);
-            else Ui.iconButton(g, x, y, Icon.LAYERS, viewedBand != null && it[i] == viewedBand, mx, my);
+            // The shown layer is a light button (like the large one on the Genshin Impact map), the others dark. The
+            // small ones slide in over the right edge one after the other, the large one moves up or down to its place.
+            if (it[i] == SURFACE_ITEM) Ui.iconButton(g, x, surfaceY(), COMPASS_D, BIG_ICON, Icon.LAYERS, viewedBand == null, mx, my);
+            else Ui.iconButton(g, x + travel * (1 - layerSlide.staggered(i - from, to - from)), layerItemY(i), Icon.LAYERS, viewedBand != null && it[i] == viewedBand, mx, my);
         }
         // Arrows where the field can be scrolled: over the first button shown, under the last.
-        if (layersOpen && from > 0) MarkerRenderer.levelArrow(g, x, layerArrowY(true), LAYER_ARROW, true, Theme.WORLD_MARKER_LEVEL, 1f);
-        if (layersOpen && to < it.length) MarkerRenderer.levelArrow(g, x, layerArrowY(false), LAYER_ARROW, false, Theme.WORLD_MARKER_LEVEL, 1f);
+        if (layersUnfolded() && from > 0) MarkerRenderer.levelArrow(g, x, layerArrowY(true), LAYER_ARROW, true, Theme.WORLD_MARKER_LEVEL, e);
+        if (layersUnfolded() && to < it.length) MarkerRenderer.levelArrow(g, x, layerArrowY(false), LAYER_ARROW, false, Theme.WORLD_MARKER_LEVEL, e);
     }
 
     /** Width of the scroll arrows of the layer field. */
@@ -1409,7 +1658,7 @@ public final class WorldMapScreen extends Screen {
         float right = layerX() - BIG_R - Grid.GAP;
         if (layerButtonHit(mx, my)) {
             String key = layersOpen ? "teyvatcartographia.map.layer.surface" : "teyvatcartographia.map.layers";
-            Ui.tooltipLeftOf(g, Component.translatable(key).getString(), right, layerItemY(surfaceIndex()));
+            Ui.tooltipLeftOf(g, Component.translatable(key).getString(), right, surfaceY());
             return true;
         }
         int row = layerRowAt(mx, my);
@@ -1450,6 +1699,7 @@ public final class WorldMapScreen extends Screen {
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
         double mx = event.x(), my = event.y();
         int button = event.button();
+        if (exiting || overLeaving(mx, my)) return true;
         if (menu != null) {
             // Any click closes the context menu; a left click on an enabled row runs it, a right click elsewhere opens
             // the menu there.
@@ -1469,7 +1719,7 @@ public final class WorldMapScreen extends Screen {
         if (pick != null) {
             // Any click closes the pick list; a click on a row selects that pin.
             Marker m = pick.rowAt(mx, my);
-            pick = null;
+            closePick();
             if (m != null) selectMarker(m);
             return true;
         }
@@ -1537,19 +1787,20 @@ public final class WorldMapScreen extends Screen {
         }
         if (!Float.isNaN(targetIndicatorX) && Draw.inCircle(mx, my, targetIndicatorX, targetIndicatorY, INDICATOR_R + 2)) {
             Marker m = trackedMarker();
-            if (m != null) {
-                closePanel();
-                focusMarker(m);
-            }
+            if (m != null) focusMarker(m);
             return true;
         }
         if (panel != null) {
             // Clicking the dimmed map closes the panel; it never starts a drag. Dark panels (settings, pin list,
             // dimensions) only close. With a pin panel open, a click on another pin opens that pin, and a click on
             // empty ground only closes the panel (no new pin editor; back to the pin list if the pin came from it).
-            boolean consume = panel.consumesOutsideClick();
+            List<Marker> hits = panel.consumesOutsideClick() ? List.of() : markersAt(mx, my);
+            if (hits.size() == 1) {
+                selectMarker(hits.get(0)); // over the panel open now, like any other panel
+                return true;
+            }
             closePanel();
-            if (!consume) openPinsAt(mx, my);
+            if (hits.size() > 1) openPick(hits);
             return true;
         }
         dragging = true;
@@ -1563,7 +1814,7 @@ public final class WorldMapScreen extends Screen {
     private boolean openPinsAt(double mx, double my) {
         List<Marker> hits = markersAt(mx, my);
         if (hits.size() == 1) selectMarker(hits.get(0));
-        else if (hits.size() > 1) pick = new MarkerPickList(hits, width, height, INDICATOR_EDGE - INDICATOR_R); // like Genshin Impact
+        else if (hits.size() > 1) openPick(hits);
         return !hits.isEmpty();
     }
 
@@ -1666,33 +1917,40 @@ public final class WorldMapScreen extends Screen {
             TileStore s = store();
             int h = s == null ? Integer.MIN_VALUE : s.heightAt(bx, bz), y = h == Integer.MIN_VALUE ? h : h + 1;
             selected = null;
+            selectionGoing = false;
             selX = bx + 0.5;
             selZ = bz + 0.5;
             items.add(new MapContextMenu.Item(Icon.NEW_PIN, Component.translatable("teyvatcartographia.map.menu.new_pin"), () -> newPinAt(bx, y, bz)));
             if (net.tapacywka.teyvatcartographia.marker.MarkerType.isOperator()) {
                 items.add(new MapContextMenu.Item(Icon.TARGET, Component.translatable("teyvatcartographia.map.menu.teleport"),
-                        () -> teleportTo(viewedDim, bx, y, bz)));
+                        () -> {
+                    if (teleportTo(viewedDim, bx, y, bz)) onClose();
+                }));
             }
         }
-        pick = null;
+        closePick();
         menu = new MapContextMenu(items, mx, my, width, height);
     }
 
     private void closeMenu() {
-        menu = null;
-        if (panel == null) clearSelection(); // the spot marked for the menu
+        if (menu != null) {
+            menu.slideOut();
+            menuOut = menu;
+            menu = null;
+        }
+        if (panel == null) releaseSelection(); // the spot marked for the menu
     }
 
     /**
-     * The vanilla /tp, in the viewed dimension; the server checks the rights again. The map closes. Where the map does
+     * The vanilla /tp, in the viewed dimension; the server checks the rights again; true if it was sent (the map closes then). Where the map does
      * not know the ground (unexplored, {@code y} is {@link Integer#MIN_VALUE}) the server finds it: in the Nether (under
      * its roof) and the End /spreadplayers (it refuses the void and lava, then the player stays); elsewhere the player
      * goes up to {@link #TELEPORT_HIGH} over the spot first (the server loads the chunk; "positioned over" needs it
      * loaded) and down onto its top block once the chunk has reached this client ({@link #tickTeleport}).
      */
-    private static void teleportTo(ResourceKey<Level> dim, int bx, int y, int bz) {
+    private static boolean teleportTo(ResourceKey<Level> dim, int bx, int y, int bz) {
         LocalPlayer p = Minecraft.getInstance().player;
-        if (p == null || !net.tapacywka.teyvatcartographia.marker.MarkerType.isOperator()) return; // re-checked: /deop meanwhile
+        if (p == null || !net.tapacywka.teyvatcartographia.marker.MarkerType.isOperator()) return false; // re-checked: /deop meanwhile
         String in = "execute in " + dim.identifier() + " ";
         if (y != Integer.MIN_VALUE) p.connection.sendCommand(in + "run tp @s " + bx + ".5 " + y + " " + bz + ".5");
         else if (dim == Level.NETHER) p.connection.sendCommand(in + "run spreadplayers " + bx + ".5 " + bz + ".5 0 8 under 120 false @s");
@@ -1704,7 +1962,7 @@ public final class WorldMapScreen extends Screen {
             landZ = bz;
             landTicks = LAND_WAIT;
         }
-        Game.setScreen(null);
+        return true;
     }
 
     /** Height of the first step of a teleport to unexplored ground, and how long the second step waits (ticks). */
@@ -1736,10 +1994,11 @@ public final class WorldMapScreen extends Screen {
 
     @Override
     public boolean mouseScrolled(double mx, double my, double scrollX, double scrollY) {
+        if (exiting || overLeaving(mx, my)) return true;
         if (menu != null) closeMenu(); // the map moves under it
         if (pick != null) {
             if (pick.scroll(mx, my, scrollY)) return true;
-            pick = null; // the map moves under it
+            closePick(); // the map moves under it
         }
         if (panel != null && panel.mouseScrolled(mx, my, scrollY)) return true;
         if (scrollY != 0 && panel == null && overLayers(mx, my)) {
@@ -1755,6 +2014,10 @@ public final class WorldMapScreen extends Screen {
     @Override
     public boolean keyPressed(KeyEvent event) {
         int key = event.key(), scan = Game.scancode(event), mods = event.modifiers();
+        if (exiting) {
+            if (Keybinds.OPEN_MAP.matches(event)) reopen();
+            return true;
+        }
         if (panel != null && panel.keyPressed(key, scan, mods)) return true;
         if (key == InputConstants.KEY_F && (mods & InputConstants.MOD_CONTROL) != 0 && (panel == null || !panel.capturesKeyboard())) {
             // Ctrl+F: the pin list with the cursor in its search field.
@@ -1765,7 +2028,7 @@ public final class WorldMapScreen extends Screen {
         boolean typing = panel != null && panel.capturesKeyboard();
         if (key == InputConstants.KEY_ESCAPE) {
             if (menu != null) closeMenu();
-            else if (pick != null) pick = null;
+            else if (pick != null) closePick();
             else if (panel != null) closePanel();
             else onClose();
             return true;
@@ -1775,7 +2038,7 @@ public final class WorldMapScreen extends Screen {
             onClose();
             return true;
         }
-        pick = null; // keys move or zoom the map under it
+        closePick(); // keys move or zoom the map under it
         switch (key) {
             case InputConstants.KEY_SPACE -> recenterOnPlayer();
             case InputConstants.KEY_EQUALS, InputConstants.KEY_ADD -> zoomAt(width / 2.0, height / 2.0, 1.5);
@@ -1795,13 +2058,8 @@ public final class WorldMapScreen extends Screen {
     public boolean charTyped(CharacterEvent event) {
         char c = (char) event.codepoint();
         int mods = 0;
+        if (exiting) return true;
         if (panel != null && panel.charTyped(c, mods)) return true;
         return super.charTyped(event);
-    }
-
-    @Override
-    public void resize(int w, int h) {
-        super.resize(w, h);
-        if (panel != null) panel.layout(w, h);
     }
 }

@@ -1,5 +1,6 @@
 package net.tapacywka.teyvatcartographia.gui.panel;
 
+import net.tapacywka.teyvatcartographia.gui.Slide;
 import net.tapacywka.teyvatcartographia.gui.Ui;
 import net.tapacywka.teyvatcartographia.gui.Ui.Grid;
 import net.tapacywka.teyvatcartographia.gui.WorldMapScreen;
@@ -14,11 +15,14 @@ import net.minecraft.network.chat.Component;
 public abstract class SidePanel {
     protected final WorldMapScreen screen;
     protected float x, y, w, h;
-    /** 0..1 slide-in animation progress. */
-    private float open;
+    /** Slides in when opened and out when closed ({@link #slideOut}): the screen keeps drawing it until it is gone. */
+    private final Slide slide = new Slide();
+    /** Seconds since the last frame, for what a panel moves inside itself. */
+    protected float frameDt;
 
     protected SidePanel(WorldMapScreen screen) {
         this.screen = screen;
+        slide.show();
     }
 
     public void layout(float screenW, float screenH) {
@@ -28,7 +32,7 @@ public abstract class SidePanel {
         h = screenH;
         y = 0;
         // Start off-screen to the right; render() slides it in. Avoids covering the map before the first frame.
-        x = screenW - w * open;
+        x = screenW - w * slide.amount();
     }
 
     public float width() {
@@ -39,6 +43,37 @@ public abstract class SidePanel {
         return x;
     }
 
+    public void slideIn() {
+        slide.show();
+    }
+
+    public void slideOut() {
+        slide.hide();
+    }
+
+    public boolean slidingOut() {
+        return !slide.in();
+    }
+
+    /** Out of sight: the screen can forget it. */
+    public boolean gone() {
+        return slide.gone();
+    }
+
+    /** In place, covering whatever is under it. */
+    public boolean inPlace() {
+        return slide.in() && slide.settled();
+    }
+
+    /** How far in, 0 to 1 (the map behind dims with it). */
+    public float shown() {
+        return slide.amount();
+    }
+
+    /** Whether {@code other} shows the same thing: opened again while this one slides out, this one turns back instead. */
+    public boolean sameContent(SidePanel other) {
+        return getClass() == other.getClass();
+    }
 
     protected float contentX() {
         return x + Grid.PAD;
@@ -74,9 +109,9 @@ public abstract class SidePanel {
     }
 
     public final void render(GuiGraphicsExtractor g, int mx, int my, float dt, float screenW) {
-        open = Math.min(1f, open + dt * 7f);
-        float ease = 1f - (1f - open) * (1f - open) * (1f - open);
-        x = screenW - w * ease;
+        frameDt = dt;
+        slide.update(dt);
+        x = screenW - w * slide.amount();
         Ui.panel(g, x, y, w, h, dark(), title(), titleIcon(), mx, my);
         renderBody(g, mx, my, contentX(), contentY(), contentW());
     }

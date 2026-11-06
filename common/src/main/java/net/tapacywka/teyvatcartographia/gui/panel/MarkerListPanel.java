@@ -11,6 +11,7 @@ import net.tapacywka.teyvatcartographia.gui.PinTransfer;
 import net.tapacywka.teyvatcartographia.gui.SmoothScroll;
 import net.tapacywka.teyvatcartographia.gui.Ui;
 import net.tapacywka.teyvatcartographia.gui.Ui.Grid;
+import net.tapacywka.teyvatcartographia.gui.Slide;
 import net.tapacywka.teyvatcartographia.gui.WorldMapScreen;
 import net.tapacywka.teyvatcartographia.map.data.BiomeIndex;
 import net.tapacywka.teyvatcartographia.marker.AutoMarkers;
@@ -241,6 +242,11 @@ public final class MarkerListPanel extends SidePanel {
 
     /** True while the import choice (our file or Xaero's Minimap) is open above the button row. */
     private boolean importMenu;
+    /** The import choice sliding in from the right, its rows one after the other. */
+    private final Slide importSlide = new Slide();
+    /** The outcome's popup sliding out from behind the panel, and what it says (kept while it slides back). */
+    private final Slide popup = new Slide();
+    private PinTransfer.Outcome outcome;
 
     /** The row of the Export and Import buttons at the bottom. */
     private float transferRowY() {
@@ -257,7 +263,7 @@ public final class MarkerListPanel extends SidePanel {
     }
 
     private float actionsTop() {
-        return importMenu ? choiceY(1) : transferRowY();
+        return importMenu || importSlide.visible() ? choiceY(1) : transferRowY();
     }
 
 
@@ -266,14 +272,25 @@ public final class MarkerListPanel extends SidePanel {
         float row = transferRowY(), half = halfWidth();
         Ui.actionButton(g, bx, row, half, Component.translatable("teyvatcartographia.transfer.export"), Icon.EXPORT, free, mx, my);
         Ui.actionButton(g, bx + half + Grid.GAP, row, half, Component.translatable("teyvatcartographia.transfer.import"), Icon.IMPORT, free, mx, my);
-        if (importMenu) {
-            Ui.actionButton(g, bx, choiceY(0), bw, Component.translatable("teyvatcartographia.transfer.import.file"), null, free, mx, my);
-            Ui.actionButton(g, bx, choiceY(1), bw, Component.translatable("teyvatcartographia.transfer.import.xaero"), null, free, mx, my);
+        importSlide.set(importMenu);
+        importSlide.update(frameDt);
+        if (importSlide.visible()) {
+            int hx = importMenu ? mx : -1, hy = importMenu ? my : -1;
+            Ui.actionButton(g, bx + w * (1 - importSlide.staggered(0, 2)), choiceY(0), bw, Component.translatable("teyvatcartographia.transfer.import.file"), null, free, hx, hy);
+            Ui.actionButton(g, bx + w * (1 - importSlide.staggered(1, 2)), choiceY(1), bw, Component.translatable("teyvatcartographia.transfer.import.xaero"), null, free, hx, hy);
         }
         // The outcome of the last export or import: a popup over the map left of the panel, pointing at its button
-        // (at Import when the choice was closed since).
+        // (at Import when the choice was closed since). It slides out from behind the panel and back there.
         PinTransfer.Outcome o = PinTransfer.message();
-        if (o != null) Ui.popupLeftOf(g, o.title(), o.lines(), x - 1, sourceY(o.source()) + Grid.ACTION_H / 2f, y + h - Grid.MARGIN);
+        if (o != null) outcome = o;
+        popup.set(o != null);
+        popup.update(frameDt);
+        if (popup.visible()) {
+            g.enableScissor(0, 0, (int) Math.floor(x), screen.height);
+            Ui.popupLeftOf(g, outcome.title(), outcome.lines(), x - 1 + popup.offset(Ui.popupReach(outcome.title(), outcome.lines())),
+                    sourceY(outcome.source()) + Grid.ACTION_H / 2f, y + h - Grid.MARGIN);
+            g.disableScissor();
+        }
     }
 
     private float sourceY(PinTransfer.Source source) {
