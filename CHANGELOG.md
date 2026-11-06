@@ -29,6 +29,14 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 - Settings > Compatibility: the sub-section of Xaero's mods is named "Xaero's Map", and its preview shows only the
   description of the setting under the pointer (no count of waypoints).
 
+### Fixed
+- Map: land mapped just before coming straight back to the same dimension could be lost, when a region still being saved
+  was started anew and written over the saved one.
+- Entering a dimension or a new cave layer no longer holds up a frame while the map's folder is read.
+- A little memory was lost for good when a dimension was left while its map regions were loading.
+- "Explored chunks" could stay too low after a world was left, when the last regions had only been unloaded.
+- A chunk unloaded at the moment it was mapped could be listed under the wrong biome in the map search.
+
 ## [1.0.0] - 2026-11-03
 
 The first stable release, for Minecraft 1.21.1, 26.1.2, 26.2 and 26.3 on Fabric and NeoForge.

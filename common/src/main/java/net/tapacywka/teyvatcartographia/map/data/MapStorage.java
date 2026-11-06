@@ -2,6 +2,7 @@ package net.tapacywka.teyvatcartographia.map.data;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.resources.ResourceKey;
 import com.mojang.blaze3d.platform.NativeImage;
@@ -287,6 +288,16 @@ public final class MapStorage {
             return in.readInt() == MAGIC && in.readInt() == VERSION;
         } catch (IOException e) {
             return false;
+        }
+    }
+
+    /** Names the dimension of a map folder ({@code dimension.txt}): only folders with this file are listed as maps. */
+    static void writeDimension(Path dir, ResourceKey<Level> dimension) {
+        try {
+            Files.createDirectories(dir);
+            Files.writeString(dir.resolve("dimension.txt"), dimension.location().toString(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            TeyvatCartographia.LOGGER.warn("Could not create map directory {}", dir, e);
         }
     }
 
