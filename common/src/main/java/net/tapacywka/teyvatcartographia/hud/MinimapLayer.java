@@ -100,7 +100,7 @@ public final class MinimapLayer implements LayeredDraw.Layer {
             Navigation.setPathWanted(Navigation.PATH_MINIMAP, false);
             return;
         }
-        if (prepare(g, delta, false)) drawPrepared(g);
+        if (prepare(g, delta, false, 0)) drawPrepared(g);
     }
 
     /**
@@ -109,9 +109,17 @@ public final class MinimapLayer implements LayeredDraw.Layer {
      * draws it under any transform, and {@link #preparedBounds} tells where it is.
      */
     public static boolean preparePreview(GuiGraphics g, DeltaTracker delta) {
+        return preparePreview(g, delta, 0);
+    }
+
+    /**
+     * As above at a radius of its own ({@code radius} above 0), whatever the Size setting says: the preview of the look
+     * is scaled up to the card, so a large radius keeps it sharp (user request 06.11.2026).
+     */
+    public static boolean preparePreview(GuiGraphics g, DeltaTracker delta, int radius) {
         Minecraft mc = Minecraft.getInstance();
         if (instance == null || mc.player == null || mc.level == null || !MapConfig.get(MapConfig.MINIMAP_ENABLED)) return false;
-        return instance.prepare(g, delta, true);
+        return instance.prepare(g, delta, true, radius);
     }
 
     /** Draws the minimap prepared last (one textured quad, so the current pose may move and scale it). */
@@ -134,14 +142,14 @@ public final class MinimapLayer implements LayeredDraw.Layer {
     }
 
     /** Brings both cached layers up to date; {@code preview}: for the settings, not the HUD (the HUD area is not touched). */
-    private boolean prepare(GuiGraphics g, DeltaTracker delta, boolean preview) {
+    private boolean prepare(GuiGraphics g, DeltaTracker delta, boolean preview, int forceRadius) {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
 
         float pt = delta.getGameTimeDeltaPartialTick(true);
         Vec3 pos = player.getPosition(pt);
         float yaw = player.getViewYRot(pt);
-        int r = MapConfig.get(MapConfig.MINIMAP_RADIUS);
+        int r = forceRadius > 0 ? forceRadius : MapConfig.get(MapConfig.MINIMAP_RADIUS);
         // Inner padding, faded edge and the gap to the pills: read every frame (a few config reads), in the layer key.
         padding = MapConfig.get(MapConfig.MINIMAP_PADDING);
         fadeStart = 1 - MapConfig.get(MapConfig.MINIMAP_FADE_WIDTH) / 100f;
