@@ -132,6 +132,8 @@ public final class XaeroImport {
             pool.shutdownNow();
         }
         writeIndex(target, index);
+        // Imported from another dimension into an Overworld not visited yet: without this file its map is not listed.
+        if (chunks.get() > 0) MapStorage.writeDimension(target, Level.OVERWORLD);
         TeyvatCartographia.LOGGER.info("Xaero import: {} regions, {} chunks in {} ms on {} threads; per phase (ms over all threads): read {}, heights {}, colours {}, shade {}, save {}",
                 done.get(), chunks.get(), (System.nanoTime() - start) / 1_000_000, threads,
                 nanos[0].get() / 1_000_000, nanos[1].get() / 1_000_000, nanos[2].get() / 1_000_000, nanos[3].get() / 1_000_000, nanos[4].get() / 1_000_000);

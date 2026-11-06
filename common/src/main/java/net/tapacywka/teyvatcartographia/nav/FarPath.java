@@ -177,6 +177,7 @@ public final class FarPath {
             return;
         }
         if (!searching) {
+            if (!active.opened()) return; // which regions are on disk is not known yet: the whole map would count as fog
             boolean request = Navigation.pathRequest() != handled;
             if (retry && !request && --retryIn > 0) return;
             if (!request && !retry || !Navigation.pathWanted()) return;

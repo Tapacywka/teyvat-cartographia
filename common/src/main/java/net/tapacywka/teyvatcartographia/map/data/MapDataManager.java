@@ -393,7 +393,7 @@ public final class MapDataManager {
         for (String folder : MapStorage.listDimensions(dimDir(dim).resolve("caves"))) {
             if (folder.matches("b-?\\d+")) caveBands.add(Integer.parseInt(folder.substring(1)));
         }
-        TeyvatCartographia.LOGGER.info("Teyvat Cartographia: mapping {} / {} ({} chunks explored previously)", worldId, dim.identifier(), active.exploredChunks());
+        TeyvatCartographia.LOGGER.info("Teyvat Cartographia: mapping {} / {}", worldId, dim.identifier());
     }
 
     private void closeCaves() {
@@ -518,6 +518,7 @@ public final class MapDataManager {
     }
 
     private void scanQueued() {
+        if (!active.opened()) return; // the neighbours' edges need to know which regions are on disk
         boolean ceiling = level.dimensionType().hasCeiling();
         int budget = MapConfig.get(MapConfig.CHUNKS_PER_TICK);
         if (ceiling) budget = Math.max(1, budget / 3); // ceiling scans read many more blocks per column

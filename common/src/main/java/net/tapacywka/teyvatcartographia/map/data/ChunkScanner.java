@@ -212,8 +212,8 @@ public final class ChunkScanner {
                 blockLight[i] = (byte) Math.max(surface, self);
             }
         }
-        pos.set((cx << 4) + 8, height[8 * 16 + 8], (cz << 4) + 8);
-        Holder<Biome> biome = level.getBiome(pos);
+        // From the chunk itself, like the tints: through the level a chunk unloaded meanwhile gave the default biome.
+        Holder<Biome> biome = chunk.getNoiseBiome(QuartPos.fromBlock((cx << 4) + 8), QuartPos.fromBlock(height[8 * 16 + 8]), QuartPos.fromBlock((cz << 4) + 8));
         return new Snapshot(cx, cz, color, height, depth, isVoid, blockLight, keep, bottom, biome.unwrapKey().orElse(null));
     }
 
