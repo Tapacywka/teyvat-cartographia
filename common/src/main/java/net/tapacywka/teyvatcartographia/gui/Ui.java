@@ -312,6 +312,17 @@ public final class Ui {
         popupLeftOf(g, title, lines, 0, 0, tipX, cy, bottom);
     }
 
+    private static int popupBoxWidth(Component title, java.util.List<Component> lines, int minW) {
+        int w = Math.max(minW, DrawText.width(title));
+        for (Component l : lines) w = Math.max(w, DrawText.width(l));
+        return w + 2 * Grid.PAD;
+    }
+
+    /** How far a popup reaches left of its tip: how far it travels to slide behind what it points out of. */
+    public static float popupReach(Component title, java.util.List<Component> lines) {
+        return popupBoxWidth(title, lines, 0) + 2 * POINTER_L;
+    }
+
     /** The box of a popup: where to put what goes under its lines. */
     public record Box(float x, float y, float w, float h) {}
 
@@ -320,9 +331,7 @@ public final class Ui {
      * (for buttons); returns its box.
      */
     public static Box popupLeftOf(GuiGraphics g, Component title, java.util.List<Component> lines, int minW, int extraH, float tipX, float cy, float bottom) {
-        int w = Math.max(minW, DrawText.width(title));
-        for (Component l : lines) w = Math.max(w, DrawText.width(l));
-        w += 2 * Grid.PAD;
+        int w = popupBoxWidth(title, lines, minW);
         int lineStep = DrawText.LINE + 2;
         int h = 2 * Grid.PAD + DrawText.LINE + Grid.GAP + lines.size() * lineStep - 2 + extraH;
         float right = Draw.snap(tipX - POINTER_L);

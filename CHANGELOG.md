@@ -15,8 +15,17 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
   this map: the Overworld's surface, so it does not have to be explored again (its caves, the Nether and the other
   dimensions are mapped as you go). Its window lists Xaero's map folders of this world with a switch each (the same server
   under another address, say); places already on this map stay as they are.
+- World map: everything on it now slides out as smoothly as it slides in. Side panels go back over the right edge; a new
+  panel comes in over the one open, and a pin opened from the pin list slides off it again. The buttons and texts around
+  the map leave over the nearest edge while a panel is open, those on the right also while the list of overlapping pins
+  is. That list, the right-click menu, the layer buttons, the import choice and the export message slide too, and the map
+  dims and clears with the panel.
+- World map: opening and closing it, the map dissolves into the game and back while its buttons slide in or out. Pressing
+  the map key while it closes brings it back from where it is (under VulkanMod the map itself comes and goes at once).
 
 ### Changed
+- World map: like the settings screen, it is never larger than GUI 3 at 1080p (4 at 1440p, 6 at 2160p), whatever the GUI
+  Scale of the game.
 - Settings > Compatibility: the sub-section of Xaero's mods is named "Xaero's Map", and its preview shows only the
   description of the setting under the pointer (no count of waypoints).
 

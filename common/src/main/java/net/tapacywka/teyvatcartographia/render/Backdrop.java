@@ -102,6 +102,31 @@ public final class Backdrop {
         ready = true;
     }
 
+    /**
+     * Keeps the frame as it is now for {@link #drawFrame}: the map dissolves into the game behind it by laying that over
+     * itself. False under VulkanMod, where raw frame copies come out black or empty: the map then comes and goes at once.
+     * The copy is the one {@link #capture} works with: use it before the next capture.
+     */
+    public static boolean keepFrame(GuiGraphics g) {
+        if (ModCompat.vulkan()) return false;
+        g.flush();
+        RenderTarget main = Minecraft.getInstance().getMainRenderTarget();
+        saved = ensure(saved, main.width, main.height);
+        copy(main, saved);
+        // The alpha of a frame is whatever the world left there: set to 1, or the copy would show unevenly.
+        RenderSystem.colorMask(false, false, false, true);
+        saved.setClearColor(0f, 0f, 0f, 1f);
+        saved.clear(Minecraft.ON_OSX);
+        RenderSystem.colorMask(true, true, true, true);
+        main.bindWrite(true);
+        return true;
+    }
+
+    /** Lays the frame kept by {@link #keepFrame} over a {@code w} x {@code h} GUI screen, {@code alpha} of it showing. */
+    public static void drawFrame(GuiGraphics g, float alpha, float w, float h) {
+        Draw.texturedQuad(g, saved.getColorTextureId(), 0, 0, w, h, 0, CachedLayer.v(1), 1, CachedLayer.v(0), Theme.withAlpha(0xFFFFFFFF, alpha));
+    }
+
     /** Forgets the capture (call when the screen that captured is done drawing its menus). */
     public static void release() {
         ready = false;

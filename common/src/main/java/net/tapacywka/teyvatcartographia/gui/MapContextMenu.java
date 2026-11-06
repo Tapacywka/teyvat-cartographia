@@ -27,14 +27,20 @@ final class MapContextMenu {
     private static final int OFFSET = 6;
     /** Pointer of the row under the mouse: sway distance (GUI units) and speed, like the pick list's. */
     private static final float POINTER_SWAY = 3f, HOVER_SPEED = 3f;
+    /** How far each row slides, fading in with it: the menu stands by the pointer, far from any edge of the screen. */
+    private static final float TRAVEL = 24;
+    /** Below this a row is not drawn: the game's font takes a colour with almost no alpha as opaque. */
+    private static final float SEEN = 0.03f;
 
     private final List<Item> items;
     private final String[] labels;
     private final float x, y, w;
+    private final Slide slide = new Slide();
 
     /** Beside the point (mx, my), below and to the right of it, moved inside the screen where it does not fit there. */
     MapContextMenu(List<Item> items, double mx, double my, int screenW, int screenH) {
         this.items = items;
+        slide.show();
         int text = 0;
         for (Item i : items) {
             DrawText.room(i.label(), screenW / 2f);
@@ -56,6 +62,20 @@ final class MapContextMenu {
         return items.size() * STEP - Grid.GAP;
     }
 
+    void slideOut() {
+        slide.hide();
+    }
+
+    /** Out of sight: the screen can forget it. */
+    boolean gone() {
+        return slide.gone();
+    }
+
+    /** How far in, 0 to 1. */
+    float shown() {
+        return slide.amount();
+    }
+
     boolean contains(double mx, double my) {
         return Draw.inRect(mx, my, x, y, w, height());
     }
@@ -69,22 +89,25 @@ final class MapContextMenu {
     }
 
     /** {@code time}: seconds, drives the swaying pointer and the pulsing outline of the row under the mouse. */
-    void render(GuiGraphics g, int mx, int my, float time) {
+    void render(GuiGraphics g, int mx, int my, float time, float dt) {
+        slide.update(dt);
         Item hover = rowAt(mx, my);
         if (hover != null) Cursors.want(Cursors.Shape.HAND);
         float phase = 0.5f + 0.5f * (float) Math.sin(time * HOVER_SPEED);
         for (int i = 0; i < items.size(); i++) {
             Item it = items.get(i);
-            float ry = y + i * STEP, cap = ROW_H / 2f;
+            float a = slide.staggered(i, items.size());
+            if (a < SEEN) continue;
+            float rx = x + TRAVEL * (1 - a), ry = y + i * STEP, cap = ROW_H / 2f;
             boolean hot = it == hover;
-            row(g, ry, hot, phase);
+            row(g, rx, ry, hot, phase, a);
             if (hot) {
-                float cy = ry + cap, px = x - 3 - POINTER_SWAY * phase;
-                Draw.triangle(g, px, cy, px - 5, cy - 4, px - 5, cy + 4, Theme.PICK_POINTER);
+                float cy = ry + cap, px = rx - 3 - POINTER_SWAY * phase;
+                Draw.triangle(g, px, cy, px - 5, cy - 4, px - 5, cy + 4, Theme.withAlpha(Theme.PICK_POINTER, a));
             }
             int color = hot ? Theme.WHITE : Theme.CREAM;
-            Draw.icon(g, it.icon(), x + cap, ry + cap, Grid.ICON_L, Theme.WHITE);
-            DrawText.text(g, labels[i], x + ROW_H + Grid.GAP, DrawText.textY(ry, ROW_H), color, false);
+            Draw.icon(g, it.icon(), rx + cap, ry + cap, Grid.ICON_L, Theme.withAlpha(Theme.WHITE, a));
+            DrawText.text(g, labels[i], rx + ROW_H + Grid.GAP, DrawText.textY(ry, ROW_H), Theme.withAlpha(color, a), false);
         }
     }
 
@@ -93,27 +116,27 @@ final class MapContextMenu {
      * thin outline (the rounded or straight left end, then the top and bottom edges fading out with the band). The
      * hovered row's outline pulses from grey to white and back.
      */
-    private void row(GuiGraphics g, float ry, boolean hot, float phase) {
-        int fill = hot ? Theme.PICK_ROW_HOVER : Theme.PICK_ROW;
-        float h = ROW_H, r = h / 2f, x0 = x;
+    private void row(GuiGraphics g, float rx, float ry, boolean hot, float phase, float alpha) {
+        int fill = Theme.withAlpha(hot ? Theme.PICK_ROW_HOVER : Theme.PICK_ROW, alpha);
+        float h = ROW_H, r = h / 2f, x0 = rx;
         if (!Theme.Style.squareUi) { // rounded left end
-            Draw.sector(g, x + r, ry + r, r, (float) (-Math.PI / 2), (float) (Math.PI / 2), fill, fill);
-            x0 = x + r;
+            Draw.sector(g, rx + r, ry + r, r, (float) (-Math.PI / 2), (float) (Math.PI / 2), fill, fill);
+            x0 = rx + r;
         }
-        float fadeFrom = x + w * 0.45f;
+        float fadeFrom = rx + w * 0.45f;
         Draw.rect(g, x0, ry, fadeFrom, ry + h, fill);
-        Draw.gradientRectH(g, fadeFrom, ry, x + w, ry + h, fill, fill & 0x00FFFFFF);
-        int line = hot ? Theme.lerp(Theme.PICK_OUTLINE, Theme.PICK_OUTLINE_HOVER, phase) : Theme.PICK_OUTLINE;
-        if (Theme.Style.squareUi) Draw.rect(g, x, ry, x + 1, ry + h, line);
-        else Draw.arc(g, x + r, ry + r, r - 0.5f, 1f, (float) Math.PI, (float) (2 * Math.PI), line);
-        edgeLine(g, x0, ry, line);
-        edgeLine(g, x0, ry + h - 1, line);
+        Draw.gradientRectH(g, fadeFrom, ry, rx + w, ry + h, fill, fill & 0x00FFFFFF);
+        int line = Theme.withAlpha(hot ? Theme.lerp(Theme.PICK_OUTLINE, Theme.PICK_OUTLINE_HOVER, phase) : Theme.PICK_OUTLINE, alpha);
+        if (Theme.Style.squareUi) Draw.rect(g, rx, ry, rx + 1, ry + h, line);
+        else Draw.arc(g, rx + r, ry + r, r - 0.5f, 1f, (float) Math.PI, (float) (2 * Math.PI), line);
+        edgeLine(g, rx, x0, ry, line);
+        edgeLine(g, rx, x0, ry + h - 1, line);
     }
 
     /** Top or bottom outline: solid, then fading out with the band. */
-    private void edgeLine(GuiGraphics g, float x0, float ly, int line) {
-        float fade = x + w * 0.4f;
+    private void edgeLine(GuiGraphics g, float rx, float x0, float ly, int line) {
+        float fade = rx + w * 0.4f;
         Draw.rect(g, x0, ly, fade, ly + 1, line);
-        Draw.gradientRectH(g, fade, ly, x + w * 0.95f, ly + 1, line, line & 0x00FFFFFF);
+        Draw.gradientRectH(g, fade, ly, rx + w * 0.95f, ly + 1, line, line & 0x00FFFFFF);
     }
 }

@@ -68,6 +68,11 @@ public final class PinPanel extends SidePanel {
         name.setValue(editing != null ? editing.name : defaultName());
     }
 
+    @Override
+    public boolean sameContent(SidePanel other) {
+        return other instanceof PinPanel p && p.dimension == dimension && p.px == px && p.py == py && p.pz == pz && (p.editing == null) == (editing == null);
+    }
+
     /** Read-only view: automatic points. */
     private boolean readOnly() {
         return editing != null && editing.automatic;

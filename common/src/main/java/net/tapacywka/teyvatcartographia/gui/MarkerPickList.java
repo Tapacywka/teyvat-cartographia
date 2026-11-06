@@ -36,6 +36,10 @@ final class MarkerPickList {
     private final List<Marker> items;
     private final float x, y, w;
     private final int visible;
+    /** Rows slide in from beyond the right edge of the screen, one after the other (all together when they scroll). */
+    private final Slide slide = new Slide();
+    /** From the list's place to beyond that edge. */
+    private final float travel;
     /** How far the rows are scrolled, without steps. */
     private final SmoothScroll scroller = new SmoothScroll();
     /** Height of the dissolving edges of the rows, GUI units. */
@@ -51,6 +55,8 @@ final class MarkerPickList {
         visible = Math.max(1, Math.min(MAX_ROWS, Math.min(items.size(), (int) ((screenH - 2 * edge + Grid.GAP) / STEP))));
         x = Draw.snap(screenW - edge - w);
         y = Draw.snap(screenH - edge - height()); // same gap to the bottom edge as to the right one
+        travel = screenW - x;
+        slide.show();
         int maxText = (int) (w * 0.75f - ROW_H - Grid.GAP); // the right quarter fades out
         names = new String[items.size()];
         for (int i = 0; i < names.length; i++) names[i] = DrawText.fit(items.get(i).name, maxText);
@@ -61,6 +67,20 @@ final class MarkerPickList {
 
     private float height() {
         return visible * STEP - Grid.GAP;
+    }
+
+    void slideOut() {
+        slide.hide();
+    }
+
+    /** Out of sight: the screen can forget it. */
+    boolean gone() {
+        return slide.gone();
+    }
+
+    /** Goes on from where {@code old} is, on its way out: opened again at once, the rows turn back. */
+    void goOnFrom(MarkerPickList old) {
+        slide.takeFrom(old.slide);
     }
 
     boolean contains(double mx, double my) {
@@ -88,16 +108,18 @@ final class MarkerPickList {
     }
 
     /** {@code time}: seconds, drives the swaying pointer and the pulsing outline of the hovered row. */
-    void render(GuiGraphics g, int mx, int my, float time) {
+    void render(GuiGraphics g, int mx, int my, float time, float dt) {
+        slide.update(dt);
         Marker hover = rowAt(mx, my);
         if (hover != null) Cursors.want(Cursors.Shape.HAND);
         float phase = 0.5f + 0.5f * (float) Math.sin(time * HOVER_SPEED); // 0 = grey / pointer in, 1 = white / out
-        float s = scroller.update(maxScroll()), h = height(), left = x - 3 - POINTER_SWAY - 6;
-        // Rows cut by the list's edges too, dissolving there (over the map) like the settings list's own.
         boolean scrolls = items.size() > visible;
+        float out = scrolls ? slide.offset(travel) : 0;
+        float s = scroller.update(maxScroll()), h = height(), left = x + out - 3 - POINTER_SWAY - 6;
+        // Rows cut by the list's edges too, dissolving there (over the map) like the settings list's own.
         if (scrolls) {
             EdgeFade.capture(g);
-            g.enableScissor((int) left, (int) y, (int) Math.ceil(x + w), (int) Math.ceil(y + h));
+            g.enableScissor((int) left, (int) y, (int) Math.ceil(x + out + w), (int) Math.ceil(y + h));
         }
         int first = (int) (s / STEP);
         for (int i = first; i < items.size(); i++) {
@@ -105,20 +127,21 @@ final class MarkerPickList {
             float ry = y + i * STEP - s;
             if (ry >= y + h) break;
             boolean hot = m == hover;
-            row(g, ry, hot, phase);
+            float rx = scrolls ? x + out : x + travel * (1 - slide.staggered(i, items.size()));
+            row(g, rx, ry, hot, phase);
             float cap = ROW_H / 2f;
             if (hot) { // white pointer left of the row, slowly swaying left and right, like Genshin
-                float cy = ry + cap, px = x - 3 - POINTER_SWAY * phase;
+                float cy = ry + cap, px = rx - 3 - POINTER_SWAY * phase;
                 Draw.triangle(g, px, cy, px - 5, cy - 4, px - 5, cy + 4, Theme.PICK_POINTER);
             }
-            Draw.icon(g, m.type.icon, x + cap, ry + cap, Grid.ICON_L, Theme.WHITE);
-            DrawText.text(g, names[i], x + ROW_H + Grid.GAP, DrawText.textY(ry, ROW_H), hot ? Theme.WHITE : Theme.CREAM, false);
+            Draw.icon(g, m.type.icon, rx + cap, ry + cap, Grid.ICON_L, Theme.WHITE);
+            DrawText.text(g, names[i], rx + ROW_H + Grid.GAP, DrawText.textY(ry, ROW_H), hot ? Theme.WHITE : Theme.CREAM, false);
         }
         if (scrolls) {
             g.disableScissor();
-            EdgeFade.draw(g, left, x + w - BAR_W - 1, y, y + h, FADE, Math.min(1, s / FADE), Math.min(1, (scroller.max() - s) / FADE));
+            EdgeFade.draw(g, left, x + out + w - BAR_W - 1, y, y + h, FADE, Math.min(1, s / FADE), Math.min(1, (scroller.max() - s) / FADE));
             EdgeFade.release();
-            scrollBar(g);
+            scrollBar(g, x + out);
         }
     }
 
@@ -126,35 +149,35 @@ final class MarkerPickList {
      * One row: a dark band fading out to the right, with a thin outline (the rounded or straight left end, then the
      * top and bottom edges fading out with the band). The hovered row's outline pulses from grey to white and back.
      */
-    private void row(GuiGraphics g, float ry, boolean hot, float phase) {
+    private void row(GuiGraphics g, float rx, float ry, boolean hot, float phase) {
         int fill = hot ? Theme.PICK_ROW_HOVER : Theme.PICK_ROW;
-        float h = ROW_H, r = h / 2f, x0 = x;
+        float h = ROW_H, r = h / 2f, x0 = rx;
         if (!Theme.Style.squareUi) { // rounded left end
-            Draw.sector(g, x + r, ry + r, r, (float) (-Math.PI / 2), (float) (Math.PI / 2), fill, fill);
-            x0 = x + r;
+            Draw.sector(g, rx + r, ry + r, r, (float) (-Math.PI / 2), (float) (Math.PI / 2), fill, fill);
+            x0 = rx + r;
         }
         // Solid for the first part, then fading out towards the right end.
-        float fadeFrom = x + w * 0.45f;
+        float fadeFrom = rx + w * 0.45f;
         Draw.rect(g, x0, ry, fadeFrom, ry + h, fill);
-        Draw.gradientRectH(g, fadeFrom, ry, x + w, ry + h, fill, fill & 0x00FFFFFF);
+        Draw.gradientRectH(g, fadeFrom, ry, rx + w, ry + h, fill, fill & 0x00FFFFFF);
 
         int line = hot ? Theme.lerp(Theme.PICK_OUTLINE, Theme.PICK_OUTLINE_HOVER, phase) : Theme.PICK_OUTLINE;
-        if (Theme.Style.squareUi) Draw.rect(g, x, ry, x + 1, ry + h, line);
-        else Draw.arc(g, x + r, ry + r, r - 0.5f, 1f, (float) Math.PI, (float) (2 * Math.PI), line);
-        edgeLine(g, x0, ry, line);
-        edgeLine(g, x0, ry + h - 1, line);
+        if (Theme.Style.squareUi) Draw.rect(g, rx, ry, rx + 1, ry + h, line);
+        else Draw.arc(g, rx + r, ry + r, r - 0.5f, 1f, (float) Math.PI, (float) (2 * Math.PI), line);
+        edgeLine(g, rx, x0, ry, line);
+        edgeLine(g, rx, x0, ry + h - 1, line);
     }
 
     /** Top or bottom outline: solid, then fading out with the band. */
-    private void edgeLine(GuiGraphics g, float x0, float ly, int line) {
-        float fade = x + w * 0.4f;
+    private void edgeLine(GuiGraphics g, float rx, float x0, float ly, int line) {
+        float fade = rx + w * 0.4f;
         Draw.rect(g, x0, ly, fade, ly + 1, line);
-        Draw.gradientRectH(g, fade, ly, x + w * 0.95f, ly + 1, line, line & 0x00FFFFFF);
+        Draw.gradientRectH(g, fade, ly, rx + w * 0.95f, ly + 1, line, line & 0x00FFFFFF);
     }
 
     /** Thin bar at the list's right end: track over all items, thumb over the visible ones. */
-    private void scrollBar(GuiGraphics g) {
-        float bx = x + w - BAR_W, h = height();
+    private void scrollBar(GuiGraphics g, float rx) {
+        float bx = rx + w - BAR_W, h = height();
         Draw.rect(g, bx, y, bx + BAR_W, y + h, Theme.SCROLL_TRACK);
         float th = Math.max(8, h * h / (items.size() * STEP - Grid.GAP));
         float ty = y + (h - th) * scroller.fraction();
