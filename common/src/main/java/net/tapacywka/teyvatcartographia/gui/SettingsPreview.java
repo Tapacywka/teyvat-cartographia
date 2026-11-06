@@ -374,25 +374,18 @@ final class SettingsPreview {
     /** Layers drawn in the field when no cave is mapped yet: only for the look, they show nothing. */
     private static final List<Integer> SAMPLE_BANDS = List.of(-1, -2, -3, -4);
 
-    /** "Height 64 to 79" from the heights of {@code CaveScanner.heights}. */
-    private static Component heightsText(int[] h) {
-        return Component.translatable("teyvatcartographia.map.caves", h[0], h[1]);
-    }
-
     /**
      * Cave map, a picture only (user request 31.10.2026; until then its layer field could be clicked). On: the first
      * cave layer under the surface mapped here, with the layer field at the right edge as the world map shows it open
      * (the large surface button and the cave layers around it, the shown one lit); with no cave mapped yet the map
-     * around the player under sample buttons. Off: the map around the player alone. Under it the layer shown.
+     * around the player under sample buttons. Off: the map around the player alone. No line under it (user request 06.11.2026).
      */
     static void caves(GuiGraphicsExtractor g, float x, float y, float w, float h, LayerArea map) {
-        float label = Grid.GAP + DrawText.LINE;
-        float mw = w, mh = h - label;
+        float mw = w, mh = h;
         var level = Minecraft.getInstance().level;
         int sea = level == null ? 63 : level.getSeaLevel();
         if (!MapConfig.get(MapConfig.CAVES_ENABLED)) {
             map.draw(g, x, y, mw, mh, null);
-            caveCaption(g, Component.translatable("teyvatcartographia.map.layer.surface"), x, y + mh, mw);
             return;
         }
         java.util.NavigableSet<Integer> bands = MapDataManager.get().caveBands();
@@ -422,14 +415,8 @@ final class SettingsPreview {
             if (it == null) Ui.iconButton(g, fx, ys[i], CAVE_BIG, Grid.ICON_L, net.tapacywka.teyvatcartographia.render.Icon.LAYERS, lit, -1000, -1000);
             else Ui.iconButton(g, fx, ys[i], net.tapacywka.teyvatcartographia.render.Icon.LAYERS, lit, -1000, -1000);
         }
-        caveCaption(g, bands.isEmpty() ? Component.translatable("teyvatcartographia.config.preview.caves_none")
-                : heightsText(net.tapacywka.teyvatcartographia.map.data.CaveScanner.heights(shown, sea)), x, y + mh, mw);
     }
 
-    private static void caveCaption(GuiGraphicsExtractor g, Component caption, float x, float y, float w) {
-        DrawText.room(caption, w);
-        DrawText.textCentered(g, Component.literal(DrawText.fit(caption.getString(), (int) w)), Draw.snap(x + w / 2f), y + Grid.GAP, Theme.CREAM, false);
-    }
     // ------------------------------------------------------------------ Terrain detail
 
     /** Chunks east and west, and north and south, of the player's in the detail samples (11 x 3 chunks, 176 x 48 blocks). */

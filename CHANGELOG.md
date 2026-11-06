@@ -12,7 +12,7 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 
 ### Added
 - Settings > Compatibility > Xaero's Map: "Explored map from Xaero" brings the land you explored with Xaero's World Map onto
-  this map: the Overworld's surface, so it does not have to be explored again (its caves, the Nether and the other
+  this map: the Overworld's surface, so it does not have to be explored again (its caves, The Nether and the other
   dimensions are mapped as you go). Its window lists Xaero's map folders of this world with a switch each (the same server
   under another address, say); places already on this map stay as they are.
 - World map: everything on it now slides out as smoothly as it slides in. Side panels go back over the right edge; a new
@@ -28,6 +28,10 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
   Scale of the game.
 - Settings > Compatibility: the sub-section of Xaero's mods is named "Xaero's Map", and its preview shows only the
   description of the setting under the pointer (no count of waypoints).
+- Settings: the preview card no longer repeats the setting's current value in a line under the picture, and the Cave map
+  preview has no line under it either.
+- Settings > Minimap > Look: the preview is drawn as if the minimap's Size were 110, so it stays sharp.
+- Russian: The End is called «Край» everywhere on the map (it was «Энд» in the list of dimensions).
 
 ### Fixed
 - Map: land mapped just before coming straight back to the same dimension could be lost, when a region still being saved

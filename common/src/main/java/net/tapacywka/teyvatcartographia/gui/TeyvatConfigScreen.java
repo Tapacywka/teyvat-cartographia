@@ -293,18 +293,19 @@ public final class TeyvatConfigScreen {
             this.tab = tab;
         }
 
-        /** A caption with the value under a single picture; the frames of the pins, caves and detail have their own. */
+        /** No "name: value" line under the picture (user request 06.11.2026); the frames of the pins, caves and detail keep their own captions. */
         @Override
         public boolean caption(String rk) {
-            return (tab.equals(K + "tab.map") || tab.equals(K + "tab.minimap") || tab.equals(K + "tab.compat"))
-                    && !rk.equals(K + "detail") && !rk.equals(K + "caves") && !pinKindRow(rk);
+            return false;
         }
 
         @Override
         public void prepare(GuiGraphicsExtractor g, String rk, float w, float h, float pt) {
             // The minimap's layers are brought up to date before any clipping (they draw off screen).
             Minecraft mc = Minecraft.getInstance();
-            minimap = mc.player != null && mc.level != null && tab.equals(K + "tab.minimap") && MinimapLayer.preparePreview(g, mc.getDeltaTracker());
+            // The rows of its look: as if Size were 110 (the picture is scaled up to the card, a large map stays sharp).
+            minimap = mc.player != null && mc.level != null && tab.equals(K + "tab.minimap")
+                    && MinimapLayer.preparePreview(g, mc.getDeltaTracker(), LOOK_ROWS.contains(rk) ? 110 : 0);
         }
 
         @Override
