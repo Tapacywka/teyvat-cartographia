@@ -10,6 +10,8 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-06
+
 ### Added
 - Settings > Compatibility > Xaero's Map: "Explored map from Xaero" brings the land you explored with Xaero's World Map onto
   this map: the Overworld's surface, so it does not have to be explored again (its caves, The Nether and the other
@@ -21,9 +23,10 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
   is. That list, the right-click menu, the layer buttons, the import choice and the export message slide too, and the map
   dims and clears with the panel.
 - World map: opening and closing it, the map dissolves into the game and back while its buttons slide in or out. Pressing
-  the map key while it closes brings it back from where it is (under VulkanMod the map itself comes and goes at once).
+  the map key while it closes brings it back from where it is (on 1.21.1 under VulkanMod the map itself comes and goes at once).
 
 ### Changed
+- The settings screen comes from Actually Amazing Config Screen 1.1.0 (packed inside the mod, nothing to install).
 - World map: like the settings screen, it is never larger than GUI 3 at 1080p (4 at 1440p, 6 at 2160p), whatever the GUI
   Scale of the game.
 - Settings > Compatibility: the sub-section of Xaero's mods is named "Xaero's Map", and its preview shows only the
@@ -460,7 +463,8 @@ The first public release, for Minecraft 1.21.1 on NeoForge 21.1. Client only.
 - Cached HUD layers, chunk work on worker threads and path searches in short slices: the mod is meant to cost at most
   2 to 3% FPS.
 
-[Unreleased]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.9.0-beta.5...v1.0.0
 [0.9.0-beta.5]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.9.0-beta.4...v0.9.0-beta.5
 [0.9.0-beta.4]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.9.0-beta.3...v0.9.0-beta.4

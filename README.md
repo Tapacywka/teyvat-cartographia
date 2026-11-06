@@ -68,7 +68,7 @@ Place pins, search for them and for biomes, track them, follow the path and find
 | Mod loader | **Fabric** (Fabric Loader 0.16 or newer with [Fabric API](https://github.com/FabricMC/fabric-api)) or **NeoForge** (21.1 for 1.21.1, built against 21.1.257; 26.1.2, 26.2 or 26.3 for those games, built against 26.1.2.124, 26.2.0.93 and 26.3.0.99): one file for each, the same mod |
 | Java | **21** for 1.21.1, **25** for 26.1.2, 26.2 and 26.3 |
 | Side | **Client** only. Servers don't need it, so you can join vanilla and modded servers. |
-| Version | **1.0.0** for every game (1.21.1, 26.1.2, 26.2 and 26.3), the first stable release. The settings screen comes from the library [Actually Amazing Config Screen](https://github.com/Tapacywka/actually-amazing-config-screen) 1.0.0, packed inside the mod (nothing to install). |
+| Version | **1.1.0** for every game (1.21.1, 26.1.2, 26.2 and 26.3). The settings screen comes from the library [Actually Amazing Config Screen](https://github.com/Tapacywka/actually-amazing-config-screen) 1.1.0, packed inside the mod (nothing to install). |
 | Languages | English, Russian |
 | License | [MIT](https://github.com/Tapacywka/teyvat-cartographia/blob/main/LICENSE) |
 
@@ -133,8 +133,8 @@ Place pins, search for them and for biomes, track them, follow the path and find
 2. Download the file for your game and loader from [Modrinth](https://modrinth.com/mod/teyvat-cartographia),
    [CurseForge](https://www.curseforge.com/minecraft/mc-mods/teyvat-cartographia) or the
    [GitHub releases](https://github.com/Tapacywka/teyvat-cartographia/releases):
-   the part after `+mc` names them: `teyvatcartographia-v1.0.0+mc1.21.1-fabric.jar` is for Minecraft 1.21.1 on Fabric,
-   `teyvatcartographia-v1.0.0+mc26.3-neoforge.jar` for 26.3 on NeoForge. Put it into your `mods/` folder.
+   the part after `+mc` names them: `teyvatcartographia-v1.1.0+mc1.21.1-fabric.jar` is for Minecraft 1.21.1 on Fabric,
+   `teyvatcartographia-v1.1.0+mc26.3-neoforge.jar` for 26.3 on NeoForge. Put it into your `mods/` folder.
 3. Launch the game and press **M** in a world.
 4. Optional: make the minimap round (**Settings > Minimap**) or the interface rounded (**Settings > Map**). On Fabric,
    [Mod Menu](https://github.com/TerraformersMC/ModMenu) adds a settings button to the mod list.
@@ -166,6 +166,9 @@ adds its settings button to NeoForge's mod list), but on NeoForge the NeoForge f
 * Its own mouse pointer in the theme's colours on the map and in the settings: a hand over what you can click, a
   text cursor in text fields, a move cross while you drag the map, arrows on the sliders. It is a system cursor, so it
   never lags behind the mouse.
+* Everything on the map slides: side panels, buttons, menus and lists come in and go out, and the map dissolves into
+  the game as it opens and closes (press the map key while it closes and it comes back). Like the settings screen, it is
+  never larger than GUI 3 on a 1080p screen (4 at 1440p, 6 at 2160p).
 
 <h3 id="map-colours">Map colours</h3>
 
@@ -222,7 +225,7 @@ adds its settings button to NeoForge's mod list), but on NeoForge the NeoForge f
 * **Export and import** from the pin list: save every pin of the world to a `.json` file, add the pins of such a file
   (or of another world's `markers.json`); repeats are skipped.
 * **Import from Xaero's Minimap** (its waypoints also show on Xaero's World Map): the waypoints of the current world
-  are found on their own, or pick any waypoint file of a Xaero world. Settings > Compatibility > Xaero's Minimap sets
+  are found on their own, or pick any waypoint file of a Xaero world. Settings > Compatibility > Xaero's Map sets
   the pin type they get and whether hidden waypoints and death points come too.
 
 <h3 id="pin-in-the-world">Pin in the world</h3>
@@ -346,6 +349,7 @@ world map, so most mods work without anything special. A few get more: with one 
 |---|---|
 | [Waystones](https://github.com/TwelveIterations/Waystones) | Its **waystones, sharestones and warp plates** on the world map and the minimap, like the teleport waypoints of Genshin Impact: the ones you have activated with their names, the ones you have only seen in grey, a waystone of a dungeon as a dungeon. Track them like any pin; teleporting stays with Waystones. Where the stones and the path to them show is in its part, and both switch on or off in the world map's quick settings. |
 | [Xaero's Minimap](https://modrinth.com/mod/xaeros-minimap) | **Import** of its waypoints (also those of Xaero's World Map) into your pins: the current world's are found on their own. The pin type they get, and whether hidden waypoints and death points come too, are in its part. |
+| [Xaero's World Map](https://modrinth.com/mod/xaeros-world-map) | **Import of the explored map**: the Overworld's surface you explored with it comes onto this map, so it does not have to be explored again (Settings > Compatibility > Xaero's Map). Pick the map folders of this world in its window; places already on this map stay as they are. Its caves, The Nether and other dimensions are mapped as you go. |
 | [The Aether](https://github.com/The-Aether-Team/The-Aether) | A Fog of War of its own, a **sea of clouds** seen from above, with the floating islands casting a soft shadow on it (on the world map and the minimap). No cave layers under the islands. |
 | [Mielon's The Sift](https://modrinth.com/mod/mielons-the-sift) | A **pearly haze** in the colours of its ichor as the Fog of War; its **rainbow ichor** and **ichor snow** shimmer on the map in their own colours (each can be switched off); its cyan willows keep their colour. |
 | [Biomes O' Plenty](https://github.com/Glitchfiend/BiomesOPlenty), [Regions Unexplored](https://github.com/Apollounknowndev/RegionsUnexplored) | Their biomes, leaves, grass and plants in their own colours (compared side by side with Xaero's Minimap in 16 places); their plants in the Plants list. |
