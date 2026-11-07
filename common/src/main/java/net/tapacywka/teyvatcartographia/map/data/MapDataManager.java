@@ -98,6 +98,10 @@ public final class MapDataManager {
     private final NavigableSet<Integer> caveBandsView = java.util.Collections.unmodifiableNavigableSet(caveBands.descendingSet());
     private final Underground underground = new Underground();
 
+    // The far land of this world's Overworld (single player, setting on); tried once per world, so a flat world does not ask every tick.
+    private FarLand far;
+    private boolean farTried;
+
     // Mapping speed for the settings (System tab): chunks mapped in each of the last 100 ticks the game ran.
     private final int[] mappedPerTick = new int[100];
     private int mappedCursor, mappedNow;
@@ -141,6 +145,11 @@ public final class MapDataManager {
     }
 
     // ------------------------------------------------------------------ public API
+
+    /** The far land of {@code dimension}, null where there is none (another dimension, on a server, the setting off). */
+    public FarLand farLand(ResourceKey<Level> dimension) {
+        return far != null && far.dimension() == dimension ? far : null;
+    }
 
     /** Store being mapped right now (current dimension), or {@code null} when not in a world. */
     public TileStore active() {
@@ -270,6 +279,7 @@ public final class MapDataManager {
         int n = active == null ? 0 : active.regions();
         for (TileStore s : caveStores.values()) n += s.regions();
         for (TileStore s : viewStores.values()) if (s != active) n += s.regions();
+        if (far != null) n += far.regions();
         return n;
     }
 
@@ -318,6 +328,7 @@ public final class MapDataManager {
         for (TileStore s : viewStores.values()) s.drainLoaded();
         for (TileStore s : caveStores.values()) s.drainLoaded();
         applyResults();
+        updateFar(mc, player);
         if (!mc.isPaused()) {
             mappedPerTick[mappedCursor] = mappedNow;
             mappedCursor = (mappedCursor + 1) % mappedPerTick.length;
@@ -347,9 +358,42 @@ public final class MapDataManager {
         }
     }
 
+    /** The far land starts, works or stops with its setting (main thread, in a world). */
+    private void updateFar(Minecraft mc, LocalPlayer player) {
+        net.minecraft.client.server.IntegratedServer server = mc.getSingleplayerServer();
+        if (server == null || !MapConfig.get(MapConfig.FAR_LAND)) {
+            closeFar();
+            return;
+        }
+        if (far == null) {
+            if (farTried) return;
+            farTried = true;
+            net.minecraft.server.level.ServerLevel overworld = server.overworld();
+            FarLandSource source = null;
+            try {
+                if (overworld != null) source = FarLandSource.of(overworld);
+            } catch (RuntimeException e) {
+                TeyvatCartographia.LOGGER.warn("The far land cannot be worked out for this world", e); // heights a data pack made strange
+            }
+            if (source == null) return; // a flat world, a mod's own generator: nothing to ask
+            net.minecraft.world.level.border.WorldBorder border = overworld.getWorldBorder();
+            far = new FarLand(source, new FarLandRules.Bounds(border.getMinX(), border.getMinZ(), border.getMaxX(), border.getMaxZ()),
+                    Level.OVERWORLD, dimDir(Level.OVERWORLD).resolve("far"), io, generation);
+        }
+        boolean here = active.dimension == far.dimension();
+        far.tick(net.tapacywka.teyvatcartographia.version.Game.screen() instanceof net.tapacywka.teyvatcartographia.gui.WorldMapScreen, here, player.getX(), player.getZ(), here ? active : null);
+    }
+
+    private void closeFar() {
+        if (far != null) far.close();
+        far = null;
+        farTried = false;
+    }
+
     /** Saves everything and forgets the world (logout / game exit). Blocks briefly for pending writes. */
     public void closeAll(boolean waitForIo) {
         if (active != null) active.close();
+        closeFar();
         closeCaves();
         releaseViewStores();
         active = null;
@@ -377,7 +421,10 @@ public final class MapDataManager {
         String newWorld = WorldId.current();
         if (active != null) active.close();
         closeCaves();
-        if (worldId != null && !worldId.equals(newWorld)) releaseViewStores();
+        if (worldId != null && !worldId.equals(newWorld)) {
+            releaseViewStores();
+            closeFar();
+        }
         generation++;
         queue.clear();
         queued.clear();

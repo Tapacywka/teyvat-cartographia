@@ -97,6 +97,7 @@
   "teyvatcartographia.settings.plants.tooltip": "Растения окрашивают своё место на карте. Какие именно: Все настройки > Карта. Уже нанесённые места изменятся, когда вы снова пройдёте рядом.",
   "teyvatcartographia.settings.labels": "Названия биомов",
   "teyvatcartographia.settings.grid": "Сетка чанков",
+  "teyvatcartographia.settings.far_land": "Дальние земли",
   "teyvatcartographia.settings.all": "Все настройки",
 
   "teyvatcartographia.config.title": "Настройки Teyvat Cartographia",
@@ -201,6 +202,10 @@
   "teyvatcartographia.config.caves.tooltip": "Наносить на карту пещеры вокруг вас, пока вы под землёй.",
   "teyvatcartographia.config.player_cone": "Конус обзора и подсветка",
   "teyvatcartographia.config.player_cone.tooltip": "Световой конус, куда смотрит стрелка игрока, и подсветка под ней, на карте мира и мини-карте. Выключено: только стрелка.",
+  "teyvatcartographia.config.far_land": "Дальние земли",
+  "teyvatcartographia.config.far_land.tooltip": "В одиночной игре очертания неисследованной суши, рассчитанные по генератору мира, бледно видны под Туманом Войны на обеих картах: всё, что показывает карта, до самой границы мира. Берега видно раньше, чем вы до них дойдёте.",
+  "teyvatcartographia.config.far_land_radius": "Дальние земли: точный радиус, блоки",
+  "teyvatcartographia.config.far_land_radius.tooltip": "Насколько далеко вокруг вас точный берег считается в фоне, пока карта закрыта. То, что показывает карта мира, считается в любом случае.",
   "teyvatcartographia.config.plants": "Растения",
   "teyvatcartographia.config.plants.tooltip": "Растения окрашивают своё место на карте. Стрелка открывает их список: под выключенным видна земля.",
   "teyvatcartographia.config.plants.find": "Найти растение",

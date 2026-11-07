@@ -156,6 +156,10 @@ public final class MapConfig {
     public static final BoolValue CAVES_ENABLED;
     public static final BoolValue MAP_PLANTS;
     public static final BoolValue PLAYER_CONE;
+    /** The land beyond what was explored, worked out from the world's generator (FarLand, 07.11.2026): single player, off by default. */
+    public static final BoolValue FAR_LAND;
+    /** How far around the player the far land is worked out with every column while the map is closed, in blocks. */
+    public static final IntValue FAR_LAND_RADIUS;
     public static final ListValue PLANTS_HIDDEN;
     public static final IntValue WATER_DEPTH;
     public static final IntValue SHALLOW_WATER;
@@ -241,6 +245,8 @@ public final class MapConfig {
         CAVES_ENABLED = b.bool("caves", true);
         MAP_PLANTS = b.bool("plants", true);
         PLAYER_CONE = b.bool("playerCone", true);
+        FAR_LAND = b.bool("farLand", false);
+        FAR_LAND_RADIUS = b.integer("farLandRadius", 2048, 512, 8192);
         // The plants switched off (user decision 24.10.2026: every plant on by default, also those of mods added later);
         // until then the list held the ones switched on (plantsShown, cactus, dead bush and chorus by default).
         PLANTS_HIDDEN = b.list("plantsHidden", java.util.List.of(), id -> true);

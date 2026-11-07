@@ -822,6 +822,8 @@ public final class MinimapLayer {
     private static final int SUPERSAMPLE = 2;
     /** Map content changes (newly scanned chunks) refresh the cache at most this often. */
     private static final long CONTENT_REFRESH_MS = 250;
+    /** The far land coming in refreshes it at most this often: most of it lies outside the minimap. */
+    private static final long FAR_REFRESH_MS = 1000;
     /** Disc tessellation: 48 segments keep the edge within a pixel of a true circle even at the largest size. */
     private static final int SEGMENTS = 48, BANDS = 6;
     private static final float[] COS = new float[SEGMENTS + 1], SIN = new float[SEGMENTS + 1];
@@ -837,7 +839,8 @@ public final class MinimapLayer {
     private final MapView cacheView = new MapView();
     private final CachedLayer cache = new CachedLayer();
     private TileStore cacheStore;
-    private int cacheVersion, cacheR, cacheSize, cacheTint, cacheNight, cacheTheme;
+    private net.tapacywka.teyvatcartographia.map.data.FarLand cacheFar;
+    private int cacheVersion, cacheFarVersion, cacheR, cacheSize, cacheTint, cacheNight, cacheTheme;
     private double cacheX, cacheZ, cacheZoom;
     private long cacheTime;
     private boolean cacheValid;
@@ -852,11 +855,15 @@ public final class MinimapLayer {
         int size = Math.min(4096, (int) Math.ceil(2 * cR * w.getGuiScale() * SUPERSAMPLE));
         int nightQ = Math.round(night * 32);
         long now = Util.getMillis();
+        // The far land under the map, not under a cave layer.
+        net.tapacywka.teyvatcartographia.map.data.FarLand far = store == null || store.cave ? null : net.tapacywka.teyvatcartographia.map.data.MapDataManager.get().farLand(store.dimension);
+        int farVersion = MapLayerRenderer.farVersion(far, cacheView.set(px, pz, zoom, 0, cR, cR));
         boolean stale = !cacheValid || !cache.exists()
                 || store != cacheStore || zoom != cacheZoom || cR != cacheR || size != cacheSize
                 || tint != cacheTint || nightQ != cacheNight || Theme.generation() != cacheTheme
                 || Math.hypot(px - cacheX, pz - cacheZ) * zoom > MARGIN - 1
-                || (store != null && store.version() != cacheVersion && now - cacheTime >= CONTENT_REFRESH_MS);
+                || (store != null && store.version() != cacheVersion && now - cacheTime >= CONTENT_REFRESH_MS)
+                || far != cacheFar || farVersion != cacheFarVersion && now - cacheTime >= FAR_REFRESH_MS;
         if (!stale) {
             touchTiles(store);
             return;
@@ -879,7 +886,8 @@ public final class MinimapLayer {
         if (store != null) {
             cacheView.set(px, pz, zoom, 0, cR, cR);
             // The backdrop made the square opaque, and the GUI's blending keeps it so (alpha one, one minus source alpha).
-            complete = MapLayerRenderer.drawRect(g, store, cacheView, 0, 0, 2 * cR, 2 * cR, tint, night);
+            boolean farDone = MapLayerRenderer.drawFar(g, far, cacheView, 0, 0, 2 * cR, 2 * cR, false);
+            complete = MapLayerRenderer.drawRect(g, store, cacheView, 0, 0, 2 * cR, 2 * cR, tint, night) && farDone;
         }
         g.pose().popMatrix();
         cache.unbind();
@@ -887,6 +895,8 @@ public final class MinimapLayer {
         cacheValid = complete;
         cacheGeneration++;
         cacheStore = store;
+        cacheFar = far;
+        cacheFarVersion = farVersion;
         cacheVersion = store == null ? 0 : store.version();
         cacheZoom = zoom;
         cacheR = cR;

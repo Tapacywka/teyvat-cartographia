@@ -2,6 +2,8 @@ package net.tapacywka.teyvatcartographia.gui;
 
 import com.mojang.blaze3d.platform.Window;
 import net.tapacywka.teyvatcartographia.map.MapView;
+import net.tapacywka.teyvatcartographia.map.data.FarLand;
+import net.tapacywka.teyvatcartographia.map.data.MapDataManager;
 import net.tapacywka.teyvatcartographia.map.data.TileStore;
 import net.tapacywka.teyvatcartographia.render.CachedLayer;
 import net.tapacywka.teyvatcartographia.render.DayLight;
@@ -15,7 +17,7 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 /**
  * The picture of the world map screen: the fog-of-war backdrop with a gentle parallax (it follows panning and stays
- * still while zooming) and the map regions lit by the time of day, or LOD tiles far out.
+ * still while zooming), the far land over it, and the map regions lit by the time of day, or LOD tiles far out.
  * <p>
  * It lives in an opaque screen-sized layer, so the screen is filled once per frame. The layer is redrawn only when the
  * view (and with it the fog's parallax), the map data, the lighting, the theme or the screen changes, while the
@@ -24,6 +26,8 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
  */
 final class MapPicture {
     private static final double FOG_PARALLAX = 0.35;
+    /** While the far land comes in, the picture is drawn again at most this often. */
+    private static final long FAR_REFRESH_NS = 200_000_000L;
     // Accumulated screen offset of the fog, and the view it was last updated at.
     private double fogOffsetX, fogOffsetZ;
     private double fogLastX = Double.NaN, fogLastZ, fogLastScale;
@@ -31,7 +35,8 @@ final class MapPicture {
     private final CachedLayer layer = new CachedLayer();
     private boolean complete;
     private TileStore kStore;
-    private int kVersion, kTint, kWidth, kHeight, kTheme;
+    private FarLand kFar;
+    private int kVersion, kFarVersion, kTint, kWidth, kHeight, kTheme;
     private float kNight;
     private double kCenterX, kCenterZ, kScale, kGuiScale, kFogX, kFogZ;
     private long kDrawnNs;
@@ -45,23 +50,30 @@ final class MapPicture {
         // Quantised like the tint, so the slow change of daylight does not redraw every frame.
         float night = cave ? 0f : Math.round(DayLight.night(pt) * 255) / 255f;
         int version = store == null ? -1 : store.version();
+        // Not under a cave layer.
+        FarLand far = store == null || cave ? null : MapDataManager.get().farLand(store.dimension);
+        int farVersion = MapLayerRenderer.farVersion(far, view);
         Window w = Minecraft.getInstance().getWindow();
         double guiScale = w.getGuiScale();
         long now = Util.getNanos();
         boolean dirty = !layer.exists() || !complete || now - kDrawnNs > 1_000_000_000L
                 || store != kStore || version != kVersion || centerX != kCenterX || centerZ != kCenterZ || scale != kScale
                 || tint != kTint || night != kNight || width != kWidth || height != kHeight || guiScale != kGuiScale
-                || fogOffsetX != kFogX || fogOffsetZ != kFogZ || Theme.generation() != kTheme;
+                || fogOffsetX != kFogX || fogOffsetZ != kFogZ || Theme.generation() != kTheme
+                || far != kFar || farVersion != kFarVersion && now - kDrawnNs > FAR_REFRESH_NS;
         if (dirty) {
             layer.bind(g, w.getWidth(), w.getHeight(), false);
             try {
                 // The dimension's own fog (the Aether's sea of clouds), not under a cave layer.
                 FogTexture.draw(g, store == null || store.cave ? null : store.dimension, 0, 0, width, height, (float) fogOffsetX, (float) fogOffsetZ, Theme.WHITE);
-                complete = MapLayerRenderer.drawRect(g, store, view, 0, 0, width, height, tint, night);
+                boolean farDone = MapLayerRenderer.drawFar(g, far, view, 0, 0, width, height, true);
+                complete = MapLayerRenderer.drawRect(g, store, view, 0, 0, width, height, tint, night) && farDone;
             } finally {
                 layer.unbind();
             }
             kStore = store;
+            kFar = far;
+            kFarVersion = farVersion;
             kVersion = version;
             kCenterX = centerX;
             kCenterZ = centerZ;
