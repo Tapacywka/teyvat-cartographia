@@ -160,6 +160,8 @@ public final class MapConfig {
     public static final BoolValue FAR_LAND;
     /** How far around the player the far land is worked out with every column while the map is closed, in blocks. */
     public static final IntValue FAR_LAND_RADIUS;
+    /** The edge of the explored map as a soft round line instead of the chunks' stairs (SoftEdge, 07.11.2026): on the GPU's copy only, off by default. */
+    public static final BoolValue SOFT_EDGE;
     public static final ListValue PLANTS_HIDDEN;
     public static final IntValue WATER_DEPTH;
     public static final IntValue SHALLOW_WATER;
@@ -247,6 +249,7 @@ public final class MapConfig {
         PLAYER_CONE = b.bool("playerCone", true);
         FAR_LAND = b.bool("farLand", false);
         FAR_LAND_RADIUS = b.integer("farLandRadius", 2048, 512, 8192);
+        SOFT_EDGE = b.bool("softEdge", false);
         // The plants switched off (user decision 24.10.2026: every plant on by default, also those of mods added later);
         // until then the list held the ones switched on (plantsShown, cactus, dead bush and chorus by default).
         PLANTS_HIDDEN = b.list("plantsHidden", java.util.List.of(), id -> true);

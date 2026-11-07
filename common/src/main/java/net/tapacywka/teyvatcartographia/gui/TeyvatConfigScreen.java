@@ -108,6 +108,7 @@ public final class TeyvatConfigScreen {
             t.toggle(K + "player_cone", MapConfig.PLAYER_CONE);
             t.toggle(K + "far_land", MapConfig.FAR_LAND);
             t.slider(K + "far_land_radius", MapConfig.FAR_LAND_RADIUS, s -> s.steps(512, 1024, 2048, 4096, 8192));
+            t.toggle(K + "soft_edge", MapConfig.SOFT_EDGE);
             // How the map is coloured: relief, water.
             t.section(K + "section.colours");
             // A choice with arrows, not a slider (user request 24.10.2026: three steps made it the one short slider).
@@ -279,8 +280,8 @@ public final class TeyvatConfigScreen {
     /** The minimap's look: their preview is the minimap alone, without the lines under it. */
     private static final Set<String> LOOK_ROWS = Set.of(K + "minimap_opacity", K + "minimap_padding", K + "minimap_fade_width", K + "minimap_fade_strength");
 
-    /** The far land: the map from farther out, where it shows. */
-    private static final Set<String> FAR_ROWS = Set.of(K + "far_land", K + "far_land_radius");
+    /** The far land and the soft edge: the map from farther out, where they show. */
+    private static final Set<String> FAR_ROWS = Set.of(K + "far_land", K + "far_land_radius", K + "soft_edge");
     private static final double FAR_ZOOM = 1 / 8.0;
 
     /** A row of where a kind of pins or its path shows: the frames of the Pins tab, also for the stones of Waystones in Compatibility. */

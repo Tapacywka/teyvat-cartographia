@@ -55,6 +55,11 @@ public final class MapTile {
 
     private GpuImage texture;
     boolean gpuDirty = true;
+    /** Its soft edge, on the way to the GPU only: {@link #image} stays whole. */
+    final EdgeMask edge = new EdgeMask(() -> {
+        gpuDirty = true;
+        lightDirty = true;
+    });
     boolean diskDirty;
     long lastUsedMs = System.currentTimeMillis();
     int chunkCount;
@@ -121,6 +126,11 @@ public final class MapTile {
 
     public boolean hasChunk(int lcx, int lcz) {
         return (chunkState[lcz * CHUNKS + lcx] & 0x80) != 0;
+    }
+
+    /** The chunks on the map, a bit each, as {@link TileStore} keeps them for regions on disk. */
+    long[] chunkBits() {
+        return TileStore.chunkBits(chunkState);
     }
 
     /** A chunk is shaded again when a neighbour is on the map now that was not when it was shaded (masks as {@link #neighbourMask}). */
@@ -216,12 +226,13 @@ public final class MapTile {
      */
     public Tex tex(boolean allowUpload) {
         RenderSystem.assertOnRenderThread();
+        if (!edge.ready()) allowUpload = false;
         if (texture == null) {
             if (!allowUpload) return null;
-            texture = new GpuImage("Teyvat Cartographia region", image);
+            texture = new GpuImage("Teyvat Cartographia region", edge.faded() ? edge.over(image) : image);
             gpuDirty = false;
         } else if (gpuDirty && allowUpload) {
-            texture.upload(image);
+            texture.upload(edge.faded() ? edge.over(image) : image);
             gpuDirty = false;
         }
         return texture.tex(linear);
@@ -265,7 +276,7 @@ public final class MapTile {
                     continue;
                 }
                 int c = Pixels.abgr(image, x, z); // ABGR
-                float a = LIGHT_ALPHA[Math.min(15, lv)] * ((c >>> 24) / 255f);
+                float a = LIGHT_ALPHA[Math.min(15, lv)] * ((c >>> 24) / 255f) * edge.share(idx(x, z));
                 int r = c & 0xFF, gr = (c >> 8) & 0xFF, b = (c >> 16) & 0xFF;
                 float warm = 0.26f * a; // torch-light warmth
                 r = (int) (r + (255 - r) * warm);

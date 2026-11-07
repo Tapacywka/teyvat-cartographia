@@ -18,6 +18,10 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
   through the game's generator are seen too. Lakes and rivers show; what the world adds later (streams from springs, villages,
   ice on the water) does not. While the map is closed the exact coast is worked out around you in the background: how far is
   a setting too, 2048 blocks by default.
+- Settings > Map > Soft map edge (off by default, also in the map's quick settings): the edge of the explored map becomes a
+  round line with slow, smooth curves that fades into the Fog of War, instead of the steps of the chunks, on the world map at
+  every zoom and on the minimap. It runs up to 30 blocks inside what you explored, and strips narrower than about 5 chunks
+  fade away with it. Nothing changes in the saved map: switched off, everything is back at once.
 
 ## [1.1.0] - 2026-11-06
 

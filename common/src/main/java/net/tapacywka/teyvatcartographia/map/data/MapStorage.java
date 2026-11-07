@@ -157,6 +157,24 @@ public final class MapStorage {
     }
 
     /**
+     * Reads only which chunks of a region are on the map ({@link TileStore#chunkBits}), for the soft edge of the regions
+     * beside it; none if the file is missing, outdated or damaged. Safe on worker threads.
+     */
+    static long[] readChunks(Path dir, int tx, int tz) {
+        byte[] state = new byte[MapTile.CHUNKS * MapTile.CHUNKS];
+        try (DataInputStream in = new DataInputStream(new BufferedInputStream(new GZIPInputStream(Files.newInputStream(dir.resolve("r." + tx + "." + tz + ".dat")))))) {
+            if (in.readInt() == MAGIC && in.readInt() == VERSION) {
+                int pixels = MapTile.SIZE * MapTile.SIZE;
+                in.skipNBytes(pixels * 2L + pixels); // heights, flags (as in load)
+                in.readFully(state);
+            }
+        } catch (IOException e) {
+            java.util.Arrays.fill(state, (byte) 0);
+        }
+        return TileStore.chunkBits(state);
+    }
+
+    /**
      * A biome palette: a count, then one id per entry (also in {@link BiomeIndex}'s cache). An unreadable id keeps its
      * place (as unknown), so the other indices stay right.
      */
@@ -275,6 +293,7 @@ public final class MapStorage {
                 dropped = old.size();
                 if (dropped > 0) {
                     Files.deleteIfExists(dir.resolve("index.txt"));
+                    Files.deleteIfExists(dir.resolve("chunks.idx"));
                     Files.deleteIfExists(dir.resolve("biomes.idx"));
                     TeyvatCartographia.LOGGER.info("Deleted {} map regions of an older format in {}", dropped, dir);
                 }
