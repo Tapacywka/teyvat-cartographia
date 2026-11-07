@@ -96,7 +96,8 @@ public final class SettingsPanel extends SidePanel {
                 option("teyvatcartographia.settings.labels", "map_labels", MapConfig.MAP_SHOW_LABELS),
                 option("teyvatcartographia.settings.grid", "map_grid", MapConfig.MAP_SHOW_GRID),
                 option("teyvatcartographia.settings.far_land", "far_land", MapConfig.FAR_LAND),
-                option("teyvatcartographia.settings.soft_edge", "soft_edge", MapConfig.SOFT_EDGE)));
+                option("teyvatcartographia.settings.map_outline", "map_outline", MapConfig.MAP_OUTLINE),
+                option("teyvatcartographia.settings.world_border", "world_border", MapConfig.WORLD_BORDER)));
         if (ModCompat.waystones()) {
             out.add(section("teyvatcartographia.config.subsection.compat_waystones"));
             out.add(pins("teyvatcartographia.settings.stones", MapConfig.PinKind.INTERACTIVE));

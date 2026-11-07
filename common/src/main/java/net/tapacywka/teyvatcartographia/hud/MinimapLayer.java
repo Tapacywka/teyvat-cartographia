@@ -840,7 +840,7 @@ public final class MinimapLayer {
     private final CachedLayer cache = new CachedLayer();
     private TileStore cacheStore;
     private net.tapacywka.teyvatcartographia.map.data.FarLand cacheFar;
-    private int cacheVersion, cacheFarVersion, cacheR, cacheSize, cacheTint, cacheNight, cacheTheme;
+    private int cacheVersion, cacheFarVersion, cacheBorder, cacheR, cacheSize, cacheTint, cacheNight, cacheTheme;
     private double cacheX, cacheZ, cacheZoom;
     private long cacheTime;
     private boolean cacheValid;
@@ -858,12 +858,13 @@ public final class MinimapLayer {
         // The far land under the map, not under a cave layer.
         net.tapacywka.teyvatcartographia.map.data.FarLand far = store == null || store.cave ? null : net.tapacywka.teyvatcartographia.map.data.MapDataManager.get().farLand(store.dimension);
         int farVersion = MapLayerRenderer.farVersion(far, cacheView.set(px, pz, zoom, 0, cR, cR));
+        int border = store == null ? 0 : net.tapacywka.teyvatcartographia.render.BorderLine.stamp(store.dimension);
         boolean stale = !cacheValid || !cache.exists()
                 || store != cacheStore || zoom != cacheZoom || cR != cacheR || size != cacheSize
                 || tint != cacheTint || nightQ != cacheNight || Theme.generation() != cacheTheme
                 || Math.hypot(px - cacheX, pz - cacheZ) * zoom > MARGIN - 1
                 || (store != null && store.version() != cacheVersion && now - cacheTime >= CONTENT_REFRESH_MS)
-                || far != cacheFar || farVersion != cacheFarVersion && now - cacheTime >= FAR_REFRESH_MS;
+                || far != cacheFar || farVersion != cacheFarVersion && now - cacheTime >= FAR_REFRESH_MS || border != cacheBorder;
         if (!stale) {
             touchTiles(store);
             return;
@@ -888,6 +889,7 @@ public final class MinimapLayer {
             // The backdrop made the square opaque, and the GUI's blending keeps it so (alpha one, one minus source alpha).
             boolean farDone = MapLayerRenderer.drawFar(g, far, cacheView, 0, 0, 2 * cR, 2 * cR, false);
             complete = MapLayerRenderer.drawRect(g, store, cacheView, 0, 0, 2 * cR, 2 * cR, tint, night) && farDone;
+            net.tapacywka.teyvatcartographia.render.BorderLine.draw(g, store.dimension, cacheView, 0, 0, 2 * cR, 2 * cR);
         }
         g.pose().popMatrix();
         cache.unbind();
@@ -897,6 +899,7 @@ public final class MinimapLayer {
         cacheStore = store;
         cacheFar = far;
         cacheFarVersion = farVersion;
+        cacheBorder = border;
         cacheVersion = store == null ? 0 : store.version();
         cacheZoom = zoom;
         cacheR = cR;

@@ -40,7 +40,7 @@ public final class LodStore {
     /** Regions (tile keys) whose cell is to be redrawn from the region in memory. */
     private final LongArrayFIFOQueue memoryQueue = new LongArrayFIFOQueue();
     private final LongOpenHashSet memoryQueued = new LongOpenHashSet();
-    /** Tiles whose soft edge is to be worked out. */
+    /** Tiles whose outline is to be worked out. */
     private final LongOpenHashSet edgeStale = new LongOpenHashSet();
     private volatile boolean closed;
 
@@ -56,7 +56,7 @@ public final class LodStore {
         final NativeImage image = new NativeImage(MapTile.SIZE, MapTile.SIZE, true);
         private GpuImage texture;
         boolean gpuDirty = true;
-        /** Its soft edge: the saved thumbnails know nothing of it. */
+        /** Its outline: the saved thumbnails know nothing of it. */
         final EdgeMask edge = new EdgeMask(() -> gpuDirty = true);
         /** Bit per cell (region) still waiting for its thumbnail. */
         int pending;
@@ -126,7 +126,7 @@ public final class LodStore {
         if (t == null) {
             t = new LodTile(lx, lz);
             tiles.put(key, t);
-            if (store.softEdges()) {
+            if (store.outlines()) {
                 t.edge.waitForFirst();
                 edgeStale.add(key);
             }
@@ -176,20 +176,20 @@ public final class LodStore {
         if (memoryQueued.add(rk)) memoryQueue.enqueue(rk);
     }
 
-    // ------------------------------------------------------------------ soft edge
+    // ------------------------------------------------------------------ outline
 
-    /** The tiles a chunk reaches with its soft edge have theirs worked out again. */
+    /** The tiles a chunk reaches with its outline have theirs worked out again. */
     void edgesAround(int cx, int cz) {
         int n = REGIONS * MapTile.CHUNKS;
-        for (int lz = Math.floorDiv(cz - SoftEdge.RING, n); lz <= Math.floorDiv(cz + SoftEdge.RING, n); lz++) {
-            for (int lx = Math.floorDiv(cx - SoftEdge.RING, n); lx <= Math.floorDiv(cx + SoftEdge.RING, n); lx++) {
+        for (int lz = Math.floorDiv(cz - MapOutline.RING, n); lz <= Math.floorDiv(cz + MapOutline.RING, n); lz++) {
+            for (int lx = Math.floorDiv(cx - MapOutline.RING, n); lx <= Math.floorDiv(cx + MapOutline.RING, n); lx++) {
                 long key = MapView.tileKey(lx, lz);
                 if (tiles.containsKey(key)) edgeStale.add(key);
             }
         }
     }
 
-    /** The soft edge went on or off: every tile follows. */
+    /** The outline went on or off: every tile follows. */
     void switchEdges(boolean on) {
         for (LodTile t : tiles.values()) {
             if (on) {
@@ -202,14 +202,14 @@ public final class LodStore {
         if (!on) edgeStale.clear();
     }
 
-    /** A tile not drawn for this long keeps its soft edge waiting: exploring with the map closed, nothing needs it. */
+    /** A tile not drawn for this long keeps its outline waiting: exploring with the map closed, nothing needs it. */
     private static final long SHOWN_MS = 2000;
 
     private static boolean shown(LodTile t) {
         return System.currentTimeMillis() - t.lastUsedMs < SHOWN_MS;
     }
 
-    /** Whether no tile on the map waits for its soft edge. */
+    /** Whether no tile on the map waits for its outline. */
     boolean edgesDone() {
         for (LongIterator it = edgeStale.iterator(); it.hasNext(); ) {
             LodTile t = tiles.get(it.nextLong());

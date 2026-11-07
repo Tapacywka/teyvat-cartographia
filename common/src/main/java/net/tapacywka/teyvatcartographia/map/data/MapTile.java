@@ -55,7 +55,7 @@ public final class MapTile {
 
     private GpuImage texture;
     boolean gpuDirty = true;
-    /** Its soft edge, on the way to the GPU only: {@link #image} stays whole. */
+    /** Its outline, on the way to the GPU only: {@link #image} stays whole. */
     final EdgeMask edge = new EdgeMask(() -> {
         gpuDirty = true;
         lightDirty = true;
