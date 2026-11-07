@@ -112,6 +112,8 @@ public final class FarLand {
     private int wantLevel = -1, wantX0, wantZ0, wantX1, wantZ1;
     private boolean wantChanged;
     private int ticks, lookAgain;
+    /** A scan met regions still loading: it is made again. */
+    private boolean restart;
 
     FarLand(FarLandSource source, FarLandRules.Bounds bounds, ResourceKey<Level> dimension, Path dir, ExecutorService io, long generation) {
         this.source = source;
@@ -150,7 +152,7 @@ public final class FarLand {
 
     /** Whether all that is looked for now is done. */
     public boolean idle() {
-        return scan == null && lookAgain == 0 && jobs.isEmpty() && done.isEmpty() && waiting() == 0;
+        return scan == null && lookAgain == 0 && !restart && jobs.isEmpty() && done.isEmpty() && waiting() == 0;
     }
 
     /** Cells worked out since it started. */
@@ -208,6 +210,11 @@ public final class FarLand {
 
     /** Which part to look at: what the open map shows, else the levels around the player one after the other. */
     private void choose(boolean open, boolean here, double px, double pz) {
+        if (restart) {
+            restart = false;
+            if (wantLevel >= 0) wantChanged = true;
+            else homeX = Double.NaN;
+        }
         if (open && wantLevel >= 0) {
             if (wantChanged) {
                 wantChanged = false;
@@ -248,18 +255,16 @@ public final class FarLand {
 
     /** Looks for missing cells until there are jobs enough or the tick's looks are spent. */
     private void fill(TileStore explored) {
-        if (lookAgain > 0 && --lookAgain == 0) {
-            if (wantLevel >= 0) wantChanged = true;
-            else homeX = Double.NaN;
-        }
-        if (scan == null || jobs.size() >= JOBS_LOW) return;
+        if (lookAgain > 0 && --lookAgain == 0) restart = true;
+        // Until a level knows what is on disk, nothing can be said of its cells.
+        if (scan == null || jobs.size() >= JOBS_LOW || !stores[scan.level].opened()) return;
         for (int checks = 0; checks < CHECKS_PER_TICK && jobs.size() < JOBS_FULL; checks++) {
             if (!scan.spiral.next()) {
                 if (scan.again) lookAgain = TICKS_LOOK_AGAIN;
                 if (scan.radius >= 0 && homeLevel + 1 < stores.length) {
                     homeLevel++;
                     scan = homeScan();
-                    continue;
+                    return;
                 }
                 scan = null;
                 return;
