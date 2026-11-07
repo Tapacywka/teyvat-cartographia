@@ -183,13 +183,14 @@ public final class MapStorage {
 
     /**
      * Quarter-size copy of a region image (ABGR): each pixel averages the explored ones of its 4 x 4 block, and its
-     * alpha is the explored share, so the map edge stays soft. Caller owns the result.
+     * alpha is the average of the 16 (on the map the explored share, so its edge stays soft; the far land's faint veil
+     * stays faint). Caller owns the result.
      */
     static NativeImage thumbnail(NativeImage src) {
         NativeImage out = new NativeImage(THUMB, THUMB, true);
         for (int y = 0; y < THUMB; y++) {
             for (int x = 0; x < THUMB; x++) {
-                int r = 0, g = 0, b = 0, n = 0;
+                int r = 0, g = 0, b = 0, a = 0, n = 0;
                 for (int dy = 0; dy < 4; dy++) {
                     for (int dx = 0; dx < 4; dx++) {
                         int c = src.getPixelRGBA(x * 4 + dx, y * 4 + dy);
@@ -197,10 +198,11 @@ public final class MapStorage {
                         r += c & 0xFF;
                         g += (c >> 8) & 0xFF;
                         b += (c >> 16) & 0xFF;
+                        a += c >>> 24;
                         n++;
                     }
                 }
-                out.setPixelRGBA(x, y, n == 0 ? 0 : ((n * 255 / 16) << 24) | ((b / n) << 16) | ((g / n) << 8) | (r / n));
+                out.setPixelRGBA(x, y, n == 0 ? 0 : ((a / 16) << 24) | ((b / n) << 16) | ((g / n) << 8) | (r / n));
             }
         }
         return out;

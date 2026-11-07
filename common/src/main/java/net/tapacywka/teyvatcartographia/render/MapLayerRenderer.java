@@ -4,6 +4,8 @@ import net.minecraft.Util;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.resources.ResourceKey;
 import net.tapacywka.teyvatcartographia.map.MapView;
+import net.tapacywka.teyvatcartographia.map.data.FarLand;
+import net.tapacywka.teyvatcartographia.map.data.FarLandRules;
 import net.tapacywka.teyvatcartographia.map.data.LodStore;
 import net.tapacywka.teyvatcartographia.map.data.MapTile;
 import net.tapacywka.teyvatcartographia.map.data.TileStore;
@@ -50,6 +52,81 @@ public final class MapLayerRenderer {
         return view.scale * guiScale < 0.999;
     }
 
+    private static final MapView FAR_VIEW = new MapView(), FAR_OTHER_VIEW = new MapView();
+
+    /** The level of the far land shown at {@code view}'s zoom. */
+    private static int farLevel(MapView view) {
+        return FarLandRules.level(view.scale * Minecraft.getInstance().getWindow().getGuiScale());
+    }
+
+    /**
+     * The far land under the map, over the fog (null: none), at the level of {@code view}'s zoom: a level's map is a map
+     * of its own whose block stands for several, drawn through a view scaled to it. {@code wanted}: this is the world
+     * map, whose part of the level is worked out first.
+     *
+     * @return as {@link #drawRect}
+     */
+    public static boolean drawFar(GuiGraphics g, FarLand far, MapView view, float x0, float y0, float x1, float y1, boolean wanted) {
+        if (far == null) return true;
+        int level = farLevel(view), step = FarLandRules.STEPS[level];
+        FAR_VIEW.set(view.centerX / step, view.centerZ / step, view.scale * step, 0, view.cx, view.cy);
+        double wx0 = FAR_VIEW.worldX(x0, y0), wz0 = FAR_VIEW.worldZ(x0, y0), wx1 = FAR_VIEW.worldX(x1, y1), wz1 = FAR_VIEW.worldZ(x1, y1);
+        if (wanted) far.want(level, wx0, wz0, wx1, wz1);
+        TileStore store = far.store(level);
+        boolean complete = drawRect(g, store, FAR_VIEW, x0, y0, x1, y1, Theme.WHITE);
+        // What this level does not have yet (a zoom just changed, cells still coming in): the nearest level that has it,
+        // meanwhile. Only there: two veils over each other would show.
+        int tx1 = MapView.blockToTile((int) Math.floor(wx1)), tz1 = MapView.blockToTile((int) Math.floor(wz1)), n = MapTile.CHUNKS;
+        for (int tz = MapView.blockToTile((int) Math.floor(wz0)); tz <= tz1; tz++) {
+            for (int tx = MapView.blockToTile((int) Math.floor(wx0)); tx <= tx1; tx++) {
+                int known = store.chunksIn(tx, tz);
+                if (known >= n * n) continue;
+                if (known == 0) {
+                    drawFarGap(g, far, level, view, tx * n, tz * n, (tx + 1) * n, (tz + 1) * n, x0, y0, x1, y1);
+                } else if (store.peek(tx, tz) != null) {
+                    // A region filling up: the runs of cells still missing in each row.
+                    for (int z = tz * n; z < (tz + 1) * n; z++) {
+                        for (int x = tx * n; x < (tx + 1) * n; x++) {
+                            if (store.hasChunk(x, z)) continue;
+                            int end = x + 1;
+                            while (end < (tx + 1) * n && !store.hasChunk(end, z)) end++;
+                            drawFarGap(g, far, level, view, x, z, end, z + 1, x0, y0, x1, y1);
+                            x = end;
+                        }
+                    }
+                }
+            }
+        }
+        return complete;
+    }
+
+    /** The cells from (cx0, cz0) up to (cx1, cz1) of a level, inside the rectangle, from the nearest level that has them. */
+    private static void drawFarGap(GuiGraphics g, FarLand far, int level, MapView view, int cx0, int cz0, int cx1, int cz1, float x0, float y0, float x1, float y1) {
+        float rx0 = Math.max(x0, FAR_VIEW.screenX(cx0 * 16.0, 0)), rx1 = Math.min(x1, FAR_VIEW.screenX(cx1 * 16.0, 0));
+        float ry0 = Math.max(y0, FAR_VIEW.screenY(0, cz0 * 16.0)), ry1 = Math.min(y1, FAR_VIEW.screenY(0, cz1 * 16.0));
+        if (rx1 <= rx0 || ry1 <= ry0) return;
+        for (int d = 1; d < FarLandRules.STEPS.length; d++) {
+            if (drawFarLevel(g, far, level + d, view, rx0, ry0, rx1, ry1) || drawFarLevel(g, far, level - d, view, rx0, ry0, rx1, ry1)) return;
+        }
+    }
+
+    /** A rectangle from another level of the far land; false where that level has nothing at its middle. */
+    private static boolean drawFarLevel(GuiGraphics g, FarLand far, int level, MapView view, float x0, float y0, float x1, float y1) {
+        if (level < 0 || level >= FarLandRules.STEPS.length) return false;
+        int step = FarLandRules.STEPS[level];
+        FAR_OTHER_VIEW.set(view.centerX / step, view.centerZ / step, view.scale * step, 0, view.cx, view.cy);
+        float mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
+        TileStore store = far.store(level);
+        if (store.chunksIn(MapView.blockToTile((int) Math.floor(FAR_OTHER_VIEW.worldX(mx, my))), MapView.blockToTile((int) Math.floor(FAR_OTHER_VIEW.worldZ(mx, my)))) == 0) return false;
+        drawRect(g, store, FAR_OTHER_VIEW, x0, y0, x1, y1, Theme.WHITE);
+        return true;
+    }
+
+    /** What changes when the far land at {@code view}'s zoom does (-1: none). */
+    public static int farVersion(FarLand far, MapView view) {
+        return far == null ? -1 : far.store(farLevel(view)).version();
+    }
+
     /** Draws regions covering the screen rectangle (view must have rotation 0). */
     public static boolean drawRect(GuiGraphics g, TileStore store, MapView view, float x0, float y0, float x1, float y1, int tint) {
         return drawRect(g, store, view, x0, y0, x1, y1, tint, 0f);
@@ -68,13 +145,13 @@ public final class MapLayerRenderer {
         int tz0 = MapView.blockToTile((int) Math.floor(view.worldZ(x0, y0)));
         int tx1 = MapView.blockToTile((int) Math.floor(view.worldX(x1, y1)));
         int tz1 = MapView.blockToTile((int) Math.floor(view.worldZ(x1, y1)));
-        if (useLod(view) || (long) (tx1 - tx0 + 1) * (tz1 - tz0 + 1) > MAX_REGIONS) return drawLod(g, store, view, x0, y0, x1, y1, tint);
+        if (!store.far && useLod(view) || (long) (tx1 - tx0 + 1) * (tz1 - tz0 + 1) > MAX_REGIONS) return drawLod(g, store, view, x0, y0, x1, y1, tint);
         boolean complete = true, lodUpdated = false;
         int lightColor = Theme.withAlpha(Theme.WHITE, lightAlpha);
         int uploads = UPLOADS_PER_CALL;
-        boolean blur = blurFor(view);
+        boolean blur = store.far || blurFor(view);
         float edge = blur ? EDGE : NEAR_EDGE;
-        if (!store.cave && FogTexture.shadow(store.dimension)) {
+        if (!store.cave && !store.far && FogTexture.shadow(store.dimension)) {
             // Floating land: its shadow on the fog below, the regions drawn dark and shifted down-right first.
             for (int tz = tz0; tz <= tz1; tz++) {
                 for (int tx = tx0; tx <= tx1; tx++) {
@@ -192,7 +269,7 @@ public final class MapLayerRenderer {
         int lx1 = Math.floorDiv((int) Math.floor(view.worldX(x1, y1)), LodStore.BLOCKS);
         int lz1 = Math.floorDiv((int) Math.floor(view.worldZ(x1, y1)), LodStore.BLOCKS);
         if ((long) (lx1 - lx0 + 1) * (lz1 - lz0 + 1) > 1024) return true; // safety: absurd zoom-out
-        if (!store.cave && FogTexture.shadow(store.dimension)) {
+        if (!store.cave && !store.far && FogTexture.shadow(store.dimension)) {
             for (int lz = lz0; lz <= lz1; lz++) {
                 for (int lx = lx0; lx <= lx1; lx++) {
                     if (!lod.any(lx, lz)) continue;

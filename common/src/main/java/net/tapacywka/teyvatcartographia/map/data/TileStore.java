@@ -32,6 +32,8 @@ public final class TileStore {
     public final ResourceKey<Level> dimension;
     /** A cave layer (one height band underground): not lit by the time of day. */
     public final boolean cave;
+    /** A level of the far land ({@link FarLand}): under the map, smoothed at every zoom, no shadow. */
+    public final boolean far;
     public final Path dir;
     private final ExecutorService io;
     private final long generation;
@@ -70,7 +72,12 @@ public final class TileStore {
     }
 
     TileStore(ResourceKey<Level> dimension, Path dir, ExecutorService io, long generation, boolean cave) {
+        this(dimension, dir, io, generation, cave, false);
+    }
+
+    TileStore(ResourceKey<Level> dimension, Path dir, ExecutorService io, long generation, boolean cave, boolean far) {
         this.cave = cave;
+        this.far = far;
         this.dimension = dimension;
         this.dir = dir;
         this.io = io;
@@ -158,6 +165,13 @@ public final class TileStore {
         }
         for (MapTile t : tiles.values()) sum += t.chunkCount;
         return sum;
+    }
+
+    /** How many chunks of a region are known, in memory or on disk, without loading it. */
+    public int chunksIn(int tx, int tz) {
+        long key = MapView.tileKey(tx, tz);
+        MapTile t = tiles.get(key);
+        return t != null ? t.chunkCount : diskChunkCounts.get(key);
     }
 
     public boolean hasChunk(int cx, int cz) {

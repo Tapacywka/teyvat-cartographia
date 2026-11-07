@@ -10,6 +10,15 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 
 ## [Unreleased]
 
+### Added
+- Settings > Map > Far land (single player, off by default, as it gives away what you have not found yet): the outline of
+  the land you have not explored shows faintly under the Fog of War on the world map and the minimap, with a brighter line
+  along the coast. It is worked out from the world's generator, no chunk is made: zoomed out a whole screen takes seconds,
+  closer in the coast gets finer down to the block, as far as the map shows, up to the world border. Mods that change the land
+  through the game's generator are seen too. Lakes and rivers show; what the world adds later (streams from springs, villages,
+  ice on the water) does not. While the map is closed the exact coast is worked out around you in the background: how far is
+  a setting too, 2048 blocks by default.
+
 ## [1.1.0] - 2026-11-06
 
 ### Added

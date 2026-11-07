@@ -105,6 +105,8 @@ public final class TeyvatConfigScreen {
             t.toggleList(K + "plants", MapConfig.MAP_PLANTS, MapConfig.PLANTS_HIDDEN, TeyvatConfigScreen::plants, remap).then(remap);
             t.toggle(K + "caves", MapConfig.CAVES_ENABLED);
             t.toggle(K + "player_cone", MapConfig.PLAYER_CONE);
+            t.toggle(K + "far_land", MapConfig.FAR_LAND);
+            t.slider(K + "far_land_radius", MapConfig.FAR_LAND_RADIUS, s -> s.steps(512, 1024, 2048, 4096, 8192));
             // How the map is coloured: relief, water.
             t.section(K + "section.colours");
             // A choice with arrows, not a slider (user request 24.10.2026: three steps made it the one short slider).
@@ -276,6 +278,10 @@ public final class TeyvatConfigScreen {
     /** The minimap's look: their preview is the minimap alone, without the lines under it. */
     private static final Set<String> LOOK_ROWS = Set.of(K + "minimap_opacity", K + "minimap_padding", K + "minimap_fade_width", K + "minimap_fade_strength");
 
+    /** The far land: the map from farther out, where it shows. */
+    private static final Set<String> FAR_ROWS = Set.of(K + "far_land", K + "far_land_radius");
+    private static final double FAR_ZOOM = 1 / 8.0;
+
     /** A row of where a kind of pins or its path shows: the frames of the Pins tab, also for the stones of Waystones in Compatibility. */
     private static boolean pinKindRow(String rk) {
         return rk.startsWith(K + "pins.") || rk.startsWith(K + "path.");
@@ -318,7 +324,7 @@ public final class TeyvatConfigScreen {
                 if (world) SettingsPreview.detail(g, cx, cy, cw, ch);
                 else note(g, cx, cy, cw, ch, K + "preview.no_world");
             } else if (tab.equals(K + "tab.map")) {
-                if (world) map(g, cx, cy, cw, ch, MapView.snapZoom(MapConfig.get(MapConfig.MAP_DEFAULT_ZOOM)), pt);
+                if (world) map(g, cx, cy, cw, ch, FAR_ROWS.contains(rk) ? FAR_ZOOM : MapView.snapZoom(MapConfig.get(MapConfig.MAP_DEFAULT_ZOOM)), pt);
                 else note(g, cx, cy, cw, ch, K + "preview.no_world");
             } else if (tab.equals(K + "tab.minimap")) {
                 if (!world) note(g, cx, cy, cw, ch, K + "preview.no_world");
@@ -370,6 +376,9 @@ public final class TeyvatConfigScreen {
             boolean cave = store != null && store.cave;
             g.enableScissor((int) x, (int) y, (int) (x + w), (int) (y + h));
             FogTexture.draw(g, store == null || cave ? null : store.dimension, x, y, x + w, y + h, (float) (pos.x * zoom), (float) (pos.z * zoom), Theme.WHITE);
+            if (store != null && !cave) {
+                net.tapacywka.teyvatcartographia.render.MapLayerRenderer.drawFar(g, MapDataManager.get().farLand(store.dimension), view, x, y, x + w, y + h, false);
+            }
             net.tapacywka.teyvatcartographia.render.MapLayerRenderer.drawRect(g, store, view, x, y, x + w, y + h,
                     cave ? 0xFFFFFFFF : net.tapacywka.teyvatcartographia.render.DayLight.tint(pt), cave ? 0f : net.tapacywka.teyvatcartographia.render.DayLight.night(pt));
             if (MapConfig.get(MapConfig.MAP_SHOW_GRID)) grid(g, x, y, w, h, zoom);
