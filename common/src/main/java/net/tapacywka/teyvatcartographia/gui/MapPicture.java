@@ -5,6 +5,7 @@ import net.tapacywka.teyvatcartographia.map.MapView;
 import net.tapacywka.teyvatcartographia.map.data.FarLand;
 import net.tapacywka.teyvatcartographia.map.data.MapDataManager;
 import net.tapacywka.teyvatcartographia.map.data.TileStore;
+import net.tapacywka.teyvatcartographia.render.BorderLine;
 import net.tapacywka.teyvatcartographia.render.CachedLayer;
 import net.tapacywka.teyvatcartographia.render.DayLight;
 import net.tapacywka.teyvatcartographia.render.Draw;
@@ -36,7 +37,7 @@ final class MapPicture {
     private boolean complete;
     private TileStore kStore;
     private FarLand kFar;
-    private int kVersion, kFarVersion, kTint, kWidth, kHeight, kTheme;
+    private int kVersion, kFarVersion, kBorder, kTint, kWidth, kHeight, kTheme;
     private float kNight;
     private double kCenterX, kCenterZ, kScale, kGuiScale, kFogX, kFogZ;
     private long kDrawnNs;
@@ -53,6 +54,7 @@ final class MapPicture {
         // Not under a cave layer.
         FarLand far = store == null || cave ? null : MapDataManager.get().farLand(store.dimension);
         int farVersion = MapLayerRenderer.farVersion(far, view);
+        int border = store == null ? 0 : BorderLine.stamp(store.dimension);
         Window w = Minecraft.getInstance().getWindow();
         double guiScale = w.getGuiScale();
         long now = Util.getNanos();
@@ -60,7 +62,7 @@ final class MapPicture {
                 || store != kStore || version != kVersion || centerX != kCenterX || centerZ != kCenterZ || scale != kScale
                 || tint != kTint || night != kNight || width != kWidth || height != kHeight || guiScale != kGuiScale
                 || fogOffsetX != kFogX || fogOffsetZ != kFogZ || Theme.generation() != kTheme
-                || far != kFar || farVersion != kFarVersion && now - kDrawnNs > FAR_REFRESH_NS;
+                || far != kFar || farVersion != kFarVersion && now - kDrawnNs > FAR_REFRESH_NS || border != kBorder;
         if (dirty) {
             layer.bind(g, w.getWidth(), w.getHeight(), false);
             Draw.beginLayer();
@@ -69,6 +71,7 @@ final class MapPicture {
                 FogTexture.draw(g, store == null || store.cave ? null : store.dimension, 0, 0, width, height, (float) fogOffsetX, (float) fogOffsetZ, Theme.WHITE);
                 boolean farDone = MapLayerRenderer.drawFar(g, far, view, 0, 0, width, height, true);
                 complete = MapLayerRenderer.drawRect(g, store, view, 0, 0, width, height, tint, night) && farDone;
+                if (store != null) BorderLine.draw(g, store.dimension, view, 0, 0, width, height);
                 g.flush();
             } finally {
                 Draw.endLayer();
@@ -77,6 +80,7 @@ final class MapPicture {
             kStore = store;
             kFar = far;
             kFarVersion = farVersion;
+            kBorder = border;
             kVersion = version;
             kCenterX = centerX;
             kCenterZ = centerZ;

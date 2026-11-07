@@ -155,7 +155,7 @@ public final class MapStorage {
     }
 
     /**
-     * Reads only which chunks of a region are on the map ({@link TileStore#chunkBits}), for the soft edge of the regions
+     * Reads only which chunks of a region are on the map ({@link TileStore#chunkBits}), for the outline of the regions
      * beside it; none if the file is missing, outdated or damaged. Safe on worker threads.
      */
     static long[] readChunks(Path dir, int tx, int tz) {

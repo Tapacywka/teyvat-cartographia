@@ -295,7 +295,7 @@ public final class FarLand {
 
     /**
      * A region explored to the last chunk needs nothing under it, as long as those around it are too: along a side
-     * with land unexplored beyond it the map's soft edge lets through what is under.
+     * with land unexplored beyond it the map's outline lets through what is under.
      */
     private static boolean covered(TileStore explored, int tx, int tz) {
         for (int dz = -1; dz <= 1; dz++) {

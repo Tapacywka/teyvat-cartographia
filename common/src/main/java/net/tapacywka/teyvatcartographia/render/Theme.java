@@ -188,6 +188,12 @@ public final class Theme {
      */
     public static int ROUTE_AIR = 0xFFEEF2F7;
     public static int ROUTE_AIR_FOG = 0xE66E7682;
+    /** The outline of the explored map (MapOutline): the line and its glow into the fog; their strength is its own. */
+    public static int MAP_OUTLINE = 0xFF3EACAA;
+    public static int MAP_OUTLINE_GLOW = 0xFF2E96A5;
+    /** The world border on the maps (BorderLine): the line, and what lies over everything beyond it. */
+    public static int WORLD_BORDER_LINE = 0xE6E86054;
+    public static int WORLD_BORDER_BEYOND = 0x85141C24;
     public static int PING_GLOW = 0x30FFFFFF;
     public static int PING_RING = 0xFFFFFFFF;
     public static int PING_CORE = 0xFFFFFFFF;

@@ -4,6 +4,7 @@ import net.minecraft.world.level.biome.Biome;
 import net.tapacywka.teyvatcartographia.TeyvatCartographia;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
 import net.tapacywka.teyvatcartographia.map.MapView;
+import net.tapacywka.teyvatcartographia.render.FogTexture;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 import it.unimi.dsi.fastutil.longs.Long2IntMap;
@@ -51,7 +52,7 @@ public final class TileStore {
     private final LongOpenHashSet failed = new LongOpenHashSet();
     /** Chunk counts of regions that are on disk (persisted in index.txt), used for "explored" statistics. */
     private final Long2IntOpenHashMap diskChunkCounts = new Long2IntOpenHashMap();
-    /** Which chunks of regions on disk are on the map ({@link #chunkBits}), kept in {@code chunks.idx}: for the soft edge of the regions beside them. */
+    /** Which chunks of regions on disk are on the map ({@link #chunkBits}), kept in {@code chunks.idx}: for the outline of the regions beside them. */
     private final Long2ObjectOpenHashMap<long[]> diskChunks = new Long2ObjectOpenHashMap<>();
     private final Long2ObjectOpenHashMap<List<ChunkShader.Result>> pending = new Long2ObjectOpenHashMap<>();
     private final ConcurrentLinkedQueue<Object[]> loaded = new ConcurrentLinkedQueue<>();
@@ -87,8 +88,8 @@ public final class TileStore {
     TileStore(ResourceKey<Level> dimension, Path dir, ExecutorService io, long generation, boolean cave, boolean far) {
         this.cave = cave;
         this.far = far;
-        this.softens = !cave && !far;
-        this.edgesOn = softens && MapConfig.get(MapConfig.SOFT_EDGE);
+        this.outlined = !cave && !far;
+        this.edgesOn = outlined && MapConfig.get(MapConfig.MAP_OUTLINE);
         this.dimension = dimension;
         this.dir = dir;
         this.io = io;
@@ -114,7 +115,7 @@ public final class TileStore {
             MapStorage.dropOutdated(dir);
             regions.addAll(MapStorage.listTiles(dir));
             readIndex(chunks);
-            if (softens) readChunkBits(chunks, bits);
+            if (outlined) readChunkBits(chunks, bits);
             MapStorage.writeDimension(dir, dimension);
         } catch (RuntimeException e) {
             TeyvatCartographia.LOGGER.warn("Could not read the map folder {}", dir, e);
@@ -344,7 +345,7 @@ public final class TileStore {
         onDisk.add(t.key);
         failed.remove(t.key);
         diskChunkCounts.put(t.key, t.chunkCount);
-        if (softens) diskChunks.put(t.key, t.chunkBits());
+        if (outlined) diskChunks.put(t.key, t.chunkBits());
         indexDirty = true;
         io.execute(() -> {
             try {
@@ -371,7 +372,7 @@ public final class TileStore {
         lod.close();
     }
 
-    // --------------------------------------------------------------- soft edge
+    // --------------------------------------------------------------- outline
 
     /** Worked out away from the frames, one picture at a time: a few milliseconds each. */
     private static final ExecutorService EDGE_WORKER = Executors.newSingleThreadExecutor(r -> {
@@ -383,38 +384,38 @@ public final class TileStore {
     /** Pictures handed to the thread at a time. */
     private static final int MAX_EDGE_JOBS = 8;
 
-    private record EdgeDone(EdgeMask mask, long[] grid, byte[] alpha) {}
+    private record EdgeDone(EdgeMask mask, long[] grid, MapOutline.Picture picture) {}
 
     /** The surface of a dimension: not a cave layer, whose few blocks around the player are all it has, nor the far land. */
-    private final boolean softens;
+    private final boolean outlined;
     private boolean edgesOn;
-    /** Regions whose soft edge is to be worked out. */
+    /** Regions whose outline is to be worked out. */
     private final LongOpenHashSet edgeStale = new LongOpenHashSet();
     private final ConcurrentLinkedQueue<EdgeDone> edgesDone = new ConcurrentLinkedQueue<>();
     private int edgeJobs;
     private final LongOpenHashSet chunksLoading = new LongOpenHashSet();
     private final ConcurrentLinkedQueue<Object[]> chunksRead = new ConcurrentLinkedQueue<>();
 
-    /** Whether the pictures of this store have the soft edge now. */
-    public boolean softEdges() {
+    /** Whether the pictures of this store have the outline now. */
+    public boolean outlines() {
         return edgesOn;
     }
 
-    /** Regions in memory with a soft edge. */
+    /** Regions in memory with a outline. */
     public int fadedRegions() {
         int n = 0;
         for (MapTile t : tiles.values()) if (t.edge.faded()) n++;
         return n;
     }
 
-    /** Whether every picture in memory has the soft edge of the chunks known now. */
+    /** Whether every picture in memory has the outline of the chunks known now. */
     public boolean edgesDone() {
         if (!edgeStale.isEmpty() || edgeJobs > 0 || !chunksLoading.isEmpty() || !lod.edgesDone()) return false;
         for (MapTile t : tiles.values()) if (!t.edge.ready()) return false;
         return true;
     }
 
-    /** A region came into memory: not shown before its soft edge is there. */
+    /** A region came into memory: not shown before its outline is there. */
     private void newRegion(MapTile t) {
         if (!edgesOn) return;
         t.edge.waitForFirst();
@@ -423,14 +424,14 @@ public final class TileStore {
 
     /** What a region in memory has on the map, for when it is not. */
     private void keepChunks(MapTile t) {
-        if (softens && diskChunks.put(t.key, t.chunkBits()) == null) indexDirty = true;
+        if (outlined && diskChunks.put(t.key, t.chunkBits()) == null) indexDirty = true;
     }
 
-    /** A chunk came onto the map: the pictures it reaches have their soft edge worked out again. */
+    /** A chunk came onto the map: the pictures it reaches have their outline worked out again. */
     private void edgesAround(int cx, int cz) {
         if (!edgesOn) return;
-        for (int tz = MapView.chunkToTile(cz - SoftEdge.RING); tz <= MapView.chunkToTile(cz + SoftEdge.RING); tz++) {
-            for (int tx = MapView.chunkToTile(cx - SoftEdge.RING); tx <= MapView.chunkToTile(cx + SoftEdge.RING); tx++) {
+        for (int tz = MapView.chunkToTile(cz - MapOutline.RING); tz <= MapView.chunkToTile(cz + MapOutline.RING); tz++) {
+            for (int tx = MapView.chunkToTile(cx - MapOutline.RING); tx <= MapView.chunkToTile(cx + MapOutline.RING); tx++) {
                 long key = MapView.tileKey(tx, tz);
                 if (tiles.containsKey(key)) edgeStale.add(key);
             }
@@ -440,8 +441,8 @@ public final class TileStore {
 
     /** Follows the setting, takes in what the threads finished and hands them what waits. Main thread; every tick and when the map is drawn. */
     public void updateEdges() {
-        if (!softens || closed) return;
-        boolean on = MapConfig.get(MapConfig.SOFT_EDGE);
+        if (!outlined || closed) return;
+        boolean on = MapConfig.get(MapConfig.MAP_OUTLINE);
         if (on != edgesOn) switchEdges(on);
         Object[] read;
         while ((read = chunksRead.poll()) != null) tookChunks((Long) read[0], (long[]) read[1]);
@@ -449,7 +450,7 @@ public final class TileStore {
         while ((d = edgesDone.poll()) != null) {
             edgeJobs--;
             if (!edgesOn) d.mask.ignored();
-            else if (d.mask.set(d.grid, d.alpha)) version++;
+            else if (d.mask.set(d.grid, d.picture)) version++;
         }
         if (!edgesOn || !opened) return;
         for (LongIterator it = edgeStale.iterator(); it.hasNext(); ) {
@@ -480,15 +481,16 @@ public final class TileStore {
     }
 
     /**
-     * Has the soft edge of a picture worked out if the chunks around it changed.
+     * Has the outline of a picture worked out if the chunks around it changed.
      *
      * @return false while the thread has enough to do: the picture stays waiting
      */
     boolean askEdge(EdgeMask mask, int cx0, int cz0, int chunks, int pixels) {
+        mask.landOnly(FogTexture.shadow(dimension));
         long[] grid = grid(cx0, cz0, chunks);
         if (mask.madeFrom(grid)) return true;
         // Land all around is the most of a map: nothing to wait for.
-        if (SoftEdge.whole(grid, chunks + 2 * SoftEdge.RING)) {
+        if (MapOutline.whole(grid, chunks + 2 * MapOutline.RING)) {
             if (mask.set(grid, null)) version++;
             return true;
         }
@@ -496,24 +498,24 @@ public final class TileStore {
         edgeJobs++;
         mask.started();
         EDGE_WORKER.execute(() -> {
-            byte[] alpha = null;
+            MapOutline.Picture picture = null;
             try {
-                alpha = SoftEdge.alpha(cx0, cz0, chunks, pixels, grid);
+                picture = MapOutline.picture(cx0, cz0, chunks, pixels, grid);
             } catch (RuntimeException e) {
-                TeyvatCartographia.LOGGER.warn("Could not work out the soft edge at chunk {},{}", cx0, cz0, e);
+                TeyvatCartographia.LOGGER.warn("Could not work out the outline at chunk {},{}", cx0, cz0, e);
             }
-            edgesDone.add(new EdgeDone(mask, grid, alpha));
+            edgesDone.add(new EdgeDone(mask, grid, picture));
         });
         return true;
     }
 
-    /** The explored chunks of a square from (cx0, cz0) and the ring around it, as {@link SoftEdge#alpha} takes them. */
+    /** The explored chunks of a square from (cx0, cz0) and the ring around it, as {@link MapOutline#picture} takes them. */
     private long[] grid(int cx0, int cz0, int chunks) {
-        int side = chunks + 2 * SoftEdge.RING;
-        long[] grid = SoftEdge.grid(side);
+        int side = chunks + 2 * MapOutline.RING;
+        long[] grid = MapOutline.grid(side);
         for (int z = 0; z < side; z++) {
             for (int x = 0; x < side; x++) {
-                if (explored(cx0 + x - SoftEdge.RING, cz0 + z - SoftEdge.RING)) SoftEdge.set(grid, z * side + x);
+                if (explored(cx0 + x - MapOutline.RING, cz0 + z - MapOutline.RING)) MapOutline.set(grid, z * side + x);
             }
         }
         return grid;
@@ -535,7 +537,7 @@ public final class TileStore {
         return (bits[i >> 6] >>> (i & 63) & 1) != 0;
     }
 
-    /** Maps saved before the soft edge have no {@code chunks.idx}: a region's chunks are read when first asked for. */
+    /** Maps saved before the outline have no {@code chunks.idx}: a region's chunks are read when first asked for. */
     private void readChunks(long key) {
         if (closed || !chunksLoading.add(key)) return;
         int tx = MapView.tileKeyX(key), tz = MapView.tileKeyZ(key);
@@ -626,7 +628,7 @@ public final class TileStore {
             sb.append(MapView.tileKeyX(k)).append(' ').append(MapView.tileKeyZ(k)).append(' ').append(diskChunkCounts.get(k)).append('\n');
         }
         String content = sb.toString();
-        byte[] chunkBits = softens ? chunkBitsFile() : null;
+        byte[] chunkBits = outlined ? chunkBitsFile() : null;
         io.execute(() -> {
             try {
                 Path tmp = dir.resolve("index.txt.tmp");

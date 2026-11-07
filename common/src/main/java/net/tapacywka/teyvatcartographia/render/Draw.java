@@ -655,6 +655,42 @@ public final class Draw {
         fillConvexInto(b, m, 4, argb);
     }
 
+    /** A solid line through {@code n} points ({@code xy} = x0, y0, x1, y1, ...) of {@code width}, in one draw call. */
+    public static void polyline(GuiGraphics g, float[] xy, int n, float width, int argb) {
+        if (n < 2) return;
+        Matrix4f m = mat(g);
+        BufferBuilder b = beginColor();
+        for (int i = 0; i + 1 < n; i++) {
+            float x1 = xy[2 * i], y1 = xy[2 * i + 1], dx = xy[2 * i + 2] - x1, dy = xy[2 * i + 3] - y1, len = (float) Math.sqrt(dx * dx + dy * dy);
+            if (len >= 1e-4f) piece(b, m, x1, y1, dx / len, dy / len, 0, len, width, argb);
+        }
+        endColor(b);
+    }
+
+    /**
+     * The area between a line through {@code n} points and the same line moved by (dx, dy), in one draw call. Its pieces
+     * share their sides exactly: with the soft sides of {@link #fillConvex} a see-through colour would show stripes.
+     */
+    public static void band(GuiGraphics g, float[] xy, int n, float dx, float dy, int argb) {
+        if (n < 2) return;
+        Matrix4f m = mat(g);
+        BufferBuilder b = beginColor();
+        for (int i = 0; i + 1 < n; i++) {
+            float x1 = xy[2 * i], y1 = xy[2 * i + 1], x2 = xy[2 * i + 2], y2 = xy[2 * i + 3];
+            // Always turning the same way, as {@link #quad}.
+            if ((x2 - x1) * dy - (y2 - y1) * dx > 0) {
+                float x = x1, y = y1;
+                x1 = x2;
+                y1 = y2;
+                x2 = x;
+                y2 = y;
+            }
+            tri(b, m, x1, y1, x2, y2, x2 + dx, y2 + dy, argb);
+            tri(b, m, x1, y1, x2 + dx, y2 + dy, x1 + dx, y1 + dy, argb);
+        }
+        endColor(b);
+    }
+
     /**
      * Many axis-aligned rectangles in one draw call: {@code rects} holds x0, y0, x1, y1 per rectangle and
      * {@code colors} one ARGB colour each (e.g. the map grid).
