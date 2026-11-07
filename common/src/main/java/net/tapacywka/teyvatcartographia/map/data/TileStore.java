@@ -2,18 +2,24 @@ package net.tapacywka.teyvatcartographia.map.data;
 
 import net.minecraft.world.level.biome.Biome;
 import net.tapacywka.teyvatcartographia.TeyvatCartographia;
+import net.tapacywka.teyvatcartographia.config.MapConfig;
 import net.tapacywka.teyvatcartographia.map.MapView;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 import it.unimi.dsi.fastutil.longs.Long2IntMap;
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.DataInputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -22,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Stage 4 (cache): all map regions of one dimension. Keeps at most {@code maxTiles} regions in memory
@@ -44,6 +51,8 @@ public final class TileStore {
     private final LongOpenHashSet failed = new LongOpenHashSet();
     /** Chunk counts of regions that are on disk (persisted in index.txt), used for "explored" statistics. */
     private final Long2IntOpenHashMap diskChunkCounts = new Long2IntOpenHashMap();
+    /** Which chunks of regions on disk are on the map ({@link #chunkBits}), kept in {@code chunks.idx}: for the soft edge of the regions beside them. */
+    private final Long2ObjectOpenHashMap<long[]> diskChunks = new Long2ObjectOpenHashMap<>();
     private final Long2ObjectOpenHashMap<List<ChunkShader.Result>> pending = new Long2ObjectOpenHashMap<>();
     private final ConcurrentLinkedQueue<Object[]> loaded = new ConcurrentLinkedQueue<>();
     private volatile boolean closed;
@@ -78,6 +87,8 @@ public final class TileStore {
     TileStore(ResourceKey<Level> dimension, Path dir, ExecutorService io, long generation, boolean cave, boolean far) {
         this.cave = cave;
         this.far = far;
+        this.softens = !cave && !far;
+        this.edgesOn = softens && MapConfig.get(MapConfig.SOFT_EDGE);
         this.dimension = dimension;
         this.dir = dir;
         this.io = io;
@@ -87,7 +98,7 @@ public final class TileStore {
     }
 
     /** The regions and chunk counts of the folder as the IO thread read them. */
-    private record Found(LongOpenHashSet regions, Long2IntOpenHashMap chunks) {}
+    private record Found(LongOpenHashSet regions, Long2IntOpenHashMap chunks, Long2ObjectOpenHashMap<long[]> bits) {}
 
     /**
      * IO thread: reads the folder behind every write queued before it (one IO thread). Read on the main thread it missed
@@ -98,15 +109,17 @@ public final class TileStore {
         if (closed) return;
         LongOpenHashSet regions = new LongOpenHashSet();
         Long2IntOpenHashMap chunks = new Long2IntOpenHashMap();
+        Long2ObjectOpenHashMap<long[]> bits = new Long2ObjectOpenHashMap<>();
         try {
             MapStorage.dropOutdated(dir);
             regions.addAll(MapStorage.listTiles(dir));
             readIndex(chunks);
+            if (softens) readChunkBits(chunks, bits);
             MapStorage.writeDimension(dir, dimension);
         } catch (RuntimeException e) {
             TeyvatCartographia.LOGGER.warn("Could not read the map folder {}", dir, e);
         }
-        found = new Found(regions, chunks);
+        found = new Found(regions, chunks, bits);
     }
 
     /** Whether the store knows what is on disk; until then it answers as an empty map and holds the chunks it is given. */
@@ -122,6 +135,7 @@ public final class TileStore {
         found = null;
         onDisk.addAll(f.regions);
         diskChunkCounts.putAll(f.chunks);
+        diskChunks.putAll(f.bits);
         version++;
         List<ChunkShader.Result> waiting = new ArrayList<>(early);
         early.clear();
@@ -234,12 +248,16 @@ public final class TileStore {
             }
             t = new MapTile(tx, tz);
             tiles.put(key, t);
+            newRegion(t);
         }
+        int lcx = r.cx() & (MapTile.CHUNKS - 1), lcz = r.cz() & (MapTile.CHUNKS - 1);
+        boolean fresh = !t.hasChunk(lcx, lcz);
         // Only real changes count (re-sampled chunks around the player are usually identical).
-        if (t.applyChunk(r.cx() & (MapTile.CHUNKS - 1), r.cz() & (MapTile.CHUNKS - 1), r.abgr(), r.heights(), r.flags(), r.light(), r.neighbourMask(), r.biome(), r.merge())) {
+        if (t.applyChunk(lcx, lcz, r.abgr(), r.heights(), r.flags(), r.light(), r.neighbourMask(), r.biome(), r.merge())) {
             version++;
             lod.regionChanged(tx, tz);
         }
+        if (fresh) edgesAround(r.cx(), r.cz());
         t.touch();
         return t.changedEdges;
     }
@@ -290,10 +308,13 @@ public final class TileStore {
                 tiles.put(key, t);
                 t.touch();
                 version++;
+                newRegion(t);
+                keepChunks(t);
             }
             List<ChunkShader.Result> waiting = pending.remove(key);
             if (waiting != null) waiting.forEach(this::apply);
         }
+        updateEdges();
     }
 
     /** Evicts least recently used regions above the limit (saving them first if needed). */
@@ -308,6 +329,7 @@ public final class TileStore {
             if (toRemove <= 0) break;
             if (now - t.lastUsedMs < 2000) break;
             save(t);
+            keepChunks(t);
             tiles.remove(t.key);
             t.release();
             toRemove--;
@@ -322,6 +344,7 @@ public final class TileStore {
         onDisk.add(t.key);
         failed.remove(t.key);
         diskChunkCounts.put(t.key, t.chunkCount);
+        if (softens) diskChunks.put(t.key, t.chunkBits());
         indexDirty = true;
         io.execute(() -> {
             try {
@@ -348,7 +371,238 @@ public final class TileStore {
         lod.close();
     }
 
+    // --------------------------------------------------------------- soft edge
+
+    /** Worked out away from the frames, one picture at a time: a few milliseconds each. */
+    private static final ExecutorService EDGE_WORKER = Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "TeyvatCartographia-Edges");
+        t.setDaemon(true);
+        t.setPriority(Thread.NORM_PRIORITY - 1);
+        return t;
+    });
+    /** Pictures handed to the thread at a time. */
+    private static final int MAX_EDGE_JOBS = 8;
+
+    private record EdgeDone(EdgeMask mask, long[] grid, byte[] alpha) {}
+
+    /** The surface of a dimension: not a cave layer, whose few blocks around the player are all it has, nor the far land. */
+    private final boolean softens;
+    private boolean edgesOn;
+    /** Regions whose soft edge is to be worked out. */
+    private final LongOpenHashSet edgeStale = new LongOpenHashSet();
+    private final ConcurrentLinkedQueue<EdgeDone> edgesDone = new ConcurrentLinkedQueue<>();
+    private int edgeJobs;
+    private final LongOpenHashSet chunksLoading = new LongOpenHashSet();
+    private final ConcurrentLinkedQueue<Object[]> chunksRead = new ConcurrentLinkedQueue<>();
+
+    /** Whether the pictures of this store have the soft edge now. */
+    public boolean softEdges() {
+        return edgesOn;
+    }
+
+    /** Regions in memory with a soft edge. */
+    public int fadedRegions() {
+        int n = 0;
+        for (MapTile t : tiles.values()) if (t.edge.faded()) n++;
+        return n;
+    }
+
+    /** Whether every picture in memory has the soft edge of the chunks known now. */
+    public boolean edgesDone() {
+        if (!edgeStale.isEmpty() || edgeJobs > 0 || !chunksLoading.isEmpty() || !lod.edgesDone()) return false;
+        for (MapTile t : tiles.values()) if (!t.edge.ready()) return false;
+        return true;
+    }
+
+    /** A region came into memory: not shown before its soft edge is there. */
+    private void newRegion(MapTile t) {
+        if (!edgesOn) return;
+        t.edge.waitForFirst();
+        edgeStale.add(t.key);
+    }
+
+    /** What a region in memory has on the map, for when it is not. */
+    private void keepChunks(MapTile t) {
+        if (softens && diskChunks.put(t.key, t.chunkBits()) == null) indexDirty = true;
+    }
+
+    /** A chunk came onto the map: the pictures it reaches have their soft edge worked out again. */
+    private void edgesAround(int cx, int cz) {
+        if (!edgesOn) return;
+        for (int tz = MapView.chunkToTile(cz - SoftEdge.RING); tz <= MapView.chunkToTile(cz + SoftEdge.RING); tz++) {
+            for (int tx = MapView.chunkToTile(cx - SoftEdge.RING); tx <= MapView.chunkToTile(cx + SoftEdge.RING); tx++) {
+                long key = MapView.tileKey(tx, tz);
+                if (tiles.containsKey(key)) edgeStale.add(key);
+            }
+        }
+        lod.edgesAround(cx, cz);
+    }
+
+    /** Follows the setting, takes in what the threads finished and hands them what waits. Main thread; every tick and when the map is drawn. */
+    public void updateEdges() {
+        if (!softens || closed) return;
+        boolean on = MapConfig.get(MapConfig.SOFT_EDGE);
+        if (on != edgesOn) switchEdges(on);
+        Object[] read;
+        while ((read = chunksRead.poll()) != null) tookChunks((Long) read[0], (long[]) read[1]);
+        EdgeDone d;
+        while ((d = edgesDone.poll()) != null) {
+            edgeJobs--;
+            if (!edgesOn) d.mask.ignored();
+            else if (d.mask.set(d.grid, d.alpha)) version++;
+        }
+        if (!edgesOn || !opened) return;
+        for (LongIterator it = edgeStale.iterator(); it.hasNext(); ) {
+            MapTile t = tiles.get(it.nextLong());
+            if (t == null) {
+                it.remove();
+            } else if (!t.edge.busy()) {
+                if (!askEdge(t.edge, t.tx * MapTile.CHUNKS, t.tz * MapTile.CHUNKS, MapTile.CHUNKS, 16)) return;
+                it.remove();
+            }
+        }
+        lod.askEdges();
+    }
+
+    private void switchEdges(boolean on) {
+        edgesOn = on;
+        for (MapTile t : tiles.values()) {
+            if (on) {
+                t.edge.again();
+                edgeStale.add(t.key);
+            } else {
+                t.edge.clear();
+            }
+        }
+        if (!on) edgeStale.clear();
+        lod.switchEdges(on);
+        version++;
+    }
+
+    /**
+     * Has the soft edge of a picture worked out if the chunks around it changed.
+     *
+     * @return false while the thread has enough to do: the picture stays waiting
+     */
+    boolean askEdge(EdgeMask mask, int cx0, int cz0, int chunks, int pixels) {
+        long[] grid = grid(cx0, cz0, chunks);
+        if (mask.madeFrom(grid)) return true;
+        // Land all around is the most of a map: nothing to wait for.
+        if (SoftEdge.whole(grid, chunks + 2 * SoftEdge.RING)) {
+            if (mask.set(grid, null)) version++;
+            return true;
+        }
+        if (edgeJobs >= MAX_EDGE_JOBS) return false;
+        edgeJobs++;
+        mask.started();
+        EDGE_WORKER.execute(() -> {
+            byte[] alpha = null;
+            try {
+                alpha = SoftEdge.alpha(cx0, cz0, chunks, pixels, grid);
+            } catch (RuntimeException e) {
+                TeyvatCartographia.LOGGER.warn("Could not work out the soft edge at chunk {},{}", cx0, cz0, e);
+            }
+            edgesDone.add(new EdgeDone(mask, grid, alpha));
+        });
+        return true;
+    }
+
+    /** The explored chunks of a square from (cx0, cz0) and the ring around it, as {@link SoftEdge#alpha} takes them. */
+    private long[] grid(int cx0, int cz0, int chunks) {
+        int side = chunks + 2 * SoftEdge.RING;
+        long[] grid = SoftEdge.grid(side);
+        for (int z = 0; z < side; z++) {
+            for (int x = 0; x < side; x++) {
+                if (explored(cx0 + x - SoftEdge.RING, cz0 + z - SoftEdge.RING)) SoftEdge.set(grid, z * side + x);
+            }
+        }
+        return grid;
+    }
+
+    /** Whether a chunk is on the map; of a region whose chunks are not known yet, true: no edge against land that may be there. */
+    private boolean explored(int cx, int cz) {
+        long key = MapView.tileKey(MapView.chunkToTile(cx), MapView.chunkToTile(cz));
+        int lcx = cx & (MapTile.CHUNKS - 1), lcz = cz & (MapTile.CHUNKS - 1);
+        MapTile t = tiles.get(key);
+        if (t != null) return t.hasChunk(lcx, lcz);
+        if (!onDisk.contains(key)) return false;
+        long[] bits = diskChunks.get(key);
+        if (bits == null) {
+            readChunks(key);
+            return true;
+        }
+        int i = lcz * MapTile.CHUNKS + lcx;
+        return (bits[i >> 6] >>> (i & 63) & 1) != 0;
+    }
+
+    /** Maps saved before the soft edge have no {@code chunks.idx}: a region's chunks are read when first asked for. */
+    private void readChunks(long key) {
+        if (closed || !chunksLoading.add(key)) return;
+        int tx = MapView.tileKeyX(key), tz = MapView.tileKeyZ(key);
+        io.execute(() -> {
+            if (!closed) chunksRead.add(new Object[]{key, MapStorage.readChunks(dir, tx, tz)});
+        });
+    }
+
+    private void tookChunks(long key, long[] bits) {
+        chunksLoading.remove(key);
+        if (diskChunks.putIfAbsent(key, bits) == null) indexDirty = true;
+        // Its four corners and just outside them reach every picture that has it in reach.
+        int x0 = MapView.tileKeyX(key) * MapTile.CHUNKS, z0 = MapView.tileKeyZ(key) * MapTile.CHUNKS, last = MapTile.CHUNKS - 1;
+        for (int z = z0; z <= z0 + last; z += last) {
+            for (int x = x0; x <= x0 + last; x += last) edgesAround(x, z);
+        }
+    }
+
+    /** Which of a region's chunks are on the map, a bit each, from their states ({@link MapTile#chunkState}). */
+    static long[] chunkBits(byte[] chunkState) {
+        long[] bits = new long[MapTile.CHUNKS * MapTile.CHUNKS / 64];
+        for (int i = 0; i < chunkState.length; i++) if ((chunkState[i] & 0x80) != 0) bits[i >> 6] |= 1L << (i & 63);
+        return bits;
+    }
+
     // --------------------------------------------------------------- index
+
+    private static final int CHUNKS_MAGIC = 0x54594331; // "TYC1"
+
+    /**
+     * IO thread: {@code chunks.idx} as {@link #chunkBitsFile} wrote it. A region whose count differs from the index was
+     * saved by something else since (the Xaero import): it is left out, and read from the region when needed.
+     */
+    private void readChunkBits(Long2IntOpenHashMap counts, Long2ObjectOpenHashMap<long[]> bits) {
+        Path file = dir.resolve("chunks.idx");
+        if (!Files.exists(file)) return;
+        try (DataInputStream in = new DataInputStream(new BufferedInputStream(Files.newInputStream(file)))) {
+            if (in.readInt() != CHUNKS_MAGIC) return;
+            int n = in.readInt();
+            for (int i = 0; i < n; i++) {
+                long key = in.readLong();
+                long[] b = new long[MapTile.CHUNKS * MapTile.CHUNKS / 64];
+                int count = 0;
+                for (int k = 0; k < b.length; k++) {
+                    b[k] = in.readLong();
+                    count += Long.bitCount(b[k]);
+                }
+                if (count == counts.get(key)) bits.put(key, b);
+            }
+        } catch (IOException e) {
+            TeyvatCartographia.LOGGER.warn("Could not read the map's chunks {}", file, e);
+        }
+    }
+
+    /** The bytes of {@code chunks.idx}: the regions on disk with what is known of their chunks. */
+    private byte[] chunkBitsFile() {
+        int longs = MapTile.CHUNKS * MapTile.CHUNKS / 64, n = 0;
+        for (Long2ObjectMap.Entry<long[]> e : diskChunks.long2ObjectEntrySet()) if (onDisk.contains(e.getLongKey())) n++;
+        ByteBuffer out = ByteBuffer.allocate(8 + n * 8 * (1 + longs));
+        out.putInt(CHUNKS_MAGIC).putInt(n);
+        for (Long2ObjectMap.Entry<long[]> e : diskChunks.long2ObjectEntrySet()) {
+            if (!onDisk.contains(e.getLongKey())) continue;
+            out.putLong(e.getLongKey());
+            for (long b : e.getValue()) out.putLong(b);
+        }
+        return out.array();
+    }
 
     private void readIndex(Long2IntOpenHashMap chunks) {
         Path index = dir.resolve("index.txt");
@@ -372,6 +626,7 @@ public final class TileStore {
             sb.append(MapView.tileKeyX(k)).append(' ').append(MapView.tileKeyZ(k)).append(' ').append(diskChunkCounts.get(k)).append('\n');
         }
         String content = sb.toString();
+        byte[] chunkBits = softens ? chunkBitsFile() : null;
         io.execute(() -> {
             try {
                 Path tmp = dir.resolve("index.txt.tmp");
@@ -379,6 +634,11 @@ public final class TileStore {
                     w.write(content);
                 }
                 Files.move(tmp, dir.resolve("index.txt"), StandardCopyOption.REPLACE_EXISTING);
+                if (chunkBits != null) {
+                    Path bitsTmp = dir.resolve("chunks.idx.tmp");
+                    Files.write(bitsTmp, chunkBits);
+                    Files.move(bitsTmp, dir.resolve("chunks.idx"), StandardCopyOption.REPLACE_EXISTING);
+                }
             } catch (IOException e) {
                 TeyvatCartographia.LOGGER.warn("Could not write map index in {}", dir, e);
             }

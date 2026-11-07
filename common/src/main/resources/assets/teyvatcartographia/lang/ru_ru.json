@@ -98,6 +98,7 @@
   "teyvatcartographia.settings.labels": "Названия биомов",
   "teyvatcartographia.settings.grid": "Сетка чанков",
   "teyvatcartographia.settings.far_land": "Дальние земли",
+  "teyvatcartographia.settings.soft_edge": "Мягкий край карты",
   "teyvatcartographia.settings.all": "Все настройки",
 
   "teyvatcartographia.config.title": "Настройки Teyvat Cartographia",
@@ -206,6 +207,8 @@
   "teyvatcartographia.config.far_land.tooltip": "В одиночной игре очертания неисследованной суши бледно видны под Туманом Войны на обеих картах.",
   "teyvatcartographia.config.far_land_radius": "Радиус дальних земель",
   "teyvatcartographia.config.far_land_radius.tooltip": "На сколько блоков вокруг вас считать берег точно, пока карта закрыта. Что на карте видно, считается всегда.",
+  "teyvatcartographia.config.soft_edge": "Мягкий край карты",
+  "teyvatcartographia.config.soft_edge.tooltip": "Край исследованного становится плавной линией, которая тает в Тумане Войны чуть внутри карты.",
   "teyvatcartographia.config.plants": "Растения",
   "teyvatcartographia.config.plants.tooltip": "Растения окрашивают своё место на карте. Стрелка открывает их список: под выключенным видна земля.",
   "teyvatcartographia.config.plants.find": "Найти растение",

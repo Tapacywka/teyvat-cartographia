@@ -5,6 +5,7 @@ import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
+import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.tapacywka.teyvatcartographia.TeyvatCartographia;
 import net.tapacywka.teyvatcartographia.map.MapView;
@@ -41,6 +42,8 @@ public final class LodStore {
     /** Regions (tile keys) whose cell is to be redrawn from the region in memory. */
     private final LongArrayFIFOQueue memoryQueue = new LongArrayFIFOQueue();
     private final LongOpenHashSet memoryQueued = new LongOpenHashSet();
+    /** Tiles whose soft edge is to be worked out. */
+    private final LongOpenHashSet edgeStale = new LongOpenHashSet();
     private volatile boolean closed;
 
     LodStore(TileStore store, ExecutorService io) {
@@ -55,6 +58,8 @@ public final class LodStore {
         final NativeImage image = new NativeImage(MapTile.SIZE, MapTile.SIZE, true);
         private DynamicTexture texture;
         boolean gpuDirty = true;
+        /** Its soft edge: the saved thumbnails know nothing of it. */
+        final EdgeMask edge = new EdgeMask(() -> gpuDirty = true);
         /** Bit per cell (region) still waiting for its thumbnail. */
         int pending;
         long lastUsedMs = System.currentTimeMillis();
@@ -75,7 +80,7 @@ public final class LodStore {
 
         /** Whether every existing region of this tile is in the picture. */
         public boolean complete() {
-            return pending == 0;
+            return pending == 0 && edge.ready();
         }
 
         public boolean needsUpload() {
@@ -85,6 +90,7 @@ public final class LodStore {
         /** The GL texture id (linear filtering), uploading pending changes if {@code allowUpload}; -1 if not available yet. */
         public int textureId(boolean allowUpload) {
             RenderSystem.assertOnRenderThread();
+            if (!edge.ready()) allowUpload = false;
             if (texture == null) {
                 if (!allowUpload) return -1;
                 texture = new DynamicTexture(image) {
@@ -97,9 +103,15 @@ public final class LodStore {
                 texture.bind();
                 GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
                 GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+                if (edge.faded()) edge.over(image).upload(0, 0, 0, false);
                 gpuDirty = false;
             } else if (gpuDirty && allowUpload) {
-                texture.upload();
+                if (edge.faded()) {
+                    texture.bind();
+                    edge.over(image).upload(0, 0, 0, false);
+                } else {
+                    texture.upload();
+                }
                 gpuDirty = false;
             }
             return texture.getId();
@@ -131,6 +143,10 @@ public final class LodStore {
         if (t == null) {
             t = new LodTile(lx, lz);
             tiles.put(key, t);
+            if (store.softEdges()) {
+                t.edge.waitForFirst();
+                edgeStale.add(key);
+            }
             for (int i = 0; i < REGIONS * REGIONS; i++) {
                 int tx = lx * REGIONS + i % REGIONS, tz = lz * REGIONS + i / REGIONS;
                 if (store.exists(tx, tz)) requestCell(t, tx, tz);
@@ -175,6 +191,62 @@ public final class LodStore {
         t.pending |= 1 << cellIndex(tx, tz);
         long rk = MapView.tileKey(tx, tz);
         if (memoryQueued.add(rk)) memoryQueue.enqueue(rk);
+    }
+
+    // ------------------------------------------------------------------ soft edge
+
+    /** The tiles a chunk reaches with its soft edge have theirs worked out again. */
+    void edgesAround(int cx, int cz) {
+        int n = REGIONS * MapTile.CHUNKS;
+        for (int lz = Math.floorDiv(cz - SoftEdge.RING, n); lz <= Math.floorDiv(cz + SoftEdge.RING, n); lz++) {
+            for (int lx = Math.floorDiv(cx - SoftEdge.RING, n); lx <= Math.floorDiv(cx + SoftEdge.RING, n); lx++) {
+                long key = MapView.tileKey(lx, lz);
+                if (tiles.containsKey(key)) edgeStale.add(key);
+            }
+        }
+    }
+
+    /** The soft edge went on or off: every tile follows. */
+    void switchEdges(boolean on) {
+        for (LodTile t : tiles.values()) {
+            if (on) {
+                t.edge.again();
+                edgeStale.add(t.key);
+            } else {
+                t.edge.clear();
+            }
+        }
+        if (!on) edgeStale.clear();
+    }
+
+    /** A tile not drawn for this long keeps its soft edge waiting: exploring with the map closed, nothing needs it. */
+    private static final long SHOWN_MS = 2000;
+
+    private static boolean shown(LodTile t) {
+        return System.currentTimeMillis() - t.lastUsedMs < SHOWN_MS;
+    }
+
+    /** Whether no tile on the map waits for its soft edge. */
+    boolean edgesDone() {
+        for (LongIterator it = edgeStale.iterator(); it.hasNext(); ) {
+            LodTile t = tiles.get(it.nextLong());
+            if (t != null && shown(t)) return false;
+        }
+        return true;
+    }
+
+    /** Hands the tiles waiting to the thread that works the edges out, as many as it takes. */
+    void askEdges() {
+        int n = REGIONS * MapTile.CHUNKS;
+        for (LongIterator it = edgeStale.iterator(); it.hasNext(); ) {
+            LodTile t = tiles.get(it.nextLong());
+            if (t == null) {
+                it.remove();
+            } else if (!t.edge.busy() && shown(t)) {
+                if (!store.askEdge(t.edge, t.lx * n, t.lz * n, n, MapStorage.THUMB / MapTile.CHUNKS)) return;
+                it.remove();
+            }
+        }
     }
 
     /** Applies thumbnails read by the IO thread and redraws a few cells from regions in memory. Once per frame. */
@@ -234,5 +306,6 @@ public final class LodStore {
         tiles.clear();
         memoryQueue.clear();
         memoryQueued.clear();
+        edgeStale.clear();
     }
 }

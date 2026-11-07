@@ -141,6 +141,7 @@ public final class MapLayerRenderer {
      */
     public static boolean drawRect(GuiGraphics g, TileStore store, MapView view, float x0, float y0, float x1, float y1, int tint, float lightAlpha) {
         if (store == null) return true;
+        store.updateEdges();
         int tx0 = MapView.blockToTile((int) Math.floor(view.worldX(x0, y0)));
         int tz0 = MapView.blockToTile((int) Math.floor(view.worldZ(x0, y0)));
         int tx1 = MapView.blockToTile((int) Math.floor(view.worldX(x1, y1)));
@@ -170,6 +171,7 @@ public final class MapLayerRenderer {
                 int id = t == null ? -1 : t.textureId(allow);
                 if (t == null || !allow) complete = false;
                 if (id < 0) {
+                    complete = false;
                     // Still loading (e.g. just zoomed in from the LOD scales): its quarter-size copy fills the hole meanwhile.
                     if (!lodUpdated) {
                         store.lod().update();
@@ -288,7 +290,10 @@ public final class MapLayerRenderer {
                 if (t.needsUpload() && allow) uploads--;
                 if (!allow) complete = false;
                 int id = t.textureId(allow);
-                if (id < 0) continue;
+                if (id < 0) {
+                    complete = false;
+                    continue;
+                }
                 float sx0 = view.screenX(t.blockX0(), t.blockZ0()), sy0 = view.screenY(t.blockX0(), t.blockZ0());
                 float sx1 = view.screenX(t.blockX0() + LodStore.BLOCKS, t.blockZ0() + LodStore.BLOCKS);
                 float sy1 = view.screenY(t.blockX0() + LodStore.BLOCKS, t.blockZ0() + LodStore.BLOCKS);

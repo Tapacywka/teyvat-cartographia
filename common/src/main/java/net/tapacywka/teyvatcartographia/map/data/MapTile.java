@@ -57,6 +57,11 @@ public final class MapTile {
 
     private DynamicTexture texture;
     boolean gpuDirty = true;
+    /** Its soft edge, on the way to the GPU only: {@link #image} stays whole. */
+    final EdgeMask edge = new EdgeMask(() -> {
+        gpuDirty = true;
+        lightDirty = true;
+    });
     boolean diskDirty;
     long lastUsedMs = System.currentTimeMillis();
     int chunkCount;
@@ -123,6 +128,11 @@ public final class MapTile {
 
     public boolean hasChunk(int lcx, int lcz) {
         return (chunkState[lcz * CHUNKS + lcx] & 0x80) != 0;
+    }
+
+    /** The chunks on the map, a bit each, as {@link TileStore} keeps them for regions on disk. */
+    long[] chunkBits() {
+        return TileStore.chunkBits(chunkState);
     }
 
     /** A chunk is shaded again when a neighbour is on the map now that was not when it was shaded (masks as {@link #neighbourMask}). */
@@ -214,6 +224,7 @@ public final class MapTile {
     /** Returns the GL texture id, uploading pending changes if {@code allowUpload}. -1 if not yet available. */
     public int textureId(boolean allowUpload) {
         RenderSystem.assertOnRenderThread();
+        if (!edge.ready()) allowUpload = false;
         if (texture == null) {
             if (!allowUpload) return -1;
             texture = new DynamicTexture(image) {
@@ -228,9 +239,15 @@ public final class MapTile {
             texture.bind();
             GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
             GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+            if (edge.faded()) edge.over(image).upload(0, 0, 0, false);
             gpuDirty = false;
         } else if (gpuDirty && allowUpload) {
-            texture.upload();
+            if (edge.faded()) {
+                texture.bind();
+                edge.over(image).upload(0, 0, 0, false);
+            } else {
+                texture.upload();
+            }
             gpuDirty = false;
         }
         return texture.getId();
@@ -271,7 +288,7 @@ public final class MapTile {
                     continue;
                 }
                 int c = image.getPixelRGBA(x, z); // ABGR
-                float a = LIGHT_ALPHA[Math.min(15, lv)] * ((c >>> 24) / 255f);
+                float a = LIGHT_ALPHA[Math.min(15, lv)] * ((c >>> 24) / 255f) * edge.share(idx(x, z));
                 int r = c & 0xFF, gr = (c >> 8) & 0xFF, b = (c >> 16) & 0xFF;
                 float warm = 0.26f * a; // torch-light warmth
                 r = (int) (r + (255 - r) * warm);

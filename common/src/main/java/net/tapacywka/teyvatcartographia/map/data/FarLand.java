@@ -284,14 +284,26 @@ public final class FarLand {
         }
         int tx = MapView.chunkToTile(x), tz = MapView.chunkToTile(z);
         if (store.chunksIn(tx, tz) >= MapTile.CHUNKS * MapTile.CHUNKS) return;
-        // A region explored to the last chunk needs nothing under it.
-        if (level == 0 && explored != null && explored.chunksIn(tx, tz) >= MapTile.CHUNKS * MapTile.CHUNKS) return;
+        if (level == 0 && explored != null && covered(explored, tx, tz)) return;
         if (store.exists(tx, tz) && store.get(tx, tz) == null) {
             s.again = true; // on disk: known once it has loaded
             return;
         }
         if (store.hasChunk(x, z) || !queued.get(level).add(MapView.tileKey(x, z))) return;
         jobs.addLast(new Job(level, x, z));
+    }
+
+    /**
+     * A region explored to the last chunk needs nothing under it, as long as those around it are too: along a side
+     * with land unexplored beyond it the map's soft edge lets through what is under.
+     */
+    private static boolean covered(TileStore explored, int tx, int tz) {
+        for (int dz = -1; dz <= 1; dz++) {
+            for (int dx = -1; dx <= 1; dx++) {
+                if (explored.chunksIn(tx + dx, tz + dz) < MapTile.CHUNKS * MapTile.CHUNKS) return false;
+            }
+        }
+        return true;
     }
 
     // ------------------------------------------------------------------ the threads
