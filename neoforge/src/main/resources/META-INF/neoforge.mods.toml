@@ -32,6 +32,6 @@ iconBlur=true
 [[dependencies.${mod_id}]]
     modId="aacs"
     type="required"
-    versionRange="[1.1.0,)"
+    versionRange="[1.2.0,)"
     ordering="NONE"
     side="BOTH"

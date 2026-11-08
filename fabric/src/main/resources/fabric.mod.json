@@ -22,7 +22,7 @@
     "fabricloader": ">=0.16.0",
     "minecraft": "${minecraft_version_range}",
     "fabric-api": "*",
-    "aacs": ">=1.1.0",
+    "aacs": ">=1.2.0",
     "java": ">=21"
   },
   "suggests": {

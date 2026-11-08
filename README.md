@@ -45,7 +45,7 @@
 - [Screenshots](#screenshots)
 - [Installation](#installation)
 - [Features](#features)
-  - [World map](#world-map) &middot; [Map colours](#map-colours) &middot; [Cave layers](#cave-layers) &middot; [Minimap](#minimap) &middot; [Pins and tracking](#pins-and-tracking) &middot; [Pin in the world](#pin-in-the-world) &middot; [Walking path](#walking-path) &middot; [Settings](#settings)
+  - [World map](#world-map) &middot; [Map colours](#map-colours) &middot; [Experimental](#experimental) &middot; [Cave layers](#cave-layers) &middot; [Minimap](#minimap) &middot; [Pins and tracking](#pins-and-tracking) &middot; [Pin in the world](#pin-in-the-world) &middot; [Walking path](#walking-path) &middot; [Settings](#settings)
 - [Controls](#controls)
 - [Themes](#themes)
 - [Compatibility with mods](#compatibility)
@@ -68,7 +68,7 @@ Place pins, search for them and for biomes, track them, follow the path and find
 | Mod loader | **Fabric** (Fabric Loader 0.16 or newer with [Fabric API](https://github.com/FabricMC/fabric-api)) or **NeoForge** (21.1 for 1.21.1, built against 21.1.257; 26.1.2, 26.2 or 26.3 for those games, built against 26.1.2.124, 26.2.0.93 and 26.3.0.99): one file for each, the same mod |
 | Java | **21** for 1.21.1, **25** for 26.1.2, 26.2 and 26.3 |
 | Side | **Client** only. Servers don't need it, so you can join vanilla and modded servers. |
-| Version | **1.1.0** for every game (1.21.1, 26.1.2, 26.2 and 26.3). The settings screen comes from the library [Actually Amazing Config Screen](https://github.com/Tapacywka/actually-amazing-config-screen) 1.1.0, packed inside the mod (nothing to install). |
+| Version | **1.2.0** for every game (1.21.1, 26.1.2, 26.2 and 26.3). The settings screen comes from the library [Actually Amazing Config Screen](https://github.com/Tapacywka/actually-amazing-config-screen) 1.2.0, packed inside the mod (nothing to install). |
 | Languages | English, Russian |
 | License | [MIT](https://github.com/Tapacywka/teyvat-cartographia/blob/main/LICENSE) |
 
@@ -133,8 +133,8 @@ Place pins, search for them and for biomes, track them, follow the path and find
 2. Download the file for your game and loader from [Modrinth](https://modrinth.com/mod/teyvat-cartographia),
    [CurseForge](https://www.curseforge.com/minecraft/mc-mods/teyvat-cartographia) or the
    [GitHub releases](https://github.com/Tapacywka/teyvat-cartographia/releases):
-   the part after `+mc` names them: `teyvatcartographia-v1.1.0+mc1.21.1-fabric.jar` is for Minecraft 1.21.1 on Fabric,
-   `teyvatcartographia-v1.1.0+mc26.3-neoforge.jar` for 26.3 on NeoForge. Put it into your `mods/` folder.
+   the part after `+mc` names them: `teyvatcartographia-v1.2.0+mc1.21.1-fabric.jar` is for Minecraft 1.21.1 on Fabric,
+   `teyvatcartographia-v1.2.0+mc26.3-neoforge.jar` for 26.3 on NeoForge. Put it into your `mods/` folder.
 3. Launch the game and press **M** in a world.
 4. Optional: make the minimap round (**Settings > Minimap**) or the interface rounded (**Settings > Map**). On Fabric,
    [Mod Menu](https://github.com/TerraformersMC/ModMenu) adds a settings button to the mod list.
@@ -183,6 +183,21 @@ adds its settings button to NeoForge's mod list), but on NeoForge the NeoForge f
 * **Terrain detail** (flat colours, shaded slopes, or slopes with contour lines), **Deep water shading** and **Clear
   shallow water** (the ground seen through shallow water) in **Settings > Map > Colours**.
 * **View cone and glow** under the player arrow can be switched off (**Settings > Map**).
+
+<h3 id="experimental">Experimental</h3>
+
+**Settings > Experimental** holds what is still being tried: it may change, cost more or work another way later. Each is
+off by default, and none is in the map's quick settings until it is out in full.
+
+* **Far land** (single player): the outline of the land you have not explored shows faintly under the Fog of War on both
+  maps, with a brighter line along the coast. It is worked out from the world's generator, no chunk is made, up to the
+  world border, the same outline at every zoom. Lakes and rivers show; what the world adds later (villages, streams from
+  springs, ice) does not. It gives away what you have not found yet, so it stays off unless you want it.
+* **Map edges**: instead of the steps of the chunks the explored map ends on a round, hand-drawn line with a thin
+  turquoise outline and a soft glow into the Fog of War, on the world map and the minimap. The saved map does not
+  change: switched off, everything is back at once.
+* **World border**: the world border as a rough red line on both maps, over the Fog of War too, all beyond it darker;
+  it moves with the border, also on a server.
 
 <h3 id="cave-layers">Cave layers</h3>
 
@@ -259,8 +274,10 @@ adds its settings button to NeoForge's mod list), but on NeoForge the NeoForge f
   and with [Waystones](https://github.com/TwelveIterations/Waystones) its stones and the path to them. The list scrolls when it does not fit.
 * The full settings screen (also from the mod list: NeoForge's, or Mod Menu's on Fabric) has a tab for each part: *Map* (appearance; what the
   map shows: plants, caves; colours; the world map), *Minimap* (display, size and position, look, extra
-  information), *Pins* (display and path to the target for custom and system pins), *System* (performance) and
-  *Compatibility* (The Nether and End fogs, and the supported mods in the game: see [Compatibility with mods](#compatibility)).
+  information), *Pins* (display and path to the target for custom and system pins), *System* (performance),
+  *Compatibility* (The Nether and End fogs, and the supported mods in the game: see [Compatibility with mods](#compatibility))
+  and *Experimental* (see [Experimental](#experimental)). The tabs scroll between two arrows, a tab a click (the mouse
+  wheel over them too).
 * **Live preview**: point at a setting and the card beside the list shows it, with what it does. The map around you
   as it will look, the minimap at its real size and where it sits, the three terrain detail modes, the
   cave layers, the plants, each pin kind on the world map, the minimap and in the world, the mapping
@@ -349,7 +366,7 @@ world map, so most mods work without anything special. A few get more: with one 
 |---|---|
 | [Waystones](https://github.com/TwelveIterations/Waystones) | Its **waystones, sharestones and warp plates** on the world map and the minimap, like the teleport waypoints of Genshin Impact: the ones you have activated with their names, the ones you have only seen in grey, a waystone of a dungeon as a dungeon. Track them like any pin; teleporting stays with Waystones. Where the stones and the path to them show is in its part, and both switch on or off in the world map's quick settings. |
 | [Xaero's Minimap](https://modrinth.com/mod/xaeros-minimap) | **Import** of its waypoints (also those of Xaero's World Map) into your pins: the current world's are found on their own. The pin type they get, and whether hidden waypoints and death points come too, are in its part. |
-| [Xaero's World Map](https://modrinth.com/mod/xaeros-world-map) | **Import of the explored map**: the Overworld's surface you explored with it comes onto this map, so it does not have to be explored again (Settings > Compatibility > Xaero's Map). Pick the map folders of this world in its window; places already on this map stay as they are. Its caves, The Nether and other dimensions are mapped as you go. |
+| [Xaero's World Map](https://modrinth.com/mod/xaeros-world-map) | **Import of the explored map**: the Overworld's surface you explored with it comes onto this map, so it does not have to be explored again (Settings > Compatibility > Xaero's Map). Pick the map folders of this world in its window, which says about how long the import takes (and while it runs, how long is left); places already on this map stay as they are. Its caves, The Nether and other dimensions are mapped as you go. |
 | [The Aether](https://github.com/The-Aether-Team/The-Aether) | A Fog of War of its own, a **sea of clouds** seen from above, with the floating islands casting a soft shadow on it (on the world map and the minimap). No cave layers under the islands. |
 | [Mielon's The Sift](https://modrinth.com/mod/mielons-the-sift) | A **pearly haze** in the colours of its ichor as the Fog of War; its **rainbow ichor** and **ichor snow** shimmer on the map in their own colours (each can be switched off); its cyan willows keep their colour. |
 | [Biomes O' Plenty](https://github.com/Glitchfiend/BiomesOPlenty), [Regions Unexplored](https://github.com/Apollounknowndev/RegionsUnexplored) | Their biomes, leaves, grass and plants in their own colours (compared side by side with Xaero's Minimap in 16 places); their plants in the Plants list. |
