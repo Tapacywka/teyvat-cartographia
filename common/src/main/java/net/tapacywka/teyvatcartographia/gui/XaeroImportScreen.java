@@ -8,6 +8,7 @@ import net.minecraft.world.level.Level;
 import net.tapacywka.teyvatcartographia.TeyvatCartographia;
 import net.tapacywka.teyvatcartographia.compat.XaeroMapFolders;
 import net.tapacywka.teyvatcartographia.gui.Ui.Grid;
+import net.tapacywka.teyvatcartographia.map.data.ImportTime;
 import net.tapacywka.teyvatcartographia.map.data.MapDataManager;
 import net.tapacywka.teyvatcartographia.map.data.XaeroImport;
 import net.tapacywka.teyvatcartographia.render.Draw;
@@ -24,8 +25,9 @@ import java.util.List;
 /**
  * The import of the explored Overworld of Xaero's World Map into this mod's map of it, from any dimension (user request
  * 03.11.2026, opened from Settings > Compatibility > Xaero's Minimap; docs/XAERO_MAP_IMPORT.md): Xaero's folders of the
- * Overworld with a switch each (the current world's on), Import, a bar while it runs, then what it wrote. The map is
- * closed meanwhile ({@link MapDataManager#pauseForImport}) and opens again with the imported land.
+ * Overworld with a switch each (the current world's on), about how long the import of those chosen takes, Import, a bar
+ * and the time left while it runs (user request 08.11.2026, {@link ImportTime}), then what it wrote. The map is closed
+ * meanwhile ({@link MapDataManager#pauseForImport}) and opens again with the imported land.
  */
 public final class XaeroImportScreen extends Screen {
     private static final int W = 300;
@@ -103,15 +105,21 @@ public final class XaeroImportScreen extends Screen {
         float ny = ly + rows() * ROW + 2;
         if (running == null) {
             DrawText.text(g, DrawText.fit(Component.translatable(K + "keeps").getString(), (int) bw), bx, ny, Theme.TEXT_MUTED, false);
+            // About how long it takes, for the folders chosen (user request 08.11.2026).
+            double seconds = estimate();
+            if (seconds > 0) {
+                Component line = Component.translatable(K + "estimate", time(seconds));
+                DrawText.text(g, DrawText.fit(line.getString(), (int) bw), bx, ny + 12, Theme.CREAM, false);
+            }
         } else {
-            // Progress: a bar over the regions, the count under it.
+            // Progress: a bar over the regions, the count and about how long is left under it.
             int total = Math.max(1, running.total.get()), done = running.done.get();
             Draw.rect(g, bx, ny, bx + bw, ny + 6, Theme.SCROLL_TRACK);
             Draw.rect(g, bx, ny, bx + bw * done / total, ny + 6, Theme.GOLD);
             Component line = finished
                     ? Component.translatable(K + "done", running.chunks.get(), running.broken.get())
-                    : Component.translatable(K + "progress", done, running.total.get());
-            DrawText.text(g, DrawText.fit(line.getString(), (int) bw), bx, ny + 10, finished ? Theme.CREAM : Theme.TEXT_MUTED, false);
+                    : Component.translatable(K + "progress", done, running.total.get(), time(left()));
+            DrawText.text(g, DrawText.fit(line.getString(), (int) bw), bx, ny + 10, Theme.CREAM, false);
         }
         float half = (bw - Grid.GAP) / 2f, by = buttonsY();
         if (running == null) {
@@ -123,6 +131,40 @@ public final class XaeroImportScreen extends Screen {
             Ui.actionButton(g, bx, by, bw, Component.translatable("gui.done"), null, true, mx, my);
         }
         DrawText.room(title, w - 2 * Grid.PAD - Grid.ICON_L - Grid.ICON - 3 * Grid.GAP);
+    }
+
+    /** About how many seconds the import of the folders chosen takes (0 with none chosen). */
+    private double estimate() {
+        int regions = 0;
+        long bytes = 0;
+        for (int i = 0; i < sources.size(); i++) {
+            if (!chosen[i]) continue;
+            regions += sources.get(i).regions();
+            bytes += sources.get(i).bytes();
+        }
+        return regions == 0 ? 0 : ImportTime.seconds(regions, bytes, XaeroImport.threads(), 1);
+    }
+
+    /** The time left as last worked out, and when (renewed once a second, so the number does not flicker). */
+    private double left;
+    private long leftAt;
+
+    private double left() {
+        long now = System.nanoTime();
+        if (leftAt == 0 || now - leftAt > 1_000_000_000L) {
+            double l = running.secondsLeft();
+            left = l < 0 ? estimate() : l; // the regions still being listed: as estimated before
+            leftAt = now;
+        }
+        return left;
+    }
+
+    /** "40 s", "2 min", "1 h 5 min": the time rounded as {@link ImportTime#rounded} says. */
+    private static Component time(double seconds) {
+        int[] t = ImportTime.rounded(seconds);
+        if (t[0] > 0) return Component.translatable(K + "hours", t[0], t[1]);
+        if (t[1] > 0) return Component.translatable(K + "minutes", t[1]);
+        return Component.translatable(K + "seconds", t[2]);
     }
 
     @Override

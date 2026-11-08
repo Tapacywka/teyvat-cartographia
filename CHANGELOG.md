@@ -11,20 +11,30 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 ## [Unreleased]
 
 ### Added
-- Settings > Map > Far land (single player, off by default, as it gives away what you have not found yet): the outline of
-  the land you have not explored shows faintly under the Fog of War on the world map and the minimap, with a brighter line
-  along the coast. It is worked out from the world's generator, no chunk is made, as far as the map shows, up to the world
-  border: the same outline at every zoom, its coast in steps of a few blocks, worked out in detail only along the coasts. Mods
-  that change the land through the game's generator are seen too. Lakes and rivers show; what the world adds later (streams
-  from springs, villages, ice on the water) does not. While the map is closed it is worked out in the background, 2048 blocks
-  around you, farther for the farther zooms.
-- Settings > Map > Map edges (off by default, also in the map's quick settings): instead of the steps of the chunks the
-  explored map ends on a round, hand-drawn line with a thin turquoise outline and a soft glow into the Fog of War, on the world
-  map at every zoom and on the minimap. It runs up to 30 blocks inside what you explored, and strips narrower than about 5
-  chunks fade away with it. Nothing changes in the saved map: switched off, everything is back at once.
-- Settings > Map > World border (off by default, also in the map's quick settings): the world border shows as a rough red line
-  on both maps, over the Fog of War too, and all beyond it is darker. It keeps its width at every zoom and moves with the
-  border, also on a server.
+- Settings > Experimental: a new tab for what is still being tried, may change, cost more or work another way later. Far
+  land, Map edges and World border are there. The settings tabs no longer fit in the window, so they scroll: an arrow at
+  each end of the row moves them a tab at a time, the mouse wheel over them too.
+- Explored map from Xaero: the window says about how long the import of the chosen folders takes, and while it runs,
+  about how long is left besides the region count.
+- Settings > Experimental > Far land (single player, off by default, as it gives away what you have not found yet): the
+  outline of the land you have not explored shows faintly under the Fog of War on the world map and the minimap, with a
+  brighter line along the coast. It is worked out from the world's generator, no chunk is made, as far as the map shows,
+  up to the world border: the same outline at every zoom, its coast in steps of a few blocks, worked out in detail only
+  along the coasts. Mods that change the land through the game's generator are seen too. Lakes and rivers show; what the
+  world adds later (streams from springs, villages, ice on the water) does not. While the map is closed it is worked out
+  in the background, 2048 blocks around you, farther for the farther zooms.
+- Settings > Experimental > Map edges (off by default, also in the map's quick settings): instead of the steps of the
+  chunks the explored map ends on a round, hand-drawn line with a thin turquoise outline and a soft glow into the Fog of
+  War, on the world map at every zoom and on the minimap. It runs up to 30 blocks inside what you explored, and strips
+  narrower than about 5 chunks fade away with it. Nothing changes in the saved map: switched off, everything is back at
+  once.
+- Settings > Experimental > World border (off by default, also in the map's quick settings): the world border shows as a
+  rough red line on both maps, over the Fog of War too, and all beyond it is darker. It keeps its width at every zoom and
+  moves with the border, also on a server.
+
+### Changed
+- Settings > Compatibility > Xaero's Map: the Import link is white like the other texts (grey, it looked switched off).
+- The settings screen comes from Actually Amazing Config Screen 1.2.0 (packed inside the mod, nothing to install).
 
 ## [1.1.0] - 2026-11-06
 
