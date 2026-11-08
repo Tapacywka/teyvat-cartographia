@@ -85,7 +85,8 @@ public final class SettingsPanel extends SidePanel {
 
     /**
      * The interactive pins (the stones of Waystones) have their own section, named after the mod, only with Waystones (user
-     * request 03.11.2026); the rest of their settings are in Compatibility > Waystones of the full settings screen.
+     * request 03.11.2026); the rest of their settings are in Compatibility > Waystones of the full settings screen. No
+     * setting of Settings > Experimental (user decision 08.11.2026): one comes here only once its feature is out in full.
      */
     private static List<Row> rows() {
         List<Row> out = new java.util.ArrayList<>(List.of(section("teyvatcartographia.settings.section.display"),
@@ -93,10 +94,7 @@ public final class SettingsPanel extends SidePanel {
                 pins("teyvatcartographia.settings.system_pins", MapConfig.PinKind.SYSTEM),
                 path("teyvatcartographia.settings.path", MapConfig.PinKind.CUSTOM, MapConfig.PinKind.SYSTEM), plants(),
                 option("teyvatcartographia.settings.labels", "map_labels", MapConfig.MAP_SHOW_LABELS),
-                option("teyvatcartographia.settings.grid", "map_grid", MapConfig.MAP_SHOW_GRID),
-                option("teyvatcartographia.settings.far_land", "far_land", MapConfig.FAR_LAND),
-                option("teyvatcartographia.settings.map_outline", "map_outline", MapConfig.MAP_OUTLINE),
-                option("teyvatcartographia.settings.world_border", "world_border", MapConfig.WORLD_BORDER)));
+                option("teyvatcartographia.settings.grid", "map_grid", MapConfig.MAP_SHOW_GRID)));
         if (ModCompat.waystones()) {
             out.add(section("teyvatcartographia.config.subsection.compat_waystones"));
             out.add(pins("teyvatcartographia.settings.stones", MapConfig.PinKind.INTERACTIVE));

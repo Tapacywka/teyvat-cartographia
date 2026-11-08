@@ -97,9 +97,6 @@
   "teyvatcartographia.settings.plants.tooltip": "Plants colour their spot on the map. Which plants: All settings > Map. Places already mapped change when you pass by again.",
   "teyvatcartographia.settings.labels": "Biome names",
   "teyvatcartographia.settings.grid": "Chunk grid",
-  "teyvatcartographia.settings.far_land": "Far land",
-  "teyvatcartographia.settings.map_outline": "Map edges",
-  "teyvatcartographia.settings.world_border": "World border",
   "teyvatcartographia.settings.all": "All settings",
 
   "teyvatcartographia.config.title": "Teyvat Cartographia settings",
