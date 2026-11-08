@@ -10,6 +10,8 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-11-08
+
 ### Added
 - Settings > Experimental: a new tab for what is still being tried, may change, cost more or work another way later. Far
   land, Map edges and World border are there; the map's quick settings get such a setting only once its feature is out
@@ -489,7 +491,8 @@ The first public release, for Minecraft 1.21.1 on NeoForge 21.1. Client only.
 - Cached HUD layers, chunk work on worker threads and path searches in short slices: the mod is meant to cost at most
   2 to 3% FPS.
 
-[Unreleased]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.9.0-beta.5...v1.0.0
 [0.9.0-beta.5]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.9.0-beta.4...v0.9.0-beta.5
