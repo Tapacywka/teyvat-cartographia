@@ -20,8 +20,11 @@ import java.util.stream.Stream;
 public final class XaeroMapFolders {
     private XaeroMapFolders() {}
 
-    /** One folder of regions: its world and map as Xaero names them, how many regions, the newest of them, current. */
-    public record Source(Path dir, String world, String map, int regions, FileTime newest, boolean current) {}
+    /**
+     * One folder of regions: its world and map as Xaero names them, how many regions and their bytes in all (for the time
+     * the import takes), the newest of them, current.
+     */
+    public record Source(Path dir, String world, String map, int regions, long bytes, FileTime newest, boolean current) {}
 
     /** Xaero's folder of the Overworld in a world's folder. */
     static final String OVERWORLD = "null";
@@ -63,18 +66,20 @@ public final class XaeroMapFolders {
 
     private static Source source(Path dir, String world, String map, boolean current) {
         int n = 0;
+        long bytes = 0;
         FileTime newest = FileTime.fromMillis(0);
         for (Path f : list(dir)) {
             if (!f.getFileName().toString().matches("-?\\d+_-?\\d+\\.zip")) continue;
             n++;
             try {
-                FileTime t = Files.getLastModifiedTime(f);
-                if (t.compareTo(newest) > 0) newest = t;
+                java.nio.file.attribute.BasicFileAttributes a = Files.readAttributes(f, java.nio.file.attribute.BasicFileAttributes.class);
+                bytes += a.size();
+                if (a.lastModifiedTime().compareTo(newest) > 0) newest = a.lastModifiedTime();
             } catch (IOException ignored) {
-                // No date: counted all the same.
+                // No date or size: counted all the same.
             }
         }
-        return n == 0 ? null : new Source(dir, world, map, n, newest, current);
+        return n == 0 ? null : new Source(dir, world, map, n, bytes, newest, current);
     }
 
     /** The world as the player knows it: a server's address, a world's own name (Xaero's escapes undone). */

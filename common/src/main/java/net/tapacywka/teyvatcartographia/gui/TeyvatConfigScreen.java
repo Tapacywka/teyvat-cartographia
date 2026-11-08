@@ -30,10 +30,11 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 /**
- * The settings screen, laid out by Actually Amazing Config Screen (AACS) over the values of {@link MapConfig}: five
+ * The settings screen, laid out by Actually Amazing Config Screen (AACS) over the values of {@link MapConfig}: six
  * tabs, each answering one question: how the map looks and what it shows (Map), the minimap, the pins, how much work
- * the mapping may take (System), and what was made for other mods (Compatibility, only with such a mod in the game).
- * The pictures of the card beside the list stay here ({@link Pictures}, {@link SettingsPreview}).
+ * the mapping may take (System), what was made for Minecraft's dimensions and other mods (Compatibility), and what is
+ * still being tried (Experimental). AACS scrolls the tabs between two arrows, as they do not fit in the panel. The
+ * pictures of the card beside the list stay here ({@link Pictures}, {@link SettingsPreview}).
  */
 public final class TeyvatConfigScreen {
     private TeyvatConfigScreen() {}
@@ -106,9 +107,6 @@ public final class TeyvatConfigScreen {
             t.toggleList(K + "plants", MapConfig.MAP_PLANTS, MapConfig.PLANTS_HIDDEN, TeyvatConfigScreen::plants, remap).then(remap);
             t.toggle(K + "caves", MapConfig.CAVES_ENABLED);
             t.toggle(K + "player_cone", MapConfig.PLAYER_CONE);
-            t.toggle(K + "far_land", MapConfig.FAR_LAND);
-            t.toggle(K + "map_outline", MapConfig.MAP_OUTLINE);
-            t.toggle(K + "world_border", MapConfig.WORLD_BORDER);
             // How the map is coloured: relief, water.
             t.section(K + "section.colours");
             // A choice with arrows, not a slider (user request 24.10.2026: three steps made it the one short slider).
@@ -194,6 +192,15 @@ public final class TeyvatConfigScreen {
             t.subSection(K + "subsection.compat_minecraft")
                     .toggle(K + "compat.nether_fog", MapConfig.NETHER_FOG).then(Theme.Style::update)
                     .toggle(K + "compat.end_fog", MapConfig.END_FOG).then(Theme.Style::update);
+        });
+        // Experimental (user request 08.11.2026): what is not checked to the end yet, or wants more work, a faster or
+        // another way; the far land, the map edges and the world border first (they stay in the map's quick settings).
+        b.tab(K + "tab.experimental", t -> {
+            t.defaultPreview(new Pictures(K + "tab.experimental"));
+            t.section(K + "section.map_content");
+            t.toggle(K + "far_land", MapConfig.FAR_LAND);
+            t.toggle(K + "map_outline", MapConfig.MAP_OUTLINE);
+            t.toggle(K + "world_border", MapConfig.WORLD_BORDER);
         });
         return b.build();
     }
@@ -325,7 +332,7 @@ public final class TeyvatConfigScreen {
             } else if (rk.equals(K + "detail")) {
                 if (world) SettingsPreview.detail(g, cx, cy, cw, ch);
                 else note(g, cx, cy, cw, ch, K + "preview.no_world");
-            } else if (tab.equals(K + "tab.map")) {
+            } else if (tab.equals(K + "tab.map") || FAR_ROWS.contains(rk)) {
                 if (world) map(g, cx, cy, cw, ch, FAR_ROWS.contains(rk) ? FAR_ZOOM : MapView.snapZoom(MapConfig.get(MapConfig.MAP_DEFAULT_ZOOM)), pt);
                 else note(g, cx, cy, cw, ch, K + "preview.no_world");
             } else if (tab.equals(K + "tab.minimap")) {

@@ -55,7 +55,24 @@ public final class XaeroImport {
 
     /** Progress for the screen: regions done of all, chunks written, regions Xaero left broken. */
     public final AtomicInteger done = new AtomicInteger(), total = new AtomicInteger(), chunks = new AtomicInteger(), broken = new AtomicInteger();
+    /** Bytes of Xaero's files of the regions done, for the time left ({@link #secondsLeft}). */
+    private final java.util.concurrent.atomic.AtomicLong bytesDone = new java.util.concurrent.atomic.AtomicLong();
+    /** Bytes of all the files, and when the work began ({@link System#nanoTime}); set once the regions are listed. */
+    private volatile long totalBytes, began;
     public final AtomicBoolean cancel = new AtomicBoolean();
+    private final int threads = threads();
+
+    /** The import's threads: every core but one (the game keeps one). */
+    public static int threads() {
+        return Math.max(1, Runtime.getRuntime().availableProcessors() - 1);
+    }
+
+    /** About how many seconds are left (see {@link ImportTime}), or -1 while the regions are still being listed. */
+    public double secondsLeft() {
+        long from = began;
+        if (from == 0) return -1;
+        return ImportTime.left((System.nanoTime() - from) / 1e9, done.get(), bytesDone.get(), total.get(), totalBytes, threads);
+    }
 
     private final ClientLevel level;
     private final Path target;
@@ -101,11 +118,13 @@ public final class XaeroImport {
         // Per Xaero region, its file in every folder that has it, the first folder first.
         Map<Long, List<Path>> work = new java.util.LinkedHashMap<>();
         for (Path s : sources) regions(s).forEach((key, file) -> work.computeIfAbsent(key, k -> new ArrayList<>()).add(file));
+        long bytes = 0;
+        for (List<Path> files : work.values()) bytes += size(files);
+        totalBytes = bytes;
         total.set(work.size());
         Map<Long, Integer> index = new java.util.concurrent.ConcurrentHashMap<>(readIndex(target));
         // Regions on every core but one (the game keeps one): a Xaero region writes its own four regions of this mod,
         // never one another region writes (512 blocks against 256, aligned).
-        int threads = Math.max(1, Runtime.getRuntime().availableProcessors() - 1);
         java.util.concurrent.ExecutorService pool = java.util.concurrent.Executors.newFixedThreadPool(threads, r -> {
             Thread t = new Thread(r, "Teyvat Cartographia Xaero import");
             t.setDaemon(true);
@@ -113,6 +132,7 @@ public final class XaeroImport {
             return t;
         });
         long start = System.nanoTime();
+        began = start;
         // A faster PNG level and one row filter during the import were tried (03.11.2026): 6% less time on the whole
         // map, 9% larger files, the game's PNG writer changed meanwhile; left out.
         try {
@@ -193,7 +213,21 @@ public final class XaeroImport {
         } finally {
             for (MapTile t : tiles) if (t != null) t.release();
         }
+        bytesDone.addAndGet(size(files)); // before the count: the time left never sees a region without its bytes
         done.incrementAndGet();
+    }
+
+    /** Bytes of the files in all (a file that cannot be read counts 0). */
+    private static long size(List<Path> files) {
+        long n = 0;
+        for (Path f : files) {
+            try {
+                n += Files.size(f);
+            } catch (IOException e) {
+                // Counted as nothing: read() reports it.
+            }
+        }
+        return n;
     }
 
     // ------------------------------------------------------------------ one region
