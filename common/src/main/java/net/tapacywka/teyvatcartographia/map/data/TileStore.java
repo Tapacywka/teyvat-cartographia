@@ -390,7 +390,7 @@ public final class TileStore {
     /** The surface of a dimension: not a cave layer, whose few blocks around the player are all it has, nor the far land. */
     private final boolean outlined;
     private boolean edgesOn;
-    /** Whether the outlines are made for {@link EdgeShader}. */
+    /** Whether the outlines are made for {@link EdgeShader} ({@link EdgeShader#inUse}). */
     private boolean edgesByShader;
     /** Regions whose outline is to be worked out. */
     private final LongOpenHashSet edgeStale = new LongOpenHashSet();
@@ -430,11 +430,11 @@ public final class TileStore {
         if (outlined && diskChunks.put(t.key, t.chunkBits()) == null) indexDirty = true;
     }
 
-    /** A chunk came onto the map: the pictures it reaches have their outline worked out again. */
+    /** A chunk came onto the map: the pictures it reaches have their outline worked out again (a field's border reaches a chunk farther). */
     private void edgesAround(int cx, int cz) {
         if (!edgesOn) return;
-        for (int tz = MapView.chunkToTile(cz - MapOutline.RING); tz <= MapView.chunkToTile(cz + MapOutline.RING); tz++) {
-            for (int tx = MapView.chunkToTile(cx - MapOutline.RING); tx <= MapView.chunkToTile(cx + MapOutline.RING); tx++) {
+        for (int tz = MapView.chunkToTile(cz - MapOutline.FIELD_RING); tz <= MapView.chunkToTile(cz + MapOutline.FIELD_RING); tz++) {
+            for (int tx = MapView.chunkToTile(cx - MapOutline.FIELD_RING); tx <= MapView.chunkToTile(cx + MapOutline.FIELD_RING); tx++) {
                 long key = MapView.tileKey(tx, tz);
                 if (tiles.containsKey(key)) edgeStale.add(key);
             }
@@ -447,8 +447,9 @@ public final class TileStore {
         if (!outlined || closed) return;
         boolean on = MapConfig.get(MapConfig.MAP_OUTLINE);
         if (on != edgesOn) switchEdges(on);
-        // The shader came or went (the resources were loaded again): every outline is made again for the other way.
-        if (edgesOn && EdgeShader.ready() != edgesByShader) switchEdges(true);
+        // The shader came or went (the resources were loaded again, or Map edges went between animated and not): every
+        // outline is made again for the other way.
+        if (edgesOn && EdgeShader.inUse() != edgesByShader) switchEdges(true);
         Object[] read;
         while ((read = chunksRead.poll()) != null) tookChunks((Long) read[0], (long[]) read[1]);
         EdgeDone d;
@@ -472,7 +473,7 @@ public final class TileStore {
 
     private void switchEdges(boolean on) {
         edgesOn = on;
-        edgesByShader = EdgeShader.ready();
+        edgesByShader = EdgeShader.inUse();
         for (MapTile t : tiles.values()) {
             if (on) {
                 t.edge.again();
@@ -493,11 +494,13 @@ public final class TileStore {
      */
     boolean askEdge(EdgeMask mask, int cx0, int cz0, int chunks, int pixels) {
         mask.landOnly(FogTexture.shadow(dimension));
-        long[] grid = grid(cx0, cz0, chunks);
+        // The shader's field has a border from the chunks next to the picture: its grid has a ring a chunk wider.
+        boolean shader = EdgeShader.inUse();
+        int ring = shader ? MapOutline.FIELD_RING : MapOutline.RING;
+        long[] grid = grid(cx0, cz0, chunks, ring);
         if (mask.madeFrom(grid)) return true;
         // Land all around is the most of a map: nothing to wait for.
-        boolean shader = EdgeShader.ready();
-        if (MapOutline.whole(grid, chunks + 2 * MapOutline.RING)) {
+        if (MapOutline.whole(grid, chunks + 2 * ring)) {
             if (mask.set(grid, null, null, shader)) version++;
             return true;
         }
@@ -518,13 +521,16 @@ public final class TileStore {
         return true;
     }
 
-    /** The explored chunks of a square from (cx0, cz0) and the ring around it, as {@link MapOutline#picture} takes them. */
-    private long[] grid(int cx0, int cz0, int chunks) {
-        int side = chunks + 2 * MapOutline.RING;
+    /**
+     * The explored chunks of a square from (cx0, cz0) and the {@code ring} around it, as {@link MapOutline#picture}
+     * ({@link MapOutline#RING}) or {@link MapOutline#field} ({@link MapOutline#FIELD_RING}) takes them.
+     */
+    private long[] grid(int cx0, int cz0, int chunks, int ring) {
+        int side = chunks + 2 * ring;
         long[] grid = MapOutline.grid(side);
         for (int z = 0; z < side; z++) {
             for (int x = 0; x < side; x++) {
-                if (explored(cx0 + x - MapOutline.RING, cz0 + z - MapOutline.RING)) MapOutline.set(grid, z * side + x);
+                if (explored(cx0 + x - ring, cz0 + z - ring)) MapOutline.set(grid, z * side + x);
             }
         }
         return grid;

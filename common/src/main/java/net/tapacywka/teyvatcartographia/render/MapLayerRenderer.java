@@ -70,9 +70,9 @@ public final class MapLayerRenderer {
     }
 
     /** A picture (a region or a LOD tile) with its outline by the shader. */
-    private static void edgeQuad(GuiGraphics g, int id, int fieldId, int bx0, int bz0, int blocks, int mode,
+    private static void edgeQuad(GuiGraphics g, int id, int fieldId, int bx0, int bz0, int blocks, int mode, float inset,
                                  float x0, float y0, float x1, float y1, float u0, float v0, float u1, float v1, int tint) {
-        EdgeShader.picture(bx0, bz0, blocks, mode);
+        EdgeShader.picture(bx0, bz0, blocks, mode, inset);
         Draw.edgeQuad(g, id, fieldId, x0, y0, x1, y1, u0, v0, u1, v1, tint);
         breathed |= breathing;
     }
@@ -187,7 +187,7 @@ public final class MapLayerRenderer {
                     int id = t == null ? -1 : t.textureId(false);
                     if (id < 0) continue;
                     int field = t.edgeByShader() ? t.edgeFieldId() : -1;
-                    if (field >= 0) EdgeShader.picture(t.blockX0(), t.blockZ0(), MapTile.SIZE, t.edgeMode());
+                    if (field >= 0) EdgeShader.picture(t.blockX0(), t.blockZ0(), MapTile.SIZE, t.edgeMode(), edge);
                     shadow(g, id, field, view, t.blockX0(), t.blockZ0(), MapTile.SIZE, x0, y0, x1, y1, edge, edge, 1 - edge, 1 - edge);
                 }
             }
@@ -221,7 +221,7 @@ public final class MapLayerRenderer {
                 float u0 = in((cx0 - sx0) / w, edge), v0 = in((cy0 - sy0) / h, edge), u1 = in((cx1 - sx0) / w, edge), v1 = in((cy1 - sy0) / h, edge);
                 boolean byShader = t.edgeByShader();
                 if (byShader) {
-                    edgeQuad(g, id, t.edgeFieldId(), t.blockX0(), t.blockZ0(), MapTile.SIZE, t.edgeMode(), cx0, cy0, cx1, cy1, u0, v0, u1, v1, tint);
+                    edgeQuad(g, id, t.edgeFieldId(), t.blockX0(), t.blockZ0(), MapTile.SIZE, t.edgeMode(), edge, cx0, cy0, cx1, cy1, u0, v0, u1, v1, tint);
                 } else {
                     Draw.texturedQuad(g, id, cx0, cy0, cx1, cy1, u0, v0, u1, v1, tint);
                 }
@@ -235,7 +235,7 @@ public final class MapLayerRenderer {
                         t.setLightFilter(blur);
                         // By the shader the light is not cut by the outline in its texture: the shader cuts it where the edge is now.
                         if (byShader) {
-                            edgeQuad(g, lid, t.edgeFieldId(), t.blockX0(), t.blockZ0(), MapTile.SIZE, EdgeShader.SHOWN_ONLY, cx0, cy0, cx1, cy1, u0, v0, u1, v1, lightColor);
+                            edgeQuad(g, lid, t.edgeFieldId(), t.blockX0(), t.blockZ0(), MapTile.SIZE, EdgeShader.SHOWN_ONLY, edge, cx0, cy0, cx1, cy1, u0, v0, u1, v1, lightColor);
                         } else {
                             Draw.texturedQuad(g, lid, cx0, cy0, cx1, cy1, u0, v0, u1, v1, lightColor);
                         }
@@ -308,7 +308,7 @@ public final class MapLayerRenderer {
     /** A part of a LOD tile, with its outline by the shader where it has one. */
     private static void lodQuad(GuiGraphics g, LodStore.LodTile t, int id, float x0, float y0, float x1, float y1, float u0, float v0, float u1, float v1, int tint) {
         if (t.edgeByShader()) {
-            edgeQuad(g, id, t.edgeFieldId(), t.blockX0(), t.blockZ0(), LodStore.BLOCKS, t.edgeMode(), x0, y0, x1, y1, u0, v0, u1, v1, tint);
+            edgeQuad(g, id, t.edgeFieldId(), t.blockX0(), t.blockZ0(), LodStore.BLOCKS, t.edgeMode(), EDGE, x0, y0, x1, y1, u0, v0, u1, v1, tint);
         } else {
             Draw.texturedQuad(g, id, x0, y0, x1, y1, u0, v0, u1, v1, tint);
         }
@@ -342,7 +342,7 @@ public final class MapLayerRenderer {
                     int id = t.textureId(false);
                     if (id < 0) continue;
                     int field = t.edgeByShader() ? t.edgeFieldId() : -1;
-                    if (field >= 0) EdgeShader.picture(t.blockX0(), t.blockZ0(), LodStore.BLOCKS, t.edgeMode());
+                    if (field >= 0) EdgeShader.picture(t.blockX0(), t.blockZ0(), LodStore.BLOCKS, t.edgeMode(), EDGE);
                     shadow(g, id, field, view, t.blockX0(), t.blockZ0(), LodStore.BLOCKS, x0, y0, x1, y1, EDGE, EDGE, 1 - EDGE, 1 - EDGE);
                 }
             }

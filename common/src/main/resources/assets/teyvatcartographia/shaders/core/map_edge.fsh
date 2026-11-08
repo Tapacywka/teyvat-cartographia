@@ -25,6 +25,7 @@ uniform vec3 EdgeStroke;
 uniform vec3 EdgeGlow;
 
 in vec2 texCoord0;
+in vec2 fieldCoord;
 in vec2 world;
 in vec4 vertexColor;
 
@@ -89,7 +90,7 @@ float softMin(float a, float b, float k) {
 
 void main() {
     vec4 map = texture(Sampler0, texCoord0);
-    vec4 field = texture(Sampler1, texCoord0);
+    vec4 field = texture(Sampler1, fieldCoord);
     float lobes = mix(-FIELD_RANGE, FIELD_RANGE, field.r);
     float guard = mix(-FIELD_RANGE, FIELD_RANGE, field.g);
     float s = mix(S_FROM, S_TO, field.b);
