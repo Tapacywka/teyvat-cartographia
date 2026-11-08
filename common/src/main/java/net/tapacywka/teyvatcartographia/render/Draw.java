@@ -759,6 +759,27 @@ public final class Draw {
         endTex(b, textureId);
     }
 
+    /**
+     * As {@link #texturedQuad}, a picture of the map with its outline drawn by {@link EdgeShader} from its field
+     * ({@code fieldId}); {@link EdgeShader#view} and {@link EdgeShader#picture} say how.
+     */
+    public static void edgeQuad(GuiGraphics g, int textureId, int fieldId, float x0, float y0, float x1, float y1,
+                                float u0, float v0, float u1, float v1, int argb) {
+        Matrix4f m = mat(g);
+        BufferBuilder b = beginTex();
+        vtx(b, m, x0, y0, u0, v0, argb); vtx(b, m, x0, y1, u0, v1, argb); vtx(b, m, x1, y1, u1, v1, argb);
+        vtx(b, m, x0, y0, u0, v0, argb); vtx(b, m, x1, y1, u1, v1, argb); vtx(b, m, x1, y0, u1, v0, argb);
+        MeshData mesh = b.build();
+        if (mesh == null) return;
+        setup();
+        RenderSystem.setShader(EdgeShader::shader);
+        RenderSystem.setShaderTexture(0, textureId);
+        RenderSystem.setShaderTexture(1, fieldId);
+        BufferUploader.drawWithShader(mesh);
+        RenderSystem.setShaderTexture(1, 0);
+        restore();
+    }
+
     /** As {@link #texturedQuad}, replacing what is underneath (no blending; e.g. a copy of the frame). */
     public static void texturedQuadOpaque(GuiGraphics g, int textureId, float x0, float y0, float x1, float y1,
                                           float u0, float v0, float u1, float v1) {

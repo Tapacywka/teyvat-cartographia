@@ -239,18 +239,34 @@ public final class MapTile {
             texture.bind();
             GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
             GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
-            if (edge.faded()) edge.over(image).upload(0, 0, 0, false);
+            if (edge.baked()) edge.over(image).upload(0, 0, 0, false);
+            edge.uploadField(SIZE);
             gpuDirty = false;
         } else if (gpuDirty && allowUpload) {
-            if (edge.faded()) {
+            if (edge.baked()) {
                 texture.bind();
                 edge.over(image).upload(0, 0, 0, false);
             } else {
                 texture.upload();
             }
+            edge.uploadField(SIZE);
             gpuDirty = false;
         }
         return texture.getId();
+    }
+
+    /** Whether {@link net.tapacywka.teyvatcartographia.render.EdgeShader} draws this picture's outline, from {@link #edgeFieldId}. */
+    public boolean edgeByShader() {
+        return edge.byShader();
+    }
+
+    public int edgeFieldId() {
+        return edge.fieldId();
+    }
+
+    /** What {@link net.tapacywka.teyvatcartographia.render.EdgeShader} draws of the outline. */
+    public int edgeMode() {
+        return edge.shaderMode();
     }
 
     public boolean needsUpload() {
@@ -339,6 +355,7 @@ public final class MapTile {
             lightImage.close();
             lightImage = null;
         }
+        edge.free();
         image.close();
     }
 

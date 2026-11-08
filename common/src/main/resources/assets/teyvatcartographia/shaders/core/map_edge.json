@@ -1,0 +1,22 @@
+{
+    "vertex": "teyvatcartographia:map_edge",
+    "fragment": "teyvatcartographia:map_edge",
+    "samplers": [
+        { "name": "Sampler0" },
+        { "name": "Sampler1" }
+    ],
+    "uniforms": [
+        { "name": "ModelViewMat", "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
+        { "name": "ProjMat", "type": "matrix4x4", "count": 16, "values": [ 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0 ] },
+        { "name": "ColorModulator", "type": "float", "count": 4, "values": [ 1.0, 1.0, 1.0, 1.0 ] },
+        { "name": "EdgeOrigin", "type": "float", "count": 2, "values": [ 0.0, 0.0 ] },
+        { "name": "EdgeSize", "type": "float", "count": 1, "values": [ 256.0 ] },
+        { "name": "EdgePhase", "type": "float", "count": 2, "values": [ 0.0, 0.5 ] },
+        { "name": "EdgeBreath", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "EdgeSurf", "type": "float", "count": 3, "values": [ 0.0, 1.0, 0.0 ] },
+        { "name": "EdgePixel", "type": "float", "count": 1, "values": [ 1.0 ] },
+        { "name": "EdgeMode", "type": "float", "count": 1, "values": [ 0.0 ] },
+        { "name": "EdgeStroke", "type": "float", "count": 3, "values": [ 0.24, 0.67, 0.67 ] },
+        { "name": "EdgeGlow", "type": "float", "count": 3, "values": [ 0.18, 0.59, 0.65 ] }
+    ]
+}

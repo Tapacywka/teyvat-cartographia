@@ -177,6 +177,9 @@
   "teyvatcartographia.config.step.maps": "Both maps",
   "teyvatcartographia.config.step.world": "In the world",
   "teyvatcartographia.config.step.everywhere": "Everywhere",
+  "teyvatcartographia.config.step.edges_still": "No animation",
+  "teyvatcartographia.config.step.edges_breathing": "Animated",
+  "teyvatcartographia.config.step.edges_surf": "Animated + waves",
 
   "teyvatcartographia.config.subsection.pins_display": "Display",
   "teyvatcartographia.config.pins.custom": "Custom pins",
@@ -204,7 +207,7 @@
   "teyvatcartographia.config.far_land": "Far land",
   "teyvatcartographia.config.far_land.tooltip": "Single player: the outline of unexplored land, faint under the Fog of War on both maps, up to the world border.",
   "teyvatcartographia.config.map_outline": "Map edges",
-  "teyvatcartographia.config.map_outline.tooltip": "Instead of the steps of the chunks, the explored map ends on a round turquoise line glowing into the Fog of War.",
+  "teyvatcartographia.config.map_outline.tooltip": "Instead of the steps of the chunks, the explored map ends on a round turquoise line glowing into the Fog of War. Animated, it swells and draws back like water on the world map; with waves, thin waves also run from it into the fog.",
   "teyvatcartographia.config.world_border": "World border",
   "teyvatcartographia.config.world_border.tooltip": "The world border as a red line on both maps, over the Fog of War too. All beyond it is darker.",
   "teyvatcartographia.config.plants": "Plants",

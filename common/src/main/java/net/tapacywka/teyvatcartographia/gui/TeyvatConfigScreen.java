@@ -48,7 +48,8 @@ public final class TeyvatConfigScreen {
     }
 
     private static final String[] CLOCK_STEPS = {K + "step.off", K + "step.game", K + "step.real", K + "step.both"};
-    private static final String[] PIN_STEPS = {K + "step.off", K + "step.map", K + "step.maps", K + "step.world", K + "step.everywhere"};
+    private static final String[] EDGE_STEPS = {K + "step.off", K + "step.edges_still", K + "step.edges_breathing", K + "step.edges_surf"};
+    private static final String[] PIN_STEPS ={K + "step.off", K + "step.map", K + "step.maps", K + "step.world", K + "step.everywhere"};
     private static final String[] PATH_STEPS = {K + "step.off", K + "step.map", K + "step.maps", K + "step.everywhere"};
 
     /** Sets an on/off setting and its three parts from a step (see {@link StepChoice}); off leaves the parts as they are. */
@@ -199,7 +200,13 @@ public final class TeyvatConfigScreen {
             t.defaultPreview(new Pictures(K + "tab.experimental"));
             t.section(K + "section.map_content");
             t.toggle(K + "far_land", MapConfig.FAR_LAND);
-            t.toggle(K + "map_outline", MapConfig.MAP_OUTLINE);
+            // One slider (user request 08.11.2026): off, on and still, breathing, breathing with waves.
+            t.steps(K + "map_outline", EDGE_STEPS,
+                    () -> MapConfig.MAP_OUTLINE.get() ? MapConfig.MAP_OUTLINE_MOTION.get().ordinal() + 1 : 0,
+                    s -> {
+                        MapConfig.MAP_OUTLINE.set(s > 0);
+                        if (s > 0) MapConfig.MAP_OUTLINE_MOTION.set(MapConfig.EdgeMotion.values()[s - 1]);
+                    });
             t.toggle(K + "world_border", MapConfig.WORLD_BORDER);
         });
         return b.build();

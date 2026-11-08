@@ -4,6 +4,7 @@ import net.minecraft.world.level.biome.Biome;
 import net.tapacywka.teyvatcartographia.TeyvatCartographia;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
 import net.tapacywka.teyvatcartographia.map.MapView;
+import net.tapacywka.teyvatcartographia.render.EdgeShader;
 import net.tapacywka.teyvatcartographia.render.FogTexture;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
@@ -384,11 +385,13 @@ public final class TileStore {
     /** Pictures handed to the thread at a time. */
     private static final int MAX_EDGE_JOBS = 8;
 
-    private record EdgeDone(EdgeMask mask, long[] grid, MapOutline.Picture picture) {}
+    private record EdgeDone(EdgeMask mask, long[] grid, MapOutline.Picture picture, MapOutline.Field field, boolean shader) {}
 
     /** The surface of a dimension: not a cave layer, whose few blocks around the player are all it has, nor the far land. */
     private final boolean outlined;
     private boolean edgesOn;
+    /** Whether the outlines are made for {@link EdgeShader}. */
+    private boolean edgesByShader;
     /** Regions whose outline is to be worked out. */
     private final LongOpenHashSet edgeStale = new LongOpenHashSet();
     private final ConcurrentLinkedQueue<EdgeDone> edgesDone = new ConcurrentLinkedQueue<>();
@@ -444,13 +447,15 @@ public final class TileStore {
         if (!outlined || closed) return;
         boolean on = MapConfig.get(MapConfig.MAP_OUTLINE);
         if (on != edgesOn) switchEdges(on);
+        // The shader came or went (the resources were loaded again): every outline is made again for the other way.
+        if (edgesOn && EdgeShader.ready() != edgesByShader) switchEdges(true);
         Object[] read;
         while ((read = chunksRead.poll()) != null) tookChunks((Long) read[0], (long[]) read[1]);
         EdgeDone d;
         while ((d = edgesDone.poll()) != null) {
             edgeJobs--;
             if (!edgesOn) d.mask.ignored();
-            else if (d.mask.set(d.grid, d.picture)) version++;
+            else if (d.mask.set(d.grid, d.picture, d.field, d.shader)) version++;
         }
         if (!edgesOn || !opened) return;
         for (LongIterator it = edgeStale.iterator(); it.hasNext(); ) {
@@ -467,6 +472,7 @@ public final class TileStore {
 
     private void switchEdges(boolean on) {
         edgesOn = on;
+        edgesByShader = EdgeShader.ready();
         for (MapTile t : tiles.values()) {
             if (on) {
                 t.edge.again();
@@ -490,8 +496,9 @@ public final class TileStore {
         long[] grid = grid(cx0, cz0, chunks);
         if (mask.madeFrom(grid)) return true;
         // Land all around is the most of a map: nothing to wait for.
+        boolean shader = EdgeShader.ready();
         if (MapOutline.whole(grid, chunks + 2 * MapOutline.RING)) {
-            if (mask.set(grid, null)) version++;
+            if (mask.set(grid, null, null, shader)) version++;
             return true;
         }
         if (edgeJobs >= MAX_EDGE_JOBS) return false;
@@ -499,12 +506,14 @@ public final class TileStore {
         mask.started();
         EDGE_WORKER.execute(() -> {
             MapOutline.Picture picture = null;
+            MapOutline.Field field = null;
             try {
-                picture = MapOutline.picture(cx0, cz0, chunks, pixels, grid);
+                if (shader) field = MapOutline.field(cx0, cz0, chunks, pixels, grid);
+                else picture = MapOutline.picture(cx0, cz0, chunks, pixels, grid);
             } catch (RuntimeException e) {
                 TeyvatCartographia.LOGGER.warn("Could not work out the outline at chunk {},{}", cx0, cz0, e);
             }
-            edgesDone.add(new EdgeDone(mask, grid, picture));
+            edgesDone.add(new EdgeDone(mask, grid, picture, field, shader));
         });
         return true;
     }

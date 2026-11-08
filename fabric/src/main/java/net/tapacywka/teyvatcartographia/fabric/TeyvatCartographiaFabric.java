@@ -5,9 +5,11 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientChunkEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.CoreShaderRegistrationCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import net.minecraft.server.packs.PackType;
 import net.tapacywka.teyvatcartographia.TeyvatCartographia;
 import net.tapacywka.teyvatcartographia.client.ClientEvents;
@@ -15,6 +17,7 @@ import net.tapacywka.teyvatcartographia.client.ClientStart;
 import net.tapacywka.teyvatcartographia.client.Keybinds;
 import net.tapacywka.teyvatcartographia.hud.MinimapLayer;
 import net.tapacywka.teyvatcartographia.hud.WorldMarkerLayer;
+import net.tapacywka.teyvatcartographia.render.EdgeShader;
 
 /**
  * The Fabric entry point (also on NeoForge through Sinytra Connector): the common client wired to Fabric API events.
@@ -35,6 +38,14 @@ public final class TeyvatCartographiaFabric implements ClientModInitializer {
             MINIMAP.render(g, delta);
         });
         ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(new FabricThemeReload());
+        CoreShaderRegistrationCallback.EVENT.register(context -> {
+            if (!EdgeShader.wanted()) return;
+            try {
+                context.register(EdgeShader.ID, DefaultVertexFormat.POSITION_TEX_COLOR, EdgeShader::loaded);
+            } catch (Exception e) {
+                EdgeShader.failed(e);
+            }
+        });
         ClientTickEvents.END_CLIENT_TICK.register(ClientEvents::tick);
         ClientChunkEvents.CHUNK_LOAD.register(ClientEvents::chunkLoaded);
         ClientPlayConnectionEvents.DISCONNECT.register((handler, mc) -> ClientEvents.loggingOut());

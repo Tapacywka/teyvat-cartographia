@@ -2,6 +2,8 @@ package net.tapacywka.teyvatcartographia.neoforge;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.ShaderInstance;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.neoforged.bus.api.IEventBus;
@@ -11,6 +13,7 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RegisterClientReloadListenersEvent;
 import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.neoforged.neoforge.client.event.RegisterShadersEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
@@ -23,6 +26,7 @@ import net.tapacywka.teyvatcartographia.client.Keybinds;
 import net.tapacywka.teyvatcartographia.gui.TeyvatConfigScreen;
 import net.tapacywka.teyvatcartographia.hud.MinimapLayer;
 import net.tapacywka.teyvatcartographia.hud.WorldMarkerLayer;
+import net.tapacywka.teyvatcartographia.render.EdgeShader;
 import net.tapacywka.teyvatcartographia.render.ThemeLoader;
 
 /** The common client wired to NeoForge's events: settings, keys, HUD layers, themes, the settings button in the mod list. */
@@ -35,6 +39,14 @@ final class NeoForgeClient {
         modBus.addListener((RegisterKeyMappingsEvent e) -> Keybinds.ALL.forEach(e::register));
         modBus.addListener(NeoForgeClient::registerLayers);
         modBus.addListener((RegisterClientReloadListenersEvent e) -> e.registerReloadListener(new ThemeLoader()));
+        modBus.addListener((RegisterShadersEvent e) -> {
+            if (!EdgeShader.wanted()) return;
+            try {
+                e.registerShader(new ShaderInstance(e.getResourceProvider(), EdgeShader.ID, DefaultVertexFormat.POSITION_TEX_COLOR), EdgeShader::loaded);
+            } catch (Exception ex) {
+                EdgeShader.failed(ex);
+            }
+        });
         NeoForge.EVENT_BUS.addListener((ClientTickEvent.Post e) -> ClientEvents.tick(Minecraft.getInstance()));
         NeoForge.EVENT_BUS.addListener((ChunkEvent.Load e) -> {
             if (e.getLevel() instanceof ClientLevel level && e.getChunk() instanceof LevelChunk chunk) ClientEvents.chunkLoaded(level, chunk);

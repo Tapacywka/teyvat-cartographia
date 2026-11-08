@@ -177,6 +177,9 @@
   "teyvatcartographia.config.step.maps": "Две карты",
   "teyvatcartographia.config.step.world": "В мире",
   "teyvatcartographia.config.step.everywhere": "Везде",
+  "teyvatcartographia.config.step.edges_still": "Без анимации",
+  "teyvatcartographia.config.step.edges_breathing": "С анимацией",
+  "teyvatcartographia.config.step.edges_surf": "Анимация + волны",
 
   "teyvatcartographia.config.subsection.pins_display": "Отображение",
   "teyvatcartographia.config.pins.custom": "Пользовательские метки",
@@ -204,7 +207,7 @@
   "teyvatcartographia.config.far_land": "Дальние земли",
   "teyvatcartographia.config.far_land.tooltip": "В одиночной игре очертания неисследованной суши бледно видны под Туманом Войны на обеих картах.",
   "teyvatcartographia.config.map_outline": "Края карты",
-  "teyvatcartographia.config.map_outline.tooltip": "Вместо ступенек чанков исследованная карта заканчивается округлой бирюзовой линией со свечением в Тумане Войны.",
+  "teyvatcartographia.config.map_outline.tooltip": "Вместо ступенек чанков исследованная карта заканчивается округлой бирюзовой линией со свечением в Тумане Войны. С анимацией край на карте мира набегает и отступает, как вода; с волнами от него ещё расходятся в туман тонкие волны.",
   "teyvatcartographia.config.world_border": "Барьер мира",
   "teyvatcartographia.config.world_border.tooltip": "Барьер мира красной линией на обеих картах, также поверх Тумана Войны. Всё за ним темнее.",
   "teyvatcartographia.config.plants": "Растения",
