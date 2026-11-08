@@ -13,12 +13,12 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 ### Added
 - Settings > Map > Far land (single player, off by default, as it gives away what you have not found yet): the outline of
   the land you have not explored shows faintly under the Fog of War on the world map and the minimap, with a brighter line
-  along the coast. It is worked out from the world's generator, no chunk is made: zoomed out a whole screen takes seconds,
-  closer in the coast gets finer down to the block, as far as the map shows, up to the world border. Mods that change the land
-  through the game's generator are seen too. Lakes and rivers show; what the world adds later (streams from springs, villages,
-  ice on the water) does not. While the map is closed the exact coast is worked out around you in the background: how far is
-  a setting too, 2048 blocks by default.
-- Settings > Map > Map outline (off by default, also in the map's quick settings): instead of the steps of the chunks the
+  along the coast. It is worked out from the world's generator, no chunk is made, as far as the map shows, up to the world
+  border: the same outline at every zoom, its coast in steps of a few blocks, worked out in detail only along the coasts. Mods
+  that change the land through the game's generator are seen too. Lakes and rivers show; what the world adds later (streams
+  from springs, villages, ice on the water) does not. While the map is closed it is worked out in the background, 2048 blocks
+  around you, farther for the farther zooms.
+- Settings > Map > Map edges (off by default, also in the map's quick settings): instead of the steps of the chunks the
   explored map ends on a round, hand-drawn line with a thin turquoise outline and a soft glow into the Fog of War, on the world
   map at every zoom and on the minimap. It runs up to 30 blocks inside what you explored, and strips narrower than about 5
   chunks fade away with it. Nothing changes in the saved map: switched off, everything is back at once.

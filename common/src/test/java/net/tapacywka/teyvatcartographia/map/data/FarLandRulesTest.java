@@ -6,59 +6,99 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** The rules of the far land: the level of a zoom, sure chunks, the coast between cells, the world border, the spiral. */
+/** The rules of the far land: the level of a zoom, one grid for every level, sure squares, the coast between cells, the world border, the spiral. */
 class FarLandRulesTest {
     private static final FarLandRules.Bounds WORLD = new FarLandRules.Bounds(-3e7, -3e7, 3e7, 3e7);
 
-    /** GUI 3: the steps of the map's zoom, each at the level meant for it. */
+    /** GUI 3: the steps of the map's zoom, each at the level meant for it; nearer than 1/8 the finest level, larger. */
     @Test
     void levelFollowsTheZoom() {
+        assertEquals(0, FarLandRules.level(3 * 32.0));
         assertEquals(0, FarLandRules.level(3 * 1.0));
         assertEquals(0, FarLandRules.level(3 / 4.0));
-        assertEquals(1, FarLandRules.level(3 / 8.0));
-        assertEquals(2, FarLandRules.level(3 / 16.0));
-        assertEquals(3, FarLandRules.level(3 / 32.0));
-        assertEquals(3, FarLandRules.level(0.001));
+        assertEquals(0, FarLandRules.level(3 / 8.0));
+        assertEquals(1, FarLandRules.level(3 / 16.0));
+        assertEquals(2, FarLandRules.level(3 / 32.0));
+        assertEquals(2, FarLandRules.level(0.001));
     }
 
-    /** A screen is about the same work at each coarse level: a pixel of the level for each GUI unit, give or take. */
+    /** Each level a pixel of more blocks, every one a whole part of the square and of the grid's spacing. */
     @Test
     void stepsGrow() {
         for (int i = 1; i < FarLandRules.STEPS.length; i++) assertTrue(FarLandRules.STEPS[i] > FarLandRules.STEPS[i - 1]);
-        assertEquals(1, FarLandRules.STEPS[0]);
+        for (int step : FarLandRules.STEPS) {
+            assertEquals(0, FarLandRules.SQUARE % step);
+            assertEquals(0, FarLandRules.FINE % step);
+            assertEquals(0, 16 * step % FarLandRules.SQUARE, "a cell holds whole squares");
+        }
+        assertEquals(2, FarLandRules.STEPS[0]);
     }
 
-    /** A coast between corners falls between them, smoothly: not on a whole step of the corners. */
+    private interface Answer {
+        float at(int i, int j);
+    }
+
+    /** Answers of one square, row by row, from a rule of their place. */
+    private static float[] square(Answer answer) {
+        int side = FarLandRules.SIDE;
+        float[] a = new float[side * side];
+        for (int j = 0; j < side; j++) for (int i = 0; i < side; i++) a[j * side + i] = answer.at(i, j);
+        return a;
+    }
+
+    private static long[] blend(float[] answers, int step) {
+        long[] mask = new long[4];
+        FarLandRules.blend(answers, step, mask, 0, 0);
+        return mask;
+    }
+
+    /** A coast between answers falls between them, smoothly: not on a whole step of the answers. */
     @Test
-    void blendDrawsTheLineBetweenTheCorners() {
-        int side = 16 / FarLandRules.SAMPLE + 1;
-        float[] corners = new float[side * side];
-        // Land in the west, sea in the east: 1 and -1 meet in the middle of the cell.
-        for (int j = 0; j < side; j++) for (int i = 0; i < side; i++) corners[j * side + i] = 1 - 2f * i / (side - 1);
-        long[] mask = FarLandRules.blend(corners);
+    void blendDrawsTheLineBetweenTheAnswers() {
+        int side = FarLandRules.SIDE;
+        // Land in the west, sea in the east: 1 and -1 meet in the middle of the square, 16 blocks in.
+        long[] mask = blend(square((i, j) -> 1 - 2f * i / (side - 1)), 2);
         for (int z = 0; z < 16; z++) {
             for (int x = 0; x < 16; x++) assertEquals(x >= 8, FarLandRules.water(mask, x, z), "column " + x);
         }
-        // A corner of sea alone in the land makes a small round bay, no more.
-        float[] bay = new float[side * side];
-        Arrays.fill(bay, 1f);
-        bay[2 * side + 2] = -3f;
-        long[] small = FarLandRules.blend(bay);
+        // A place of sea alone in the land makes a small round bay, no more.
+        long[] small = blend(square((i, j) -> i == 2 && j == 2 ? -3f : 1f), 2);
         assertTrue(FarLandRules.water(small, 8, 8));
         assertFalse(FarLandRules.water(small, 2, 8));
         assertFalse(FarLandRules.water(small, 8, 13));
         // All land and all sea stay so.
-        Arrays.fill(bay, 0.5f);
-        assertEquals(0L, FarLandRules.blend(bay)[2]);
-        Arrays.fill(bay, -0.5f);
-        assertEquals(-1L, FarLandRules.blend(bay)[2]);
+        assertEquals(0L, blend(square((i, j) -> 0.5f), 2)[2]);
+        assertEquals(-1L, blend(square((i, j) -> -0.5f), 2)[2]);
     }
 
-    /** A lone answer of water is no water at a coarse level; water with company, and land, stay as they are. */
+    /** The same answers at every level: a coast falls on the same blocks, only in pixels of other sizes. */
+    @Test
+    void everyLevelDrawsTheSameCoast() {
+        float[] coast = square((i, j) -> 1 - 2f * i / (FarLandRules.SIDE - 1));
+        for (int step : FarLandRules.STEPS) {
+            long[] mask = blend(coast, step);
+            int n = FarLandRules.SQUARE / step;
+            for (int x = 0; x < n; x++) assertEquals(x * step >= 16, FarLandRules.water(mask, x, 0), "step " + step + ", pixel " + x);
+            for (int x = n; x < 16; x++) assertFalse(FarLandRules.water(mask, x, 0), "only the pixels of the square");
+        }
+    }
+
+    @Test
+    void waterFillsTheSquareOnly() {
+        long[] mask = new long[4];
+        FarLandRules.fillWater(mask, 8, 4, 8);
+        for (int z = 0; z < 16; z++) {
+            for (int x = 0; x < 16; x++) assertEquals(x >= 4 && x < 8 && z >= 8 && z < 12, FarLandRules.water(mask, x, z));
+        }
+    }
+
+    /** A lone answer of water is no water; water with company, and land, stay as they are. */
     @Test
     void loneWaterIsSettled() {
         float[] land = new float[8];
@@ -78,21 +118,94 @@ class FarLandRulesTest {
     }
 
     @Test
-    void chunkIsSureOnlyClearOfTheLine() {
-        float[] land = new float[9], sea = new float[9];
-        Arrays.fill(land, 0.5f);
-        Arrays.fill(sea, -0.5f);
-        assertEquals(FarLandRules.LAND, FarLandRules.kind(land));
-        assertEquals(FarLandRules.WATER, FarLandRules.kind(sea));
-        float[] mixed = land.clone();
-        mixed[4] = -0.5f;
-        assertEquals(FarLandRules.UNSURE, FarLandRules.kind(mixed));
-        float[] close = land.clone();
-        close[8] = FarLandRules.MARGIN / 2;
-        assertEquals(FarLandRules.UNSURE, FarLandRules.kind(close), "a corner within the margin needs the columns read");
-        float[] closeSea = sea.clone();
-        closeSea[0] = -FarLandRules.MARGIN / 2;
-        assertEquals(FarLandRules.UNSURE, FarLandRules.kind(closeSea));
+    void aSquareIsSureOnlyClearOfTheLine() {
+        float m = FarLandRules.SURE_MARGIN;
+        assertEquals(FarLandRules.LAND, FarLandRules.sure(0.5f, 0.5f, 0.5f, 0.5f));
+        assertEquals(FarLandRules.WATER, FarLandRules.sure(-0.5f, -0.5f, -0.5f, -0.5f));
+        assertEquals(FarLandRules.UNSURE, FarLandRules.sure(0.5f, 0.5f, -0.5f, 0.5f), "land and water");
+        assertEquals(FarLandRules.UNSURE, FarLandRules.sure(0.5f, 0.5f, 0.5f, m / 2), "a corner within the margin");
+        assertEquals(FarLandRules.UNSURE, FarLandRules.sure(-m / 2, -0.5f, -0.5f, -0.5f));
+        assertEquals(FarLandRules.LAND, FarLandRules.sure(0.5f, m * 2));
+        assertEquals(FarLandRules.UNSURE, FarLandRules.sure(0.5f, -0.5f));
+    }
+
+    private interface Rule {
+        float at(int gx, int gz);
+    }
+
+    /** A drawn grid of answers (gx, gz), counting what was asked. */
+    private static final class Drawn implements FarLandRules.Grid {
+        final Rule rule;
+        final Set<Long> asked = new HashSet<>();
+
+        Drawn(Rule rule) {
+            this.rule = rule;
+        }
+
+        @Override
+        public float asked(int gx, int gz) {
+            asked.add((long) gx << 32 | gz & 0xFFFFFFFFL);
+            return rule.at(gx, gz);
+        }
+
+        boolean wasAsked(int gx, int gz) {
+            return asked.contains((long) gx << 32 | gz & 0xFFFFFFFFL);
+        }
+    }
+
+    private static long[] cell(FarLandRules.Grid grid, int x, int z, int step) {
+        return FarLandRules.cell(grid, x, z, step, new float[FarLandRules.SIDE * FarLandRules.SIDE], new float[8]);
+    }
+
+    /** Sure land and sure sea: only the corners of the squares are asked, and the masks are the shared ones. */
+    @Test
+    void sureSquaresAskOnlyTheirCorners() {
+        Drawn land = new Drawn((gx, gz) -> 1f);
+        assertSame(FarLandRules.ALL_LAND, cell(land, 3, -2, 8));
+        assertEquals(25, land.asked.size(), "a cell of 128 blocks: 5 x 5 corners of squares of 32");
+        Drawn sea = new Drawn((gx, gz) -> -1f);
+        assertSame(FarLandRules.ALL_WATER, cell(sea, 0, 0, 2));
+        assertEquals(4, sea.asked.size());
+    }
+
+    /** A coast is asked every 8 blocks, but only in its own squares; the same coast at every level. */
+    @Test
+    void theCoastIsAskedInItsSquaresOnly() {
+        // Sea east of x = 60 blocks (gx 7.5): the square from gx 4 to 8 holds the coast.
+        Drawn grid = new Drawn((gx, gz) -> (60 - gx * 8f) / 32);
+        long[] fine = cell(grid, 0, 0, 2), mid = cell(grid, 0, 0, 4), far = cell(grid, 0, 0, 8);
+        assertTrue(grid.wasAsked(6, 1), "inside the square of the coast");
+        assertFalse(grid.wasAsked(1, 1), "inside a square of sure land");
+        assertFalse(grid.wasAsked(10, 1), "inside a square of sure sea");
+        assertSame(FarLandRules.ALL_LAND, fine, "the first 32 blocks are land");
+        for (int x = 0; x < 16; x++) {
+            assertEquals(x * 4 + 2 >= 60, FarLandRules.water(mid, x, 5), "step 4, pixel " + x);
+            assertEquals(x * 8 + 4 >= 60, FarLandRules.water(far, x, 5), "step 8, pixel " + x);
+        }
+    }
+
+    /** Between the corners of a sure square, the answers are drawn: also along a side shared with an unsure square. */
+    @Test
+    void aSideIsDrawnFromItsEndsAlone() {
+        // The corners of the square from (0, 0) to (4, 4) sure land; a corner of the square east of it, (8, 0), water.
+        Drawn grid = new Drawn((gx, gz) -> gx >= 8 && gz <= 0 ? -1f : gx == 6 && gz == 2 ? -0.05f : 1f);
+        assertEquals(1f, FarLandRules.at(grid, 4, 2), 1e-6f, "on the shared side, drawn between (4, 0) and (4, 4)");
+        assertFalse(grid.wasAsked(4, 2));
+        assertEquals(-0.05f, FarLandRules.at(grid, 6, 2), 1e-6f, "inside the unsure square: asked");
+        assertEquals(1f, FarLandRules.at(grid, 2, 2), 1e-6f);
+        assertFalse(grid.wasAsked(2, 2));
+    }
+
+    /** A pond met at one answer is the land around it; inside a square of sure land it is not even asked. */
+    @Test
+    void aLonePondIsLand() {
+        Drawn sure = new Drawn((gx, gz) -> gx == 6 && gz == 1 ? -0.5f : 1f);
+        assertSame(FarLandRules.ALL_LAND, cell(sure, 1, 0, 2));
+        assertFalse(sure.wasAsked(6, 1));
+        // One corner near the line: the square is asked all through, and the pond is found, alone.
+        Drawn near = new Drawn((gx, gz) -> gx == 6 && gz == 1 ? -0.5f : gx == 8 && gz == 4 ? 0.05f : 1f);
+        assertArrayEquals(new long[4], cell(near, 1, 0, 2));
+        assertTrue(near.wasAsked(6, 1));
     }
 
     @Test

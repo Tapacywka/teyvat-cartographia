@@ -107,7 +107,6 @@ public final class TeyvatConfigScreen {
             t.toggle(K + "caves", MapConfig.CAVES_ENABLED);
             t.toggle(K + "player_cone", MapConfig.PLAYER_CONE);
             t.toggle(K + "far_land", MapConfig.FAR_LAND);
-            t.slider(K + "far_land_radius", MapConfig.FAR_LAND_RADIUS, s -> s.steps(512, 1024, 2048, 4096, 8192));
             t.toggle(K + "map_outline", MapConfig.MAP_OUTLINE);
             t.toggle(K + "world_border", MapConfig.WORLD_BORDER);
             // How the map is coloured: relief, water.
@@ -281,8 +280,8 @@ public final class TeyvatConfigScreen {
     /** The minimap's look: their preview is the minimap alone, without the lines under it. */
     private static final Set<String> LOOK_ROWS = Set.of(K + "minimap_opacity", K + "minimap_padding", K + "minimap_fade_width", K + "minimap_fade_strength");
 
-    /** The far land, the outline and the world border: the map from farther out, where they show. */
-    private static final Set<String> FAR_ROWS = Set.of(K + "far_land", K + "far_land_radius", K + "map_outline", K + "world_border");
+    /** The far land, the map edges and the world border: the map from farther out, where they show. */
+    private static final Set<String> FAR_ROWS = Set.of(K + "far_land", K + "map_outline", K + "world_border");
     private static final double FAR_ZOOM = 1 / 8.0;
 
     /** A row of where a kind of pins or its path shows: the frames of the Pins tab, also for the stones of Waystones in Compatibility. */

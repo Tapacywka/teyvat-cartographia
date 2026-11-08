@@ -3,33 +3,85 @@ package net.tapacywka.teyvatcartographia.map.data;
 import net.minecraft.server.level.ServerLevel;
 import net.tapacywka.teyvatcartographia.version.FarNoise;
 
-import java.util.concurrent.ConcurrentHashMap;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
+import java.util.Arrays;
+import java.util.concurrent.atomic.LongAdder;
 
 /**
  * Land or water from the world's own generator, without making a chunk (user decisions 07.11.2026, measured by the
  * suite's category farland on 1.21.1): only the generator's formulas are asked, nothing of the world, so any thread may
  * ask, also after the world closed. What differs between the games is in {@link FarNoise}.
- * <ul>
- *   <li>{@link #cell}, coarse levels: the density around the sea every few pixels, blended between.</li>
- *   <li>{@link #chunk}, every column: the density at nine corners of the chunk settles most chunks at once, and only
- *       those it is unsure of (about 17%) are read as the game fills a chunk, in a slab of the height around the sea.</li>
- * </ul>
- * Carvers, structures and features are not seen (a spring's stream, a village's farms), nor ice on the water.
+ * <p>
+ * The density around the sea is asked every {@link FarLandRules#FINE} blocks and blended between (98.5% of the columns as
+ * the real map), the same answers for every level (user decision 08.11.2026), and asked there only near a coast: the
+ * corners of each {@link FarLandRules#SQUARE} first, and between them only where they are not all sure of one thing
+ * ({@link FarLandRules#sure}). Carvers, structures and features are not seen (a spring's stream, a village's farms), nor
+ * ice on the water.
  */
 final class FarLandSource {
-    /** Answers are kept for places this far apart, the most of them at once: about 90 bytes each. */
-    private static final int CORNER = 8, MAX_CORNERS = 1 << 18;
-    private static final short NONE = Short.MIN_VALUE;
-
     private final FarNoise noise;
     private final ThreadLocal<Scratch> scratch = ThreadLocal.withInitial(Scratch::new);
-    /** The answers at corners, shared by the threads: cells side by side ask the same corners, and the threads take neighbours. */
-    private final ConcurrentHashMap<Long, Float> corners = new ConcurrentHashMap<>();
+    private final Answers answers = new Answers();
+    private final LongAdder asked = new LongAdder();
 
-    /** What a thread keeps between chunks. */
-    private static final class Scratch {
-        final float[] nine = new float[9], around = new float[8], lattice = new float[(16 / FarLandRules.SAMPLE + 1) * (16 / FarLandRules.SAMPLE + 1)];
-        final short[] top = new short[256], ground = new short[256];
+    /** What a thread keeps between cells, and its way of asking. */
+    private final class Scratch implements FarLandRules.Grid {
+        final float[] square = new float[FarLandRules.SIDE * FarLandRules.SIDE], around = new float[8];
+        final FarNoise.Asker asker = noise.asker();
+
+        @Override
+        public float asked(int gx, int gz) {
+            float v = answers.get(gx, gz);
+            if (!Float.isNaN(v)) return v;
+            v = value(asker, gx * FarLandRules.FINE, gz * FarLandRules.FINE);
+            answers.put(gx, gz, v);
+            asked.increment();
+            return v;
+        }
+    }
+
+    /**
+     * The answers asked so far, shared by the threads (cells side by side, and every level, ask the same places): one
+     * slot for each place of a window of 2048 x 1024 answers (16 384 x 8 192 blocks, in turn over the world), which a
+     * place as far on takes over. A slot holds the rest of the place's coordinates and its answer, written and read whole,
+     * so a thread never reads half of another's. 16 MB, for the life of the world.
+     */
+    private static final class Answers {
+        private static final int BITS_X = 11, BITS_Z = 10;
+        private static final VarHandle SLOT = MethodHandles.arrayElementVarHandle(long[].class);
+        /** No place: its upper half is more than any place's rest (25 bits). */
+        private static final long EMPTY = -1L;
+        private final long[] slots = new long[1 << BITS_X + BITS_Z];
+
+        Answers() {
+            Arrays.fill(slots, EMPTY);
+        }
+
+        /** Whether a place has a slot: the rest of its coordinates must fit in 12 and 13 bits (the world border is far within). */
+        private static boolean fits(int gx, int gz) {
+            int hx = gx >> BITS_X, hz = gz >> BITS_Z;
+            return hx >= -2048 && hx < 2048 && hz >= -4096 && hz < 4096;
+        }
+
+        private static int index(int gx, int gz) {
+            return gx & (1 << BITS_X) - 1 | (gz & (1 << BITS_Z) - 1) << BITS_X;
+        }
+
+        private static long rest(int gx, int gz) {
+            return (gx >> BITS_X & 0xFFF | (gz >> BITS_Z & 0x1FFF) << 12) & 0xFFFFFFFFL;
+        }
+
+        /** The answer at a place, NaN when it is not kept. */
+        float get(int gx, int gz) {
+            if (!fits(gx, gz)) return Float.NaN;
+            long v = (long) SLOT.getOpaque(slots, index(gx, gz));
+            return v >>> 32 == rest(gx, gz) ? Float.intBitsToFloat((int) v) : Float.NaN;
+        }
+
+        void put(int gx, int gz, float value) {
+            if (fits(gx, gz)) SLOT.setOpaque(slots, index(gx, gz), rest(gx, gz) << 32 | Float.floatToRawIntBits(value) & 0xFFFFFFFFL);
+        }
     }
 
     /** For a dimension whose generator works from noise; null for others (a flat world, a mod's own generator). */
@@ -42,71 +94,24 @@ final class FarLandSource {
         this.noise = noise;
     }
 
-    /** The mask of a chunk, every column (see {@link FarLandRules}). */
-    long[] chunk(int cx, int cz) {
-        Scratch s = scratch.get();
-        int x0 = cx << 4, z0 = cz << 4, n = 0;
-        for (int z = 0; z <= 16; z += CORNER) {
-            for (int x = 0; x <= 16; x += CORNER) s.nine[n++] = corner(x0 + x, z0 + z);
-        }
-        return switch (FarLandRules.kind(s.nine)) {
-            case FarLandRules.LAND -> FarLandRules.ALL_LAND;
-            case FarLandRules.WATER -> FarLandRules.ALL_WATER;
-            default -> read(s, cx, cz);
-        };
+    /** Places asked of the generator since it started. */
+    long questions() {
+        return asked.sum();
     }
 
-    /** The mask of cell (x, z) of a coarse level with pixels of {@code step} blocks: asked at its corners, blended between. */
+    /** The mask of cell (x, z) of a level with pixels of {@code step} blocks ({@link FarLandRules#cell}). */
     long[] cell(int x, int z, int step) {
         Scratch s = scratch.get();
-        int side = 16 / FarLandRules.SAMPLE + 1, spacing = step * FarLandRules.SAMPLE, x0 = x * 16 * step, z0 = z * 16 * step;
-        float[] lattice = s.lattice, around = s.around;
-        for (int j = 0; j < side; j++) {
-            for (int i = 0; i < side; i++) {
-                int cx = x0 + i * spacing, cz = z0 + j * spacing, n = 0;
-                float v = corner(cx, cz);
-                if (v <= 0) {
-                    for (int dz = -1; dz <= 1; dz++) {
-                        for (int dx = -1; dx <= 1; dx++) if (dx != 0 || dz != 0) around[n++] = corner(cx + dx * spacing, cz + dz * spacing);
-                    }
-                    v = FarLandRules.settled(v, around);
-                }
-                lattice[j * side + i] = v;
-            }
-        }
-        return FarLandRules.blend(lattice);
-    }
-
-    private float corner(int x, int z) {
-        Long key = (long) (x / CORNER) << 32 | (z / CORNER) & 0xFFFFFFFFL;
-        Float known = corners.get(key);
-        if (known != null) return known;
-        float v = value(x, z);
-        if (corners.size() >= MAX_CORNERS) corners.clear();
-        corners.put(key, v);
-        return v;
+        return FarLandRules.cell(s, x, z, step, s.square, s.around);
     }
 
     /**
      * Over 0 on land: the highest of the density at the top of the sea, the density a cell higher (a cave at sea level
      * with rock over it) and the game's first guess at the surface (a wide cave: the two alone drew false lakes).
      */
-    private float value(int x, int z) {
-        float surface = noise.surfaceOverSea(x, z);
+    private static float value(FarNoise.Asker asker, int x, int z) {
+        float surface = asker.surfaceOverSea(x, z);
         if (surface > FarLandRules.MARGIN) return surface; // land for sure: the dearer density need not be asked
-        return Math.max(surface, Math.max(noise.atSea(x, z), noise.higher(x, z)));
-    }
-
-    /** The chunk read in the slab: water where the top block stands over the ground. */
-    private long[] read(Scratch s, int cx, int cz) {
-        short[] top = s.top, ground = s.ground;
-        java.util.Arrays.fill(top, NONE);
-        java.util.Arrays.fill(ground, NONE);
-        noise.read(cx, cz, top, ground, NONE);
-        long[] mask = new long[4];
-        for (int z = 0; z < 16; z++) {
-            for (int x = 0; x < 16; x++) if (top[z * 16 + x] > ground[z * 16 + x]) FarLandRules.setWater(mask, x, z);
-        }
-        return mask;
+        return Math.max(surface, Math.max(asker.atSea(x, z), asker.higher(x, z)));
     }
 }
