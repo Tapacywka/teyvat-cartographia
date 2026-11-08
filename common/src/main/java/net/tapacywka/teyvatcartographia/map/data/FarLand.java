@@ -3,12 +3,15 @@ package net.tapacywka.teyvatcartographia.map.data;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 import net.tapacywka.teyvatcartographia.TeyvatCartographia;
-import net.tapacywka.teyvatcartographia.config.MapConfig;
 import net.tapacywka.teyvatcartographia.map.MapView;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -17,17 +20,23 @@ import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Stream;
 
 /**
  * The far land of one world's Overworld ({@link FarLandRules}, {@link FarLandSource}): a {@link TileStore} per level under
  * {@code <dimension>/far/s<step>/}, so its pictures are kept, saved and drawn like the map's, and threads filling them.
  * <p>
  * With the world map open it works out what the map shows, from the middle out, up to the world border, on several
- * threads; with the map closed one thread rests between chunks (the frames come first) and fills the circle around the
- * player, every column first, then the coarser levels farther out. The pictures are made on the threads, so the game's
+ * threads; with the map closed one thread rests between cells (the frames come first) and fills the circle around the
+ * player, the finest level first, then the coarser ones farther out. The pictures are made on the threads, so the game's
  * thread only writes them in. Everything below but the threads' own part is on the main thread.
  */
 public final class FarLand {
+    /**
+     * The far land's own format, in {@code far/format.txt}: 2 since 08.11.2026 (every level drawn from the same answers,
+     * no level of every column); pictures of an older one are deleted once, as they no longer match.
+     */
+    private static final int FORMAT = 2;
     /** Jobs kept waiting: filled up again under the low mark, cleared when the view moves. */
     private static final int JOBS_LOW = 96, JOBS_FULL = 384;
     /** Finished cells waiting for the game's thread: the threads wait over this. */
@@ -47,6 +56,13 @@ public final class FarLand {
     /** Regions kept in memory: of the level the map shows (a screen takes up to 60), of each other. About 0.8 MB each. */
     private static final int MAX_TILES = 72, MAX_OTHER_TILES = 16;
     private static final int TICKS_EVICT = 100, TICKS_SAVE = 1200, TICKS_LOOK_AGAIN = 40;
+    /**
+     * How far around the player the far land is worked out with every column while the map is closed, in blocks. A setting
+     * (512 to 8192) until 07.11.2026, when the user asked for one middle value in its place.
+     */
+    public static final int RADIUS = 2048;
+    /** For the in-game tests only: another radius, so a scan ends sooner or reaches farther (0: {@link #RADIUS}). */
+    public static int testRadius;
 
     private record Job(int level, int x, int z) {}
 
@@ -119,6 +135,8 @@ public final class FarLand {
         this.source = source;
         this.bounds = bounds;
         this.dimension = dimension;
+        // Before the stores open: the one IO thread takes its jobs in turn.
+        io.execute(() -> dropOutdated(dir));
         for (int i = 0; i < stores.length; i++) {
             stores[i] = new TileStore(dimension, dir.resolve("s" + FarLandRules.STEPS[i]), io, generation, false, true);
             queued.add(new LongOpenHashSet());
@@ -131,6 +149,24 @@ public final class FarLand {
             t.setPriority(Thread.MIN_PRIORITY);
             t.start();
             threads.add(t);
+        }
+    }
+
+    /** IO thread: everything under {@code dir} deleted when it is of an older {@link #FORMAT}. */
+    private static void dropOutdated(Path dir) {
+        Path stamp = dir.resolve("format.txt");
+        try {
+            if (Files.exists(stamp) && Files.readString(stamp, StandardCharsets.UTF_8).trim().equals(Integer.toString(FORMAT))) return;
+            if (Files.isDirectory(dir)) {
+                try (Stream<Path> files = Files.walk(dir)) {
+                    for (Path p : files.sorted(Comparator.reverseOrder()).toList()) if (!p.equals(dir)) Files.delete(p);
+                }
+                TeyvatCartographia.LOGGER.info("Deleted the far land of an older format in {}", dir);
+            }
+            Files.createDirectories(dir);
+            Files.writeString(stamp, Integer.toString(FORMAT), StandardCharsets.UTF_8);
+        } catch (IOException | RuntimeException e) {
+            TeyvatCartographia.LOGGER.warn("The far land of an older format could not be deleted in {}", dir, e);
         }
     }
 
@@ -234,7 +270,7 @@ public final class FarLand {
             homeX = Double.NaN;
             return;
         }
-        int radius = MapConfig.get(MapConfig.FAR_LAND_RADIUS);
+        int radius = testRadius > 0 ? testRadius : RADIUS;
         if (Double.isNaN(homeX) || radius != homeRadius || Math.hypot(px - homeX, pz - homeZ) > HOME_MOVE) {
             homeX = px;
             homeZ = pz;
@@ -284,7 +320,7 @@ public final class FarLand {
         }
         int tx = MapView.chunkToTile(x), tz = MapView.chunkToTile(z);
         if (store.chunksIn(tx, tz) >= MapTile.CHUNKS * MapTile.CHUNKS) return;
-        if (level == 0 && explored != null && covered(explored, tx, tz)) return;
+        if (explored != null && covered(explored, tx, tz, FarLandRules.STEPS[level])) return;
         if (store.exists(tx, tz) && store.get(tx, tz) == null) {
             s.again = true; // on disk: known once it has loaded
             return;
@@ -294,13 +330,14 @@ public final class FarLand {
     }
 
     /**
-     * A region explored to the last chunk needs nothing under it, as long as those around it are too: along a side
-     * with land unexplored beyond it the map's outline lets through what is under.
+     * Region (tx, tz) of a level with this {@code step} lies under explored regions to the last chunk, and needs nothing
+     * under it, as long as those around them are too: along a side with land unexplored beyond it the map's outline lets
+     * through what is under.
      */
-    private static boolean covered(TileStore explored, int tx, int tz) {
-        for (int dz = -1; dz <= 1; dz++) {
-            for (int dx = -1; dx <= 1; dx++) {
-                if (explored.chunksIn(tx + dx, tz + dz) < MapTile.CHUNKS * MapTile.CHUNKS) return false;
+    private static boolean covered(TileStore explored, int tx, int tz, int step) {
+        for (int z = tz * step - 1; z <= (tz + 1) * step; z++) {
+            for (int x = tx * step - 1; x <= (tx + 1) * step; x++) {
+                if (explored.chunksIn(x, z) < MapTile.CHUNKS * MapTile.CHUNKS) return false;
             }
         }
         return true;
@@ -352,7 +389,7 @@ public final class FarLand {
         long key = (long) level << 56 ^ MapView.tileKey(x, z);
         long[] m = masks.get(key);
         if (m != null) return m;
-        m = level == 0 ? source.chunk(x, z) : source.cell(x, z, FarLandRules.STEPS[level]);
+        m = source.cell(x, z, FarLandRules.STEPS[level]);
         if (masks.size() >= MAX_MASKS) masks.clear();
         masks.put(key, m);
         return m;

@@ -61,8 +61,9 @@ public final class MapLayerRenderer {
 
     /**
      * The far land under the map, over the fog (null: none), at the level of {@code view}'s zoom: a level's map is a map
-     * of its own whose block stands for several, drawn through a view scaled to it. {@code wanted}: this is the world
-     * map, whose part of the level is worked out first.
+     * of its own whose block stands for several, drawn through a view scaled to it; nearer than the finest level is meant
+     * for, that level drawn larger. Every level draws the same answers of the generator, so the land keeps its shape from
+     * zoom to zoom. {@code wanted}: this is the world map, whose part of the level is worked out first.
      *
      * @return as {@link #drawRect}
      */
