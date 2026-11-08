@@ -194,7 +194,8 @@ public final class TeyvatConfigScreen {
                     .toggle(K + "compat.end_fog", MapConfig.END_FOG).then(Theme.Style::update);
         });
         // Experimental (user request 08.11.2026): what is not checked to the end yet, or wants more work, a faster or
-        // another way; the far land, the map edges and the world border first (they stay in the map's quick settings).
+        // another way; the far land, the map edges and the world border first. None of them is in the map's quick settings
+        // (user decision 08.11.2026): a setting goes there only once its feature is out in full.
         b.tab(K + "tab.experimental", t -> {
             t.defaultPreview(new Pictures(K + "tab.experimental"));
             t.section(K + "section.map_content");

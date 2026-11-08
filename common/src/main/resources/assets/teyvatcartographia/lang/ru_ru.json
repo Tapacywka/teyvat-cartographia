@@ -97,9 +97,6 @@
   "teyvatcartographia.settings.plants.tooltip": "Растения окрашивают своё место на карте. Какие именно: Все настройки > Карта. Уже нанесённые места изменятся, когда вы снова пройдёте рядом.",
   "teyvatcartographia.settings.labels": "Названия биомов",
   "teyvatcartographia.settings.grid": "Сетка чанков",
-  "teyvatcartographia.settings.far_land": "Дальние земли",
-  "teyvatcartographia.settings.map_outline": "Края карты",
-  "teyvatcartographia.settings.world_border": "Барьер мира",
   "teyvatcartographia.settings.all": "Все настройки",
 
   "teyvatcartographia.config.title": "Настройки Teyvat Cartographia",
