@@ -12,6 +12,7 @@ import net.tapacywka.teyvatcartographia.render.GpuImage;
 import net.tapacywka.teyvatcartographia.render.Tex;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
@@ -20,8 +21,9 @@ import java.util.concurrent.ExecutorService;
  * Level of detail for far zoom: one 256 x 256 texture per 4 x 4 regions (1024 x 1024 blocks, one pixel per 4 x 4
  * blocks), built from the regions' thumbnails ({@link MapStorage#loadThumbnail}). Far out the map draws a few of these
  * instead of hundreds of full regions, so it neither loads every region from disk nor fills the GPU.
- * Thumbnails of regions on disk are read by the IO thread; regions in memory (and regions that change while mapped)
- * are downsampled on the main thread, a few per frame. Main/render thread only, apart from the IO tasks.
+ * Thumbnails of regions on disk are read by the IO thread; regions in memory are downsampled on the main thread, a few
+ * per frame, and of a region that changes while mapped only its changed chunks. Main/render thread only, apart from the
+ * IO tasks.
  */
 public final class LodStore {
     /** Regions per side of one LOD tile. */
@@ -30,16 +32,53 @@ public final class LodStore {
     public static final int BLOCKS = MapTile.SIZE * REGIONS;
     private static final int CELL = MapStorage.THUMB;
     private static final int MAX_TILES = 96;
-    private static final int MEMORY_CELLS_PER_FRAME = 4;
+    /** Chunks redrawn a frame from regions in memory: four whole cells (0.15 ms each), or many more changed chunks. */
+    private static final int MEMORY_CHUNKS_PER_FRAME = 4 * MapTile.CHUNKS * MapTile.CHUNKS;
+    private static final int CHUNK_WORDS = MapTile.CHUNKS * MapTile.CHUNKS / 64;
 
     private final TileStore store;
     private final ExecutorService io;
     private final Long2ObjectOpenHashMap<LodTile> tiles = new Long2ObjectOpenHashMap<>();
     /** Thumbnails read by the IO thread: {LodTile, cell index, NativeImage or null}. */
     private final ConcurrentLinkedQueue<Object[]> loaded = new ConcurrentLinkedQueue<>();
-    /** Regions (tile keys) whose cell is to be redrawn from the region in memory. */
+    /** Regions (tile keys) whose cell is to be redrawn from the region in memory, in turn. */
     private final LongArrayFIFOQueue memoryQueue = new LongArrayFIFOQueue();
-    private final LongOpenHashSet memoryQueued = new LongOpenHashSet();
+    /**
+     * Their chunks to redraw, a bit each ({@link MapStorage#thumbnailChunks}), all of them for a whole cell: a changed
+     * chunk redrew the region's whole thumbnail until 09.11.2026, 2% of the game's thread while mapping at far zoom.
+     */
+    private final Long2ObjectOpenHashMap<long[]> memoryDirty = new Long2ObjectOpenHashMap<>();
+    private final CellCopy cellCopy = new CellCopy();
+
+    /** Reads a region's picture and writes its cell of a LOD tile; one, reused with its buffers, so a frame allocates nothing. */
+    private static final class CellCopy implements MapStorage.ChunkPixels {
+        final int[] chunk = new int[MapStorage.CHUNK_PIXELS], thumb = new int[MapStorage.CHUNK_THUMB * MapStorage.CHUNK_THUMB];
+        NativeImage src, dst;
+        int x0, y0;
+
+        @Override
+        public void read(int lcx, int lcz, int[] into) {
+            MapStorage.readChunk(src, lcx, lcz, into);
+        }
+
+        @Override
+        public void write(int lcx, int lcz, int[] thumb) {
+            int side = MapStorage.CHUNK_THUMB, px = x0 + lcx * side, py = y0 + lcz * side;
+            for (int ty = 0; ty < side; ty++) {
+                for (int tx = 0; tx < side; tx++) dst.setPixelABGR(px + tx, py + ty, thumb[ty * side + tx]);
+            }
+        }
+    }
+
+    /** The chunk bits of region {@code rk} waiting to be redrawn, the region queued if it was not. */
+    private long[] memoryBits(long rk) {
+        long[] bits = memoryDirty.get(rk);
+        if (bits == null) {
+            memoryDirty.put(rk, bits = new long[CHUNK_WORDS]);
+            memoryQueue.enqueue(rk);
+        }
+        return bits;
+    }
     /** Tiles whose outline is to be worked out. */
     private final LongOpenHashSet edgeStale = new LongOpenHashSet();
     private volatile boolean closed;
@@ -165,8 +204,7 @@ public final class LodStore {
         int cell = cellIndex(tx, tz);
         t.pending |= 1 << cell;
         if (store.peek(tx, tz) != null) {
-            long rk = MapView.tileKey(tx, tz);
-            if (memoryQueued.add(rk)) memoryQueue.enqueue(rk);
+            Arrays.fill(memoryBits(MapView.tileKey(tx, tz)), -1L); // the whole cell
             return;
         }
         io.execute(() -> {
@@ -184,13 +222,14 @@ public final class LodStore {
         });
     }
 
-    /** A region in memory changed: its cell is redrawn if its LOD tile exists. */
-    void regionChanged(int tx, int tz) {
+    /** A chunk of a region in memory changed: its part of the region's cell is redrawn if the LOD tile exists. */
+    void chunkChanged(int cx, int cz) {
+        int tx = MapView.chunkToTile(cx), tz = MapView.chunkToTile(cz);
         LodTile t = tiles.get(MapView.tileKey(lodOf(tx), lodOf(tz)));
         if (t == null) return;
         t.pending |= 1 << cellIndex(tx, tz);
-        long rk = MapView.tileKey(tx, tz);
-        if (memoryQueued.add(rk)) memoryQueue.enqueue(rk);
+        int i = (cz & (MapTile.CHUNKS - 1)) * MapTile.CHUNKS + (cx & (MapTile.CHUNKS - 1));
+        memoryBits(MapView.tileKey(tx, tz))[i >> 6] |= 1L << (i & 63);
     }
 
     // ------------------------------------------------------------------ outline
@@ -258,20 +297,27 @@ public final class LodStore {
             if (!closed && tiles.get(t.key) == t) blit(t, (Integer) e[1], thumb);
             if (thumb != null) thumb.close();
         }
-        for (int n = 0; n < MEMORY_CELLS_PER_FRAME && !memoryQueue.isEmpty(); n++) {
+        for (int budget = MEMORY_CHUNKS_PER_FRAME; budget > 0 && !memoryQueue.isEmpty(); ) {
             long rk = memoryQueue.dequeueLong();
-            memoryQueued.remove(rk);
+            long[] bits = memoryDirty.remove(rk);
             int tx = MapView.tileKeyX(rk), tz = MapView.tileKeyZ(rk);
             LodTile t = tiles.get(MapView.tileKey(lodOf(tx), lodOf(tz)));
-            if (t == null) continue;
+            if (t == null || bits == null) continue;
             MapTile region = store.peek(tx, tz);
             if (region == null) {
                 requestCell(t, tx, tz); // evicted meanwhile: its thumbnail is on disk now
                 continue;
             }
-            try (NativeImage thumb = MapStorage.thumbnail(region.image)) {
-                blit(t, cellIndex(tx, tz), thumb);
-            }
+            int cell = cellIndex(tx, tz);
+            CellCopy copy = cellCopy;
+            copy.src = region.image;
+            copy.dst = t.image;
+            copy.x0 = (cell % REGIONS) * CELL;
+            copy.y0 = (cell / REGIONS) * CELL;
+            budget -= Math.max(1, MapStorage.thumbnailChunks(bits, copy, copy.chunk, copy.thumb));
+            copy.src = copy.dst = null;
+            t.pending &= ~(1 << cell);
+            t.gpuDirty = true;
         }
     }
 
@@ -305,7 +351,7 @@ public final class LodStore {
         for (LodTile t : tiles.values()) t.release();
         tiles.clear();
         memoryQueue.clear();
-        memoryQueued.clear();
+        memoryDirty.clear();
         edgeStale.clear();
     }
 }

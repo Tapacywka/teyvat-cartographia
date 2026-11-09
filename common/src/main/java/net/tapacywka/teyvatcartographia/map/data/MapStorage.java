@@ -208,12 +208,42 @@ public final class MapStorage {
      */
     static NativeImage thumbnail(NativeImage src) {
         NativeImage out = new NativeImage(THUMB, THUMB, true);
-        for (int y = 0; y < THUMB; y++) {
-            for (int x = 0; x < THUMB; x++) {
+        int[] chunk = new int[CHUNK_PIXELS], thumb = new int[CHUNK_THUMB * CHUNK_THUMB];
+        for (int lcz = 0; lcz < MapTile.CHUNKS; lcz++) {
+            for (int lcx = 0; lcx < MapTile.CHUNKS; lcx++) {
+                readChunk(src, lcx, lcz, chunk);
+                thumbChunk(chunk, thumb);
+                for (int ty = 0; ty < CHUNK_THUMB; ty++) {
+                    for (int tx = 0; tx < CHUNK_THUMB; tx++) out.setPixelABGR(lcx * CHUNK_THUMB + tx, lcz * CHUNK_THUMB + ty, thumb[ty * CHUNK_THUMB + tx]);
+                }
+            }
+        }
+        return out;
+    }
+
+    /** Pixels of a chunk in a region's picture (16 x 16) and in its thumbnail (4 x 4 a side). */
+    static final int CHUNK_PIXELS = 16 * 16, CHUNK_THUMB = THUMB / MapTile.CHUNKS;
+
+    /** The 16 x 16 picture pixels of chunk (lcx, lcz) of a region, row by row. */
+    static void readChunk(NativeImage picture, int lcx, int lcz, int[] into) {
+        int x0 = lcx * 16, y0 = lcz * 16;
+        for (int y = 0; y < 16; y++) {
+            for (int x = 0; x < 16; x++) into[y * 16 + x] = Pixels.abgr(picture, x0 + x, y0 + y);
+        }
+    }
+
+    /**
+     * A chunk's 4 x 4 thumbnail pixels from its 16 x 16 picture pixels (row by row): each pixel averages the explored
+     * ones of its 4 x 4 block, and its alpha is the average of the 16 (on the map the explored share, so its edge stays
+     * soft; the far land's faint veil stays faint).
+     */
+    static void thumbChunk(int[] chunk, int[] thumb) {
+        for (int ty = 0; ty < CHUNK_THUMB; ty++) {
+            for (int tx = 0; tx < CHUNK_THUMB; tx++) {
                 int r = 0, g = 0, b = 0, a = 0, n = 0;
                 for (int dy = 0; dy < 4; dy++) {
                     for (int dx = 0; dx < 4; dx++) {
-                        int c = Pixels.abgr(src, x * 4 + dx, y * 4 + dy);
+                        int c = chunk[(ty * 4 + dy) * 16 + tx * 4 + dx];
                         if ((c >>> 24) == 0) continue;
                         r += c & 0xFF;
                         g += (c >> 8) & 0xFF;
@@ -222,10 +252,41 @@ public final class MapStorage {
                         n++;
                     }
                 }
-                out.setPixelABGR(x, y, n == 0 ? 0 : ((a / 16) << 24) | ((b / n) << 16) | ((g / n) << 8) | (r / n));
+                thumb[ty * CHUNK_THUMB + tx] = n == 0 ? 0 : ((a / 16) << 24) | ((b / n) << 16) | ((g / n) << 8) | (r / n);
             }
         }
-        return out;
+    }
+
+    /** Where the chunks of {@link #thumbnailChunks} are read from and their thumbnail pixels go. */
+    interface ChunkPixels {
+        /** The chunk's 16 x 16 picture pixels, row by row ({@link #readChunk}). */
+        void read(int lcx, int lcz, int[] into);
+
+        /** The chunk's 4 x 4 thumbnail pixels, row by row. */
+        void write(int lcx, int lcz, int[] thumb);
+    }
+
+    /**
+     * The thumbnail pixels of the chunks set in {@code chunks} (a bit per chunk of the region, {@code lcz * CHUNKS +
+     * lcx}): a changed chunk costs 256 reads of the picture instead of the region's 65 536 (the whole thumbnail of every
+     * changed region took 2% of the game's thread, profile 09.11.2026). The pixels go through two buffers, a call each
+     * per chunk, not per pixel (that made the whole cell three times slower). Returns the chunks done.
+     */
+    static int thumbnailChunks(long[] chunks, ChunkPixels pixels, int[] chunk, int[] thumb) {
+        int done = 0;
+        for (int w = 0; w < chunks.length; w++) {
+            long bits = chunks[w];
+            while (bits != 0) {
+                int i = w * 64 + Long.numberOfTrailingZeros(bits);
+                bits &= bits - 1;
+                int lcx = i % MapTile.CHUNKS, lcz = i / MapTile.CHUNKS;
+                pixels.read(lcx, lcz, chunk);
+                thumbChunk(chunk, thumb);
+                pixels.write(lcx, lcz, thumb);
+                done++;
+            }
+        }
+        return done;
     }
 
     private static void writeThumbnail(Path dir, int tx, int tz, NativeImage thumb) throws IOException {

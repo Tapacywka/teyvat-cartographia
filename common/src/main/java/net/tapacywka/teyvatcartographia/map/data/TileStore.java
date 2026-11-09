@@ -258,7 +258,7 @@ public final class TileStore {
         // Only real changes count (re-sampled chunks around the player are usually identical).
         if (t.applyChunk(lcx, lcz, r.abgr(), r.heights(), r.flags(), r.light(), r.neighbourMask(), r.biome(), r.merge())) {
             version++;
-            lod.regionChanged(tx, tz);
+            lod.chunkChanged(r.cx(), r.cz());
         }
         if (fresh) edgesAround(r.cx(), r.cz());
         t.touch();
