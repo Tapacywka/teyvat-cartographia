@@ -78,6 +78,28 @@ Place pins, search for them and for biomes, track them, follow the path and find
 <h2 id="screenshots">📸 Screenshots</h2>
 
 <p align="center">
+  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/experimental-features.jpg" alt="Far land, Map edges and World border on the world map" width="100%">
+  <br>
+  <sub>Far land, Map edges and World border together (each is off by default, see Settings > Experimental).</sub>
+</p>
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/world-border.jpg" alt="The world border as a rough red line over the map" width="49%">
+  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/map-edge-waves.jpg" alt="Map edges up close: a glowing line with waves" width="49%">
+  <br>
+  <sub><b>Left:</b> World border: a rough red line over the map and the Fog of War, all beyond it darker.<br>
+  <b>Right:</b> Map edges up close: a round glowing line instead of chunk steps, with waves running out into the Fog of War.</sub>
+</p>
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/far-land.jpg" alt="Far land: the outline of unexplored land under the Fog of War" width="49%">
+  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/minimap-edge.jpg" alt="The minimap with the map edges" width="49%">
+  <br>
+  <sub><b>Left:</b> Far land: the outline of the land you have not explored yet, faint under the Fog of War.<br>
+  <b>Right:</b> The minimap shows the map edges too.</sub>
+</p>
+
+<p align="center">
   <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/world-map.jpg" alt="World map with pins and the walking path" width="49%">
   <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/world-map-night.jpg" alt="At night the map darkens, lit places keep their colour" width="49%">
   <br>
