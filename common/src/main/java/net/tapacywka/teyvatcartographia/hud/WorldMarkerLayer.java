@@ -413,7 +413,7 @@ public final class WorldMarkerLayer implements LayeredDraw.Layer {
             main.copyDepthFrom(particles);
             main.bindWrite(false);
         }
-        if (stars) PathStars.render(camera, starsShown);
+        if (stars) PathStars.render(camera, starsShown, projection);
         renderBeam(camera, delta);
         view.popMatrix();
         RenderSystem.applyModelViewMatrix();
