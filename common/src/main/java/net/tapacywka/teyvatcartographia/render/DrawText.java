@@ -35,6 +35,7 @@ public final class DrawText {
     }
 
     public static void text(GuiGraphics g, Component text, float x, float y, int color, boolean shadow) {
+        Draw.flush(); // the shapes before it first: a batch would draw them over the text
         g.pose().pushPose();
         g.pose().translate(Draw.snap(x), Draw.snap(y), 0);
         g.drawString(font(), text, 0, 0, color, shadow);
@@ -66,6 +67,7 @@ public final class DrawText {
      * the glyphs batched (call {@code g.flush()} after a group of labels).
      */
     public static void textOutlined(GuiGraphics g, Component text, float cx, float cy, int color, int outline, boolean flush) {
+        Draw.flush(); // the shapes before it first: a batch would draw them over the text
         FormattedCharSequence seq = text.getVisualOrderText();
         float w = Math.max(0, font().width(seq) - 1); // visible glyph width (no trailing advance)
         g.pose().pushPose();

@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.Tesselator;
@@ -52,11 +53,90 @@ public final class Draw {
 
     /** Starts drawing into a transparent off-screen layer; blit it with {@link #texturedQuadPremultiplied}. */
     public static void beginLayer() {
+        flush();
         layer = true;
     }
 
     public static void endLayer() {
+        flush();
         layer = false;
+    }
+
+    // ================================================================== batches
+
+    /**
+     * Shapes drawn one after another as one draw (item 8 of the profile, 09.11.2026: a draw each, 1 to 3% of the game's
+     * thread with the map open). Between {@link #batch} and {@link #endBatch} a shape of the same kind (colours; a
+     * texture; a premultiplied texture) and texture as the one before goes into the same mesh, drawn when another kind
+     * comes, before text ({@link DrawText}), before anything drawn at once ({@link #beginTex}: the edge shader, opaque
+     * copies, the minimap's disc), when a layer starts or ends, and at {@link #endBatch}: the order on the screen stays as
+     * called. Only where nothing else draws in between (no scissor, no layer bound, no shader colour).
+     */
+    private static boolean batching;
+    /** For the in-game tests: off draws every shape at once as before, so both can be compared pixel by pixel. */
+    public static boolean batchesAllowed = true;
+    /** For the in-game tests: the shapes and batches drawn so far (each a draw call). */
+    public static int drawCalls;
+    private static final int COLOR = 1, TEX = 2, PREMULTIPLIED = 3;
+    private static ByteBufferBuilder pendingBytes;
+    private static BufferBuilder pending;
+    private static int pendingKind, pendingTexture;
+
+    /** Starts a batch (see above). Batches do not nest: the first {@link #endBatch} ends it. */
+    public static void batch() {
+        batching = batchesAllowed;
+    }
+
+    /** Draws what the batch holds and ends it. */
+    public static void endBatch() {
+        flush();
+        batching = false;
+    }
+
+    /** Draws the shapes waiting in the batch now, before something else draws. */
+    public static void flush() {
+        BufferBuilder b = pending;
+        if (b == null) return;
+        pending = null;
+        draw(b, pendingKind, pendingTexture);
+    }
+
+    /** The mesh a shape of {@code kind} goes into: the batch's when it is of the same kind and texture, else a new one. */
+    private static BufferBuilder begin(int kind, int texture) {
+        if (!batching) {
+            return Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, kind == COLOR ? DefaultVertexFormat.POSITION_COLOR : DefaultVertexFormat.POSITION_TEX_COLOR);
+        }
+        if (pending != null && pendingKind == kind && pendingTexture == texture) return pending;
+        flush();
+        if (pendingBytes == null) pendingBytes = new ByteBufferBuilder(1 << 16);
+        pending = new BufferBuilder(pendingBytes, VertexFormat.Mode.TRIANGLES, kind == COLOR ? DefaultVertexFormat.POSITION_COLOR : DefaultVertexFormat.POSITION_TEX_COLOR);
+        pendingKind = kind;
+        pendingTexture = texture;
+        return pending;
+    }
+
+    /** A shape is done: drawn now, or later with the rest of its batch. */
+    private static void end(BufferBuilder b, int kind, int texture) {
+        if (b != pending) draw(b, kind, texture);
+    }
+
+    private static void draw(BufferBuilder b, int kind, int texture) {
+        MeshData mesh = b.build();
+        if (mesh == null) return;
+        drawCalls++;
+        setup();
+        if (kind == PREMULTIPLIED) {
+            RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA,
+                    GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+        }
+        if (kind == COLOR) {
+            RenderSystem.setShader(GameRenderer::getPositionColorShader);
+        } else {
+            RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
+            RenderSystem.setShaderTexture(0, texture);
+        }
+        BufferUploader.drawWithShader(mesh);
+        restore();
     }
 
     private static void setup() {
@@ -79,19 +159,16 @@ public final class Draw {
     }
 
     private static BufferBuilder beginColor() {
-        return Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+        return begin(COLOR, 0);
     }
 
     private static void endColor(BufferBuilder buffer) {
-        MeshData mesh = buffer.build();
-        if (mesh == null) return;
-        setup();
-        RenderSystem.setShader(GameRenderer::getPositionColorShader);
-        BufferUploader.drawWithShader(mesh);
-        restore();
+        end(buffer, COLOR, 0);
     }
 
+    /** A textured mesh drawn at once by {@link #endTex} or {@link #endPremultiplied} (what a batch holds goes first). */
     public static BufferBuilder beginTex() {
+        flush();
         return Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_TEX_COLOR);
     }
 
@@ -567,7 +644,8 @@ public final class Draw {
      */
     public static void glowFan(GuiGraphics g, float cx, float cy, float[] xs, float[] ys, int n, int argb) {
         Matrix4f m = mat(g);
-        BufferBuilder b = beginColor();
+        flush(); // drawn at once, added: never with a batch
+        BufferBuilder b = Tesselator.getInstance().begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
         int clear = argb & 0x00FFFFFF;
         for (int i = 0; i < n; i++) {
             int j = (i + 1) % n;
@@ -740,10 +818,11 @@ public final class Draw {
         int a = (argb >>> 24) & 0xFF;
         int pm = (a << 24) | ((((argb >> 16) & 0xFF) * a / 255) << 16) | ((((argb >> 8) & 0xFF) * a / 255) << 8) | ((argb & 0xFF) * a / 255);
         Matrix4f m = mat(g);
-        BufferBuilder b = beginTex();
+        int atlas = IconAtlas.textureId();
+        BufferBuilder b = begin(PREMULTIPLIED, atlas);
         vtx(b, m, x[0], y[0], u0, v0, pm); vtx(b, m, x[1], y[1], u0, v1, pm); vtx(b, m, x[2], y[2], u1, v1, pm);
         vtx(b, m, x[0], y[0], u0, v0, pm); vtx(b, m, x[2], y[2], u1, v1, pm); vtx(b, m, x[3], y[3], u1, v0, pm);
-        endPremultiplied(b, IconAtlas.textureId());
+        end(b, PREMULTIPLIED, atlas);
     }
 
     public static void icon(GuiGraphics g, Icon icon, float cx, float cy, float size, int argb) {
@@ -753,10 +832,10 @@ public final class Draw {
     public static void texturedQuad(GuiGraphics g, int textureId, float x0, float y0, float x1, float y1,
                                     float u0, float v0, float u1, float v1, int argb) {
         Matrix4f m = mat(g);
-        BufferBuilder b = beginTex();
+        BufferBuilder b = begin(TEX, textureId);
         vtx(b, m, x0, y0, u0, v0, argb); vtx(b, m, x0, y1, u0, v1, argb); vtx(b, m, x1, y1, u1, v1, argb);
         vtx(b, m, x0, y0, u0, v0, argb); vtx(b, m, x1, y1, u1, v1, argb); vtx(b, m, x1, y0, u1, v0, argb);
-        endTex(b, textureId);
+        end(b, TEX, textureId);
     }
 
     /**
@@ -828,12 +907,12 @@ public final class Draw {
     public static void texturedQuadPremultiplied(GuiGraphics g, int textureId, float x0, float y0, float x1, float y1,
                                                  float u0, float v0, float u1, float v1, float alpha) {
         Matrix4f m = mat(g);
-        BufferBuilder b = beginTex();
+        BufferBuilder b = begin(PREMULTIPLIED, textureId);
         int a = Math.round(Math.max(0f, Math.min(1f, alpha)) * 255);
         int c = a << 24 | a << 16 | a << 8 | a;
         vtx(b, m, x0, y0, u0, v0, c); vtx(b, m, x0, y1, u0, v1, c); vtx(b, m, x1, y1, u1, v1, c);
         vtx(b, m, x0, y0, u0, v0, c); vtx(b, m, x1, y1, u1, v1, c); vtx(b, m, x1, y0, u1, v0, c);
-        endPremultiplied(b, textureId);
+        end(b, PREMULTIPLIED, textureId);
     }
 
     // ================================================================== hit tests

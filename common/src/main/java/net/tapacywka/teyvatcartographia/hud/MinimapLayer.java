@@ -292,7 +292,12 @@ public final class MinimapLayer implements LayeredDraw.Layer {
             g.pose().translate(-bx0, -by0, 0);
             Draw.beginLayer();
             try {
-                drawContents(g, player, cx, cy, r, alpha, heading, dim, target, zoom, path, coordsLine, biomeLine, timeLine, textBelow, textBlock);
+                Draw.batch(); // shapes of one kind in a row drawn as one
+                try {
+                    drawContents(g, player, cx, cy, r, alpha, heading, dim, target, zoom, path, coordsLine, biomeLine, timeLine, textBelow, textBlock);
+                } finally {
+                    Draw.endBatch();
+                }
                 g.flush();
             } finally {
                 Draw.snapIcons(true);

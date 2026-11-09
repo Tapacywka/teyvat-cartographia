@@ -20,6 +20,7 @@ public final class CachedLayer {
      */
     public void bind(GuiGraphics g, int pw, int ph, boolean linear) {
         g.flush();
+        Draw.flush(); // a batch's shapes belong where they were drawn
         if (target == null) {
             target = new TextureTarget(pw, ph, false, Minecraft.ON_OSX);
         } else if (target.width != pw || target.height != ph) {
@@ -33,6 +34,7 @@ public final class CachedLayer {
 
     /** Ends a redraw: the game's main framebuffer is the draw target again. */
     public static void unbind() {
+        Draw.flush();
         Minecraft.getInstance().getMainRenderTarget().bindWrite(true);
     }
 

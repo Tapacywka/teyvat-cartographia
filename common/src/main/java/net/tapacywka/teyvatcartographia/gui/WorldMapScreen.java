@@ -954,18 +954,23 @@ public final class WorldMapScreen extends Screen {
         boolean overUi = exiting || overPanels(mx, my) || pick != null && pick.contains(mx, my) || menu != null && menu.contains(mx, my);
         // No list building per frame: custom pins straight from the store, then the automatic points. The pin whose
         // panel is open stays visible whatever the filters.
-        if (viewedDim != null) {
-            for (int i = 0, n = MarkerStore.count(); i < n; i++) {
-                Marker m = MarkerStore.get(i);
-                if (m.dimension == viewedDim && (MarkerVisibility.shown(m, false) || isSelected(m))) drawMarker(g, m, size, mx, my, overUi);
+        Draw.batch(); // a pin's tile and frame drawn as one
+        try {
+            if (viewedDim != null) {
+                for (int i = 0, n = MarkerStore.count(); i < n; i++) {
+                    Marker m = MarkerStore.get(i);
+                    if (m.dimension == viewedDim && (MarkerVisibility.shown(m, false) || isSelected(m))) drawMarker(g, m, size, mx, my, overUi);
+                }
+                List<Marker> auto = AutoMarkers.forDimension(viewedDim);
+                for (int i = 0; i < auto.size(); i++) {
+                    Marker m = auto.get(i);
+                    if (MarkerVisibility.shown(m, false) || isSelected(m)) drawMarker(g, m, size, mx, my, overUi);
+                }
             }
-            List<Marker> auto = AutoMarkers.forDimension(viewedDim);
-            for (int i = 0; i < auto.size(); i++) {
-                Marker m = auto.get(i);
-                if (MarkerVisibility.shown(m, false) || isSelected(m)) drawMarker(g, m, size, mx, my, overUi);
-            }
+            if (selX != null && !panelsShown()) drawSelectedPoint(g);
+        } finally {
+            Draw.endBatch();
         }
-        if (selX != null && !panelsShown()) drawSelectedPoint(g);
     }
 
     /** Rings from a search result for {@link #FOUND_PULSES} seconds after the flight; a biome place also gets a point. */
@@ -1308,17 +1313,23 @@ public final class WorldMapScreen extends Screen {
             List<float[]> rects = uiRects(store, mx, my);
             for (int i = 0; i < chromeRects.length; i++) System.arraycopy(rects.get(i), 0, chromeRects[i], 0, 4);
         }
-        // Each group slides out over its own edge of the screen by moving where its part of the layer is laid.
-        for (int i = 0; i < chromeRects.length; i++) {
-            if (i != CHROME_ZOOM && !barsOn) continue; // with a panel open only the zoom slider is shown
-            float[] r = chromeRects[i];
-            float x0 = Math.max(0, r[0]), y0 = Math.max(0, r[1]), x1 = Math.min(width, r[2]), y1 = Math.min(height, r[3]);
-            if (x1 <= x0 || y1 <= y0) continue;
-            float away = 1 - (i == CHROME_ZOOM ? entry : i == CHROME_LEFT ? bars : rightBars).amount();
-            float dx = Draw.snap(i == CHROME_ZOOM ? -x1 * away : i == CHROME_LAYERS ? (width - x0) * away : 0);
-            float dy = Draw.snap(i == CHROME_TOP ? -y1 * away : i == CHROME_ZOOM || i == CHROME_LAYERS ? 0 : (height - y0) * away);
-            Draw.texturedQuadPremultiplied(g, chrome.textureId(), x0 + dx, y0 + dy, x1 + dx, y1 + dy,
-                    x0 / width, CachedLayer.v(1f - y0 / height), x1 / width, CachedLayer.v(1f - y1 / height));
+        // Each group slides out over its own edge of the screen by moving where its part of the layer is laid; all of
+        // them one draw (one texture).
+        Draw.batch();
+        try {
+            for (int i = 0; i < chromeRects.length; i++) {
+                if (i != CHROME_ZOOM && !barsOn) continue; // with a panel open only the zoom slider is shown
+                float[] r = chromeRects[i];
+                float x0 = Math.max(0, r[0]), y0 = Math.max(0, r[1]), x1 = Math.min(width, r[2]), y1 = Math.min(height, r[3]);
+                if (x1 <= x0 || y1 <= y0) continue;
+                float away = 1 - (i == CHROME_ZOOM ? entry : i == CHROME_LEFT ? bars : rightBars).amount();
+                float dx = Draw.snap(i == CHROME_ZOOM ? -x1 * away : i == CHROME_LAYERS ? (width - x0) * away : 0);
+                float dy = Draw.snap(i == CHROME_TOP ? -y1 * away : i == CHROME_ZOOM || i == CHROME_LAYERS ? 0 : (height - y0) * away);
+                Draw.texturedQuadPremultiplied(g, chrome.textureId(), x0 + dx, y0 + dy, x1 + dx, y1 + dy,
+                        x0 / width, CachedLayer.v(1f - y0 / height), x1 / width, CachedLayer.v(1f - y1 / height));
+            }
+        } finally {
+            Draw.endBatch();
         }
     }
 
