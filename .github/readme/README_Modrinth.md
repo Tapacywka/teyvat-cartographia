@@ -68,7 +68,7 @@ Place pins, search for them and for biomes, track them, follow the path and find
 | Mod loader | **Fabric** (Fabric Loader 0.16 or newer with [Fabric API](https://modrinth.com/mod/fabric-api)) or **NeoForge** (21.1 for 1.21.1, built against 21.1.257; 26.1.2, 26.2 or 26.3 for those games, built against 26.1.2.124, 26.2.0.93 and 26.3.0.99): one file for each, the same mod |
 | Java | **21** for 1.21.1, **25** for 26.1.2, 26.2 and 26.3 |
 | Side | **Client** only. Servers don't need it, so you can join vanilla and modded servers. |
-| Version | **1.2.0** for every game (1.21.1, 26.1.2, 26.2 and 26.3). The settings screen comes from the library [Actually Amazing Config Screen](https://github.com/Tapacywka/actually-amazing-config-screen) 1.2.0, packed inside the mod (nothing to install). |
+| Version | **1.3.0** for every game (1.21.1, 26.1.2, 26.2 and 26.3). The settings screen comes from the library [Actually Amazing Config Screen](https://github.com/Tapacywka/actually-amazing-config-screen) 1.3.0, packed inside the mod (nothing to install). |
 | Languages | English, Russian |
 | License | [MIT](https://github.com/Tapacywka/teyvat-cartographia/blob/main/LICENSE) |
 
@@ -133,8 +133,8 @@ Place pins, search for them and for biomes, track them, follow the path and find
 2. Download the file for your game and loader from [Modrinth](https://modrinth.com/mod/teyvat-cartographia),
    [CurseForge](https://www.curseforge.com/minecraft/mc-mods/teyvat-cartographia) or the
    [GitHub releases](https://github.com/Tapacywka/teyvat-cartographia/releases):
-   the part after `+mc` names them: `teyvatcartographia-v1.2.0+mc1.21.1-fabric.jar` is for Minecraft 1.21.1 on Fabric,
-   `teyvatcartographia-v1.2.0+mc26.3-neoforge.jar` for 26.3 on NeoForge. Put it into your `mods/` folder.
+   the part after `+mc` names them: `teyvatcartographia-v1.3.0+mc1.21.1-fabric.jar` is for Minecraft 1.21.1 on Fabric,
+   `teyvatcartographia-v1.3.0+mc26.3-neoforge.jar` for 26.3 on NeoForge. Put it into your `mods/` folder.
 3. Launch the game and press **M** in a world.
 4. Optional: make the minimap round (**Settings > Minimap**) or the interface rounded (**Settings > Map**). On Fabric,
    [Mod Menu](https://modrinth.com/mod/modmenu) adds a settings button to the mod list.
@@ -194,8 +194,10 @@ off by default, and none is in the map's quick settings until it is out in full.
   world border, the same outline at every zoom. Lakes and rivers show; what the world adds later (villages, streams from
   springs, ice) does not. It gives away what you have not found yet, so it stays off unless you want it.
 * **Map edges**: instead of the steps of the chunks the explored map ends on a round, hand-drawn line with a thin
-  turquoise outline and a soft glow into the Fog of War, on the world map and the minimap. The saved map does not
-  change: switched off, everything is back at once.
+  turquoise outline and a soft glow into the Fog of War, on the world map and the minimap. Animated (since 1.3.0), the
+  edge on the world map slowly swells into the fog and draws back like water, smooth at every zoom; with waves, thin
+  waves also run from it into the fog. No animation keeps it still, a pixel a block. The saved map does not change:
+  switched off, everything is back at once.
 * **World border**: the world border as a rough red line on both maps, over the Fog of War too, all beyond it darker;
   it moves with the border, also on a server.
 
@@ -289,8 +291,8 @@ off by default, and none is in the map's quick settings until it is out in full.
   [Actually Amazing Config Screen](https://github.com/Tapacywka/actually-amazing-config-screen), the library the settings
   screen is made with).
 * A setting with parts is one slider in steps: each pin kind goes Off, Map, Both maps, In the world (the marker over a
-  tracked pin), Everywhere (its beam too); its path Off, Map, Both maps, Everywhere (the stars); the clock Off, Game,
-  Real, Both.
+  tracked pin), Everywhere (its beam too); its path Off, Map, Both maps, Everywhere (the stars). The clock is one
+  choice with arrows: Off, Game, Real, Both.
 * Every list (the settings, plants, pins, overlapping pins on the map) glides as it scrolls, with no steps, and its
   rows dissolve softly at the top and bottom edges.
 * Reset to defaults and a shortcut to key binds. Stored in `config/teyvatcartographia-client.json` (the

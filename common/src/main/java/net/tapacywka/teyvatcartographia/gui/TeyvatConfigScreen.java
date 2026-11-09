@@ -48,10 +48,12 @@ public final class TeyvatConfigScreen {
         return spec.open(parent);
     }
 
-    private static final String[] CLOCK_STEPS = {K + "step.off", K + "step.game", K + "step.real", K + "step.both"};
+    private static final String[] CLOCK_OPTIONS = {K + "step.off", K + "step.game", K + "step.real", K + "step.both"};
     private static final String[] EDGE_STEPS = {K + "step.off", K + "step.edges_still", K + "step.edges_breathing", K + "step.edges_surf"};
     private static final String[] PIN_STEPS ={K + "step.off", K + "step.map", K + "step.maps", K + "step.world", K + "step.everywhere"};
     private static final String[] PATH_STEPS = {K + "step.off", K + "step.map", K + "step.maps", K + "step.everywhere"};
+    /** The minimap's redraws a second, from the cheapest to the smoothest (the names of {@link MapConfig.UpdateRate}). */
+    private static final String[] RATE_STEPS = {K + "value.rate_10", K + "value.rate_20", K + "value.rate_30", K + "value.rate_60", K + "value.unlimited"};
 
     /** Sets an on/off setting and its three parts from a step (see {@link StepChoice}); off leaves the parts as they are. */
     private static void setSteps(int step, BoolValue on, BoolValue map, BoolValue minimap, BoolValue world) {
@@ -104,9 +106,10 @@ public final class TeyvatConfigScreen {
             t.choice(K + "theme", MapConfig.THEME, ThemeLoader::available, ThemeLoader::displayName, c -> c.activeWhen(() -> ThemeLoader.available().size() > 1))
                     .then(ThemeLoader::applyNow).noPreview();
             t.choice(K + "interface_style", MapConfig.INTERFACE_STYLE, c -> {}).then(Theme.Style::update).noPreview();
+            // The caves first, the largest of them (user decision 09.11.2026).
             t.section(K + "section.map_content");
-            t.toggleList(K + "plants", MapConfig.MAP_PLANTS, MapConfig.PLANTS_HIDDEN, TeyvatConfigScreen::plants, remap).then(remap);
             t.toggle(K + "caves", MapConfig.CAVES_ENABLED);
+            t.toggleList(K + "plants", MapConfig.MAP_PLANTS, MapConfig.PLANTS_HIDDEN, TeyvatConfigScreen::plants, remap).then(remap);
             t.toggle(K + "player_cone", MapConfig.PLAYER_CONE);
             // How the map is coloured: relief, water.
             t.section(K + "section.colours");
@@ -124,7 +127,6 @@ public final class TeyvatConfigScreen {
             t.defaultPreview(new Pictures(K + "tab.minimap"));
             t.section(K + "subsection.minimap_display");
             t.toggle(K + "minimap_enabled", MapConfig.MINIMAP_ENABLED);
-            t.choice(K + "minimap_shape", MapConfig.MINIMAP_SHAPE, c -> {}).then(Theme.Style::update);
             t.slider(K + "minimap_zoom", MapConfig.MINIMAP_ZOOM, TeyvatConfigScreen::zoom);
             t.choice(K + "minimap_orientation", MapConfig.MINIMAP_ORIENTATION, c -> {});
             t.section(K + "subsection.minimap_layout");
@@ -139,7 +141,10 @@ public final class TeyvatConfigScreen {
             t.slider(K + "minimap_offset_x", MapConfig.MINIMAP_OFFSET_X, s -> {});
             t.slider(K + "minimap_offset_y", MapConfig.MINIMAP_OFFSET_Y, s -> {});
             t.section(K + "section.minimap_look");
-            t.slider(K + "minimap_opacity", MapConfig.MINIMAP_OPACITY, s -> {});
+            // The shape is part of the look (user decision 09.11.2026; in Display since 23.10.2026).
+            t.choice(K + "minimap_shape", MapConfig.MINIMAP_SHAPE, c -> {}).then(Theme.Style::update);
+            // In percent, as the other opacities (user decision 09.11.2026; it read "0.85").
+            t.slider(K + "minimap_opacity", MapConfig.MINIMAP_OPACITY, s -> s.label(d -> Math.round(d * 100) + "%"));
             t.slider(K + "minimap_padding", MapConfig.MINIMAP_PADDING, s -> {});
             t.slider(K + "minimap_fade_width", MapConfig.MINIMAP_FADE_WIDTH, s -> s.unit("%"));
             t.slider(K + "minimap_fade_strength", MapConfig.MINIMAP_FADE_STRENGTH, s -> s.unit("%"));
@@ -147,8 +152,9 @@ public final class TeyvatConfigScreen {
             t.section(K + "subsection.minimap_info");
             t.toggle(K + "minimap_coords", MapConfig.MINIMAP_SHOW_COORDS);
             t.toggle(K + "minimap_biome", MapConfig.MINIMAP_SHOW_BIOME);
-            // The clock as one choice: off, game time, real time, both.
-            t.steps(K + "minimap_time", CLOCK_STEPS,
+            // The clock as one choice with arrows: off, game time, real time, both (user decision 09.11.2026: kinds of
+            // time, not steps of one thing, so no slider).
+            t.choice(K + "minimap_time", CLOCK_OPTIONS,
                     () -> StepChoice.clock(MapConfig.MINIMAP_SHOW_TIME.get(), MapConfig.MINIMAP_TIME_SOURCE.get()),
                     s -> {
                         MapConfig.MINIMAP_SHOW_TIME.set(s > 0);
@@ -172,9 +178,10 @@ public final class TeyvatConfigScreen {
             t.section(K + "subsection.pins_display");
             for (MapConfig.PinKind kind : kinds) pinRow(t, kind);
             t.section(K + "subsection.pins_path");
-            for (MapConfig.PinKind kind : kinds) pathRow(t, kind);
             // How the path goes: on land round deep water, or by boat across it (user decision 26.10.2026); a new search.
+            // First, as it holds for every kind below (user decision 09.11.2026).
             t.choice(K + "path_route", MapConfig.PATH_ROUTE, c -> {}).then(Navigation::requestPath);
+            for (MapConfig.PinKind kind : kinds) pathRow(t, kind);
         });
         // System: how much work the mapping and the minimap may take.
         b.tab(K + "tab.system", t -> {
@@ -183,7 +190,9 @@ public final class TeyvatConfigScreen {
             t.slider(K + "scan_radius", MapConfig.SCAN_RADIUS, s -> {});
             t.slider(K + "chunks_per_tick", MapConfig.CHUNKS_PER_TICK, s -> {});
             t.slider(K + "max_tiles", MapConfig.MAX_CACHED_TILES, s -> {});
-            t.choice(K + "minimap_rate", MapConfig.MINIMAP_UPDATE_RATE, c -> {});
+            // A slider in steps, as the other rows here (user decision 09.11.2026): the steps go up in cost, not a choice of kinds.
+            t.steps(K + "minimap_rate", RATE_STEPS, () -> MapConfig.MINIMAP_UPDATE_RATE.get().ordinal(),
+                    s -> MapConfig.MINIMAP_UPDATE_RATE.set(MapConfig.UpdateRate.values()[s]));
         });
         // Compatibility: Minecraft first (the fogs of its own dimensions, always there, user decision 24.10.2026), then a
         // sub-section per mod in the game, by name: the mod's own ones (compatPart) and those other mods add, open to
@@ -293,7 +302,7 @@ public final class TeyvatConfigScreen {
     private static final Set<String> PLACE_ROWS = Set.of(K + "minimap_radius", K + "minimap_corner", K + "minimap_offset_x", K + "minimap_offset_y");
 
     /** The minimap's look: their preview is the minimap alone, without the lines under it. */
-    private static final Set<String> LOOK_ROWS = Set.of(K + "minimap_opacity", K + "minimap_padding", K + "minimap_fade_width", K + "minimap_fade_strength");
+    private static final Set<String> LOOK_ROWS = Set.of(K + "minimap_shape", K + "minimap_opacity",K + "minimap_padding", K + "minimap_fade_width", K + "minimap_fade_strength");
 
     /** The far land, the map edges and the world border: the map from farther out, where they show. */
     private static final Set<String> FAR_ROWS = Set.of(K + "far_land", K + "map_outline", K + "world_border");

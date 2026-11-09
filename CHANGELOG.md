@@ -10,13 +10,22 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-11-09
+
 ### Changed
 - Settings > Experimental > Map edges is now a slider: Off, No animation, Animated, Animated + waves. Animated, the
   edge of the explored map on the world map moves as in Genshin's map: it slowly swells out into the Fog of War in
   places and draws back, like water spreading and gathering. With waves, thin waves also run out from it into the fog
   and fade, and its glow swells and ebbs like the surf. Animated, the line is also smooth at every zoom, without the
   steps of the blocks when you zoom in close; No animation keeps the edge of 1.2.0, baked into the map a pixel a block.
-  The minimap keeps the line still. With VulkanMod the edge stays still as before.
+  The minimap keeps the line still. With VulkanMod the edge stays still as before. The animated edge, its glow and
+  waves run on across the borders of map regions without a step (found and fixed by MelonCode, thank you!).
+- Settings: System > Minimap update rate is a slider in steps (10, 20, 30, 60 redraws a second, then no limit),
+  Minimap > Look > Opacity reads in percent, and Minimap > Extra information > Clock is a choice with arrows (Off,
+  Game, Real, Both). A few rows moved where they belong: Minimap shape to the top of Minimap > Look, Route to the top
+  of Pins > Path to the target (it holds for every kind of pin below it), Cave map to the top of Map > What the map
+  shows.
+- The settings screen comes from Actually Amazing Config Screen 1.3.0 (packed inside the mod, nothing to install).
 
 ### Fixed
 - Map edges: in a corner of explored land around a map region where nothing is explored yet, the line and its glow no
@@ -503,7 +512,8 @@ The first public release, for Minecraft 1.21.1 on NeoForge 21.1. Client only.
 - Cached HUD layers, chunk work on worker threads and path searches in short slices: the mod is meant to cost at most
   2 to 3% FPS.
 
-[Unreleased]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v0.9.0-beta.5...v1.0.0
