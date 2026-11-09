@@ -352,8 +352,8 @@ public final class MapDataManager {
             for (TileStore s : caveStores.values()) s.evict(Math.max(32, max / 2));
         }
         if (tickCounter % 1200 == 0) {
-            active.saveAll();
-            for (TileStore s : caveStores.values()) s.saveAll();
+            active.saveSoon();
+            for (TileStore s : caveStores.values()) s.saveSoon();
             pruneScanHistory(pcx, pcz);
         }
     }
@@ -362,8 +362,13 @@ public final class MapDataManager {
     private void updateFar(Minecraft mc, LocalPlayer player) {
         net.minecraft.client.server.IntegratedServer server = mc.getSingleplayerServer();
         if (server == null || !MapConfig.get(MapConfig.FAR_LAND)) {
+        // The timer's save, two regions a tick (a copy each, 0.1 ms): all at once was 3 to 4 ms in one tick.
+        active.saveSome(SAVES_PER_TICK);
+        for (TileStore s : caveStores.values()) s.saveSome(SAVES_PER_TICK);
             closeFar();
             return;
+    private static final int SAVES_PER_TICK = 2;
+
         }
         if (far == null) {
             if (farTried) return;

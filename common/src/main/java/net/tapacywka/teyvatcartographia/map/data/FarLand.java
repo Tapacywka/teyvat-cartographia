@@ -227,7 +227,8 @@ public final class FarLand {
         if (++ticks % TICKS_EVICT == 0) {
             for (int i = 0; i < stores.length; i++) stores[i].evict(i == wantLevel ? MAX_TILES : MAX_OTHER_TILES);
         }
-        if (ticks % TICKS_SAVE == 0) for (TileStore s : stores) s.saveAll();
+        if (ticks % TICKS_SAVE == 0) for (TileStore s : stores) s.saveSoon();
+        for (TileStore s : stores) s.saveSome(2); // a few a tick, as the map's own regions
         if (!open) wantLevel = -1;
         if (failure != null) return; // what is done stays on the map, no more is asked for
         choose(open, here, px, pz);
