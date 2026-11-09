@@ -218,7 +218,10 @@ public final class MapTile {
                 data = true;
             }
         }
-        if (pixels) gpuDirty = true;
+        if (pixels) {
+            gpuDirty = true;
+            edge.chunkChanged(lcx, lcz); // its part of a kept baked copy is laid again
+        }
         if (pixels || lit) lightDirty = true; // the light layer is tinted with the tile colours
         boolean changed = pixels || lit || data;
         if (changed) diskDirty = true;
@@ -245,13 +248,13 @@ public final class MapTile {
             texture.bind();
             GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
             GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
-            if (edge.baked()) edge.over(image).upload(0, 0, 0, false);
+            if (edge.baked()) edge.overKept(image).upload(0, 0, 0, false);
             edge.uploadField();
             gpuDirty = false;
         } else if (gpuDirty && allowUpload) {
             if (edge.baked()) {
                 texture.bind();
-                edge.over(image).upload(0, 0, 0, false);
+                edge.overKept(image).upload(0, 0, 0, false);
             } else {
                 texture.upload();
             }
