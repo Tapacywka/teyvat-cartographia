@@ -10,6 +10,27 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 
 ## [Unreleased]
 
+### Changed
+- The world map and the minimap draw their pins, frames and buttons with fewer calls to the graphics card: shapes of
+  one kind in a row now go as one, with the same pixels as before, so an open world map costs a little less.
+
+### Fixed
+- Small stutters: the map saved every minute while exploring is now written a couple of regions at a time instead of
+  all in one frame (3 to 9 ms for 36 regions, more with more; now at most 0.3 ms a frame); a far path to a tracked pin
+  is smoothed and laid out in small parts like its search (up to 3.7 ms in one frame before); turning Far land on
+  stalls one frame less, as its table of answers (16 MB) is now made by its own thread.
+- The sparkles of the path behind you or far out of view are no longer built every frame, and land newly put on the
+  map (and the far land filling it) is laid in with less work.
+- The far zoom of the world map and the minimap (1/8 and farther) no longer redraws a whole region's small copy every
+  time one chunk of it changes, only that chunk's part: while mapping new land with the map zoomed out this took up to
+  0.6 ms a frame.
+- Map regions open at once while the map is being saved: reading a region no longer waits in one line behind the
+  writes (a region asked for during a big save came late).
+- With Map edges at "No animation", a region whose chunks changed gets its edge laid again only around those chunks,
+  not over the whole region.
+- A region file that another program holds for a moment (an antivirus, a backup) is written on the next tries instead
+  of being left unsaved until the next save.
+
 ## [1.3.0] - 2026-11-09
 
 ### Changed
