@@ -166,14 +166,24 @@ public final class FarPath {
         }
         if ((searching || building) && active != store) searching = building = false; // the dimension changed under it
         if (building) {
-            // The found path is smoothed in a tick of its own.
+            // The found path is smoothed in slices like the search (in one tick it took up to 3.7 ms, profile
+            // 09.11.2026), then laid out in points from the next tick, in slices too.
             long t0 = System.nanoTime();
-            build(best);
+            boolean ready = false;
+            if (smoothed) {
+                ready = layOut(t0 + SLICE_NANOS);
+            } else if (smoothing.step(t0 + SLICE_NANOS)) {
+                smoothed = true;
+                startLayOut(smoothing.count());
+            }
             long spent = System.nanoTime() - t0;
-            building = false;
+            searchNanos += spent;
             computeMaxNanos = Math.max(computeMaxNanos, spent);
-            computeCount++;
-            computeTotalNanos += searchNanos + spent;
+            if (ready) {
+                building = false;
+                computeCount++;
+                computeTotalNanos += searchNanos;
+            }
             return;
         }
         if (!searching) {
@@ -206,6 +216,7 @@ public final class FarPath {
         if (done) {
             searching = false;
             building = true;
+            startBuild(best);
         }
     }
 
@@ -397,11 +408,15 @@ public final class FarPath {
         return height[c] = Math.round(sum / (float) walkable) + 1;
     }
 
+    /** The smoothing of the found path, a slice a tick ({@link PathSmoother.Job}). */
+    private final PathSmoother.Job smoothing = new PathSmoother.Job();
+    private final PathSmoother.Blocked blocked = this::blockedAt;
+
     /**
-     * The path from the start along the found cells, smoothed into soft arcs ({@link PathSmoother}), with points every
-     * SPACING blocks, each marked whether it lies in the fog and whether on deep water.
+     * The path from the start along the found cells, to be smoothed into soft arcs ({@link #smoothing}), then laid out
+     * in points ({@link #layOut}).
      */
-    private void build(int end) {
+    private void startBuild(int end) {
         int n = 0;
         for (int c = end; c != -1 && n < CELL_PATH.length; c = from[c]) n++;
         int i = n;
@@ -417,33 +432,74 @@ public final class FarPath {
             RAW[1] = startPZ;
         }
         // Soft arcs through a control point every ARC cells, kept clear of blocked ground (the fog is not blocked).
-        int m = PathSmoother.smooth(RAW, n, ARC, this::blockedAt, SMOOTH);
+        smoothing.start(RAW, n, ARC, blocked, SMOOTH);
+        smoothed = false;
+    }
+
+    /** Whether {@link #smoothing} is done and the path is to be laid out next tick. */
+    private boolean smoothed;
+
+    /**
+     * The path being laid out ({@link #layOut}), in slices like the search (in one tick it took up to 1.4 ms, profile
+     * 09.11.2026), into arrays of its own: the maps keep the path before until this one is whole.
+     */
+    private float[] nextPoints = new float[2 * 512];
+    private boolean[] nextFog = new boolean[512], nextWater = new boolean[512];
+    private int nextCount, laySegment, layPoints;
+    private float layAlong, layNext;
+
+    /** Begins laying out the smoothed path ({@code m} points in SMOOTH). */
+    private void startLayOut(int m) {
         System.arraycopy(SMOOTH, 0, RAW, 0, 2 * m);
-        pointCount = 0;
-        version++;
-        generation++;
-        float along = 0, next = 0;
-        for (int k = 0; k + 1 < m; k++) {
+        layPoints = m;
+        laySegment = 0;
+        layAlong = 0;
+        layNext = 0;
+        nextCount = 0;
+    }
+
+    /**
+     * Lays the smoothed path out with points every SPACING blocks, each marked whether it lies in the fog and whether
+     * on deep water, until {@code deadline} (a segment at least each call); true when the whole path is in place.
+     */
+    private boolean layOut(long deadline) {
+        while (laySegment + 1 < layPoints) {
+            int k = laySegment++;
             float ax = RAW[2 * k], az = RAW[2 * k + 1], bx = RAW[2 * k + 2], bz = RAW[2 * k + 3];
             float len = (float) Math.hypot(bx - ax, bz - az);
             if (len < 1e-4f) continue;
-            while (next <= along + len) {
-                if (pointCount == fogPoint.length) {
-                    points = Arrays.copyOf(points, points.length * 2);
-                    fogPoint = Arrays.copyOf(fogPoint, fogPoint.length * 2);
-                    water = Arrays.copyOf(water, water.length * 2);
+            while (layNext <= layAlong + len) {
+                if (nextCount == nextFog.length) {
+                    nextPoints = Arrays.copyOf(nextPoints, nextPoints.length * 2);
+                    nextFog = Arrays.copyOf(nextFog, nextFog.length * 2);
+                    nextWater = Arrays.copyOf(nextWater, nextWater.length * 2);
                 }
-                float f = (next - along) / len, x = ax + (bx - ax) * f, z = az + (bz - az) * f;
+                float f = (layNext - layAlong) / len, x = ax + (bx - ax) * f, z = az + (bz - az) * f;
                 int cell = cellOf(x, z);
-                points[2 * pointCount] = x;
-                points[2 * pointCount + 1] = z;
-                fogPoint[pointCount] = ground(cell) == FOG;
-                water[pointCount] = deep[cell];
-                pointCount++;
-                next += SPACING;
+                nextPoints[2 * nextCount] = x;
+                nextPoints[2 * nextCount + 1] = z;
+                nextFog[nextCount] = ground(cell) == FOG;
+                nextWater[nextCount] = deep[cell];
+                nextCount++;
+                layNext += SPACING;
             }
-            along += len;
+            layAlong += len;
+            if (System.nanoTime() > deadline) return false;
         }
+        // The whole path at once: the arrays swap, the old ones take the next path.
+        float[] p = points;
+        points = nextPoints;
+        nextPoints = p;
+        boolean[] fog = fogPoint;
+        fogPoint = nextFog;
+        nextFog = fog;
+        boolean[] w = water;
+        water = nextWater;
+        nextWater = w;
+        pointCount = nextCount;
+        version++;
+        generation++;
+        return true;
     }
 
     private static final int[] CELL_PATH = new int[4096];
