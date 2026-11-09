@@ -12,6 +12,7 @@ import it.unimi.dsi.fastutil.longs.Long2IntMap;
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
 import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import it.unimi.dsi.fastutil.longs.LongSet;
@@ -368,9 +369,38 @@ public final class TileStore {
         drainLoaded();
         for (MapTile t : tiles.values()) t.release();
         tiles.clear();
+        saveQueue.clear();
+        saveQueued.clear();
         dropEdgeOnly();
         pending.clear();
         early.clear();
+    /**
+     * Regions waiting for the timer's save, a few a tick ({@link #saveSome}): saved all at once, their copies took 3 to 4
+     * ms of one tick for 36 regions (profile 09.11.2026).
+     */
+    private final LongArrayFIFOQueue saveQueue = new LongArrayFIFOQueue();
+    private final LongOpenHashSet saveQueued = new LongOpenHashSet();
+
+    /** The timer's save: every region with unsaved changes is queued, {@link #saveSome} saves a few a tick. */
+    void saveSoon() {
+        for (MapTile t : tiles.values()) if (t.diskDirty && saveQueued.add(t.key)) saveQueue.enqueue(t.key);
+        if (saveQueue.isEmpty() && indexDirty) writeIndexAsync();
+    }
+
+    /** Saves up to {@code n} of the queued regions (every tick); the index once the queue is empty. */
+    void saveSome(int n) {
+        if (saveQueue.isEmpty()) return;
+        while (n > 0 && !saveQueue.isEmpty()) {
+            long key = saveQueue.dequeueLong();
+            saveQueued.remove(key);
+            MapTile t = tiles.get(key);
+            if (t == null || !t.diskDirty) continue; // saved meanwhile (evicted, or the dimension closed)
+            save(t);
+            n--;
+        }
+        if (saveQueue.isEmpty() && indexDirty) writeIndexAsync();
+    }
+
         lod.close();
     }
 
