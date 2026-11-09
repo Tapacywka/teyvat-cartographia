@@ -368,6 +368,7 @@ public final class TileStore {
         drainLoaded();
         for (MapTile t : tiles.values()) t.release();
         tiles.clear();
+        dropEdgeOnly();
         pending.clear();
         early.clear();
         lod.close();
@@ -394,6 +395,9 @@ public final class TileStore {
     private boolean edgesByShader;
     /** Regions whose outline is to be worked out. */
     private final LongOpenHashSet edgeStale = new LongOpenHashSet();
+    /** Regions with nothing explored beside explored ones: the outline that comes into them ({@link EdgeOnly}), and those to work out. */
+    private final Long2ObjectOpenHashMap<EdgeOnly> edgeOnly = new Long2ObjectOpenHashMap<>();
+    private final LongOpenHashSet edgeOnlyStale = new LongOpenHashSet();
     private final ConcurrentLinkedQueue<EdgeDone> edgesDone = new ConcurrentLinkedQueue<>();
     private int edgeJobs;
     private final LongOpenHashSet chunksLoading = new LongOpenHashSet();
@@ -413,9 +417,16 @@ public final class TileStore {
 
     /** Whether every picture in memory has the outline of the chunks known now. */
     public boolean edgesDone() {
-        if (!edgeStale.isEmpty() || edgeJobs > 0 || !chunksLoading.isEmpty() || !lod.edgesDone()) return false;
+        if (!edgeStale.isEmpty() || !edgeOnlyStale.isEmpty() || edgeJobs > 0 || !chunksLoading.isEmpty() || !lod.edgesDone()) return false;
         for (MapTile t : tiles.values()) if (!t.edge.ready()) return false;
         return true;
+    }
+
+    /** The outline that comes into a region with nothing explored from the land around it, or null ({@link EdgeOnly}). */
+    public EdgeOnly edgeOnly(int tx, int tz) {
+        if (edgeOnly.isEmpty()) return null;
+        EdgeOnly e = edgeOnly.get(MapView.tileKey(tx, tz));
+        return e != null && e.shows() ? e : null;
     }
 
     /** A region came into memory: not shown before its outline is there. */
@@ -423,6 +434,26 @@ public final class TileStore {
         if (!edgesOn) return;
         t.edge.waitForFirst();
         edgeStale.add(t.key);
+        edgeOnlyAround(t.tx, t.tz);
+    }
+
+    /** The regions with nothing explored around a region have the outline that may come into them worked out. */
+    private void edgeOnlyAround(int tx, int tz) {
+        for (int dz = -1; dz <= 1; dz++) {
+            for (int dx = -1; dx <= 1; dx++) edgeOnlyMaybe(MapView.tileKey(tx + dx, tz + dz));
+        }
+    }
+
+    private void edgeOnlyMaybe(long key) {
+        // Over floating land only land gets the line, and no glow: nothing to show where nothing is explored.
+        if (!tiles.containsKey(key) && !onDisk.contains(key) && !FogTexture.shadow(dimension)) edgeOnlyStale.add(key);
+    }
+
+    /** Frees every {@link EdgeOnly}. */
+    private void dropEdgeOnly() {
+        for (EdgeOnly e : edgeOnly.values()) e.close();
+        edgeOnly.clear();
+        edgeOnlyStale.clear();
     }
 
     /** What a region in memory has on the map, for when it is not. */
@@ -437,6 +468,7 @@ public final class TileStore {
             for (int tx = MapView.chunkToTile(cx - MapOutline.FIELD_RING); tx <= MapView.chunkToTile(cx + MapOutline.FIELD_RING); tx++) {
                 long key = MapView.tileKey(tx, tz);
                 if (tiles.containsKey(key)) edgeStale.add(key);
+                else edgeOnlyMaybe(key);
             }
         }
         lod.edgesAround(cx, cz);
@@ -468,7 +500,41 @@ public final class TileStore {
                 it.remove();
             }
         }
+        for (LongIterator it = edgeOnlyStale.iterator(); it.hasNext(); ) {
+            long key = it.nextLong();
+            int tx = MapView.tileKeyX(key), tz = MapView.tileKeyZ(key);
+            EdgeOnly e = edgeOnly.get(key);
+            if (tiles.containsKey(key) || onDisk.contains(key) || !besideInMemory(tx, tz)) {
+                it.remove();
+            } else {
+                if (e == null) edgeOnly.put(key, e = new EdgeOnly(tx, tz));
+                if (e.edge.busy()) continue;
+                if (!askEdge(e.edge, tx * MapTile.CHUNKS, tz * MapTile.CHUNKS, MapTile.CHUNKS, 16, true)) return;
+                it.remove();
+            }
+        }
+        // Those that show nothing, now have a region of their own, or no region beside them in memory any more go.
+        if (!edgeOnly.isEmpty()) {
+            for (var it = edgeOnly.long2ObjectEntrySet().fastIterator(); it.hasNext(); ) {
+                var entry = it.next();
+                EdgeOnly e = entry.getValue();
+                long key = entry.getLongKey();
+                if (e.edge.busy() || edgeOnlyStale.contains(key)) continue;
+                if (e.shows() && !tiles.containsKey(key) && !onDisk.contains(key) && besideInMemory(e.tx, e.tz)) continue;
+                if (e.shows()) version++;
+                e.close();
+                it.remove();
+            }
+        }
         lod.askEdges();
+    }
+
+    /** Whether a region beside (tx, tz), the corners too, is in memory. */
+    private boolean besideInMemory(int tx, int tz) {
+        for (int dz = -1; dz <= 1; dz++) {
+            for (int dx = -1; dx <= 1; dx++) if ((dx != 0 || dz != 0) && tiles.containsKey(MapView.tileKey(tx + dx, tz + dz))) return true;
+        }
+        return false;
     }
 
     private void switchEdges(boolean on) {
@@ -478,11 +544,17 @@ public final class TileStore {
             if (on) {
                 t.edge.again();
                 edgeStale.add(t.key);
+                edgeOnlyAround(t.tx, t.tz);
             } else {
                 t.edge.clear();
             }
         }
-        if (!on) edgeStale.clear();
+        if (on) {
+            for (EdgeOnly e : edgeOnly.values()) e.edge.again();
+        } else {
+            edgeStale.clear();
+            dropEdgeOnly();
+        }
         lod.switchEdges(on);
         version++;
     }
@@ -493,14 +565,20 @@ public final class TileStore {
      * @return false while the thread has enough to do: the picture stays waiting
      */
     boolean askEdge(EdgeMask mask, int cx0, int cz0, int chunks, int pixels) {
+        return askEdge(mask, cx0, cz0, chunks, pixels, false);
+    }
+
+    /** As above; {@code empty}: a region with nothing explored ({@link EdgeOnly}), which has an outline only where it comes in. */
+    private boolean askEdge(EdgeMask mask, int cx0, int cz0, int chunks, int pixels, boolean empty) {
         mask.landOnly(FogTexture.shadow(dimension));
         // The shader's field has a border from the chunks next to the picture: its grid has a ring a chunk wider.
         boolean shader = EdgeShader.inUse();
         int ring = shader ? MapOutline.FIELD_RING : MapOutline.RING;
         long[] grid = grid(cx0, cz0, chunks, ring);
         if (mask.madeFrom(grid)) return true;
-        // Land all around is the most of a map: nothing to wait for.
-        if (MapOutline.whole(grid, chunks + 2 * ring)) {
+        // Land all around is the most of a map, and explored land on one side only the most beside an empty region:
+        // nothing to wait for.
+        if (MapOutline.whole(grid, chunks + 2 * ring) || empty && MapOutline.oneSide(grid, chunks, ring)) {
             if (mask.set(grid, null, null, shader)) version++;
             return true;
         }
@@ -511,8 +589,12 @@ public final class TileStore {
             MapOutline.Picture picture = null;
             MapOutline.Field field = null;
             try {
-                if (shader) field = MapOutline.field(cx0, cz0, chunks, pixels, grid);
-                else picture = MapOutline.picture(cx0, cz0, chunks, pixels, grid);
+                if (shader) {
+                    field = MapOutline.field(cx0, cz0, chunks, pixels, grid);
+                    if (empty && field != null && !field.reaches()) field = null;
+                } else {
+                    picture = MapOutline.picture(cx0, cz0, chunks, pixels, grid);
+                }
             } catch (RuntimeException e) {
                 TeyvatCartographia.LOGGER.warn("Could not work out the outline at chunk {},{}", cx0, cz0, e);
             }

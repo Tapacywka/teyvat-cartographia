@@ -161,6 +161,25 @@ public final class MapOutline {
         return true;
     }
 
+    /**
+     * Whether all the explored chunks of a grid lie on one side of its square ({@code chunks} a side, the {@code ring}
+     * around it), or there are none: then the smooth outline, where half the blur is explored, cannot come into the
+     * square, and nothing of the line or its glow shows there. So it is beside most regions with nothing explored.
+     */
+    public static boolean oneSide(long[] grid, int chunks, int ring) {
+        int side = chunks + 2 * ring, minX = side, maxX = -1, minZ = side, maxZ = -1;
+        for (int z = 0; z < side; z++) {
+            for (int x = 0; x < side; x++) {
+                if (!get(grid, z * side + x)) continue;
+                minX = Math.min(minX, x);
+                maxX = Math.max(maxX, x);
+                minZ = Math.min(minZ, z);
+                maxZ = Math.max(maxZ, z);
+            }
+        }
+        return maxX < ring || minX >= ring + chunks || maxZ < ring || minZ >= ring + chunks;
+    }
+
     private static boolean get(long[] grid, int i) {
         return (grid[i >> 6] >>> (i & 63) & 1) != 0;
     }
@@ -286,7 +305,22 @@ public final class MapOutline {
         boolean same(Field other) {
             return other != null && side == other.side && Arrays.equals(abgr, other.abgr);
         }
+
+        /**
+         * Whether the smooth outline comes into the picture's own pixels (its border is the next picture's): the line and
+         * its glow lie inside it, so only then does anything of them show in a picture with nothing explored.
+         */
+        boolean reaches() {
+            int width = side - 2, inside = encode(REACHES, S_FROM, S_TO);
+            for (int z = 1; z <= width; z++) {
+                for (int x = 1; x <= width; x++) if ((abgr[z * side + x] >>> 16 & 0xFF) > inside) return true;
+            }
+            return false;
+        }
     }
+
+    /** How far inside the smooth outline, in blocks, a picture with nothing explored has something to show (the glow is nil nearer). */
+    private static final float REACHES = 0.5f;
 
     /** What {@link #walk} finds at each pixel: {@link #picture} draws it, {@link #field} hands it to the GPU. */
     private interface Pixels {

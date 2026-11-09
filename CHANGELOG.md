@@ -19,8 +19,8 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
   The minimap keeps the line still. With VulkanMod the edge stays still as before.
 
 ### Fixed
-- Map edges, animated: the line, its glow and the waves no longer break off in a step at the border of each map
-  region (and of each tile of the far zoom).
+- Map edges: in a corner of explored land around a map region where nothing is explored yet, the line and its glow no
+  longer break off straight along that region's borders: the part of the edge that reaches into it is drawn there too.
 
 ## [1.2.0] - 2026-11-08
 

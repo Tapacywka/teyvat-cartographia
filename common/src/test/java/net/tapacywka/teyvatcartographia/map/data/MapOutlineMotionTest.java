@@ -1,6 +1,7 @@
 package net.tapacywka.teyvatcartographia.map.data;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -121,6 +122,45 @@ class MapOutlineMotionTest {
                 double a = sample(here, x, width, c), b = sample(south, x, 0, c);
                 assertEquals(a, b, 1e-9, "channel " + c + " at x " + x);
             }
+        }
+    }
+
+    /**
+     * A region with nothing explored ({@link EdgeOnly}): in a concave corner of explored land the smooth outline cuts across
+     * its corner, so the line and the glow come in and it needs a picture of its own (user request 09.11.2026: without it
+     * they broke off along its borders); beside a straight edge nothing comes in, and it needs none.
+     */
+    @Test
+    void theOutlineComesIntoARegionWithNothingExploredOnlyInAConcaveCorner() {
+        int chunks = 16;
+        // Explored west of chunk 16 and north of chunk 16; the region from chunk (16, 16) has nothing.
+        BiPredicate<Integer, Integer> corner = (x, z) -> x < 16 || z < 16, west = (x, z) -> x < 16;
+        // Only a corner chunk's neighbour on the diagonal: a quadrant, at most a quarter of the blur.
+        BiPredicate<Integer, Integer> diagonal = (x, z) -> x < 16 && z < 16;
+        assertTrue(MapOutline.oneSide(fieldGrid(16, 16, chunks, west), chunks, FIELD_RING));
+        assertTrue(MapOutline.oneSide(fieldGrid(16, 16, chunks, diagonal), chunks, FIELD_RING));
+        assertTrue(MapOutline.oneSide(fieldGrid(16, 16, chunks, (x, z) -> false), chunks, FIELD_RING));
+        assertFalse(MapOutline.oneSide(fieldGrid(16, 16, chunks, corner), chunks, FIELD_RING));
+        assertFalse(MapOutline.oneSide(grid(16, 16, chunks, corner), chunks, RING));
+        for (int pixels : new int[]{16, 4}) {
+            MapOutline.Field in = MapOutline.field(16, 16, chunks, pixels, fieldGrid(16, 16, chunks, corner));
+            assertNotNull(in);
+            assertTrue(in.reaches(), "the corner: the outline comes in, " + pixels + " pixels a chunk");
+            MapOutline.Field beside = MapOutline.field(16, 16, chunks, pixels, fieldGrid(16, 16, chunks, west));
+            assertTrue(beside == null || !beside.reaches(), "a straight edge on its border: nothing comes in");
+            MapOutline.Field diagonalField = MapOutline.field(16, 16, chunks, pixels, fieldGrid(16, 16, chunks, diagonal));
+            assertTrue(diagonalField == null || !diagonalField.reaches(), "land only on the diagonal: nothing comes in");
+            // Baked: a line and a glow in the corner's picture, none beside a straight edge.
+            assertNotNull(MapOutline.picture(16, 16, chunks, pixels, grid(16, 16, chunks, corner)));
+            assertNull(MapOutline.picture(16, 16, chunks, pixels, grid(16, 16, chunks, west)));
+        }
+        // The region's own picture and the one beside it agree at their border, as any two.
+        MapOutline.Field in = MapOutline.field(16, 16, chunks, 16, fieldGrid(16, 16, chunks, corner));
+        MapOutline.Field westOf = MapOutline.field(0, 16, chunks, 16, fieldGrid(0, 16, chunks, corner));
+        assertNotNull(westOf);
+        int side = in.side();
+        for (int k = 0; k < chunks * 16; k++) {
+            assertEquals(in.abgr()[(k + 1) * side + 1], westOf.abgr()[(k + 1) * side + side - 1], "the west border at " + k);
         }
     }
 

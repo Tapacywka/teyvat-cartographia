@@ -55,11 +55,6 @@ public final class EdgeShader {
         TeyvatCartographia.LOGGER.warn("Could not load the map's edge shader; the edge of the map stays still", e);
     }
 
-    /** Whether the outline is drawn by this shader. */
-    public static boolean ready() {
-        return shader != null;
-    }
-
     /**
      * Whether the outline is drawn by this shader now: it is loaded and Map edges moves the edge (animated, or with
      * waves). Not animated, the outline is baked into the pictures as in 1.2.0, a pixel a block (user request

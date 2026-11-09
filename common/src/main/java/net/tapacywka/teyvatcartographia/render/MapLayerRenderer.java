@@ -5,6 +5,7 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraft.resources.ResourceKey;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
 import net.tapacywka.teyvatcartographia.map.MapView;
+import net.tapacywka.teyvatcartographia.map.data.EdgeOnly;
 import net.tapacywka.teyvatcartographia.map.data.FarLand;
 import net.tapacywka.teyvatcartographia.map.data.FarLandRules;
 import net.tapacywka.teyvatcartographia.map.data.LodStore;
@@ -194,7 +195,11 @@ public final class MapLayerRenderer {
         }
         for (int tz = tz0; tz <= tz1; tz++) {
             for (int tx = tx0; tx <= tx1; tx++) {
-                if (!store.exists(tx, tz)) continue;
+                if (!store.exists(tx, tz)) {
+                    EdgeOnly only = store.edgeOnly(tx, tz);
+                    if (only != null) edgeOnly(g, only, view, x0, y0, x1, y1, tint, blur, edge);
+                    continue;
+                }
                 MapTile t = store.get(tx, tz);
                 boolean allow = t != null && (!t.needsUpload() || uploads > 0);
                 if (t != null && t.needsUpload() && allow) uploads--;
@@ -246,6 +251,25 @@ public final class MapLayerRenderer {
             }
         }
         return complete;
+    }
+
+    /** The outline that comes into a region with nothing explored ({@link EdgeOnly}), drawn as that region would be. */
+    private static void edgeOnly(GuiGraphics g, EdgeOnly e, MapView view, float x0, float y0, float x1, float y1, int tint, boolean blur, float edge) {
+        int id = e.textureId();
+        if (id < 0) return;
+        e.setFilter(blur);
+        float sx0 = view.screenX(e.blockX0(), e.blockZ0()), sy0 = view.screenY(e.blockX0(), e.blockZ0());
+        float sx1 = view.screenX(e.blockX0() + MapTile.SIZE, e.blockZ0() + MapTile.SIZE);
+        float sy1 = view.screenY(e.blockX0() + MapTile.SIZE, e.blockZ0() + MapTile.SIZE);
+        float cx0 = Math.max(sx0, x0), cy0 = Math.max(sy0, y0), cx1 = Math.min(sx1, x1), cy1 = Math.min(sy1, y1);
+        if (cx1 <= cx0 || cy1 <= cy0) return;
+        float w = sx1 - sx0, h = sy1 - sy0;
+        float u0 = in((cx0 - sx0) / w, edge), v0 = in((cy0 - sy0) / h, edge), u1 = in((cx1 - sx0) / w, edge), v1 = in((cy1 - sy0) / h, edge);
+        if (e.byShader()) {
+            edgeQuad(g, id, e.fieldId(), e.blockX0(), e.blockZ0(), MapTile.SIZE, e.mode(), edge, cx0, cy0, cx1, cy1, u0, v0, u1, v1, tint);
+        } else {
+            Draw.texturedQuad(g, id, cx0, cy0, cx1, cy1, u0, v0, u1, v1, tint);
+        }
     }
 
     /** How far the land's shadow falls on the fog (GUI units, down and right) and how dark it is. */
