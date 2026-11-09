@@ -85,8 +85,8 @@ public final class MapStorage {
                 writePalette(out, s.biomePalette());
                 out.write(s.light());
             }
-            Files.move(datTmp, dat, StandardCopyOption.REPLACE_EXISTING);
-            Files.move(pngTmp, png, StandardCopyOption.REPLACE_EXISTING);
+            replace(datTmp, dat);
+            replace(pngTmp, png);
         } finally {
             s.image().close();
         }
@@ -290,7 +290,43 @@ public final class MapStorage {
     private static void writeThumbnail(Path dir, int tx, int tz, NativeImage thumb) throws IOException {
         Path file = dir.resolve("r." + tx + "." + tz + ".lod.png"), tmp = dir.resolve("r." + tx + "." + tz + ".lod.png.tmp");
         thumb.writeToFile(tmp);
-        Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING);
+        replace(tmp, file);
+    }
+
+    /** How often {@link #replace} tries, and how long it waits between tries. */
+    static final int REPLACE_TRIES = 6;
+    private static final long REPLACE_WAIT_MS = 25;
+
+    /** One move of a file over another; a test puts its own in. */
+    interface Mover {
+        void move(Path from, Path to) throws IOException;
+    }
+
+    /**
+     * Puts a finished temporary file in a file's place. Tried again a few times: regions are also read on threads of
+     * their own (thumbnails, chunk lists, the biome search), and where a file being read cannot be replaced (Windows
+     * before 10 1809, volumes that are not NTFS) the move fails until the reader is done, a matter of milliseconds.
+     * Called on the writes' thread only, so the wait holds no frame.
+     */
+    static void replace(Path tmp, Path file) throws IOException {
+        replace(tmp, file, (from, to) -> Files.move(from, to, StandardCopyOption.REPLACE_EXISTING));
+    }
+
+    static void replace(Path tmp, Path file, Mover mover) throws IOException {
+        for (int attempt = 1; ; attempt++) {
+            try {
+                mover.move(tmp, file);
+                return;
+            } catch (IOException e) {
+                if (attempt >= REPLACE_TRIES) throw e;
+            }
+            try {
+                Thread.sleep(REPLACE_WAIT_MS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IOException("Interrupted while replacing " + file, e);
+            }
+        }
     }
 
     /**
