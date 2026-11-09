@@ -49,6 +49,11 @@ public final class MapOutline {
 
     /** Chunks around a picture that reach into it: three times the blur, in chunks. */
     public static final int RING = 3;
+    /**
+     * The ring of chunks around a picture in the grid of its {@link #field}: the blur's {@link #RING} and one chunk more,
+     * from which the field's border of one pixel comes.
+     */
+    public static final int FIELD_RING = RING + 1;
     private static final int REACH = 2 * RING + 1;
     /** How much each of the chunks in reach counts, for a block at each place in its chunk. */
     private static final float[][] WEIGHTS = new float[16][REACH];
@@ -215,7 +220,7 @@ public final class MapOutline {
                 changed |= stroke > 0 || glow > 0;
             }
         };
-        walk(cx0, cz0, chunks, pixels, grid, sink);
+        walk(cx0, cz0, chunks, pixels, 0, RING, grid, sink);
         return sink.changed ? out : null;
     }
 
@@ -232,12 +237,18 @@ public final class MapOutline {
      * blocks either way), blue the distance from the smooth outline ({@link #S_FROM} to {@link #S_TO}), alpha how much of
      * the map the chunks around that are not explored leave. The GPU draws the line on the softer minimum of the first
      * two, the lobes' line breathing ({@link #breath}); sampled between the pixels, the line is smooth at every zoom.
+     * <p>
+     * Around the picture's pixels the field has a border of one pixel, worked out from the chunks next to it as the next
+     * picture has them, so the GPU's sampling between pixels runs on across the picture's edge as inside it. Without it
+     * each picture held its last pixel to its edge and the line, the glow and the waves broke off in a step at every
+     * region's border (tester report 08.11.2026; the baked outline of 1.2.0, a pixel a block, had no such step).
      *
-     * @return null where all the picture has stays as it is, as {@link #picture}
+     * @param grid the chunks of the picture and the {@link #FIELD_RING} around it, side {@code chunks + 2 * FIELD_RING}
+     * @return null where all the picture has stays as it is, as {@link #picture}; else {@code chunks * pixels + 2} pixels a side
      */
     public static Field field(int cx0, int cz0, int chunks, int pixels, long[] grid) {
-        int width = chunks * pixels;
-        if (whole(grid, chunks + 2 * RING)) return null;
+        int width = chunks * pixels + 2;
+        if (whole(grid, chunks + 2 * FIELD_RING)) return null;
         int[] abgr = new int[width * width];
         var sink = new Pixels() {
             boolean changed;
@@ -254,8 +265,8 @@ public final class MapOutline {
                 changed = true;
             }
         };
-        walk(cx0, cz0, chunks, pixels, grid, sink);
-        return sink.changed ? new Field(abgr) : null;
+        walk(cx0, cz0, chunks, pixels, 1, FIELD_RING, grid, sink);
+        return sink.changed ? new Field(width, abgr) : null;
     }
 
     private static int encode(float v, float from, float to) {
@@ -267,10 +278,13 @@ public final class MapOutline {
         return from + (channel & 0xFF) / 255f * (to - from);
     }
 
-    /** A {@link Field}: what the GPU draws the outline from, a picture's pixels as 0xAABBGGRR, as the images hold them. */
-    public record Field(int[] abgr) {
+    /**
+     * A {@link Field}: what the GPU draws the outline from, {@code side} pixels a side (the picture's and a border of one
+     * pixel around them) as 0xAABBGGRR, as the images hold them.
+     */
+    public record Field(int side, int[] abgr) {
         boolean same(Field other) {
-            return other != null && Arrays.equals(abgr, other.abgr);
+            return other != null && side == other.side && Arrays.equals(abgr, other.abgr);
         }
     }
 
@@ -287,39 +301,55 @@ public final class MapOutline {
         void near(int at, float lobes, float guard, float s, float border, boolean explored);
     }
 
-    /** Goes over a square picture as {@link #picture} takes it, pixel by pixel. */
-    private static void walk(int cx0, int cz0, int chunks, int pixels, long[] grid, Pixels out) {
-        int side = chunks + 2 * RING, width = chunks * pixels, blocks = 16 / pixels;
+    /**
+     * Goes over a square picture as {@link #picture} takes it, pixel by pixel, and with a {@code pad} of 1 the pixels
+     * around it, from the chunks next to it ({@code ring}: the chunks around the picture in the grid).
+     */
+    private static void walk(int cx0, int cz0, int chunks, int pixels, int pad, int ring, long[] grid, Pixels out) {
+        int side = chunks + 2 * ring, width = chunks * pixels + 2 * pad, blocks = 16 / pixels;
+        int first = pad > 0 ? -1 : 0, last = pad > 0 ? chunks : chunks - 1;
         float[] own = new float[REACH * REACH], row = new float[REACH];
-        for (int j = 0; j < chunks; j++) {
-            for (int i = 0; i < chunks; i++) {
-                boolean explored = get(grid, (j + RING) * side + i + RING), open = false, land = false;
+        for (int j = first; j <= last; j++) {
+            // Of the chunks next to the picture only their pixels on its border.
+            int pz0 = j < 0 ? pixels - pad : 0, pz1 = j >= chunks ? pad : pixels;
+            for (int i = first; i <= last; i++) {
+                int px0 = i < 0 ? pixels - pad : 0, px1 = i >= chunks ? pad : pixels;
+                boolean explored = get(grid, (j + ring) * side + i + ring), open = false, land = false;
                 for (int dz = 0; dz < REACH; dz++) {
                     for (int dx = 0; dx < REACH; dx++) {
-                        boolean known = get(grid, (j + dz) * side + i + dx);
+                        boolean known = get(grid, (j + ring - RING + dz) * side + i + ring - RING + dx);
                         own[dz * REACH + dx] = known ? 1 : 0;
                         open |= !known;
                         land |= known;
                     }
                 }
                 if (open && land) {
-                    chunk(out, width, i, j, pixels, blocks, cx0, cz0, own, row, explored);
+                    chunk(out, width, pad, i, j, pixels, blocks, px0, px1, pz0, pz1, cx0, cz0, own, row, explored);
                 } else {
                     // Only land in reach or only fog: all of it the one.
-                    for (int z = 0; z < pixels; z++) {
-                        for (int x = 0; x < pixels; x++) out.plain((j * pixels + z) * width + i * pixels + x, explored, explored);
+                    for (int z = pz0; z < pz1; z++) {
+                        for (int x = px0; x < px1; x++) out.plain(at(width, pad, pixels, i, j, x, z), explored, explored);
                     }
                 }
             }
         }
     }
 
-    /** One chunk with both explored chunks and others in reach ({@code own}: the chunks in its reach, 1 explored). */
-    private static void chunk(Pixels out, int width, int i, int j, int pixels, int blocks, int cx0, int cz0, float[] own, float[] row, boolean explored) {
+    /** Where pixel (x, z) of chunk (i, j) of a picture goes among its pixels, {@code width} a row, with a {@code pad} of pixels around. */
+    private static int at(int width, int pad, int pixels, int i, int j, int x, int z) {
+        return (j * pixels + z + pad) * width + i * pixels + x + pad;
+    }
+
+    /**
+     * One chunk with both explored chunks and others in reach ({@code own}: the chunks in its reach, 1 explored), its
+     * pixels px0 to px1 and pz0 to pz1 (all of them, or of a chunk next to the picture those on its border).
+     */
+    private static void chunk(Pixels out, int width, int pad, int i, int j, int pixels, int blocks, int px0, int px1, int pz0, int pz1,
+                              int cx0, int cz0, float[] own, float[] row, boolean explored) {
         int c = RING * REACH + RING;
         boolean north = own[c - REACH] == 0, south = own[c + REACH] == 0, west = own[c - 1] == 0, east = own[c + 1] == 0;
         boolean northWest = own[c - REACH - 1] == 0, northEast = own[c - REACH + 1] == 0, southWest = own[c + REACH - 1] == 0, southEast = own[c + REACH + 1] == 0;
-        for (int pz = 0; pz < pixels; pz++) {
+        for (int pz = pz0; pz < pz1; pz++) {
             int oz = pz * blocks + blocks / 2;
             float[] wz = WEIGHTS[oz];
             for (int k = 0; k < REACH; k++) {
@@ -327,8 +357,8 @@ public final class MapOutline {
                 for (int m = 0; m < REACH; m++) sum += wz[m] * own[m * REACH + k];
                 row[k] = sum;
             }
-            for (int px = 0; px < pixels; px++) {
-                int ox = px * blocks + blocks / 2, at = (j * pixels + pz) * width + i * pixels + px;
+            for (int px = px0; px < px1; px++) {
+                int ox = px * blocks + blocks / 2, at = at(width, pad, pixels, i, j, px, pz);
                 float[] wx = WEIGHTS[ox];
                 float blurred = 0;
                 for (int k = 0; k < REACH; k++) blurred += wx[k] * row[k];

@@ -17,6 +17,8 @@ import java.util.Arrays;
 final class EdgeMask {
     /** Made just before each upload, on the render thread; regions and far tiles are the same size. */
     private static NativeImage copy;
+    /** The same for a field, a pixel wider all round than the picture ({@link MapOutline.Field#side}). */
+    private static NativeImage fieldCopy;
 
     private final Runnable changed;
     /** The outline baked in; null: none, or drawn by the shader. */
@@ -64,7 +66,7 @@ final class EdgeMask {
 
     /** Whether the outline it has comes from these chunks, and is made for the way it is drawn now. */
     boolean madeFrom(long[] chunks) {
-        return ready && forShader == EdgeShader.ready() && Arrays.equals(grid, chunks);
+        return ready && forShader == EdgeShader.inUse() && Arrays.equals(grid, chunks);
     }
 
     void started() {
@@ -124,7 +126,7 @@ final class EdgeMask {
 
     /** Whether the picture is drawn by {@link EdgeShader}, with {@link #fieldId}. */
     public boolean byShader() {
-        return field != null && fieldTexture >= 0 && EdgeShader.ready();
+        return field != null && fieldTexture >= 0 && EdgeShader.inUse();
     }
 
     /** The share, 0 to 1, of a pixel that shows, as baked in (by the shader: all of it, the shader takes the rest). */
@@ -159,16 +161,24 @@ final class EdgeMask {
         return copy;
     }
 
-    /** Puts a new field on the GPU (linear, so the line is smooth between its pixels), with the picture; {@code side} the picture's. */
-    void uploadField(int side) {
+    /**
+     * Puts a new field on the GPU (linear, so the line is smooth between its pixels and, with the field's border, across
+     * into the next picture), with the picture.
+     */
+    void uploadField() {
         RenderSystem.assertOnRenderThread();
         if (field == null || !fieldDirty && fieldTexture >= 0) return;
         fieldDirty = false;
+        int side = field.side();
         if (fieldTexture < 0) {
             fieldTexture = TextureUtil.generateTextureId();
             TextureUtil.prepareImage(fieldTexture, side, side);
         }
-        NativeImage out = copy(side);
+        if (fieldCopy == null || fieldCopy.getWidth() != side) {
+            if (fieldCopy != null) fieldCopy.close();
+            fieldCopy = new NativeImage(side, side, true);
+        }
+        NativeImage out = fieldCopy;
         int[] abgr = field.abgr();
         for (int y = 0, i = 0; y < side; y++) {
             for (int x = 0; x < side; x++, i++) out.setPixelRGBA(x, y, abgr[i]);

@@ -240,7 +240,7 @@ public final class MapTile {
             GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
             GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
             if (edge.baked()) edge.over(image).upload(0, 0, 0, false);
-            edge.uploadField(SIZE);
+            edge.uploadField();
             gpuDirty = false;
         } else if (gpuDirty && allowUpload) {
             if (edge.baked()) {
@@ -249,7 +249,7 @@ public final class MapTile {
             } else {
                 texture.upload();
             }
-            edge.uploadField(SIZE);
+            edge.uploadField();
             gpuDirty = false;
         }
         return texture.getId();

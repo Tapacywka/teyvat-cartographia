@@ -104,7 +104,7 @@ public final class LodStore {
                 GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
                 GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
                 if (edge.baked()) edge.over(image).upload(0, 0, 0, false);
-                edge.uploadField(MapTile.SIZE);
+                edge.uploadField();
                 gpuDirty = false;
             } else if (gpuDirty && allowUpload) {
                 if (edge.baked()) {
@@ -113,7 +113,7 @@ public final class LodStore {
                 } else {
                     texture.upload();
                 }
-                edge.uploadField(MapTile.SIZE);
+                edge.uploadField();
                 gpuDirty = false;
             }
             return texture.getId();
@@ -212,11 +212,11 @@ public final class LodStore {
 
     // ------------------------------------------------------------------ outline
 
-    /** The tiles a chunk reaches with its outline have theirs worked out again. */
+    /** The tiles a chunk reaches with its outline have theirs worked out again (a field's border reaches a chunk farther). */
     void edgesAround(int cx, int cz) {
         int n = REGIONS * MapTile.CHUNKS;
-        for (int lz = Math.floorDiv(cz - MapOutline.RING, n); lz <= Math.floorDiv(cz + MapOutline.RING, n); lz++) {
-            for (int lx = Math.floorDiv(cx - MapOutline.RING, n); lx <= Math.floorDiv(cx + MapOutline.RING, n); lx++) {
+        for (int lz = Math.floorDiv(cz - MapOutline.FIELD_RING, n); lz <= Math.floorDiv(cz + MapOutline.FIELD_RING, n); lz++) {
+            for (int lx = Math.floorDiv(cx - MapOutline.FIELD_RING, n); lx <= Math.floorDiv(cx + MapOutline.FIELD_RING, n); lx++) {
                 long key = MapView.tileKey(lx, lz);
                 if (tiles.containsKey(key)) edgeStale.add(key);
             }

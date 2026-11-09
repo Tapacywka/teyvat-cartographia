@@ -14,8 +14,13 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 - Settings > Experimental > Map edges is now a slider: Off, No animation, Animated, Animated + waves. Animated, the
   edge of the explored map on the world map moves as in Genshin's map: it slowly swells out into the Fog of War in
   places and draws back, like water spreading and gathering. With waves, thin waves also run out from it into the fog
-  and fade, and its glow swells and ebbs like the surf. The line is also smooth at every zoom now, without the steps
-  of the blocks when you zoom in close. The minimap keeps the line still. With VulkanMod the edge stays still as before.
+  and fade, and its glow swells and ebbs like the surf. Animated, the line is also smooth at every zoom, without the
+  steps of the blocks when you zoom in close; No animation keeps the edge of 1.2.0, baked into the map a pixel a block.
+  The minimap keeps the line still. With VulkanMod the edge stays still as before.
+
+### Fixed
+- Map edges, animated: the line, its glow and the waves no longer break off in a step at the border of each map
+  region (and of each tile of the far zoom).
 
 ## [1.2.0] - 2026-11-08
 

@@ -6,6 +6,7 @@ import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.resources.ResourceLocation;
 import net.tapacywka.teyvatcartographia.TeyvatCartographia;
 import net.tapacywka.teyvatcartographia.compat.ModCompat;
+import net.tapacywka.teyvatcartographia.config.MapConfig;
 import net.tapacywka.teyvatcartographia.map.data.MapOutline;
 
 /**
@@ -13,7 +14,8 @@ import net.tapacywka.teyvatcartographia.map.data.MapOutline;
  * 08.11.2026): the line, its stroke and glow worked out per screen pixel from what does not move
  * ({@link MapOutline#field}), so on the world map the edge breathes ({@link MapOutline#breath}) and is smooth at every
  * zoom. Each loader registers it while the game loads its shaders. Without it (not loaded, or under VulkanMod, which
- * builds its pipelines from the game's own shaders) the outline is baked into the pictures as before, still.
+ * builds its pipelines from the game's own shaders), and with Map edges not animated, the outline is baked into the
+ * pictures as in 1.2.0, a pixel a block ({@link #inUse}).
  */
 public final class EdgeShader {
     private EdgeShader() {}
@@ -24,7 +26,7 @@ public final class EdgeShader {
     public static final int ALL = 0, LAND_ONLY = 1, SHOWN_ONLY = 2;
 
     private static ShaderInstance shader;
-    private static AbstractUniform origin, size, phase, breath, surf, pixel, mode, stroke, glow;
+    private static AbstractUniform origin, size, inset, phase, breath, surf, pixel, mode, stroke, glow;
     private static final float[] PHASES = new float[2], SURF = new float[2];
 
     /** Whether the loaders are to load it: not under VulkanMod. */
@@ -37,6 +39,7 @@ public final class EdgeShader {
         shader = s;
         origin = s.safeGetUniform("EdgeOrigin");
         size = s.safeGetUniform("EdgeSize");
+        inset = s.safeGetUniform("EdgeInset");
         phase = s.safeGetUniform("EdgePhase");
         breath = s.safeGetUniform("EdgeBreath");
         surf = s.safeGetUniform("EdgeSurf");
@@ -55,6 +58,15 @@ public final class EdgeShader {
     /** Whether the outline is drawn by this shader. */
     public static boolean ready() {
         return shader != null;
+    }
+
+    /**
+     * Whether the outline is drawn by this shader now: it is loaded and Map edges moves the edge (animated, or with
+     * waves). Not animated, the outline is baked into the pictures as in 1.2.0, a pixel a block (user request
+     * 08.11.2026); the stores make every outline again when this changes.
+     */
+    public static boolean inUse() {
+        return shader != null && MapConfig.get(MapConfig.MAP_OUTLINE_MOTION) != MapConfig.EdgeMotion.STILL;
     }
 
     /** For {@code RenderSystem.setShader}. */
@@ -79,11 +91,16 @@ public final class EdgeShader {
         glow.set((Theme.MAP_OUTLINE_GLOW >> 16 & 0xFF) / 255f, (Theme.MAP_OUTLINE_GLOW >> 8 & 0xFF) / 255f, (Theme.MAP_OUTLINE_GLOW & 0xFF) / 255f);
     }
 
-    /** Sets the picture drawn next: its first block, how many blocks it spans, and {@link #ALL}, {@link #LAND_ONLY} or {@link #SHOWN_ONLY}. */
-    public static void picture(int blockX0, int blockZ0, int blocks, int drawn) {
+    /**
+     * Sets the picture drawn next: its first block, how many blocks it spans, {@link #ALL}, {@link #LAND_ONLY} or
+     * {@link #SHOWN_ONLY}, and how far in from its edges its texture is sampled (the texture coordinates' inset, taken
+     * off again for its field and the world position).
+     */
+    public static void picture(int blockX0, int blockZ0, int blocks, int drawn, float edgeInset) {
         if (shader == null) return;
         origin.set((float) Math.floorMod(blockX0, MapOutline.PERIOD), (float) Math.floorMod(blockZ0, MapOutline.PERIOD));
         size.set((float) blocks);
+        inset.set(edgeInset);
         mode.set((float) drawn);
     }
 }
