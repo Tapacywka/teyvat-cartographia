@@ -170,11 +170,17 @@ public final class MapTile {
         boolean pixels = false, lit = false, data = false;
         boolean known = (chunkState[lcz * CHUNKS + lcx] & 0x80) != 0;
         changedEdges = 0;
+        // A chunk not on the map yet has nothing to compare with: its pixels go in without reading the old ones first
+        // (the far land lays thousands of new cells while it fills the map, 3% of the game's thread, profile 09.11.2026).
+        boolean fresh = !known && !merge;
+        if (fresh) pixels = true;
         for (int z = 0; z < 16; z++) {
             for (int x = 0; x < 16; x++) {
                 int i = z * 16 + x, ti = idx(x0 + x, z0 + z);
                 if (merge && (f[i] & FLAG_KNOWN) == 0) continue;
-                if (Pixels.abgr(image, x0 + x, z0 + z) != abgr[i]) {
+                if (fresh) {
+                    image.setPixelABGR(x0 + x, z0 + z, abgr[i]);
+                } else if (Pixels.abgr(image, x0 + x, z0 + z) != abgr[i]) {
                     image.setPixelABGR(x0 + x, z0 + z, abgr[i]);
                     pixels = true;
                 }
