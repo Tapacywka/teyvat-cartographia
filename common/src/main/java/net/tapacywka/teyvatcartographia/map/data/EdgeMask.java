@@ -53,7 +53,7 @@ final class EdgeMask {
     }
 
     void landOnly(boolean on) {
-        landOnly = on;
+        landOnly = on; // the kept copy follows on its next upload ({@link #overKept})
     }
 
     /** {@link EdgeShader#LAND_ONLY} or {@link EdgeShader#ALL}. */
@@ -84,9 +84,14 @@ final class EdgeMask {
         forShader = shader;
         picture = outline;
         field = forGpu;
-        if (field == null) free();
+        if (field == null) freeField();
+        if (picture == null && kept != null) {
+            kept.close(); // drawn by the shader now, or no outline: no baked copy to keep
+            kept = null;
+        }
         if (!same) {
             fieldDirty = true;
+            keptAll = true;
             changed.run();
         }
         return !same;
@@ -146,12 +151,7 @@ final class EdgeMask {
             for (int x = 0; x < side; x++, i++) {
                 int a = opacity[i] & 0xFF, s = stroke[i] & 0xFF, g = glow[i] & 0xFF;
                 if (a == 255 && s == 0 && g == 0) continue;
-                int c = Pixels.abgr(out, x, y);
-                if (landOnly) {
-                    if (c >>> 24 == 0) continue;
-                    g = 0;
-                }
-                out.setPixelABGR(x, y, MapOutline.compose(c, a, s, g, strokeRgb, glowRgb));
+                out.setPixelABGR(x, y, laid(Pixels.abgr(out, x, y), a, s, g, landOnly, strokeRgb, glowRgb));
             }
         }
         return out;
@@ -189,11 +189,91 @@ final class EdgeMask {
         return fieldTexture == null ? null : fieldTexture.tex(true);
     }
 
-    /** Frees the field's texture. */
+    /** Frees the field's texture and the kept copy ({@link #overKept}). */
     void free() {
+        freeField();
+        if (kept != null) {
+            kept.close();
+            kept = null;
+        }
+    }
+
+    private void freeField() {
         if (fieldTexture == null) return;
         RenderSystem.assertOnRenderThread();
         fieldTexture.close();
         fieldTexture = null;
+    }
+
+    // ------------------------------------------------------------------ a region's baked copy, kept
+
+    /**
+     * A region's picture with its baked outline, kept between uploads ({@link #overKept}): laid over all of its 65 536
+     * pixels before every upload it took 0.27 ms, four times the upload itself (profile 09.11.2026).
+     */
+    private NativeImage kept;
+    /** The chunks of the picture changed since the kept copy was laid, a bit each; all of it again when set. */
+    private final long[] keptStale = new long[MapTile.CHUNKS * MapTile.CHUNKS / 64];
+    private boolean keptAll = true;
+    /** The theme's colours and the land-only rule the kept copy was laid with. */
+    private int keptTheme = -1;
+    private boolean keptLandOnly;
+
+    /** A chunk of the picture changed ({@link MapTile#applyChunk}): its part of the kept copy is laid again before the next upload. */
+    void chunkChanged(int lcx, int lcz) {
+        int i = lcz * MapTile.CHUNKS + lcx;
+        keptStale[i >> 6] |= 1L << (i & 63);
+    }
+
+    /**
+     * {@code image} (a region's picture) with the outline over it, as {@link #over} lays it, in a copy kept for the
+     * region: laid again only where a chunk changed, whole after a new outline, other colours of the theme or the
+     * land-only rule. Only with {@link #baked}.
+     */
+    NativeImage overKept(NativeImage image) {
+        int side = image.getWidth();
+        if (kept == null) {
+            kept = new NativeImage(side, side, true);
+            keptAll = true;
+        }
+        if (keptTheme != net.tapacywka.teyvatcartographia.render.Theme.generation() || keptLandOnly != landOnly) keptAll = true;
+        if (keptAll) {
+            lay(image, kept, 0, 0, side);
+            keptAll = false;
+            keptTheme = net.tapacywka.teyvatcartographia.render.Theme.generation();
+            keptLandOnly = landOnly;
+        } else {
+            for (int w = 0; w < keptStale.length; w++) {
+                long bits = keptStale[w];
+                while (bits != 0) {
+                    int i = w * 64 + Long.numberOfTrailingZeros(bits);
+                    bits &= bits - 1;
+                    lay(image, kept, (i % MapTile.CHUNKS) * 16, (i / MapTile.CHUNKS) * 16, 16);
+                }
+            }
+        }
+        Arrays.fill(keptStale, 0);
+        return kept;
+    }
+
+    /** Lays the outline over a square of {@code image} into the same square of {@code out}. */
+    private void lay(NativeImage image, NativeImage out, int x0, int y0, int size) {
+        byte[] opacity = picture.opacity(), stroke = picture.stroke(), glow = picture.glow();
+        int strokeRgb = Theme.MAP_OUTLINE & 0xFFFFFF, glowRgb = Theme.MAP_OUTLINE_GLOW & 0xFFFFFF, side = image.getWidth();
+        for (int y = y0; y < y0 + size; y++) {
+            for (int x = x0, i = y * side + x0; x < x0 + size; x++, i++) {
+                out.setPixelABGR(x, y, laid(Pixels.abgr(image, x, y), opacity[i] & 0xFF, stroke[i] & 0xFF, glow[i] & 0xFF, landOnly, strokeRgb, glowRgb));
+            }
+        }
+    }
+
+    /** One pixel of the picture (ABGR) with the outline's opacity, stroke and glow there, as {@link #over} lays it. */
+    static int laid(int c, int a, int s, int g, boolean landOnly, int strokeRgb, int glowRgb) {
+        if (a == 255 && s == 0 && g == 0) return c;
+        if (landOnly) {
+            if (c >>> 24 == 0) return c;
+            g = 0;
+        }
+        return MapOutline.compose(c, a, s, g, strokeRgb, glowRgb);
     }
 }

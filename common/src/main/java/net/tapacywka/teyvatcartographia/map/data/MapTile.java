@@ -216,7 +216,10 @@ public final class MapTile {
                 data = true;
             }
         }
-        if (pixels) gpuDirty = true;
+        if (pixels) {
+            gpuDirty = true;
+            edge.chunkChanged(lcx, lcz); // its part of a kept baked copy is laid again
+        }
         if (pixels || lit) lightDirty = true; // the light layer is tinted with the tile colours
         boolean changed = pixels || lit || data;
         if (changed) diskDirty = true;
@@ -235,11 +238,11 @@ public final class MapTile {
         if (!edge.ready()) allowUpload = false;
         if (texture == null) {
             if (!allowUpload) return null;
-            texture = new GpuImage("Teyvat Cartographia region", edge.baked() ? edge.over(image) : image);
+            texture = new GpuImage("Teyvat Cartographia region", edge.baked() ? edge.overKept(image) : image);
             edge.uploadField();
             gpuDirty = false;
         } else if (gpuDirty && allowUpload) {
-            texture.upload(edge.baked() ? edge.over(image) : image);
+            texture.upload(edge.baked() ? edge.overKept(image) : image);
             edge.uploadField();
             gpuDirty = false;
         }
