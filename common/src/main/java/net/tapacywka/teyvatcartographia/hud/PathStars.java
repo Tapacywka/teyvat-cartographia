@@ -16,6 +16,7 @@ import net.minecraft.tags.BlockTags;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Matrix4fc;
 import org.joml.Vector3fc;
 
 /**
@@ -65,8 +66,28 @@ final class PathStars {
     private static final float LONG = 0.34f, SHORT = 0.26f, ARM = 0.035f, DIAG = 0.1f, DIAG_W = 0.02f, CORE = 0.05f, GLOW = 0.16f,
             MOTE = 0.03f, MOTE_GLOW = 0.07f;
 
+    /** Reach of a sparkle from its centre, blocks: the long arm of the largest (0.41) with room. */
+    static final float REACH = 0.5f;
+    /** Room on the frustum's slopes: the view bobbing turns the picture a little past the projection. */
+    static final float SLOPE_ROOM = 0.1f;
+
+    /**
+     * Whether a sparkle at (x, y, z) from the camera can show: within {@code reach} of the view, a frustum around the look
+     * direction (f) with slopes {@code sx}, {@code sy} (half its width and height a block ahead) along the camera's left
+     * (l) and up (u). Those out of it are not built: building every sparkle cost 0.01 to 0.06 ms a frame (profile
+     * 09.11.2026), and looking aside or back most of them lie out of the view.
+     */
+    static boolean inView(float x, float y, float z, float fx, float fy, float fz, float lx, float ly, float lz, float ux, float uy, float uz,
+                          float sx, float sy, float reach) {
+        float ahead = x * fx + y * fy + z * fz;
+        if (ahead < -reach) return false;
+        // Past a side plane through the camera with slope s: (offset - ahead * s) / sqrt(1 + s * s) beyond it.
+        float side = Math.abs(x * lx + y * ly + z * lz), high = Math.abs(x * ux + y * uy + z * uz);
+        return side - ahead * sx <= reach * (float) Math.sqrt(1 + sx * sx) && high - ahead * sy <= reach * (float) Math.sqrt(1 + sy * sy);
+    }
+
     /** Draws the sparkles with {@code alpha} (the marker's visibility), after the whole level (over the water in Fabulous too). */
-    static void render(Camera camera, float alpha) {
+    static void render(Camera camera, float alpha, Matrix4fc projection) {
         int n = Route.collect();
         ClientLevel level = Minecraft.getInstance().level;
         if (n < 2 || alpha <= 0.01f || level == null) return;
@@ -85,8 +106,10 @@ final class PathStars {
         if (end <= from) return;
         boolean cave = MapDataManager.get().undergroundBand() != null;
         Vec3 cam = camera.position();
-        Vector3fc left = camera.leftVector(), up = camera.upVector();
-        float lx = left.x(), ly = left.y(), lz = left.z(), ux = up.x(), uy = up.y(), uz = up.z();
+        Vector3fc left = camera.leftVector(), up = camera.upVector(), look = camera.forwardVector();
+        float lx = left.x(), ly = left.y(), lz = left.z(), ux = up.x(), uy = up.y(), uz = up.z(), fx = look.x(), fy = look.y(), fz = look.z();
+        // The frustum's slopes from the projection (m00 = 1 / (aspect tan(fov / 2)), m11 = 1 / tan(fov / 2)).
+        float sx = 1 / projection.m00() + SLOPE_ROOM, sy = 1 / projection.m11() + SLOPE_ROOM;
         float time = (Util.getMillis() % 1_000_000L) / 1000f;
         int color = Theme.worldMarkerPulse(), coreColor = Theme.WORLD_MARKER_BEAM_CORE | 0xFF000000; // golden, a light core
 
@@ -123,7 +146,7 @@ final class PathStars {
             float z = lerp(Route.z(i), Route.z(i + 1), t) + sideZ * side - (float) cam.z;
             // Like particles: nothing beyond the radius around the camera, fading towards its edge.
             float d = (float) Math.sqrt(x * x + y * y + z * z);
-            if (d >= RADIUS) continue;
+            if (d >= RADIUS || !inView(x, y, z, fx, fy, fz, lx, ly, lz, ux, uy, uz, sx, sy, REACH)) continue;
             a *= smooth((RADIUS - d) / EDGE_FADE);
             if (a <= 0.01f) continue;
             int gold = Theme.withAlpha(color, a), glow = Theme.withAlpha(color, a * 0.45f), light = Theme.withAlpha(coreColor, a);

@@ -123,7 +123,7 @@ public final class WorldMarkerLayer {
     public static void afterLevel(Matrix4fc levelView, Camera camera, DeltaTracker delta) {
         // The level's projection of this frame (since 26.1 kept in the camera's render state).
         Matrix4f projection = Game.renderState().levelRenderState.cameraRenderState.projectionMatrix;
-        renderInWorld(levelView, camera, delta);
+        renderInWorld(levelView, projection, camera, delta);
         VIEW.set(levelView);
         projection.mul(VIEW, VIEW_PROJ);
         Vec3 c = camera.position();
@@ -388,7 +388,7 @@ public final class WorldMarkerLayer {
      * ground and was cut by the clouds (tester reports 26.10.2026). Since 26.1 the light is drawn by
      * a render pass of its own with the level's view ({@link WorldGlow#begin}), whatever the model-view stack holds.
      */
-    private static void renderInWorld(Matrix4fc levelView, Camera camera, DeltaTracker delta) {
+    private static void renderInWorld(Matrix4fc levelView, Matrix4fc projection, Camera camera, DeltaTracker delta) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || Game.hideGui()) return;
         boolean stars = starsShown > 0f && Navigation.inPlayerDimension(Navigation.target(), mc.player);
@@ -397,7 +397,7 @@ public final class WorldMarkerLayer {
         // (its own copy, plus the particles), so the light is tested against that one there.
         WorldGlow.begin(levelView, Game.particlesTarget());
         try {
-            if (stars) PathStars.render(camera, starsShown);
+            if (stars) PathStars.render(camera, starsShown, projection);
             renderBeam(camera, delta);
         } finally {
             WorldGlow.end();
