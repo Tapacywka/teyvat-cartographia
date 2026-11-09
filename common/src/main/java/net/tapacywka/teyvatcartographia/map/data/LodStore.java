@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutorService;
 
 /**
  * Level of detail for far zoom: one 256 x 256 texture per 4 x 4 regions (1024 x 1024 blocks, one pixel per 4 x 4
@@ -37,7 +36,6 @@ public final class LodStore {
     private static final int CHUNK_WORDS = MapTile.CHUNKS * MapTile.CHUNKS / 64;
 
     private final TileStore store;
-    private final ExecutorService io;
     private final Long2ObjectOpenHashMap<LodTile> tiles = new Long2ObjectOpenHashMap<>();
     /** Thumbnails read by the IO thread: {LodTile, cell index, NativeImage or null}. */
     private final ConcurrentLinkedQueue<Object[]> loaded = new ConcurrentLinkedQueue<>();
@@ -83,9 +81,9 @@ public final class LodStore {
     private final LongOpenHashSet edgeStale = new LongOpenHashSet();
     private volatile boolean closed;
 
-    LodStore(TileStore store, ExecutorService io) {
+    /** Thumbnails on disk are read through the store's {@link TileStore#order}, behind a write of their region. */
+    LodStore(TileStore store) {
         this.store = store;
-        this.io = io;
     }
 
     /** One LOD texture covering {@link #REGIONS} x {@link #REGIONS} regions. */
@@ -207,7 +205,7 @@ public final class LodStore {
             Arrays.fill(memoryBits(MapView.tileKey(tx, tz)), -1L); // the whole cell
             return;
         }
-        io.execute(() -> {
+        store.order.read(MapView.tileKey(tx, tz), () -> {
             NativeImage thumb = null;
             try {
                 thumb = MapStorage.loadThumbnail(store.dir, tx, tz);

@@ -70,6 +70,12 @@ public final class MapDataManager {
         t.setDaemon(true);
         return t;
     });
+    /** Reads regions for the maps while {@link #io} writes ({@link IoOrder}): reads waited behind every save until 09.11.2026. */
+    private final ExecutorService reads = Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "TeyvatCartographia-IO-Read");
+        t.setDaemon(true);
+        return t;
+    });
 
     private final ConcurrentLinkedQueue<Object[]> results = new ConcurrentLinkedQueue<>();
     private final AtomicInteger inFlight = new AtomicInteger();
@@ -126,7 +132,7 @@ public final class MapDataManager {
     public TileStore caveStore(int band) {
         TileStore s = caveStores.get(band);
         if (s == null) {
-            s = new TileStore(active.dimension, caveDir(band), io, generation, true);
+            s = new TileStore(active.dimension, caveDir(band), io, reads, generation, true, false);
             caveStores.put(band, s);
             caveBands.add(band);
         }
@@ -168,7 +174,7 @@ public final class MapDataManager {
     public TileStore viewStore(ResourceKey<Level> dimension) {
         if (active != null && active.dimension == dimension) return active;
         if (worldId == null) return null;
-        return viewStores.computeIfAbsent(dimension, d -> new TileStore(d, dimDir(d), io, generation));
+        return viewStores.computeIfAbsent(dimension, d -> new TileStore(d, dimDir(d), io, reads, generation, false, false));
     }
 
     /**
@@ -356,19 +362,19 @@ public final class MapDataManager {
             for (TileStore s : caveStores.values()) s.saveSoon();
             pruneScanHistory(pcx, pcz);
         }
+        // The timer's save, two regions a tick (a copy each, 0.1 ms): all at once was 3 to 4 ms in one tick.
+        active.saveSome(SAVES_PER_TICK);
+        for (TileStore s : caveStores.values()) s.saveSome(SAVES_PER_TICK);
     }
+
+    private static final int SAVES_PER_TICK = 2;
 
     /** The far land starts, works or stops with its setting (main thread, in a world). */
     private void updateFar(Minecraft mc, LocalPlayer player) {
         net.minecraft.client.server.IntegratedServer server = mc.getSingleplayerServer();
         if (server == null || !MapConfig.get(MapConfig.FAR_LAND)) {
-        // The timer's save, two regions a tick (a copy each, 0.1 ms): all at once was 3 to 4 ms in one tick.
-        active.saveSome(SAVES_PER_TICK);
-        for (TileStore s : caveStores.values()) s.saveSome(SAVES_PER_TICK);
             closeFar();
             return;
-    private static final int SAVES_PER_TICK = 2;
-
         }
         if (far == null) {
             if (farTried) return;
@@ -383,7 +389,7 @@ public final class MapDataManager {
             if (source == null) return; // a flat world, a mod's own generator: nothing to ask
             net.minecraft.world.level.border.WorldBorder border = overworld.getWorldBorder();
             far = new FarLand(source, new FarLandRules.Bounds(border.getMinX(), border.getMinZ(), border.getMaxX(), border.getMaxZ()),
-                    Level.OVERWORLD, dimDir(Level.OVERWORLD).resolve("far"), io, generation);
+                    Level.OVERWORLD, dimDir(Level.OVERWORLD).resolve("far"), io, reads, generation);
         }
         boolean here = active.dimension == far.dimension();
         far.tick(net.tapacywka.teyvatcartographia.version.Game.screen() instanceof net.tapacywka.teyvatcartographia.gui.WorldMapScreen, here, player.getX(), player.getZ(), here ? active : null);
@@ -440,7 +446,7 @@ public final class MapDataManager {
         ResourceKey<Level> dim = lvl.dimension();
         TileStore reuse = viewStores.remove(dim);
         if (reuse != null) reuse.close();
-        active = new TileStore(dim, dimDir(dim), io, generation);
+        active = new TileStore(dim, dimDir(dim), io, reads, generation, false, false);
         sweepCursor = 0;
         for (String folder : MapStorage.listDimensions(dimDir(dim).resolve("caves"))) {
             if (folder.matches("b-?\\d+")) caveBands.add(Integer.parseInt(folder.substring(1)));

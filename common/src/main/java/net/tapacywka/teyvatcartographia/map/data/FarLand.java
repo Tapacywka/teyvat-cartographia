@@ -131,14 +131,14 @@ public final class FarLand {
     /** A scan met regions still loading: it is made again. */
     private boolean restart;
 
-    FarLand(FarLandSource source, FarLandRules.Bounds bounds, ResourceKey<Level> dimension, Path dir, ExecutorService io, long generation) {
+    FarLand(FarLandSource source, FarLandRules.Bounds bounds, ResourceKey<Level> dimension, Path dir, ExecutorService io, ExecutorService reads, long generation) {
         this.source = source;
         this.bounds = bounds;
         this.dimension = dimension;
         // Before the stores open: the one IO thread takes its jobs in turn.
         io.execute(() -> dropOutdated(dir));
         for (int i = 0; i < stores.length; i++) {
-            stores[i] = new TileStore(dimension, dir.resolve("s" + FarLandRules.STEPS[i]), io, generation, false, true);
+            stores[i] = new TileStore(dimension, dir.resolve("s" + FarLandRules.STEPS[i]), io, reads, generation, false, true);
             queued.add(new LongOpenHashSet());
         }
         int count = Math.max(1, Math.min(6, Runtime.getRuntime().availableProcessors() / 2 - 1));

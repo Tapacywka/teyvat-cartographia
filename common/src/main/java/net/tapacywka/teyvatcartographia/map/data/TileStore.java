@@ -88,6 +88,11 @@ public final class TileStore {
     }
 
     TileStore(ResourceKey<Level> dimension, Path dir, ExecutorService io, long generation, boolean cave, boolean far) {
+        this(dimension, dir, io, io, generation, cave, far);
+    }
+
+    /** {@code io} writes (and opens the folder, writes the index), {@code reads} reads regions ({@link IoOrder}). */
+    TileStore(ResourceKey<Level> dimension, Path dir, ExecutorService io, ExecutorService reads, long generation, boolean cave, boolean far) {
         this.cave = cave;
         this.far = far;
         this.outlined = !cave && !far;
@@ -95,10 +100,14 @@ public final class TileStore {
         this.dimension = dimension;
         this.dir = dir;
         this.io = io;
+        this.order = new IoOrder(io, reads);
         this.generation = generation;
-        this.lod = new LodStore(this, io);
+        this.lod = new LodStore(this);
         io.execute(this::open);
     }
+
+    /** Reads of regions on their own thread, behind their writes when any are queued. */
+    final IoOrder order;
 
     /** The regions and chunk counts of the folder as the IO thread read them. */
     private record Found(LongOpenHashSet regions, Long2IntOpenHashMap chunks, Long2ObjectOpenHashMap<long[]> bits) {}
@@ -269,7 +278,7 @@ public final class TileStore {
         if (closed || !onDisk.contains(key) || loading.contains(key) || failed.contains(key)) return;
         loading.add(key);
         int tx = MapView.tileKeyX(key), tz = MapView.tileKeyZ(key);
-        io.execute(() -> {
+        order.read(key, () -> {
             if (closed) return;
             MapTile t = null;
             try {
@@ -349,7 +358,7 @@ public final class TileStore {
         diskChunkCounts.put(t.key, t.chunkCount);
         if (outlined) diskChunks.put(t.key, t.chunkBits());
         indexDirty = true;
-        io.execute(() -> {
+        order.write(t.key, () -> {
             try {
                 MapStorage.save(dir, snap);
             } catch (Throwable e) {
@@ -360,20 +369,11 @@ public final class TileStore {
 
     void saveAll() {
         for (MapTile t : tiles.values()) save(t);
+        saveQueue.clear();
+        saveQueued.clear();
         if (indexDirty) writeIndexAsync();
     }
 
-    void close() {
-        saveAll();
-        closed = true;
-        drainLoaded();
-        for (MapTile t : tiles.values()) t.release();
-        tiles.clear();
-        saveQueue.clear();
-        saveQueued.clear();
-        dropEdgeOnly();
-        pending.clear();
-        early.clear();
     /**
      * Regions waiting for the timer's save, a few a tick ({@link #saveSome}): saved all at once, their copies took 3 to 4
      * ms of one tick for 36 regions (profile 09.11.2026).
@@ -401,6 +401,15 @@ public final class TileStore {
         if (saveQueue.isEmpty() && indexDirty) writeIndexAsync();
     }
 
+    void close() {
+        saveAll();
+        closed = true;
+        drainLoaded();
+        for (MapTile t : tiles.values()) t.release();
+        tiles.clear();
+        dropEdgeOnly();
+        pending.clear();
+        early.clear();
         lod.close();
     }
 
@@ -668,7 +677,7 @@ public final class TileStore {
     private void readChunks(long key) {
         if (closed || !chunksLoading.add(key)) return;
         int tx = MapView.tileKeyX(key), tz = MapView.tileKeyZ(key);
-        io.execute(() -> {
+        order.read(key, () -> {
             if (!closed) chunksRead.add(new Object[]{key, MapStorage.readChunks(dir, tx, tz)});
         });
     }
