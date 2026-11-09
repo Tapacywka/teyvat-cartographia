@@ -22,7 +22,11 @@ import java.util.concurrent.atomic.LongAdder;
 final class FarLandSource {
     private final FarNoise noise;
     private final ThreadLocal<Scratch> scratch = ThreadLocal.withInitial(Scratch::new);
-    private final Answers answers = new Answers();
+    /**
+     * Made by the first thread that asks ({@link #answers()}): made with the source it was filled on the game's thread,
+     * a frame of 13 ms when the far land came on (profile 09.11.2026).
+     */
+    private volatile Answers answers;
     private final LongAdder asked = new LongAdder();
 
     /** What a thread keeps between cells, and its way of asking. */
@@ -32,6 +36,7 @@ final class FarLandSource {
 
         @Override
         public float asked(int gx, int gz) {
+            Answers answers = answers();
             float v = answers.get(gx, gz);
             if (!Float.isNaN(v)) return v;
             v = value(asker, gx * FarLandRules.FINE, gz * FarLandRules.FINE);
@@ -39,6 +44,18 @@ final class FarLandSource {
             asked.increment();
             return v;
         }
+    }
+
+    /** The table of answers, made once by whichever thread asks first. */
+    private Answers answers() {
+        Answers a = answers;
+        if (a == null) {
+            synchronized (this) {
+                a = answers;
+                if (a == null) answers = a = new Answers();
+            }
+        }
+        return a;
     }
 
     /**
