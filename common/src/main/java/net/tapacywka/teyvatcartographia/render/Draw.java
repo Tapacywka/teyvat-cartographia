@@ -727,6 +727,25 @@ public final class Draw {
         endTex(g, b, tex);
     }
 
+    /**
+     * As {@link #texturedQuad}, a picture of the map with its outline drawn by {@link EdgeShader} from its field, with the
+     * shader's values as {@link EdgeShader#view} and {@link EdgeShader#picture} set them. Only a layer being redrawn
+     * ({@link CachedLayer}) hands the shader those values: outside one the picture is drawn as it is.
+     */
+    public static void edgeQuad(GuiGraphicsExtractor g, Tex tex, Tex field, float x0, float y0, float x1, float y1,
+                                float u0, float v0, float u1, float v1, int argb) {
+        if (LAYERS.isEmpty()) {
+            texturedQuad(g, tex, x0, y0, x1, y1, u0, v0, u1, v1, argb);
+            return;
+        }
+        Matrix3x2fc m = mat(g);
+        Mesh b = beginTex();
+        vtx(b, m, x0, y0, u0, v0, argb); vtx(b, m, x0, y1, u0, v1, argb); vtx(b, m, x1, y1, u1, v1, argb);
+        vtx(b, m, x0, y0, u0, v0, argb); vtx(b, m, x1, y1, u1, v1, argb); vtx(b, m, x1, y0, u1, v0, argb);
+        TextureSetup textures = TextureSetup.doubleTexture(tex.view(), tex.sampler(), field.view(), field.sampler());
+        submit(g, Shape.edge(b, EdgeShader.PIPELINE, textures, scissor(g), EdgeShader.values()));
+    }
+
     /** As {@link #texturedQuad} for a texture holding premultiplied colour (e.g. an off-screen layer). */
     public static void texturedQuadPremultiplied(GuiGraphicsExtractor g, Tex tex, float x0, float y0, float x1, float y1,
                                                  float u0, float v0, float u1, float v1) {

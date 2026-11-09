@@ -25,6 +25,7 @@ import net.tapacywka.teyvatcartographia.client.Keybinds;
 import net.tapacywka.teyvatcartographia.gui.TeyvatConfigScreen;
 import net.tapacywka.teyvatcartographia.hud.MinimapLayer;
 import net.tapacywka.teyvatcartographia.hud.WorldMarkerLayer;
+import net.tapacywka.teyvatcartographia.render.EdgeShader;
 import net.tapacywka.teyvatcartographia.render.Pipelines;
 import net.tapacywka.teyvatcartographia.render.ThemeLoader;
 import net.tapacywka.teyvatcartographia.render.WorldGlow;
@@ -44,6 +45,7 @@ final class NeoForgeClient {
         modBus.addListener((RegisterRenderPipelinesEvent e) -> {
             Pipelines.ALL.forEach(e::registerPipeline);
             WorldGlow.ALL.forEach(e::registerPipeline);
+            if (EdgeShader.wanted()) e.registerPipeline(EdgeShader.PIPELINE);
         });
         modBus.addListener((AddClientReloadListenersEvent e) ->
                 e.addListener(Identifier.fromNamespaceAndPath(TeyvatCartographia.MOD_ID, "themes"), new ThemeLoader()));

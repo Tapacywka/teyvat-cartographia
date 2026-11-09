@@ -3,7 +3,9 @@ package net.tapacywka.teyvatcartographia.render;
 import net.minecraft.util.Util;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.resources.ResourceKey;
+import net.tapacywka.teyvatcartographia.config.MapConfig;
 import net.tapacywka.teyvatcartographia.map.MapView;
+import net.tapacywka.teyvatcartographia.map.data.EdgeOnly;
 import net.tapacywka.teyvatcartographia.map.data.FarLand;
 import net.tapacywka.teyvatcartographia.map.data.FarLandRules;
 import net.tapacywka.teyvatcartographia.map.data.LodStore;
@@ -50,6 +52,30 @@ public final class MapLayerRenderer {
     private static boolean blurFor(MapView view) {
         double guiScale = Minecraft.getInstance().getWindow().getGuiScale();
         return view.scale * guiScale < 0.999;
+    }
+
+    /** Whether the edges drawn now breathe (the world map's picture), with waves, and whether any that did was drawn since. */
+    private static boolean breathing, waves, breathed;
+
+    /**
+     * Starts ({@code true}) or ends the world map's picture, whose edges move ({@link EdgeShader}) as the setting says;
+     * elsewhere they stand still. The end tells whether a moving edge was drawn: then the picture is drawn again every frame.
+     */
+    public static boolean breathing(boolean on) {
+        boolean drawn = breathed;
+        MapConfig.EdgeMotion motion = MapConfig.get(MapConfig.MAP_OUTLINE_MOTION);
+        breathing = on && motion != MapConfig.EdgeMotion.STILL;
+        waves = breathing && motion == MapConfig.EdgeMotion.SURF;
+        breathed = false;
+        return drawn;
+    }
+
+    /** A picture (a region or a LOD tile) with its outline by the shader. */
+    private static void edgeQuad(GuiGraphicsExtractor g, Tex id, Tex field, int bx0, int bz0, int blocks, int mode, float inset,
+                                 float x0, float y0, float x1, float y1, float u0, float v0, float u1, float v1, int tint) {
+        EdgeShader.picture(bx0, bz0, blocks, mode, inset);
+        Draw.edgeQuad(g, id, field, x0, y0, x1, y1, u0, v0, u1, v1, tint);
+        breathed |= breathing;
     }
 
     private static final MapView FAR_VIEW = new MapView(), FAR_OTHER_VIEW = new MapView();
@@ -153,19 +179,27 @@ public final class MapLayerRenderer {
         int uploads = UPLOADS_PER_CALL;
         boolean blur = store.far || blurFor(view);
         float edge = blur ? EDGE : NEAR_EDGE;
+        EdgeShader.view(blocksPerPixel(view), breathing, waves);
         if (!store.cave && !store.far && FogTexture.shadow(store.dimension)) {
             // Floating land: its shadow on the fog below, the regions drawn dark and shifted down-right first.
             for (int tz = tz0; tz <= tz1; tz++) {
                 for (int tx = tx0; tx <= tx1; tx++) {
                     MapTile t = store.exists(tx, tz) ? store.peek(tx, tz) : null;
                     Tex id = t == null ? null : t.tex(false);
-                    if (id != null) shadow(g, id, view, t.blockX0(), t.blockZ0(), MapTile.SIZE, x0, y0, x1, y1, edge, edge, 1 - edge, 1 - edge);
+                    if (id == null) continue;
+                    Tex field = t.edgeByShader() ? t.edgeField() : null;
+                    if (field != null) EdgeShader.picture(t.blockX0(), t.blockZ0(), MapTile.SIZE, t.edgeMode(), edge);
+                    shadow(g, id, field, view, t.blockX0(), t.blockZ0(), MapTile.SIZE, x0, y0, x1, y1, edge, edge, 1 - edge, 1 - edge);
                 }
             }
         }
         for (int tz = tz0; tz <= tz1; tz++) {
             for (int tx = tx0; tx <= tx1; tx++) {
-                if (!store.exists(tx, tz)) continue;
+                if (!store.exists(tx, tz)) {
+                    EdgeOnly only = store.edgeOnly(tx, tz);
+                    if (only != null) edgeOnly(g, only, view, x0, y0, x1, y1, tint, blur, edge);
+                    continue;
+                }
                 MapTile t = store.get(tx, tz);
                 boolean allow = t != null && (!t.needsUpload() || uploads > 0);
                 if (t != null && t.needsUpload() && allow) uploads--;
@@ -189,8 +223,13 @@ public final class MapLayerRenderer {
                 float cx0 = Math.max(sx0, x0), cy0 = Math.max(sy0, y0), cx1 = Math.min(sx1, x1), cy1 = Math.min(sy1, y1);
                 if (cx1 <= cx0 || cy1 <= cy0) continue;
                 float w = sx1 - sx0, h = sy1 - sy0;
-                Draw.texturedQuad(g, id, cx0, cy0, cx1, cy1,
-                        in((cx0 - sx0) / w, edge), in((cy0 - sy0) / h, edge), in((cx1 - sx0) / w, edge), in((cy1 - sy0) / h, edge), tint);
+                float u0 = in((cx0 - sx0) / w, edge), v0 = in((cy0 - sy0) / h, edge), u1 = in((cx1 - sx0) / w, edge), v1 = in((cy1 - sy0) / h, edge);
+                boolean byShader = t.edgeByShader();
+                if (byShader) {
+                    edgeQuad(g, id, t.edgeField(), t.blockX0(), t.blockZ0(), MapTile.SIZE, t.edgeMode(), edge, cx0, cy0, cx1, cy1, u0, v0, u1, v1, tint);
+                } else {
+                    Draw.texturedQuad(g, id, cx0, cy0, cx1, cy1, u0, v0, u1, v1, tint);
+                }
                 if (lightAlpha > 0.01f && t.hasLight()) {
                     // Only a real upload uses the budget: counting every lit region used it up for good in lit places
                     // (the Nether, towns at night), and regions later in the loop then never got their textures.
@@ -199,8 +238,12 @@ public final class MapLayerRenderer {
                     t.setLightFilter(blur);
                     Tex lid = t.lightTex(allowLight);
                     if (lid != null) {
-                        Draw.texturedQuad(g, lid, cx0, cy0, cx1, cy1,
-                                in((cx0 - sx0) / w, edge), in((cy0 - sy0) / h, edge), in((cx1 - sx0) / w, edge), in((cy1 - sy0) / h, edge), lightColor);
+                        // By the shader the light is not cut by the outline in its texture: the shader cuts it where the edge is now.
+                        if (byShader) {
+                            edgeQuad(g, lid, t.edgeField(), t.blockX0(), t.blockZ0(), MapTile.SIZE, EdgeShader.SHOWN_ONLY, edge, cx0, cy0, cx1, cy1, u0, v0, u1, v1, lightColor);
+                        } else {
+                            Draw.texturedQuad(g, lid, cx0, cy0, cx1, cy1, u0, v0, u1, v1, lightColor);
+                        }
                     } else {
                         complete = false;
                     }
@@ -210,15 +253,35 @@ public final class MapLayerRenderer {
         return complete;
     }
 
+    /** The outline that comes into a region with nothing explored ({@link EdgeOnly}), drawn as that region would be. */
+    private static void edgeOnly(GuiGraphicsExtractor g, EdgeOnly e, MapView view, float x0, float y0, float x1, float y1, int tint, boolean blur, float edge) {
+        Tex id = e.tex();
+        if (id == null) return;
+        e.setFilter(blur);
+        float sx0 = view.screenX(e.blockX0(), e.blockZ0()), sy0 = view.screenY(e.blockX0(), e.blockZ0());
+        float sx1 = view.screenX(e.blockX0() + MapTile.SIZE, e.blockZ0() + MapTile.SIZE);
+        float sy1 = view.screenY(e.blockX0() + MapTile.SIZE, e.blockZ0() + MapTile.SIZE);
+        float cx0 = Math.max(sx0, x0), cy0 = Math.max(sy0, y0), cx1 = Math.min(sx1, x1), cy1 = Math.min(sy1, y1);
+        if (cx1 <= cx0 || cy1 <= cy0) return;
+        float w = sx1 - sx0, h = sy1 - sy0;
+        float u0 = in((cx0 - sx0) / w, edge), v0 = in((cy0 - sy0) / h, edge), u1 = in((cx1 - sx0) / w, edge), v1 = in((cy1 - sy0) / h, edge);
+        if (e.byShader()) {
+            edgeQuad(g, id, e.field(), e.blockX0(), e.blockZ0(), MapTile.SIZE, e.mode(), edge, cx0, cy0, cx1, cy1, u0, v0, u1, v1, tint);
+        } else {
+            Draw.texturedQuad(g, id, cx0, cy0, cx1, cy1, u0, v0, u1, v1, tint);
+        }
+    }
+
     /** How far the land's shadow falls on the fog (GUI units, down and right) and how dark it is. */
     private static final float SHADOW_OFFSET = 4f;
     private static final int SHADOW = 0x50000000, SHADOW_SOFT = 0x28000000;
 
     /**
      * The shadow of one texture (a region or a LOD tile, {@code size} blocks from block (bx0, bz0), texture part u0..u1,
-     * v0..v1): drawn black with its alpha, twice (a softer, farther copy for a blurred edge), clipped to the rectangle.
+     * v0..v1): drawn black with its alpha, twice (a softer, farther copy for a blurred edge), clipped to the rectangle;
+     * with its outline by the shader where {@code field} is not -1 ({@link EdgeShader#picture} set).
      */
-    private static void shadow(GuiGraphicsExtractor g, Tex id, MapView view, int bx0, int bz0, int size, float x0, float y0, float x1, float y1,
+    private static void shadow(GuiGraphicsExtractor g, Tex id, Tex field, MapView view, int bx0, int bz0, int size, float x0, float y0, float x1, float y1,
                                float u0, float v0, float u1, float v1) {
         float sx0 = view.screenX(bx0, bz0), sy0 = view.screenY(bx0, bz0);
         float sx1 = view.screenX(bx0 + size, bz0 + size), sy1 = view.screenY(bx0 + size, bz0 + size);
@@ -228,9 +291,21 @@ public final class MapLayerRenderer {
             float ax0 = sx0 + d, ay0 = sy0 + d, ax1 = sx1 + d, ay1 = sy1 + d;
             float cx0 = Math.max(ax0, x0), cy0 = Math.max(ay0, y0), cx1 = Math.min(ax1, x1), cy1 = Math.min(ay1, y1);
             if (cx1 <= cx0 || cy1 <= cy0) continue;
-            Draw.texturedQuad(g, id, cx0, cy0, cx1, cy1, u0 + (u1 - u0) * (cx0 - ax0) / w, v0 + (v1 - v0) * (cy0 - ay0) / h,
-                    u0 + (u1 - u0) * (cx1 - ax0) / w, v0 + (v1 - v0) * (cy1 - ay0) / h, pass == 0 ? SHADOW : SHADOW_SOFT);
+            float su0 = u0 + (u1 - u0) * (cx0 - ax0) / w, sv0 = v0 + (v1 - v0) * (cy0 - ay0) / h;
+            float su1 = u0 + (u1 - u0) * (cx1 - ax0) / w, sv1 = v0 + (v1 - v0) * (cy1 - ay0) / h;
+            int color = pass == 0 ? SHADOW : SHADOW_SOFT;
+            if (field != null) {
+                Draw.edgeQuad(g, id, field, cx0, cy0, cx1, cy1, su0, sv0, su1, sv1, color);
+                breathed |= breathing;
+            } else {
+                Draw.texturedQuad(g, id, cx0, cy0, cx1, cy1, su0, sv0, su1, sv1, color);
+            }
         }
+    }
+
+    /** How many blocks a screen pixel holds at {@code view}'s zoom. */
+    private static double blocksPerPixel(MapView view) {
+        return 1 / (view.scale * Minecraft.getInstance().getWindow().getGuiScale());
     }
 
     /** Draws region (tx, tz) from its cell of the LOD tile, clipped to the rectangle; returns the uploads left. */
@@ -248,9 +323,19 @@ public final class MapLayerRenderer {
         if (cx1 <= cx0 || cy1 <= cy0) return uploads;
         float w = sx1 - sx0, h = sy1 - sy0, n = LodStore.REGIONS;
         float col = Math.floorMod(tx, LodStore.REGIONS), row = Math.floorMod(tz, LodStore.REGIONS);
-        Draw.texturedQuad(g, id, cx0, cy0, cx1, cy1, in((col + (cx0 - sx0) / w) / n, EDGE), in((row + (cy0 - sy0) / h) / n, EDGE),
-                in((col + (cx1 - sx0) / w) / n, EDGE), in((row + (cy1 - sy0) / h) / n, EDGE), tint);
+        float u0 = in((col + (cx0 - sx0) / w) / n, EDGE), v0 = in((row + (cy0 - sy0) / h) / n, EDGE);
+        float u1 = in((col + (cx1 - sx0) / w) / n, EDGE), v1 = in((row + (cy1 - sy0) / h) / n, EDGE);
+        lodQuad(g, t, id, cx0, cy0, cx1, cy1, u0, v0, u1, v1, tint);
         return uploads;
+    }
+
+    /** A part of a LOD tile, with its outline by the shader where it has one. */
+    private static void lodQuad(GuiGraphicsExtractor g, LodStore.LodTile t, Tex id, float x0, float y0, float x1, float y1, float u0, float v0, float u1, float v1, int tint) {
+        if (t.edgeByShader()) {
+            edgeQuad(g, id, t.edgeField(), t.blockX0(), t.blockZ0(), LodStore.BLOCKS, t.edgeMode(), EDGE, x0, y0, x1, y1, u0, v0, u1, v1, tint);
+        } else {
+            Draw.texturedQuad(g, id, x0, y0, x1, y1, u0, v0, u1, v1, tint);
+        }
     }
 
     /**
@@ -272,13 +357,17 @@ public final class MapLayerRenderer {
         int lx1 = Math.floorDiv((int) Math.floor(view.worldX(x1, y1)), LodStore.BLOCKS);
         int lz1 = Math.floorDiv((int) Math.floor(view.worldZ(x1, y1)), LodStore.BLOCKS);
         if ((long) (lx1 - lx0 + 1) * (lz1 - lz0 + 1) > 1024) return true; // safety: absurd zoom-out
+        EdgeShader.view(blocksPerPixel(view), breathing, waves);
         if (!store.cave && !store.far && FogTexture.shadow(store.dimension)) {
             for (int lz = lz0; lz <= lz1; lz++) {
                 for (int lx = lx0; lx <= lx1; lx++) {
                     if (!lod.any(lx, lz)) continue;
                     LodStore.LodTile t = lod.get(lx, lz);
                     Tex id = t.tex(false);
-                    if (id != null) shadow(g, id, view, t.blockX0(), t.blockZ0(), LodStore.BLOCKS, x0, y0, x1, y1, EDGE, EDGE, 1 - EDGE, 1 - EDGE);
+                    if (id == null) continue;
+                    Tex field = t.edgeByShader() ? t.edgeField() : null;
+                    if (field != null) EdgeShader.picture(t.blockX0(), t.blockZ0(), LodStore.BLOCKS, t.edgeMode(), EDGE);
+                    shadow(g, id, field, view, t.blockX0(), t.blockZ0(), LodStore.BLOCKS, x0, y0, x1, y1, EDGE, EDGE, 1 - EDGE, 1 - EDGE);
                 }
             }
         }
@@ -301,7 +390,7 @@ public final class MapLayerRenderer {
                 float cx0 = Math.max(sx0, x0), cy0 = Math.max(sy0, y0), cx1 = Math.min(sx1, x1), cy1 = Math.min(sy1, y1);
                 if (cx1 <= cx0 || cy1 <= cy0) continue;
                 float w = sx1 - sx0, h = sy1 - sy0;
-                Draw.texturedQuad(g, id, cx0, cy0, cx1, cy1,
+                lodQuad(g, t, id, cx0, cy0, cx1, cy1,
                         in((cx0 - sx0) / w, EDGE), in((cy0 - sy0) / h, EDGE), in((cx1 - sx0) / w, EDGE), in((cy1 - sy0) / h, EDGE), tint);
             }
         }

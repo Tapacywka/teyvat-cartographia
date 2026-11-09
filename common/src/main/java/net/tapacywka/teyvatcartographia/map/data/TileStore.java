@@ -4,6 +4,7 @@ import net.minecraft.world.level.biome.Biome;
 import net.tapacywka.teyvatcartographia.TeyvatCartographia;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
 import net.tapacywka.teyvatcartographia.map.MapView;
+import net.tapacywka.teyvatcartographia.render.EdgeShader;
 import net.tapacywka.teyvatcartographia.render.FogTexture;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
@@ -367,6 +368,7 @@ public final class TileStore {
         drainLoaded();
         for (MapTile t : tiles.values()) t.release();
         tiles.clear();
+        dropEdgeOnly();
         pending.clear();
         early.clear();
         lod.close();
@@ -384,13 +386,18 @@ public final class TileStore {
     /** Pictures handed to the thread at a time. */
     private static final int MAX_EDGE_JOBS = 8;
 
-    private record EdgeDone(EdgeMask mask, long[] grid, MapOutline.Picture picture) {}
+    private record EdgeDone(EdgeMask mask, long[] grid, MapOutline.Picture picture, MapOutline.Field field, boolean shader) {}
 
     /** The surface of a dimension: not a cave layer, whose few blocks around the player are all it has, nor the far land. */
     private final boolean outlined;
     private boolean edgesOn;
+    /** Whether the outlines are made for {@link EdgeShader} ({@link EdgeShader#inUse}). */
+    private boolean edgesByShader;
     /** Regions whose outline is to be worked out. */
     private final LongOpenHashSet edgeStale = new LongOpenHashSet();
+    /** Regions with nothing explored beside explored ones: the outline that comes into them ({@link EdgeOnly}), and those to work out. */
+    private final Long2ObjectOpenHashMap<EdgeOnly> edgeOnly = new Long2ObjectOpenHashMap<>();
+    private final LongOpenHashSet edgeOnlyStale = new LongOpenHashSet();
     private final ConcurrentLinkedQueue<EdgeDone> edgesDone = new ConcurrentLinkedQueue<>();
     private int edgeJobs;
     private final LongOpenHashSet chunksLoading = new LongOpenHashSet();
@@ -410,9 +417,16 @@ public final class TileStore {
 
     /** Whether every picture in memory has the outline of the chunks known now. */
     public boolean edgesDone() {
-        if (!edgeStale.isEmpty() || edgeJobs > 0 || !chunksLoading.isEmpty() || !lod.edgesDone()) return false;
+        if (!edgeStale.isEmpty() || !edgeOnlyStale.isEmpty() || edgeJobs > 0 || !chunksLoading.isEmpty() || !lod.edgesDone()) return false;
         for (MapTile t : tiles.values()) if (!t.edge.ready()) return false;
         return true;
+    }
+
+    /** The outline that comes into a region with nothing explored from the land around it, or null ({@link EdgeOnly}). */
+    public EdgeOnly edgeOnly(int tx, int tz) {
+        if (edgeOnly.isEmpty()) return null;
+        EdgeOnly e = edgeOnly.get(MapView.tileKey(tx, tz));
+        return e != null && e.shows() ? e : null;
     }
 
     /** A region came into memory: not shown before its outline is there. */
@@ -420,6 +434,26 @@ public final class TileStore {
         if (!edgesOn) return;
         t.edge.waitForFirst();
         edgeStale.add(t.key);
+        edgeOnlyAround(t.tx, t.tz);
+    }
+
+    /** The regions with nothing explored around a region have the outline that may come into them worked out. */
+    private void edgeOnlyAround(int tx, int tz) {
+        for (int dz = -1; dz <= 1; dz++) {
+            for (int dx = -1; dx <= 1; dx++) edgeOnlyMaybe(MapView.tileKey(tx + dx, tz + dz));
+        }
+    }
+
+    private void edgeOnlyMaybe(long key) {
+        // Over floating land only land gets the line, and no glow: nothing to show where nothing is explored.
+        if (!tiles.containsKey(key) && !onDisk.contains(key) && !FogTexture.shadow(dimension)) edgeOnlyStale.add(key);
+    }
+
+    /** Frees every {@link EdgeOnly}. */
+    private void dropEdgeOnly() {
+        for (EdgeOnly e : edgeOnly.values()) e.close();
+        edgeOnly.clear();
+        edgeOnlyStale.clear();
     }
 
     /** What a region in memory has on the map, for when it is not. */
@@ -427,13 +461,14 @@ public final class TileStore {
         if (outlined && diskChunks.put(t.key, t.chunkBits()) == null) indexDirty = true;
     }
 
-    /** A chunk came onto the map: the pictures it reaches have their outline worked out again. */
+    /** A chunk came onto the map: the pictures it reaches have their outline worked out again (a field's border reaches a chunk farther). */
     private void edgesAround(int cx, int cz) {
         if (!edgesOn) return;
-        for (int tz = MapView.chunkToTile(cz - MapOutline.RING); tz <= MapView.chunkToTile(cz + MapOutline.RING); tz++) {
-            for (int tx = MapView.chunkToTile(cx - MapOutline.RING); tx <= MapView.chunkToTile(cx + MapOutline.RING); tx++) {
+        for (int tz = MapView.chunkToTile(cz - MapOutline.FIELD_RING); tz <= MapView.chunkToTile(cz + MapOutline.FIELD_RING); tz++) {
+            for (int tx = MapView.chunkToTile(cx - MapOutline.FIELD_RING); tx <= MapView.chunkToTile(cx + MapOutline.FIELD_RING); tx++) {
                 long key = MapView.tileKey(tx, tz);
                 if (tiles.containsKey(key)) edgeStale.add(key);
+                else edgeOnlyMaybe(key);
             }
         }
         lod.edgesAround(cx, cz);
@@ -444,13 +479,16 @@ public final class TileStore {
         if (!outlined || closed) return;
         boolean on = MapConfig.get(MapConfig.MAP_OUTLINE);
         if (on != edgesOn) switchEdges(on);
+        // The shader came or went (the resources were loaded again, or Map edges went between animated and not): every
+        // outline is made again for the other way.
+        if (edgesOn && EdgeShader.inUse() != edgesByShader) switchEdges(true);
         Object[] read;
         while ((read = chunksRead.poll()) != null) tookChunks((Long) read[0], (long[]) read[1]);
         EdgeDone d;
         while ((d = edgesDone.poll()) != null) {
             edgeJobs--;
             if (!edgesOn) d.mask.ignored();
-            else if (d.mask.set(d.grid, d.picture)) version++;
+            else if (d.mask.set(d.grid, d.picture, d.field, d.shader)) version++;
         }
         if (!edgesOn || !opened) return;
         for (LongIterator it = edgeStale.iterator(); it.hasNext(); ) {
@@ -462,20 +500,61 @@ public final class TileStore {
                 it.remove();
             }
         }
+        for (LongIterator it = edgeOnlyStale.iterator(); it.hasNext(); ) {
+            long key = it.nextLong();
+            int tx = MapView.tileKeyX(key), tz = MapView.tileKeyZ(key);
+            EdgeOnly e = edgeOnly.get(key);
+            if (tiles.containsKey(key) || onDisk.contains(key) || !besideInMemory(tx, tz)) {
+                it.remove();
+            } else {
+                if (e == null) edgeOnly.put(key, e = new EdgeOnly(tx, tz));
+                if (e.edge.busy()) continue;
+                if (!askEdge(e.edge, tx * MapTile.CHUNKS, tz * MapTile.CHUNKS, MapTile.CHUNKS, 16, true)) return;
+                it.remove();
+            }
+        }
+        // Those that show nothing, now have a region of their own, or no region beside them in memory any more go.
+        if (!edgeOnly.isEmpty()) {
+            for (var it = edgeOnly.long2ObjectEntrySet().fastIterator(); it.hasNext(); ) {
+                var entry = it.next();
+                EdgeOnly e = entry.getValue();
+                long key = entry.getLongKey();
+                if (e.edge.busy() || edgeOnlyStale.contains(key)) continue;
+                if (e.shows() && !tiles.containsKey(key) && !onDisk.contains(key) && besideInMemory(e.tx, e.tz)) continue;
+                if (e.shows()) version++;
+                e.close();
+                it.remove();
+            }
+        }
         lod.askEdges();
+    }
+
+    /** Whether a region beside (tx, tz), the corners too, is in memory. */
+    private boolean besideInMemory(int tx, int tz) {
+        for (int dz = -1; dz <= 1; dz++) {
+            for (int dx = -1; dx <= 1; dx++) if ((dx != 0 || dz != 0) && tiles.containsKey(MapView.tileKey(tx + dx, tz + dz))) return true;
+        }
+        return false;
     }
 
     private void switchEdges(boolean on) {
         edgesOn = on;
+        edgesByShader = EdgeShader.inUse();
         for (MapTile t : tiles.values()) {
             if (on) {
                 t.edge.again();
                 edgeStale.add(t.key);
+                edgeOnlyAround(t.tx, t.tz);
             } else {
                 t.edge.clear();
             }
         }
-        if (!on) edgeStale.clear();
+        if (on) {
+            for (EdgeOnly e : edgeOnly.values()) e.edge.again();
+        } else {
+            edgeStale.clear();
+            dropEdgeOnly();
+        }
         lod.switchEdges(on);
         version++;
     }
@@ -486,12 +565,21 @@ public final class TileStore {
      * @return false while the thread has enough to do: the picture stays waiting
      */
     boolean askEdge(EdgeMask mask, int cx0, int cz0, int chunks, int pixels) {
+        return askEdge(mask, cx0, cz0, chunks, pixels, false);
+    }
+
+    /** As above; {@code empty}: a region with nothing explored ({@link EdgeOnly}), which has an outline only where it comes in. */
+    private boolean askEdge(EdgeMask mask, int cx0, int cz0, int chunks, int pixels, boolean empty) {
         mask.landOnly(FogTexture.shadow(dimension));
-        long[] grid = grid(cx0, cz0, chunks);
+        // The shader's field has a border from the chunks next to the picture: its grid has a ring a chunk wider.
+        boolean shader = EdgeShader.inUse();
+        int ring = shader ? MapOutline.FIELD_RING : MapOutline.RING;
+        long[] grid = grid(cx0, cz0, chunks, ring);
         if (mask.madeFrom(grid)) return true;
-        // Land all around is the most of a map: nothing to wait for.
-        if (MapOutline.whole(grid, chunks + 2 * MapOutline.RING)) {
-            if (mask.set(grid, null)) version++;
+        // Land all around is the most of a map, and explored land on one side only the most beside an empty region:
+        // nothing to wait for.
+        if (MapOutline.whole(grid, chunks + 2 * ring) || empty && MapOutline.oneSide(grid, chunks, ring)) {
+            if (mask.set(grid, null, null, shader)) version++;
             return true;
         }
         if (edgeJobs >= MAX_EDGE_JOBS) return false;
@@ -499,23 +587,32 @@ public final class TileStore {
         mask.started();
         EDGE_WORKER.execute(() -> {
             MapOutline.Picture picture = null;
+            MapOutline.Field field = null;
             try {
-                picture = MapOutline.picture(cx0, cz0, chunks, pixels, grid);
+                if (shader) {
+                    field = MapOutline.field(cx0, cz0, chunks, pixels, grid);
+                    if (empty && field != null && !field.reaches()) field = null;
+                } else {
+                    picture = MapOutline.picture(cx0, cz0, chunks, pixels, grid);
+                }
             } catch (RuntimeException e) {
                 TeyvatCartographia.LOGGER.warn("Could not work out the outline at chunk {},{}", cx0, cz0, e);
             }
-            edgesDone.add(new EdgeDone(mask, grid, picture));
+            edgesDone.add(new EdgeDone(mask, grid, picture, field, shader));
         });
         return true;
     }
 
-    /** The explored chunks of a square from (cx0, cz0) and the ring around it, as {@link MapOutline#picture} takes them. */
-    private long[] grid(int cx0, int cz0, int chunks) {
-        int side = chunks + 2 * MapOutline.RING;
+    /**
+     * The explored chunks of a square from (cx0, cz0) and the {@code ring} around it, as {@link MapOutline#picture}
+     * ({@link MapOutline#RING}) or {@link MapOutline#field} ({@link MapOutline#FIELD_RING}) takes them.
+     */
+    private long[] grid(int cx0, int cz0, int chunks, int ring) {
+        int side = chunks + 2 * ring;
         long[] grid = MapOutline.grid(side);
         for (int z = 0; z < side; z++) {
             for (int x = 0; x < side; x++) {
-                if (explored(cx0 + x - MapOutline.RING, cz0 + z - MapOutline.RING)) MapOutline.set(grid, z * side + x);
+                if (explored(cx0 + x - ring, cz0 + z - ring)) MapOutline.set(grid, z * side + x);
             }
         }
         return grid;

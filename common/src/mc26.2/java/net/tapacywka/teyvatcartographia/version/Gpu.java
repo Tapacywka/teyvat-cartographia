@@ -132,4 +132,32 @@ public final class Gpu {
         pass.setIndexBuffer(mesh.indices, mesh.type);
         pass.drawIndexed(mesh.count, 1, 0, 0, 0);
     }
+
+    /** The edge shader's bindings beside the GUI's own: its second texture and its block of values. */
+    public static RenderPipeline.Builder edgeBindings(RenderPipeline.Builder builder, String sampler, String uniforms) {
+        return builder.withBindGroupLayout(com.mojang.blaze3d.pipeline.BindGroupLayout.builder().withSampler(sampler).withUniform(uniforms, com.mojang.blaze3d.shaders.UniformType.UNIFORM_BUFFER).build());
+    }
+
+    /** A small block of float values for a pipeline, written whole before each pass that binds it. */
+    public static final class Uniforms {
+        private final GpuBuffer buffer;
+        private final java.nio.ByteBuffer data;
+
+        public Uniforms(String label, int floats) {
+            buffer = RenderSystem.getDevice().createBuffer(() -> label, GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST, floats * 4L);
+            data = java.nio.ByteBuffer.allocateDirect(floats * 4).order(java.nio.ByteOrder.nativeOrder());
+        }
+
+        /** Writes the values (outside a render pass). */
+        public void write(CommandEncoder encoder, float[] values) {
+            data.clear();
+            for (float v : values) data.putFloat(v);
+            data.flip();
+            encoder.writeToBuffer(buffer.slice(), data);
+        }
+
+        public void bind(RenderPass pass, String name) {
+            pass.setUniform(name, buffer);
+        }
+    }
 }

@@ -26,16 +26,17 @@ public final class MapOutline {
     private static final float BASE = GUARD + LOBES * 0.55f;
     /** The noise's share: it seldom gets near 1, and this brings the lobes out. */
     private static final float LOBE_GAIN = 1.7f;
+    // The shader (assets/teyvatcartographia/shaders/core/map_edge.fsh) has the values below as its own; MapOutlineMotionTest keeps them the same.
     /** How the lobes lean on the outline: the width of the rounding where the two lines meet. */
-    private static final float ROUNDING = 8;
+    static final float ROUNDING = 8;
     /** The small roughness on the lobes, as if drawn by hand: how far it goes in and out, and how wide it is, in blocks. */
     private static final float ROUGH = 3, ROUGH_SIZE = 9;
     /** Half the width of the map's end, of the stroke, and how the stroke's sides blend, in blocks at one pixel a block. */
-    private static final float END = 0.7f, STROKE = 0.75f, STROKE_SOFT = 0.9f;
+    static final float END = 0.7f, STROKE = 0.75f, STROKE_SOFT = 0.9f;
     /** The glow's falling off from the line and its strength there. It ends on the smooth outline, so that no chunk or region cuts it. */
-    private static final float GLOW = 12, GLOW_STRENGTH = 0.34f;
+    static final float GLOW = 12, GLOW_STRENGTH = 0.34f;
     /** The stroke's strength at its middle. */
-    private static final float STROKE_STRENGTH = 0.92f;
+    static final float STROKE_STRENGTH = 0.92f;
     /** The opacity reaches nothing this many blocks from an unexplored chunk, whatever the rest says. */
     private static final float BORDER = 4;
     /** Over this distance from the outline nothing reaches: full opacity. */
@@ -48,6 +49,11 @@ public final class MapOutline {
 
     /** Chunks around a picture that reach into it: three times the blur, in chunks. */
     public static final int RING = 3;
+    /**
+     * The ring of chunks around a picture in the grid of its {@link #field}: the blur's {@link #RING} and one chunk more,
+     * from which the field's border of one pixel comes.
+     */
+    public static final int FIELD_RING = RING + 1;
     private static final int REACH = 2 * RING + 1;
     /** How much each of the chunks in reach counts, for a block at each place in its chunk. */
     private static final float[][] WEIGHTS = new float[16][REACH];
@@ -102,10 +108,16 @@ public final class MapOutline {
 
     /** Smooth noise from 0 to 1 with a new value at every whole number. In doubles: near the world border a float has no fractions left. */
     private static float value(double x, double y) {
+        return value(x, y, -1);
+    }
+
+    /** As above, repeating after {@code mask + 1} (a power of two; -1: never). */
+    private static float value(double x, double y, int mask) {
         int xi = (int) Math.floor(x), yi = (int) Math.floor(y);
         float xf = (float) (x - xi), yf = (float) (y - yi);
         float u = xf * xf * xf * (xf * (xf * 6 - 15) + 10), w = yf * yf * yf * (yf * (yf * 6 - 15) + 10);
-        float a = hash(xi, yi), b = hash(xi + 1, yi), c = hash(xi, yi + 1), d = hash(xi + 1, yi + 1);
+        int x0 = xi & mask, x1 = (xi + 1) & mask, y0 = yi & mask, y1 = (yi + 1) & mask;
+        float a = hash(x0, y0), b = hash(x1, y0), c = hash(x0, y1), d = hash(x1, y1);
         return a + (b - a) * u + (c - a) * w + (a - b - c + d) * u * w;
     }
 
@@ -138,20 +150,34 @@ public final class MapOutline {
     }
 
     /** The lower of two values, rounded where they meet: no corner where one line takes over from the other. */
-    private static float softMin(float a, float b, float k) {
+    static float softMin(float a, float b, float k) {
         float h = Math.max(k - Math.abs(a - b), 0) / k;
         return Math.min(a, b) - h * h * k / 4;
-    }
-
-    /** Above 0 inside the map, in blocks from the line, at the block (x, z) whose distance from the smooth outline is {@code s}. */
-    private static float line(int x, int z, float s) {
-        return softMin(s - BASE + LOBES * lobes(x, z), s - GUARD, ROUNDING) + ROUGH * rough(x + 91, z + 37);
     }
 
     /** Whether every chunk of a grid of that side is explored: then no picture of it changes. */
     public static boolean whole(long[] grid, int side) {
         for (int i = 0, n = side * side; i < n; i++) if (!get(grid, i)) return false;
         return true;
+    }
+
+    /**
+     * Whether all the explored chunks of a grid lie on one side of its square ({@code chunks} a side, the {@code ring}
+     * around it), or there are none: then the smooth outline, where half the blur is explored, cannot come into the
+     * square, and nothing of the line or its glow shows there. So it is beside most regions with nothing explored.
+     */
+    public static boolean oneSide(long[] grid, int chunks, int ring) {
+        int side = chunks + 2 * ring, minX = side, maxX = -1, minZ = side, maxZ = -1;
+        for (int z = 0; z < side; z++) {
+            for (int x = 0; x < side; x++) {
+                if (!get(grid, z * side + x)) continue;
+                minX = Math.min(minX, x);
+                maxX = Math.max(maxX, x);
+                minZ = Math.min(minZ, z);
+                maxZ = Math.max(maxZ, z);
+            }
+        }
+        return maxX < ring || minX >= ring + chunks || maxZ < ring || minZ >= ring + chunks;
     }
 
     private static boolean get(long[] grid, int i) {
@@ -177,80 +203,33 @@ public final class MapOutline {
      * @return null where all the picture has stays as it is
      */
     public static Picture picture(int cx0, int cz0, int chunks, int pixels, long[] grid) {
-        int side = chunks + 2 * RING, width = chunks * pixels, blocks = 16 / pixels;
-        if (whole(grid, side)) return null;
+        int width = chunks * pixels, blocks = 16 / pixels;
+        if (whole(grid, chunks + 2 * RING)) return null;
         Picture out = new Picture(new byte[width * width], new byte[width * width], new byte[width * width]);
         Arrays.fill(out.opacity, (byte) 255);
-        boolean changed = false;
-        float[] own = new float[REACH * REACH], row = new float[REACH];
-        for (int j = 0; j < chunks; j++) {
-            for (int i = 0; i < chunks; i++) {
-                boolean explored = get(grid, (j + RING) * side + i + RING), open = false, land = false;
-                for (int dz = 0; dz < REACH; dz++) {
-                    for (int dx = 0; dx < REACH; dx++) {
-                        boolean known = get(grid, (j + dz) * side + i + dx);
-                        own[dz * REACH + dx] = known ? 1 : 0;
-                        open |= !known;
-                        land |= known;
-                    }
-                }
-                if (!explored) {
-                    for (int z = 0; z < pixels; z++) Arrays.fill(out.opacity, (j * pixels + z) * width + i * pixels, (j * pixels + z) * width + (i + 1) * pixels, (byte) 0);
-                }
-                if (open && land) changed |= fill(out, width, i, j, pixels, blocks, cx0, cz0, own, row, explored);
-            }
-        }
-        return changed ? out : null;
-    }
-
-    /** One chunk of the picture ({@code own}: the chunks in its reach, 1 explored); whether it changes anything. */
-    private static boolean fill(Picture out, int width, int i, int j, int pixels, int blocks, int cx0, int cz0, float[] own, float[] row, boolean explored) {
-        boolean changed = false;
-        int c = RING * REACH + RING;
-        boolean north = own[c - REACH] == 0, south = own[c + REACH] == 0, west = own[c - 1] == 0, east = own[c + 1] == 0;
-        boolean northWest = own[c - REACH - 1] == 0, northEast = own[c - REACH + 1] == 0, southWest = own[c + REACH - 1] == 0, southEast = own[c + REACH + 1] == 0;
         // A far copy's pixel is several blocks wide: the line keeps at least its width, or it would fall through as dots.
         float end = Math.max(END, blocks / 2f), half = Math.max(STROKE, blocks / 2f), soft = Math.max(STROKE_SOFT, blocks * 0.6f);
-        for (int pz = 0; pz < pixels; pz++) {
-            int oz = pz * blocks + blocks / 2;
-            float[] wz = WEIGHTS[oz];
-            for (int k = 0; k < REACH; k++) {
-                float sum = 0;
-                for (int m = 0; m < REACH; m++) sum += wz[m] * own[m * REACH + k];
-                row[k] = sum;
+        var sink = new Pixels() {
+            boolean changed;
+
+            @Override
+            public void plain(int at, boolean inside, boolean explored) {
+                if (inside && explored) return;
+                out.opacity[at] = 0;
+                changed |= explored;
             }
-            for (int px = 0; px < pixels; px++) {
-                int ox = px * blocks + blocks / 2, at = (j * pixels + pz) * width + i * pixels + px;
-                float[] wx = WEIGHTS[ox];
-                float blurred = 0;
-                for (int k = 0; k < REACH; k++) blurred += wx[k] * row[k];
-                if (blurred >= ALL) continue;
-                if (blurred <= NOTHING) {
-                    if (explored) {
-                        out.opacity[at] = 0;
-                        changed = true;
-                    }
-                    continue;
-                }
-                float s = outline(blurred), l = line(((cx0 + i) << 4) + ox, ((cz0 + j) << 4) + oz, s);
+
+            @Override
+            public void near(int at, float lobes, float guard, float s, float border, boolean explored) {
+                float l = softMin(lobes, guard, ROUNDING);
                 if (explored) {
                     float a = Math.max(0, Math.min(1, (l + end) / (2 * end)));
-                    if (a > 0) {
-                        // Blocks from the chunks around that are not explored: their sides and corners.
-                        float left = ox + 1, right = 16 - ox, up = oz + 1, down = 16 - oz, d = BORDER;
-                        if (west) d = Math.min(d, left);
-                        if (east) d = Math.min(d, right);
-                        if (north) d = Math.min(d, up);
-                        if (south) d = Math.min(d, down);
-                        if (northWest) d = Math.min(d, (float) Math.hypot(left, up));
-                        if (northEast) d = Math.min(d, (float) Math.hypot(right, up));
-                        if (southWest) d = Math.min(d, (float) Math.hypot(left, down));
-                        if (southEast) d = Math.min(d, (float) Math.hypot(right, down));
-                        a = Math.min(a, smooth(0, BORDER, d));
-                    }
+                    if (a > 0) a = Math.min(a, border);
                     int value = Math.round(a * 255);
                     out.opacity[at] = (byte) value;
                     changed |= value < 255;
+                } else {
+                    out.opacity[at] = 0;
                 }
                 int stroke = Math.round((1 - smooth(half, half + soft, Math.abs(l))) * STROKE_STRENGTH * 255);
                 // Over all the room between the line and the smooth outline, however narrow: it ends there softly, not on a step.
@@ -259,8 +238,246 @@ public final class MapOutline {
                 out.glow[at] = (byte) glow;
                 changed |= stroke > 0 || glow > 0;
             }
+        };
+        walk(cx0, cz0, chunks, pixels, 0, RING, grid, sink);
+        return sink.changed ? out : null;
+    }
+
+    /** How far either way the lines of a {@link Field} reach, in blocks; beyond it they are only far in or far out. */
+    static final float FIELD_RANGE = 32;
+    /** What a {@link Field} keeps of the distance from the smooth outline, in blocks: as far in as {@link #CALM_TO}, and past it. */
+    static final float S_FROM = -12, S_TO = 52;
+    /** A {@link Field}'s pixel all map; all fog; of a chunk not explored, with nothing of the line. */
+    private static final int ALL_MAP = 0xFFFFFFFF, ALL_FOG = 0, EMPTY = 0x00FFFFFF;
+
+    /**
+     * What the GPU draws the outline from ({@code assets/teyvatcartographia/shaders/core/map_edge.fsh}) where it moves:
+     * each pixel as 0xAABBGGRR, red the lobes' line and green the guard's (each with the roughness in, {@link #FIELD_RANGE}
+     * blocks either way), blue the distance from the smooth outline ({@link #S_FROM} to {@link #S_TO}), alpha how much of
+     * the map the chunks around that are not explored leave. The GPU draws the line on the softer minimum of the first
+     * two, the lobes' line breathing ({@link #breath}); sampled between the pixels, the line is smooth at every zoom.
+     * <p>
+     * Around the picture's pixels the field has a border of one pixel, worked out from the chunks next to it as the next
+     * picture has them, so the GPU's sampling between pixels runs on across the picture's edge as inside it. Without it
+     * each picture held its last pixel to its edge and the line, the glow and the waves broke off in a step at every
+     * region's border (tester report 08.11.2026; the baked outline of 1.2.0, a pixel a block, had no such step).
+     *
+     * @param grid the chunks of the picture and the {@link #FIELD_RING} around it, side {@code chunks + 2 * FIELD_RING}
+     * @return null where all the picture has stays as it is, as {@link #picture}; else {@code chunks * pixels + 2} pixels a side
+     */
+    public static Field field(int cx0, int cz0, int chunks, int pixels, long[] grid) {
+        int width = chunks * pixels + 2;
+        if (whole(grid, chunks + 2 * FIELD_RING)) return null;
+        int[] abgr = new int[width * width];
+        var sink = new Pixels() {
+            boolean changed;
+
+            @Override
+            public void plain(int at, boolean inside, boolean explored) {
+                abgr[at] = !inside ? ALL_FOG : explored ? ALL_MAP : EMPTY;
+                changed |= explored && !inside;
+            }
+
+            @Override
+            public void near(int at, float lobes, float guard, float s, float border, boolean explored) {
+                abgr[at] = Math.round(border * 255) << 24 | encode(s, S_FROM, S_TO) << 16 | encode(guard, -FIELD_RANGE, FIELD_RANGE) << 8 | encode(lobes, -FIELD_RANGE, FIELD_RANGE);
+                changed = true;
+            }
+        };
+        walk(cx0, cz0, chunks, pixels, 1, FIELD_RING, grid, sink);
+        return sink.changed ? new Field(width, abgr) : null;
+    }
+
+    private static int encode(float v, float from, float to) {
+        return Math.max(0, Math.min(255, Math.round((v - from) / (to - from) * 255)));
+    }
+
+    /** A channel of a {@link Field} back in blocks. */
+    static float decode(int channel, float from, float to) {
+        return from + (channel & 0xFF) / 255f * (to - from);
+    }
+
+    /**
+     * A {@link Field}: what the GPU draws the outline from, {@code side} pixels a side (the picture's and a border of one
+     * pixel around them) as 0xAABBGGRR, as the images hold them.
+     */
+    public record Field(int side, int[] abgr) {
+        boolean same(Field other) {
+            return other != null && side == other.side && Arrays.equals(abgr, other.abgr);
         }
-        return changed;
+
+        /**
+         * Whether the smooth outline comes into the picture's own pixels (its border is the next picture's): the line and
+         * its glow lie inside it, so only then does anything of them show in a picture with nothing explored.
+         */
+        boolean reaches() {
+            int width = side - 2, inside = encode(REACHES, S_FROM, S_TO);
+            for (int z = 1; z <= width; z++) {
+                for (int x = 1; x <= width; x++) if ((abgr[z * side + x] >>> 16 & 0xFF) > inside) return true;
+            }
+            return false;
+        }
+    }
+
+    /** How far inside the smooth outline, in blocks, a picture with nothing explored has something to show (the glow is nil nearer). */
+    private static final float REACHES = 0.5f;
+
+    /** What {@link #walk} finds at each pixel: {@link #picture} draws it, {@link #field} hands it to the GPU. */
+    private interface Pixels {
+        /** A pixel the line does not reach: all map ({@code inside}) or all fog; one of a chunk not explored stays empty either way. */
+        void plain(int at, boolean inside, boolean explored);
+
+        /**
+         * A pixel near the line, in blocks: the lobes' line and the guard's, each with the roughness in (the line is their
+         * softer minimum), and the distance from the smooth outline; {@code border} 0 to 1, how much of the map the chunks
+         * around that are not explored leave (0 where this one is not explored).
+         */
+        void near(int at, float lobes, float guard, float s, float border, boolean explored);
+    }
+
+    /**
+     * Goes over a square picture as {@link #picture} takes it, pixel by pixel, and with a {@code pad} of 1 the pixels
+     * around it, from the chunks next to it ({@code ring}: the chunks around the picture in the grid).
+     */
+    private static void walk(int cx0, int cz0, int chunks, int pixels, int pad, int ring, long[] grid, Pixels out) {
+        int side = chunks + 2 * ring, width = chunks * pixels + 2 * pad, blocks = 16 / pixels;
+        int first = pad > 0 ? -1 : 0, last = pad > 0 ? chunks : chunks - 1;
+        float[] own = new float[REACH * REACH], row = new float[REACH];
+        for (int j = first; j <= last; j++) {
+            // Of the chunks next to the picture only their pixels on its border.
+            int pz0 = j < 0 ? pixels - pad : 0, pz1 = j >= chunks ? pad : pixels;
+            for (int i = first; i <= last; i++) {
+                int px0 = i < 0 ? pixels - pad : 0, px1 = i >= chunks ? pad : pixels;
+                boolean explored = get(grid, (j + ring) * side + i + ring), open = false, land = false;
+                for (int dz = 0; dz < REACH; dz++) {
+                    for (int dx = 0; dx < REACH; dx++) {
+                        boolean known = get(grid, (j + ring - RING + dz) * side + i + ring - RING + dx);
+                        own[dz * REACH + dx] = known ? 1 : 0;
+                        open |= !known;
+                        land |= known;
+                    }
+                }
+                if (open && land) {
+                    chunk(out, width, pad, i, j, pixels, blocks, px0, px1, pz0, pz1, cx0, cz0, own, row, explored);
+                } else {
+                    // Only land in reach or only fog: all of it the one.
+                    for (int z = pz0; z < pz1; z++) {
+                        for (int x = px0; x < px1; x++) out.plain(at(width, pad, pixels, i, j, x, z), explored, explored);
+                    }
+                }
+            }
+        }
+    }
+
+    /** Where pixel (x, z) of chunk (i, j) of a picture goes among its pixels, {@code width} a row, with a {@code pad} of pixels around. */
+    private static int at(int width, int pad, int pixels, int i, int j, int x, int z) {
+        return (j * pixels + z + pad) * width + i * pixels + x + pad;
+    }
+
+    /**
+     * One chunk with both explored chunks and others in reach ({@code own}: the chunks in its reach, 1 explored), its
+     * pixels px0 to px1 and pz0 to pz1 (all of them, or of a chunk next to the picture those on its border).
+     */
+    private static void chunk(Pixels out, int width, int pad, int i, int j, int pixels, int blocks, int px0, int px1, int pz0, int pz1,
+                              int cx0, int cz0, float[] own, float[] row, boolean explored) {
+        int c = RING * REACH + RING;
+        boolean north = own[c - REACH] == 0, south = own[c + REACH] == 0, west = own[c - 1] == 0, east = own[c + 1] == 0;
+        boolean northWest = own[c - REACH - 1] == 0, northEast = own[c - REACH + 1] == 0, southWest = own[c + REACH - 1] == 0, southEast = own[c + REACH + 1] == 0;
+        for (int pz = pz0; pz < pz1; pz++) {
+            int oz = pz * blocks + blocks / 2;
+            float[] wz = WEIGHTS[oz];
+            for (int k = 0; k < REACH; k++) {
+                float sum = 0;
+                for (int m = 0; m < REACH; m++) sum += wz[m] * own[m * REACH + k];
+                row[k] = sum;
+            }
+            for (int px = px0; px < px1; px++) {
+                int ox = px * blocks + blocks / 2, at = at(width, pad, pixels, i, j, px, pz);
+                float[] wx = WEIGHTS[ox];
+                float blurred = 0;
+                for (int k = 0; k < REACH; k++) blurred += wx[k] * row[k];
+                if (blurred >= ALL || blurred <= NOTHING) {
+                    out.plain(at, blurred >= ALL, explored);
+                    continue;
+                }
+                float s = outline(blurred), border = 0;
+                int x = ((cx0 + i) << 4) + ox, z = ((cz0 + j) << 4) + oz;
+                if (explored) {
+                    // Blocks from the chunks around that are not explored: their sides and corners.
+                    float left = ox + 1, right = 16 - ox, up = oz + 1, down = 16 - oz, d = BORDER;
+                    if (west) d = Math.min(d, left);
+                    if (east) d = Math.min(d, right);
+                    if (north) d = Math.min(d, up);
+                    if (south) d = Math.min(d, down);
+                    if (northWest) d = Math.min(d, (float) Math.hypot(left, up));
+                    if (northEast) d = Math.min(d, (float) Math.hypot(right, up));
+                    if (southWest) d = Math.min(d, (float) Math.hypot(left, down));
+                    if (southEast) d = Math.min(d, (float) Math.hypot(right, down));
+                    border = smooth(0, BORDER, d);
+                }
+                float rough = ROUGH * rough(x + 91, z + 37);
+                out.near(at, s - BASE + LOBES * lobes(x, z) + rough, s - GUARD + rough, s, border, explored);
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------ breathing
+
+    /**
+     * How far the edge breathes on the world map, in blocks (user decision 08.11.2026, variant A of the mockup in
+     * {@code build-logs/edge-anim-mock}: as in Genshin's map, the edge swells out and draws back, as water spreading and
+     * gathering). It stays within the guard: outward the guard's line stops it.
+     */
+    public static final float BREATH = 6;
+    /** From this distance from the smooth outline on the breathing calms, and past the second it is still: the middle of the land never dims. */
+    static final float CALM_FROM = 28, CALM_TO = 46;
+    /** The breathing's noise repeats every this many blocks: the GPU works in floats, which keep no fraction of a block that far out. */
+    public static final int PERIOD = 1 << 18;
+
+    /**
+     * The surf (variant C of the mockup, user request 08.11.2026; Map edges at "Animated + waves", the breathing alone
+     * kept as "Animated"): thin waves this far apart run out from the edge into the fog at {@link #RIPPLE_SPEED} blocks a
+     * second, this wide, fading over this distance, this strong at the line; the glow swells and ebbs meanwhile.
+     */
+    static final float RIPPLE_GAP = 9, RIPPLE_WIDTH = 0.55f, RIPPLE_FADE = 8, RIPPLE_STRENGTH = 0.5f;
+    private static final double RIPPLE_SPEED = 2.6, SWELL = 0.12, SWELL_RATE = 1.3;
+
+    /** The surf at {@code seconds}: where the waves are in their run (0 to 1), and the glow's strength (about 0.9 to 1). */
+    public static void surf(double seconds, float[] out) {
+        double run = seconds * RIPPLE_SPEED / RIPPLE_GAP;
+        out[0] = (float) (run - Math.floor(run));
+        out[1] = (float) (1 - SWELL + SWELL * Math.sin(seconds * SWELL_RATE));
+    }
+
+    /** The breathing's two times, at {@code seconds} (any start): each counts its slices of noise, which repeat after 1024. */
+    public static void phases(double seconds, float[] out) {
+        out[0] = (float) ((seconds * 0.22) % 1024);
+        out[1] = (float) ((seconds * 0.31 + 0.5) % 1024);
+    }
+
+    /**
+     * The breathing at a block, about -1 to 1 (at most 1.5): two sizes of noise, 64 and 32 blocks, each moving through
+     * its slices in time. As the shader has it; its coordinates repeat after {@link #PERIOD}.
+     */
+    static float breath(double x, double z, float phase1, float phase2) {
+        float big = slices(x / 64, z / 64, phase1, PERIOD / 64 - 1) * 2 - 1;
+        float small = slices(x / 32 + 5.3, z / 32 - 3.1, phase2, PERIOD / 32 - 1) * 2 - 1;
+        return 1.5f * (0.65f * big + 0.35f * small);
+    }
+
+    /** How much of the breathing a pixel at that distance from the smooth outline has. */
+    static float calm(float s) {
+        return 1 - smooth(CALM_FROM, CALM_TO, s);
+    }
+
+    /** Smooth noise through time: between two slices of it, a new slice at every whole {@code phase}. */
+    private static float slices(double x, double y, float phase, int mask) {
+        int k = (int) Math.floor(phase);
+        float f = phase - k;
+        f = f * f * f * (f * (f * 6 - 15) + 10);
+        int k0 = k & 1023, k1 = (k + 1) & 1023;
+        float a = value(x + k0 * 13.7, y - k0 * 7.3, mask), b = value(x + k1 * 13.7, y - k1 * 7.3, mask);
+        return a + (b - a) * f;
     }
 
     /**

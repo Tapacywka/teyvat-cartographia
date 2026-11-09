@@ -49,7 +49,8 @@ public final class TeyvatConfigScreen {
     }
 
     private static final String[] CLOCK_STEPS = {K + "step.off", K + "step.game", K + "step.real", K + "step.both"};
-    private static final String[] PIN_STEPS = {K + "step.off", K + "step.map", K + "step.maps", K + "step.world", K + "step.everywhere"};
+    private static final String[] EDGE_STEPS = {K + "step.off", K + "step.edges_still", K + "step.edges_breathing", K + "step.edges_surf"};
+    private static final String[] PIN_STEPS ={K + "step.off", K + "step.map", K + "step.maps", K + "step.world", K + "step.everywhere"};
     private static final String[] PATH_STEPS = {K + "step.off", K + "step.map", K + "step.maps", K + "step.everywhere"};
 
     /** Sets an on/off setting and its three parts from a step (see {@link StepChoice}); off leaves the parts as they are. */
@@ -200,7 +201,13 @@ public final class TeyvatConfigScreen {
             t.defaultPreview(new Pictures(K + "tab.experimental"));
             t.section(K + "section.map_content");
             t.toggle(K + "far_land", MapConfig.FAR_LAND);
-            t.toggle(K + "map_outline", MapConfig.MAP_OUTLINE);
+            // One slider (user request 08.11.2026): off, on and still, breathing, breathing with waves.
+            t.steps(K + "map_outline", EDGE_STEPS,
+                    () -> MapConfig.MAP_OUTLINE.get() ? MapConfig.MAP_OUTLINE_MOTION.get().ordinal() + 1 : 0,
+                    s -> {
+                        MapConfig.MAP_OUTLINE.set(s > 0);
+                        if (s > 0) MapConfig.MAP_OUTLINE_MOTION.set(MapConfig.EdgeMotion.values()[s - 1]);
+                    });
             t.toggle(K + "world_border", MapConfig.WORLD_BORDER);
         });
         return b.build();
@@ -363,6 +370,12 @@ public final class TeyvatConfigScreen {
             }
         }
 
+        /**
+         * The preview's regions while Map edges is drawn by its shader ({@link net.tapacywka.teyvatcartographia.render.EdgeShader}),
+         * as large as the window; one for the game, kept once made.
+         */
+        private static final net.tapacywka.teyvatcartographia.render.CachedLayer PREVIEW_EDGES = new net.tapacywka.teyvatcartographia.render.CachedLayer();
+
         /** A short note in the middle of the area (no world, the minimap off, no preview yet). */
         private static void note(GuiGraphicsExtractor g, float x, float y, float w, float h, String key) {
             Component t = Component.literal(net.tapacywka.teyvatcartographia.render.DrawText.fit(Component.translatable(key).getString(), (int) w));
@@ -389,8 +402,24 @@ public final class TeyvatConfigScreen {
             if (store != null && !cave) {
                 net.tapacywka.teyvatcartographia.render.MapLayerRenderer.drawFar(g, MapDataManager.get().farLand(store.dimension), view, x, y, x + w, y + h, false);
             }
-            net.tapacywka.teyvatcartographia.render.MapLayerRenderer.drawRect(g, store, view, x, y, x + w, y + h,
-                    cave ? 0xFFFFFFFF : net.tapacywka.teyvatcartographia.render.DayLight.tint(pt), cave ? 0f : net.tapacywka.teyvatcartographia.render.DayLight.night(pt));
+            int tint = cave ? 0xFFFFFFFF : net.tapacywka.teyvatcartographia.render.DayLight.tint(pt);
+            float night = cave ? 0f : net.tapacywka.teyvatcartographia.render.DayLight.night(pt);
+            if (store != null && !cave && MapConfig.get(MapConfig.MAP_OUTLINE) && net.tapacywka.teyvatcartographia.render.EdgeShader.inUse()) {
+                // The edge's shader takes its values only in the mod's layers: the regions go into one, then onto the area.
+                var window = mc.getWindow();
+                PREVIEW_EDGES.bind(g, window.getWidth(), window.getHeight(), false);
+                try {
+                    net.tapacywka.teyvatcartographia.render.MapLayerRenderer.drawRect(g, store, view, x, y, x + w, y + h, tint, night);
+                } finally {
+                    PREVIEW_EDGES.unbind();
+                }
+                float gw = window.getGuiScaledWidth(), gh = window.getGuiScaledHeight();
+                Draw.texturedQuadPremultiplied(g, PREVIEW_EDGES.tex(), x, y, x + w, y + h,
+                        x / gw, net.tapacywka.teyvatcartographia.render.CachedLayer.v(1 - y / gh),
+                        (x + w) / gw, net.tapacywka.teyvatcartographia.render.CachedLayer.v(1 - (y + h) / gh));
+            } else {
+                net.tapacywka.teyvatcartographia.render.MapLayerRenderer.drawRect(g, store, view, x, y, x + w, y + h, tint, night);
+            }
             if (store != null) net.tapacywka.teyvatcartographia.render.BorderLine.draw(g, store.dimension, view, x, y, x + w, y + h);
             if (MapConfig.get(MapConfig.MAP_SHOW_GRID)) grid(g, x, y, w, h, zoom);
             if (MapConfig.get(MapConfig.MAP_SHOW_LABELS)) {

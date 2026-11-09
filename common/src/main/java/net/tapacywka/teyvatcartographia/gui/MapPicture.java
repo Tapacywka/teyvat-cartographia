@@ -29,6 +29,8 @@ final class MapPicture {
     private static final double FOG_PARALLAX = 0.35;
     /** While the far land comes in, the picture is drawn again at most this often. */
     private static final long FAR_REFRESH_NS = 200_000_000L;
+    /** While an edge on it breathes, the picture is drawn again this often (60 times a second at most). */
+    private static final long BREATH_NS = 16_000_000L;
     // Accumulated screen offset of the fog, and the view it was last updated at.
     private double fogOffsetX, fogOffsetZ;
     private double fogLastX = Double.NaN, fogLastZ, fogLastScale;
@@ -41,6 +43,8 @@ final class MapPicture {
     private float kNight;
     private double kCenterX, kCenterZ, kScale, kGuiScale, kFogX, kFogZ;
     private long kDrawnNs;
+    /** Whether the last picture had an edge that breathes. */
+    private boolean breathing;
 
     /** Draws the picture of {@code view} (centre and scale given separately) over the whole screen. */
     void draw(GuiGraphicsExtractor g, TileStore store, MapView view, double centerX, double centerZ, double scale, int width, int height, float pt) {
@@ -62,14 +66,20 @@ final class MapPicture {
                 || store != kStore || version != kVersion || centerX != kCenterX || centerZ != kCenterZ || scale != kScale
                 || tint != kTint || night != kNight || width != kWidth || height != kHeight || guiScale != kGuiScale
                 || fogOffsetX != kFogX || fogOffsetZ != kFogZ || Theme.generation() != kTheme
-                || far != kFar || farVersion != kFarVersion && now - kDrawnNs > FAR_REFRESH_NS || border != kBorder;
+                || far != kFar || farVersion != kFarVersion && now - kDrawnNs > FAR_REFRESH_NS || border != kBorder
+                || breathing && now - kDrawnNs >= BREATH_NS;
         if (dirty) {
             layer.bind(g, w.getWidth(), w.getHeight(), false);
             try {
                 // The dimension's own fog (the Aether's sea of clouds), not under a cave layer.
                 FogTexture.draw(g, store == null || store.cave ? null : store.dimension, 0, 0, width, height, (float) fogOffsetX, (float) fogOffsetZ, Theme.WHITE);
                 boolean farDone = MapLayerRenderer.drawFar(g, far, view, 0, 0, width, height, true);
-                complete = MapLayerRenderer.drawRect(g, store, view, 0, 0, width, height, tint, night) && farDone;
+                MapLayerRenderer.breathing(true);
+                try {
+                    complete = MapLayerRenderer.drawRect(g, store, view, 0, 0, width, height, tint, night) && farDone;
+                } finally {
+                    breathing = MapLayerRenderer.breathing(false);
+                }
                 if (store != null) BorderLine.draw(g, store.dimension, view, 0, 0, width, height);
             } finally {
                 layer.unbind();

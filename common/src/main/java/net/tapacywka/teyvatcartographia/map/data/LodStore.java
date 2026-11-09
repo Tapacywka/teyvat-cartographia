@@ -91,18 +91,35 @@ public final class LodStore {
             if (!edge.ready()) allowUpload = false;
             if (texture == null) {
                 if (!allowUpload) return null;
-                texture = new GpuImage("Teyvat Cartographia LOD", edge.faded() ? edge.over(image) : image);
+                texture = new GpuImage("Teyvat Cartographia LOD", edge.baked() ? edge.over(image) : image);
+                edge.uploadField();
                 gpuDirty = false;
             } else if (gpuDirty && allowUpload) {
-                texture.upload(edge.faded() ? edge.over(image) : image);
+                texture.upload(edge.baked() ? edge.over(image) : image);
+                edge.uploadField();
                 gpuDirty = false;
             }
             return texture.tex(true);
         }
 
+        /** Whether {@link net.tapacywka.teyvatcartographia.render.EdgeShader} draws this tile's outline, from {@link #edgeField}. */
+        public boolean edgeByShader() {
+            return edge.byShader();
+        }
+
+        public Tex edgeField() {
+            return edge.fieldTex();
+        }
+
+        /** What {@link net.tapacywka.teyvatcartographia.render.EdgeShader} draws of the outline. */
+        public int edgeMode() {
+            return edge.shaderMode();
+        }
+
         void release() {
             if (texture != null) texture.close();
             texture = null;
+            edge.free();
             image.close();
         }
     }
@@ -178,11 +195,11 @@ public final class LodStore {
 
     // ------------------------------------------------------------------ outline
 
-    /** The tiles a chunk reaches with its outline have theirs worked out again. */
+    /** The tiles a chunk reaches with its outline have theirs worked out again (a field's border reaches a chunk farther). */
     void edgesAround(int cx, int cz) {
         int n = REGIONS * MapTile.CHUNKS;
-        for (int lz = Math.floorDiv(cz - MapOutline.RING, n); lz <= Math.floorDiv(cz + MapOutline.RING, n); lz++) {
-            for (int lx = Math.floorDiv(cx - MapOutline.RING, n); lx <= Math.floorDiv(cx + MapOutline.RING, n); lx++) {
+        for (int lz = Math.floorDiv(cz - MapOutline.FIELD_RING, n); lz <= Math.floorDiv(cz + MapOutline.FIELD_RING, n); lz++) {
+            for (int lx = Math.floorDiv(cx - MapOutline.FIELD_RING, n); lx <= Math.floorDiv(cx + MapOutline.FIELD_RING, n); lx++) {
                 long key = MapView.tileKey(lx, lz);
                 if (tiles.containsKey(key)) edgeStale.add(key);
             }

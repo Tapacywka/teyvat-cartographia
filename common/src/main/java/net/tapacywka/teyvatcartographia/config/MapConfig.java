@@ -164,6 +164,14 @@ public final class MapConfig {
      * 08.11.2026, then two again (user decision).
      */
     public static final BoolValue MAP_OUTLINE;
+    /**
+     * How the map edges move on the world map (user request 08.11.2026, the variants A and C of the mockup kept both):
+     * still, breathing (swelling out and drawing back like water), or breathing with waves running into the fog. One
+     * slider with {@link #MAP_OUTLINE} in the settings; the minimap keeps the edge still.
+     */
+    public enum EdgeMotion { STILL, BREATHING, SURF }
+
+    public static final EnumValue<EdgeMotion> MAP_OUTLINE_MOTION;
     /** The world border ("World border" / «Барьер мира», off by default) as a red line on both maps, everything beyond it darker (BorderLine, 07.11.2026). */
     public static final BoolValue WORLD_BORDER;
     public static final ListValue PLANTS_HIDDEN;
@@ -253,6 +261,7 @@ public final class MapConfig {
         PLAYER_CONE = b.bool("playerCone", true);
         FAR_LAND = b.bool("farLand", false);
         MAP_OUTLINE = b.bool("mapOutline", false);
+        MAP_OUTLINE_MOTION = b.choice("mapOutlineMotion", EdgeMotion.BREATHING);
         WORLD_BORDER = b.bool("worldBorder", false);
         // The plants switched off (user decision 24.10.2026: every plant on by default, also those of mods added later);
         // until then the list held the ones switched on (plantsShown, cactus, dead bush and chorus by default).

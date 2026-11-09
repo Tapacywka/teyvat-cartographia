@@ -17,6 +17,8 @@ final class Shape implements GuiElementRenderState {
     private final int vertices;
     private final boolean textured;
     private final ScreenRectangle scissor, bounds;
+    /** The values of {@link EdgeShader#PIPELINE} for this draw, or null ({@link CachedLayer} hands them over). */
+    private float[] uniforms;
 
     private Shape(RenderPipeline pipeline, TextureSetup textures, float[] data, int vertices, boolean textured,
                   ScreenRectangle scissor, ScreenRectangle bounds) {
@@ -48,6 +50,17 @@ final class Shape implements GuiElementRenderState {
             if (bounds == null) return null;
         }
         return new Shape(pipeline, textures, java.util.Arrays.copyOf(d, n * Mesh.STRIDE), n, textured, scissor, bounds);
+    }
+
+    /** As {@link #of}, a picture of the map for {@link EdgeShader}, with its values. */
+    static Shape edge(Mesh mesh, RenderPipeline pipeline, TextureSetup textures, ScreenRectangle scissor, float[] uniforms) {
+        Shape s = of(mesh, pipeline, textures, true, scissor);
+        if (s != null) s.uniforms = uniforms;
+        return s;
+    }
+
+    float[] uniforms() {
+        return uniforms;
     }
 
     @Override

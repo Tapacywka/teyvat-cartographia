@@ -229,13 +229,29 @@ public final class MapTile {
         if (!edge.ready()) allowUpload = false;
         if (texture == null) {
             if (!allowUpload) return null;
-            texture = new GpuImage("Teyvat Cartographia region", edge.faded() ? edge.over(image) : image);
+            texture = new GpuImage("Teyvat Cartographia region", edge.baked() ? edge.over(image) : image);
+            edge.uploadField();
             gpuDirty = false;
         } else if (gpuDirty && allowUpload) {
-            texture.upload(edge.faded() ? edge.over(image) : image);
+            texture.upload(edge.baked() ? edge.over(image) : image);
+            edge.uploadField();
             gpuDirty = false;
         }
         return texture.tex(linear);
+    }
+
+    /** Whether {@link net.tapacywka.teyvatcartographia.render.EdgeShader} draws this picture's outline, from {@link #edgeField}. */
+    public boolean edgeByShader() {
+        return edge.byShader();
+    }
+
+    public Tex edgeField() {
+        return edge.fieldTex();
+    }
+
+    /** What {@link net.tapacywka.teyvatcartographia.render.EdgeShader} draws of the outline. */
+    public int edgeMode() {
+        return edge.shaderMode();
     }
 
     public boolean needsUpload() {
@@ -316,6 +332,7 @@ public final class MapTile {
             lightImage.close();
             lightImage = null;
         }
+        edge.free();
         image.close();
     }
 

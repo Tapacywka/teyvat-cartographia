@@ -93,18 +93,20 @@ public final class CachedLayer {
                 RenderPipeline pipeline = first.pipeline();
                 TextureSetup textures = first.textureSetup();
                 ScreenRectangle scissor = first.scissorArea();
+                float[] uniforms = uniforms(first);
                 BufferBuilder buffer = Gpu.begin(pipeline);
                 int j = i;
-                // Consecutive elements of one pipeline, texture and clip go into one draw.
+                // Consecutive elements of one pipeline, texture, clip and values go into one draw.
                 while (j < elements.size()) {
                     GuiElementRenderState e = elements.get(j);
-                    if (e.pipeline() != pipeline || !e.textureSetup().equals(textures) || !Objects.equals(e.scissorArea(), scissor)) break;
+                    if (e.pipeline() != pipeline || !e.textureSetup().equals(textures) || !Objects.equals(e.scissorArea(), scissor)
+                            || uniforms(e) != uniforms) break;
                     e.buildVertices(buffer);
                     j++;
                 }
                 i = j;
                 MeshData mesh = buffer.build();
-                if (mesh != null) draw(encoder, mesh, pipeline, textures, scissor, transforms, pw, ph, guiW, guiH);
+                if (mesh != null) draw(encoder, mesh, pipeline, textures, scissor, transforms, pw, ph, guiW, guiH, uniforms);
             }
             if (clearPending) {
                 // Nothing drawn after all: cleared on its own.
@@ -118,16 +120,24 @@ public final class CachedLayer {
         }
     }
 
+    /** The values an element hands its shader ({@link EdgeShader}), or null. */
+    private static float[] uniforms(GuiElementRenderState e) {
+        return e instanceof Shape s ? s.uniforms() : null;
+    }
+
     private void draw(CommandEncoder encoder, MeshData mesh, RenderPipeline pipeline, TextureSetup textures, ScreenRectangle scissor,
-                      GpuBufferSlice transforms, int pw, int ph, float guiW, float guiH) {
+                      GpuBufferSlice transforms, int pw, int ph, float guiW, float guiH, float[] uniforms) {
         try (mesh) {
             Gpu.upload(UPLOAD, mesh, Gpu.format(pipeline));
+            // Written before the pass opens: no buffer is written while one is open.
+            if (uniforms != null) EdgeShader.write(encoder, uniforms);
             boolean clear = clearPending;
             clearPending = false;
             try (RenderPass pass = Gpu.pass(encoder, "Teyvat Cartographia layer", view, clear)) {
                 Gpu.use(pass, pipeline);
                 RenderSystem.bindDefaultUniforms(pass);
                 pass.setUniform("DynamicTransforms", transforms);
+                if (uniforms != null) EdgeShader.bind(pass);
                 if (textures.texure0() != null) Gpu.bind(pass, "Sampler0", textures.texure0(), textures.sampler0());
                 if (textures.texure1() != null) Gpu.bind(pass, "Sampler1", textures.texure1(), textures.sampler1());
                 if (textures.texure2() != null) Gpu.bind(pass, "Sampler2", textures.texure2(), textures.sampler2());
