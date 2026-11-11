@@ -10,6 +10,8 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-11-11
+
 ### Changed
 - On Minecraft 1.21.1 the world map and the minimap draw their pins, frames and buttons with fewer calls to the graphics
   card: shapes of one kind in a row now go as one, with the same pixels as before, so an open world map costs a little
@@ -534,7 +536,8 @@ The first public release, for Minecraft 1.21.1 on NeoForge 21.1. Client only.
 - Cached HUD layers, chunk work on worker threads and path searches in short slices: the mod is meant to cost at most
   2 to 3% FPS.
 
-[Unreleased]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.3.1...HEAD
+[1.3.1]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.0.0...v1.1.0
