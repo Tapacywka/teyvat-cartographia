@@ -3,6 +3,8 @@
 </p>
 
 <p align="center">
+  <a href="https://modrinth.com/mod/teyvat-cartographia"><img src="https://img.shields.io/modrinth/dt/teyvat-cartographia?style=flat&logo=modrinth&label=modrinth&color=00AF5C" alt="Modrinth downloads"></a>
+  <a href="https://www.curseforge.com/minecraft/mc-mods/teyvat-cartographia"><img src="https://img.shields.io/curseforge/dt/1764160?style=flat&logo=curseforge&label=curseforge&color=F16436" alt="CurseForge downloads"></a>
   <a href="https://github.com/Tapacywka/teyvat-cartographia/releases"><img src="https://img.shields.io/github/downloads/Tapacywka/teyvat-cartographia/total?style=flat&logo=github&label=downloads&color=4C9F70" alt="GitHub downloads"></a>
   <img src="https://img.shields.io/badge/side-client-5B8DEF?style=flat" alt="Client side">
   <a href="https://github.com/Tapacywka/teyvat-cartographia/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-8A8F98?style=flat" alt="MIT license"></a>
@@ -14,6 +16,8 @@
 </p>
 
 <p align="center">
+  <a href="https://modrinth.com/mod/teyvat-cartographia"><img src="https://raw.githubusercontent.com/intergrav/devins-badges/v3/assets/cozy/available/modrinth_vector.svg" alt="Available on Modrinth" height="48"></a>
+  <a href="https://www.curseforge.com/minecraft/mc-mods/teyvat-cartographia"><img src="https://raw.githubusercontent.com/intergrav/devins-badges/v3/assets/cozy/available/curseforge_vector.svg" alt="Available on CurseForge" height="48"></a>
   <a href="https://github.com/Tapacywka/teyvat-cartographia/releases"><img src="https://raw.githubusercontent.com/intergrav/devins-badges/v3/assets/cozy/available/github_vector.svg" alt="Available on GitHub" height="48"></a>
 </p>
 
