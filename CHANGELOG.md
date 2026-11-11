@@ -11,8 +11,9 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 ## [Unreleased]
 
 ### Changed
-- The world map and the minimap draw their pins, frames and buttons with fewer calls to the graphics card: shapes of
-  one kind in a row now go as one, with the same pixels as before, so an open world map costs a little less.
+- On Minecraft 1.21.1 the world map and the minimap draw their pins, frames and buttons with fewer calls to the graphics
+  card: shapes of one kind in a row now go as one, with the same pixels as before, so an open world map costs a little
+  less (26.x groups them by itself).
 
 ### Fixed
 - Small stutters: the map saved every minute while exploring is now written a couple of regions at a time instead of
