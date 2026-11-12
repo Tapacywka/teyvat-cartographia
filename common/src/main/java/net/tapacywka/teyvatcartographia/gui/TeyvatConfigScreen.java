@@ -66,6 +66,7 @@ public final class TeyvatConfigScreen {
     private static final String[] PATH_STEPS = {K + "step.off", K + "step.map", K + "step.maps", K + "step.everywhere"};
     /** The minimap's redraws a second, from the cheapest to the smoothest (the names of {@link MapConfig.UpdateRate}). */
     private static final String[] RATE_STEPS = {K + "value.rate_10", K + "value.rate_20", K + "value.rate_30", K + "value.rate_60", K + "value.unlimited"};
+    private static final String[] SHOW_STEPS = {K + "value.show_30s", K + "value.show_60s", K + "value.show_2m", K + "value.show_5m", K + "value.always"};
 
     /** Sets an on/off setting and its three parts from a step (see {@link StepChoice}); off leaves the parts as they are. */
     private static void setSteps(int step, BoolValue on, BoolValue map, BoolValue minimap, BoolValue world) {
@@ -193,6 +194,10 @@ public final class TeyvatConfigScreen {
             // How the path goes: on land round deep water, or by boat across it (user decision 26.10.2026); a new search.
             // First, as it holds for every kind below (user decision 09.11.2026).
             t.choice(K + "path_route", MapConfig.PATH_ROUTE, c -> {}).then(Navigation::requestPath);
+            // How long the marker and the stars show after tracking or V (user request 12.11.2026): a slider in steps,
+            // the last one never fades.
+            t.steps(K + "marker_show_for", SHOW_STEPS, () -> MapConfig.MARKER_SHOW_FOR.get().ordinal(),
+                    s -> MapConfig.MARKER_SHOW_FOR.set(MapConfig.ShowFor.values()[s]));
             for (MapConfig.PinKind kind : kinds) pathRow(t, kind);
         });
         // System: how much work the mapping and the minimap may take.

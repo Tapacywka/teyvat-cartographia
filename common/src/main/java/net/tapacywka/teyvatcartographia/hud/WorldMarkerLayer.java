@@ -51,7 +51,7 @@ import java.util.Objects;
  *       below the player ({@link Navigation#level});</li>
  *   <li>the pulse key makes a diamond, white turning gold, close in on it ({@link #pulse}); the marker never pulses
  *       on its own.</li>
- *   <li>it is shown for a minute after tracking starts or the pulse key is pressed, then fades out; the pulse key
+ *   <li>it is shown for the set time (a minute by default) after tracking starts or the pulse key is pressed, then fades out; the pulse key
  *       fades it in again for another minute.</li>
  * </ul>
  * The camera matrices come from the end of the level rendering of the same frame ({@link #afterLevel}). The HUD part
@@ -136,7 +136,7 @@ public final class WorldMarkerLayer implements LayeredDraw.Layer {
     }
 
     /**
-     * The marker is shown for a minute after tracking starts or the pulse key is pressed, fading in and out
+     * The marker is shown for the set time (a minute by default) after tracking starts or the pulse key is pressed, fading in and out
      * ({@link MarkerTiming}): the target the timer belongs to (a new target starts it again) and when its showing began.
      */
     private static Navigation.Target shownTarget;
@@ -153,7 +153,7 @@ public final class WorldMarkerLayer implements LayeredDraw.Layer {
     private static boolean beamOn;
 
     /**
-     * Pulse key: shows the marker again for a minute (fading in if hidden) and a golden diamond closes in on it.
+     * Pulse key: shows the marker again for the time the settings say (fading in if hidden) and a golden diamond closes in on it.
      * Presses while the diamond is still running are ignored (restarting cut the running one off). The path is searched
      * again from here only when the player is off it; near the line ({@link Route#nearLine}) the stars just show again.
      */
@@ -169,7 +169,7 @@ public final class WorldMarkerLayer implements LayeredDraw.Layer {
     }
 
 
-    /** Keeps the timer on the tracked target: tracking another target (or the same one again) shows it for a minute. */
+    /** Keeps the timer on the tracked target: tracking another target (or the same one again) shows it anew. */
     private static void trackTimer(Navigation.Target t) {
         if (!Objects.equals(t, shownTarget)) {
             shownTarget = t;
@@ -179,7 +179,7 @@ public final class WorldMarkerLayer implements LayeredDraw.Layer {
 
     private static float visibility(long now) {
         if (shownTarget == null) return 0f;
-        return MarkerTiming.visibility(now - shownSince);
+        return MarkerTiming.visibility(now - shownSince, MapConfig.MARKER_SHOW_FOR.get().ms);
     }
 
     @Override
