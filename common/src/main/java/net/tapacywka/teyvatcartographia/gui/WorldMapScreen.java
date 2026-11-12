@@ -3,6 +3,7 @@ package net.tapacywka.teyvatcartographia.gui;
 import net.minecraft.world.level.biome.Biome;
 import net.tapacywka.teyvatcartographia.client.Keybinds;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
+import net.tapacywka.teyvatcartographia.radar.Radar;
 import net.tapacywka.teyvatcartographia.gui.panel.DimensionPanel;
 import net.tapacywka.teyvatcartographia.gui.panel.MarkerListPanel;
 import net.tapacywka.teyvatcartographia.gui.panel.PinPanel;
@@ -621,7 +622,18 @@ public final class WorldMapScreen extends Screen {
         }
         // 5. Path to the navigation target
         drawRoute(g);
-        // 6. Markers
+        // 6. The radar (under the pins, they matter more), then the markers
+        radarPointed = null;
+        if (Radar.any() && viewingPlayerDim()) {
+            boolean overUi = exiting || overPanels(mx, my) || pick != null && pick.contains(mx, my) || menu != null && menu.contains(mx, my);
+            Draw.batch();
+            try {
+                radarPointed = Radar.draw(g, view, pt, false, 0, 0, 0, false, Minecraft.getInstance().player.getY(), 1f,
+                        overUi || dragging ? -1000 : mx, overUi || dragging ? -1000 : my);
+            } finally {
+                Draw.endBatch();
+            }
+        }
         hovered = null;
         drawMarkers(g, mx, my);
         boolean panels = panelsShown();
@@ -668,6 +680,8 @@ public final class WorldMapScreen extends Screen {
         if (menu != null) menu.render(g, mx, my, time, dt);
         else if (pick == null && panel == null && !exiting && entry.settled() && !dragging && !drawLayerTooltip(g, mx, my)) {
             if (hovered != null) drawTooltip(g, hovered, mx, my);
+            // Another player of the radar: their name (user decision 12.11.2026).
+            else if (radarPointed != null) Ui.tooltip(g, radarPointed.getString(), null, mx, my, width, height);
             // The sea icon where a crossing of the path begins (user requests 25 and 26.10.2026).
             else if (overSeaIcon(mx, my)) Ui.tooltip(g, Component.translatable("teyvatcartographia.nav.sea").getString(), null, mx, my, width, height);
             else if (airIcon && Math.hypot(mx - airX, my - airY) <= SEA_BADGE) Ui.tooltip(g, Component.translatable("teyvatcartographia.nav.air").getString(), null, mx, my, width, height);
@@ -953,6 +967,9 @@ public final class WorldMapScreen extends Screen {
     }
 
     // ------------------------------------------------------------------ map content
+
+    /** The other player of the radar under the pointer this frame, or null. */
+    private Component radarPointed;
 
     /** The layer shown while the pins are drawn (pins on other layers get an arrow). */
     private Integer shownBand;

@@ -14,6 +14,16 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 
 - Settings > Pins > Path to the target: "Shown after tracking", how long the marker, beam and stars of a tracked pin show
   after you track it or press the key to show it again: 30 s, 60 s (as before), 2 min, 5 min or always.
+- A radar on the minimap and the world map: other players as arrows in their team's colour (their name when you point
+  at one on the world map), hostile mobs as red dots, peaceful mobs white, your pets turquoise, boats, minecarts and
+  items lavender. Those well above or below you are fainter, with a small arrow up or down. Settings > Radar, a new tab
+  after Minimap: the radar, its range (2 to 16 chunks; in single player farther than the server sends mobs), the height
+  arrows, mobs on servers, and where each kind shows (off, the minimap, both maps).
+- Fair play: on a server the radar shows only other players unless you allow mobs there, and nothing at all when the
+  server forbids a radar with the code Xaero's Minimap reads.
+- Sable (1.21.1): its ships and other moving structures on the radar, drawn from their own blocks and turned as they
+  sail, with a shadow and their name on the world map; a ship icon with an arrow of its course while they are too small
+  on the map. Settings > Compatibility > Sable.
 
 ## [1.3.2] - 2026-11-12
 

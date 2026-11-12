@@ -191,6 +191,20 @@ public final class Theme {
     /** The world border on the maps (BorderLine): the line, and what lies over everything beyond it. */
     public static int WORLD_BORDER_LINE = 0xE6E86054;
     public static int WORLD_BORDER_BEYOND = 0x85141C24;
+    /**
+     * The radar on both maps (Radar, user decisions 12.11.2026, colours of the mockup): hostile red, passive white, the
+     * player's own pets turquoise, the rest (boats, minecarts, items) lavender, other players orange unless their team
+     * has a colour; the dark rim of every dot and arrow, and the arrow of another height.
+     */
+    public static int RADAR_HOSTILE = 0xFFF25555;
+    public static int RADAR_PASSIVE = 0xFFFFFFFF;
+    public static int RADAR_PET = 0xFF6FE3C8;
+    public static int RADAR_OTHER = 0xFFB9A7FF;
+    public static int RADAR_PLAYER = 0xFFFFA640;
+    public static int RADAR_OUTLINE = 0x8C000000;
+    public static int RADAR_HEIGHT = 0xE6FFFFFF;
+    /** The shadow a Sable sub-level casts on the map under its silhouette (radar/SableRadar). */
+    public static int RADAR_SHIP_SHADOW = 0x50000000;
     public static int PING_GLOW = 0x30FFFFFF;
     public static int PING_RING = 0xFFFFFFFF;
     public static int PING_CORE = 0xFFFFFFFF;

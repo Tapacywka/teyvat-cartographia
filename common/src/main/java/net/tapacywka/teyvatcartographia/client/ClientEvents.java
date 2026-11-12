@@ -12,6 +12,7 @@ import net.tapacywka.teyvatcartographia.nav.Navigation;
 import net.tapacywka.teyvatcartographia.nav.DirectPath;
 import net.tapacywka.teyvatcartographia.nav.FarPath;
 import net.tapacywka.teyvatcartographia.nav.PathFinder;
+import net.tapacywka.teyvatcartographia.radar.Radar;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.network.chat.Component;
@@ -30,6 +31,7 @@ public final class ClientEvents {
         PathFinder.tick();
         FarPath.tick();
         DirectPath.tick();
+        Radar.tick(mc);
         if (mc.player == null) return;
         WorldMapScreen.tickTeleport(mc);
 
@@ -68,10 +70,16 @@ public final class ClientEvents {
         WaystonesCompat.chunkLoaded(level.dimension(), chunk);
     }
 
+    /** A chat or system message from the server (the radar reads Xaero's fair play codes in it). */
+    public static void chat(Component message) {
+        Radar.chat(message);
+    }
+
     public static void loggingOut() {
         MapDataManager.get().closeAll(true);
         MarkerStore.switchWorld(null);
         WaystonesCompat.leave();
         MinimapLayer.forgetWorld();
+        Radar.leave();
     }
 }
