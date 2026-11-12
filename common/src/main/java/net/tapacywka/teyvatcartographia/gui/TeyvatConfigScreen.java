@@ -206,6 +206,7 @@ public final class TeyvatConfigScreen {
             radarRow(t, "radar_players", MapConfig.RADAR_PLAYERS);
             radarRow(t, "radar_hostile", MapConfig.RADAR_HOSTILE);
             radarRow(t, "radar_passive", MapConfig.RADAR_PASSIVE);
+            radarRow(t, "radar_villagers", MapConfig.RADAR_VILLAGERS);
             radarRow(t, "radar_pets", MapConfig.RADAR_PETS);
             radarRow(t, "radar_other", MapConfig.RADAR_OTHER);
         });
@@ -350,7 +351,7 @@ public final class TeyvatConfigScreen {
     private static final Set<String> LOOK_ROWS = Set.of(K + "minimap_shape", K + "minimap_opacity",K + "minimap_padding", K + "minimap_fade_width", K + "minimap_fade_strength",
             // The radar's rows: the minimap alone too, large, so its dots show.
             K + "radar_enabled", K + "radar_range", K + "radar_height", K + "radar_server_mobs", K + "radar_players", K + "radar_hostile",
-            K + "radar_passive", K + "radar_pets", K + "radar_other");
+            K + "radar_passive", K + "radar_villagers", K + "radar_pets", K + "radar_other");
 
     /** The far land, the map edges and the world border: the map from farther out, where they show. */
     private static final Set<String> FAR_ROWS = Set.of(K + "far_land", K + "map_outline", K + "world_border");
