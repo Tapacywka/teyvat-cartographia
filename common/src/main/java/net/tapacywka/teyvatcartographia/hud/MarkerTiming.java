@@ -12,11 +12,20 @@ final class MarkerTiming {
 
     static final long SHOW_MS = 60_000, FADE_IN_MS = 400, FADE_OUT_MS = 1_500;
 
-    /** Visibility 0..1 of the marker {@code elapsedMs} after it was shown. */
+    /** Visibility 0..1 of the marker {@code elapsedMs} after it was shown, for the default {@code SHOW_MS}. */
     static float visibility(long elapsedMs) {
+        return visibility(elapsedMs, SHOW_MS);
+    }
+
+    /**
+     * Visibility 0..1 of the marker {@code elapsedMs} after it was shown for {@code showMs} (the setting
+     * {@link net.tapacywka.teyvatcartographia.config.MapConfig#MARKER_SHOW_FOR}, user request 12.11.2026); 0 or less:
+     * it never fades out.
+     */
+    static float visibility(long elapsedMs, long showMs) {
         if (elapsedMs < FADE_IN_MS) return smooth(elapsedMs / (double) FADE_IN_MS);
-        if (elapsedMs < SHOW_MS) return 1f;
-        return smooth(1 - (elapsedMs - SHOW_MS) / (double) FADE_OUT_MS);
+        if (showMs <= 0 || elapsedMs < showMs) return 1f;
+        return smooth(1 - (elapsedMs - showMs) / (double) FADE_OUT_MS);
     }
 
     /** Whether the pulse started at {@code pulseStart} ({@code Long.MIN_VALUE}: none yet) still runs at {@code now}. */

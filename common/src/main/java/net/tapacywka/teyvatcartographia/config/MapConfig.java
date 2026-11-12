@@ -201,6 +201,22 @@ public final class MapConfig {
 
     public static final EnumValue<Route> PATH_ROUTE;
 
+    /**
+     * How long the marker, beam and stars of the tracked pin show after tracking starts or the pulse key (user request
+     * 12.11.2026, a tester's idea; 60 s before): {@code ms} 0 never fades.
+     */
+    public enum ShowFor {
+        S30(30_000), S60(60_000), M2(120_000), M5(300_000), ALWAYS(0);
+
+        public final long ms;
+
+        ShowFor(long ms) {
+            this.ms = ms;
+        }
+    }
+
+    public static final EnumValue<ShowFor> MARKER_SHOW_FOR;
+
     /** Clock under the minimap: the time of day in the game world, or the real time of the player's computer. */
     public enum TimeSource { GAME_TIME, REAL_TIME, BOTH }
 
@@ -244,6 +260,7 @@ public final class MapConfig {
         b.push("pins");
         for (PinKind kind : PinKind.values()) PINS[kind.ordinal()] = new PinOptions(b, kind);
         PATH_ROUTE = b.choice("route", Route.LAND);
+        MARKER_SHOW_FOR = b.choice("showFor", ShowFor.S60);
         b.pop();
 
         b.push("worldmap");

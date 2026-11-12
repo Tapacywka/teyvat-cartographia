@@ -10,6 +10,11 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 
 ## [Unreleased]
 
+### Added
+
+- Settings > Pins > Path to the target: "Shown after tracking", how long the marker, beam and stars of a tracked pin show
+  after you track it or press the key to show it again: 30 s, 60 s (as before), 2 min, 5 min or always.
+
 ## [1.3.2] - 2026-11-12
 
 ### Fixed

@@ -25,6 +25,22 @@ class MarkerTimingTest {
         assertEquals(0f, MarkerTiming.visibility(10 * 60_000));
     }
 
+    /** The setting's times (user request 12.11.2026): each one holds that long, then fades; "Always" never fades. */
+    @Test
+    void theShowTimeFollowsTheSetting() {
+        for (var s : net.tapacywka.teyvatcartographia.config.MapConfig.ShowFor.values()) {
+            if (s.ms == 0) continue;
+            assertEquals(1f, MarkerTiming.visibility(s.ms - 1, s.ms), s + " still shown");
+            assertEquals(0f, MarkerTiming.visibility(s.ms + MarkerTiming.FADE_OUT_MS, s.ms), s + " gone");
+        }
+        long always = net.tapacywka.teyvatcartographia.config.MapConfig.ShowFor.ALWAYS.ms;
+        assertEquals(0f, MarkerTiming.visibility(0, always), "still fades in");
+        assertEquals(1f, MarkerTiming.visibility(24L * 3_600_000, always), "a day later");
+        assertEquals(1f, MarkerTiming.visibility(Long.MAX_VALUE, always), "never out");
+        assertEquals(MarkerTiming.SHOW_MS,
+                net.tapacywka.teyvatcartographia.config.MapConfig.ShowFor.S60.ms, "the default as before");
+    }
+
     @Test
     void itNeverGoesOutOfRange() {
         for (long t = -1000; t < 70_000; t += 37) {
