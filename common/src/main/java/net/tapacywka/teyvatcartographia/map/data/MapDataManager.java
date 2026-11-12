@@ -33,6 +33,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.Collections;
+import java.util.function.Consumer;
+import net.minecraft.client.server.IntegratedServer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.border.WorldBorder;
+import net.tapacywka.teyvatcartographia.gui.WorldMapScreen;
 
 /**
  * Owns the cartography pipeline for the current world and dimension:
@@ -77,7 +85,21 @@ public final class MapDataManager {
         return t;
     });
 
-    private final ConcurrentLinkedQueue<Object[]> results = new ConcurrentLinkedQueue<>();
+    /** What a worker hands back for a chunk, with the {@link #generation} it was asked in (an older one is dropped). */
+    private sealed interface Scanned {
+        long generation();
+    }
+
+    /** A chunk of the surface, shaded. */
+    private record Shaded(long generation, ChunkShader.Result result) implements Scanned {}
+
+    /** A chunk of a cave layer, shaded. */
+    private record CaveShaded(long generation, ChunkShader.Result result, int band) implements Scanned {}
+
+    /** A chunk that changed under the reader: the sweep takes it again. */
+    private record Unreadable(long generation, long chunk) implements Scanned {}
+
+    private final ConcurrentLinkedQueue<Scanned> results = new ConcurrentLinkedQueue<>();
     private final AtomicInteger inFlight = new AtomicInteger();
     private final LongArrayFIFOQueue queue = new LongArrayFIFOQueue();
     private final LongOpenHashSet queued = new LongOpenHashSet();
@@ -101,7 +123,7 @@ public final class MapDataManager {
     private final Underground.Roof roof = new Underground.Roof();
     private final Map<Integer, TileStore> caveStores = new HashMap<>();
     private final TreeSet<Integer> caveBands = new TreeSet<>();
-    private final NavigableSet<Integer> caveBandsView = java.util.Collections.unmodifiableNavigableSet(caveBands.descendingSet());
+    private final NavigableSet<Integer> caveBandsView = Collections.unmodifiableNavigableSet(caveBands.descendingSet());
     private final Underground underground = new Underground();
 
     // The far land of this world's Overworld (single player, setting on); tried once per world, so a flat world does not ask every tick.
@@ -208,12 +230,12 @@ public final class MapDataManager {
             for (String folder : MapStorage.listDimensions(dir)) {
                 try {
                     Path f = dir.resolve(folder).resolve("dimension.txt");
-                    if (java.nio.file.Files.exists(f)) {
-                        ResourceLocation id = ResourceLocation.tryParse(java.nio.file.Files.readString(f).trim());
+                    if (Files.exists(f)) {
+                        ResourceLocation id = ResourceLocation.tryParse(Files.readString(f).trim());
                         ResourceKey<Level> d = id == null ? null : ResourceKey.create(Registries.DIMENSION, id);
                         if (d != null && !out.contains(d)) out.add(d);
                     }
-                } catch (java.io.IOException e) {
+                } catch (IOException e) {
                     TeyvatCartographia.LOGGER.debug("Unreadable dimension marker in {}", folder, e);
                 }
             }
@@ -234,7 +256,7 @@ public final class MapDataManager {
      * {@link MapConfig.Detail#ordinal()}), side {@code 16 * (2 * radius + 1)}, on a worker thread. False without a
      * world. The surface of the dimension only (not a cave layer).
      */
-    public boolean sampleDetails(int rx, int rz, java.util.function.Consumer<int[][]> done) {
+    public boolean sampleDetails(int rx, int rz, Consumer<int[][]> done) {
         LocalPlayer player = Minecraft.getInstance().player;
         if (active == null || level == null || player == null) return false;
         boolean ceiling = level.dimensionType().hasCeiling();
@@ -371,7 +393,7 @@ public final class MapDataManager {
 
     /** The far land starts, works or stops with its setting (main thread, in a world). */
     private void updateFar(Minecraft mc, LocalPlayer player) {
-        net.minecraft.client.server.IntegratedServer server = mc.getSingleplayerServer();
+        IntegratedServer server = mc.getSingleplayerServer();
         if (server == null || !MapConfig.get(MapConfig.FAR_LAND)) {
             closeFar();
             return;
@@ -379,7 +401,7 @@ public final class MapDataManager {
         if (far == null) {
             if (farTried) return;
             farTried = true;
-            net.minecraft.server.level.ServerLevel overworld = server.overworld();
+            ServerLevel overworld = server.overworld();
             FarLandSource source = null;
             try {
                 if (overworld != null) source = FarLandSource.of(overworld);
@@ -387,12 +409,12 @@ public final class MapDataManager {
                 TeyvatCartographia.LOGGER.warn("The far land cannot be worked out for this world", e); // heights a data pack made strange
             }
             if (source == null) return; // a flat world, a mod's own generator: nothing to ask
-            net.minecraft.world.level.border.WorldBorder border = overworld.getWorldBorder();
+            WorldBorder border = overworld.getWorldBorder();
             far = new FarLand(source, new FarLandRules.Bounds(border.getMinX(), border.getMinZ(), border.getMaxX(), border.getMaxZ()),
                     Level.OVERWORLD, dimDir(Level.OVERWORLD).resolve("far"), io, reads, generation);
         }
         boolean here = active.dimension == far.dimension();
-        far.tick(mc.screen instanceof net.tapacywka.teyvatcartographia.gui.WorldMapScreen, here, player.getX(), player.getZ(), here ? active : null);
+        far.tick(mc.screen instanceof WorldMapScreen, here, player.getX(), player.getZ(), here ? active : null);
     }
 
     private void closeFar() {
@@ -448,6 +470,7 @@ public final class MapDataManager {
         if (reuse != null) reuse.close();
         active = new TileStore(dim, dimDir(dim), io, reads, generation, false, false);
         sweepCursor = 0;
+        Plants.worldOpened();
         for (String folder : MapStorage.listDimensions(dimDir(dim).resolve("caves"))) {
             if (folder.matches("b-?\\d+")) caveBands.add(Integer.parseInt(folder.substring(1)));
         }
@@ -500,7 +523,7 @@ public final class MapDataManager {
                 inFlight.incrementAndGet();
                 workers.execute(() -> {
                     try {
-                        results.add(new Object[]{gen, CaveScanner.scan(lvl, chunk, band, px, pz, CAVE_RADIUS), band});
+                        results.add(new CaveShaded(gen, CaveScanner.scan(lvl, chunk, band, px, pz, CAVE_RADIUS), band));
                     } catch (RuntimeException e) {
                         TeyvatCartographia.LOGGER.debug("Cave chunk {},{} could not be sampled", chunk.getPos().x, chunk.getPos().z, e);
                     } catch (Throwable e) {
@@ -604,11 +627,11 @@ public final class MapDataManager {
                 try {
                     ChunkScanner.Snapshot snap = ChunkScanner.scan(lvl, chunk, ceiling, ring);
                     fillOwnColumns(snap, n);
-                    results.add(new Object[]{gen, ChunkShader.shade(snap, n, detail)});
+                    results.add(new Shaded(gen, ChunkShader.shade(snap, n, detail)));
                 } catch (RuntimeException e) {
                     // The chunk changed under the reader (or was unloaded): map it again on a later sweep.
                     TeyvatCartographia.LOGGER.debug("Chunk {},{} could not be sampled", cx, cz, e);
-                    results.add(new Object[]{gen, k});
+                    results.add(new Unreadable(gen, k));
                 } catch (Throwable e) {
                     TeyvatCartographia.LOGGER.error("Map shading failed for chunk {},{}", cx, cz, e);
                 } finally {
@@ -690,18 +713,18 @@ public final class MapDataManager {
 
     private void applyResults() {
         int limit = 96;
-        Object[] e;
-        while (limit-- > 0 && (e = results.poll()) != null) {
-            if ((Long) e[0] != generation) continue;
-            if (e.length == 3) {
-                caveStore((Integer) e[2]).apply((ChunkShader.Result) e[1]);
+        Scanned scanned;
+        while (limit-- > 0 && (scanned = results.poll()) != null) {
+            if (scanned.generation() != generation) continue;
+            if (scanned instanceof CaveShaded cave) {
+                caveStore(cave.band()).apply(cave.result());
                 continue;
             }
-            if (e[1] instanceof Long failed) {
-                lastScan.remove((long) failed); // could not be read: the sweep picks it up again
+            if (scanned instanceof Unreadable failed) {
+                lastScan.remove(failed.chunk()); // could not be read: the sweep picks it up again
                 continue;
             }
-            ChunkShader.Result r = (ChunkShader.Result) e[1];
+            ChunkShader.Result r = ((Shaded) scanned).result();
             int edges = active.apply(r);
             mappedNow++;
             // Shaded while a neighbour was not on the map, and that neighbour was applied meanwhile (both were on the

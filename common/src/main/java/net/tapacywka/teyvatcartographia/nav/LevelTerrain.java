@@ -23,6 +23,11 @@ final class LevelTerrain implements Terrain {
         return this;
     }
 
+    /** Lets the level go between searches. */
+    void forget() {
+        level = null;
+    }
+
     @Override
     public int water() {
         return water;

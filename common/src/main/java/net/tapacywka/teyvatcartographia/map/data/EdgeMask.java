@@ -239,11 +239,11 @@ final class EdgeMask {
             kept = new NativeImage(side, side, true);
             keptAll = true;
         }
-        if (keptTheme != net.tapacywka.teyvatcartographia.render.Theme.generation() || keptLandOnly != landOnly) keptAll = true;
+        if (keptTheme != Theme.generation() || keptLandOnly != landOnly) keptAll = true;
         if (keptAll) {
             lay(image, kept, 0, 0, side);
             keptAll = false;
-            keptTheme = net.tapacywka.teyvatcartographia.render.Theme.generation();
+            keptTheme = Theme.generation();
             keptLandOnly = landOnly;
         } else {
             for (int w = 0; w < keptStale.length; w++) {

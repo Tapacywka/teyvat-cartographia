@@ -2,6 +2,7 @@ package net.tapacywka.teyvatcartographia.render;
 
 import net.tapacywka.teyvatcartographia.marker.MarkerType;
 import net.minecraft.client.gui.GuiGraphics;
+import net.tapacywka.teyvatcartographia.config.MapConfig;
 
 /**
  * Marker symbols in two styles, like Genshin Impact's custom pins:
@@ -200,7 +201,7 @@ public final class MarkerRenderer {
 
     /** Player arrow with soft glow (off with the view cone); {@code angle} radians clockwise from up. */
     public static void player(GuiGraphics g, float x, float y, float size, float angle, float alpha) {
-        if (net.tapacywka.teyvatcartographia.config.MapConfig.get(net.tapacywka.teyvatcartographia.config.MapConfig.PLAYER_CONE)) Draw.ring(g, x, y, 0f, size * 0.8f, Theme.withAlpha(Theme.PLAYER_GLOW, alpha), Theme.withAlpha(Theme.PLAYER_GLOW, 0f));
+        if (MapConfig.get(MapConfig.PLAYER_CONE)) Draw.ring(g, x, y, 0f, size * 0.8f, Theme.withAlpha(Theme.PLAYER_GLOW, alpha), Theme.withAlpha(Theme.PLAYER_GLOW, 0f));
         Draw.icon(g, Icon.PLAYER, x, y, size, Theme.withAlpha(Theme.PLAYER_ARROW, alpha), angle);
     }
 }

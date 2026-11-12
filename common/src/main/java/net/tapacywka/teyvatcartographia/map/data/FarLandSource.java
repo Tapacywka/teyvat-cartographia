@@ -25,7 +25,7 @@ import java.util.function.Supplier;
 /**
  * Land or water from the world's own generator, without making a chunk (user decisions 07.11.2026, measured by the
  * suite's category farland): only the generator's formulas are asked, nothing of the world, so any thread may ask, also
- * after the world closed. No reflection: on Fabric the game's names differ in a released game.
+ * after the world closed. No reflection by name: on Fabric the game's names differ in a released game.
  * <p>
  * The density around the sea (about 30 microseconds) is asked every {@link FarLandRules#FINE} blocks and blended between
  * (98.5% of the columns as the real map), the same answers for every level (user decision 08.11.2026), and asked there

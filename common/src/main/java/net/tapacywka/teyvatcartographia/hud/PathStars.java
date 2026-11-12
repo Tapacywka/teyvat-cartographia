@@ -17,6 +17,7 @@ import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
+import java.util.Arrays;
 
 /**
  * The path to the tracked target drawn in the world as small golden sparkles, along the whole line of the world map
@@ -94,7 +95,7 @@ final class PathStars {
         if (Route.version() != routeVersion) {
             // A new line: every sparkle starts a new life on it.
             routeVersion = Route.version();
-            java.util.Arrays.fill(lifeOf, Integer.MIN_VALUE);
+            Arrays.fill(lifeOf, Integer.MIN_VALUE);
         }
         float pt = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(false);
         Vec3 me = camera.getEntity().getPosition(pt);

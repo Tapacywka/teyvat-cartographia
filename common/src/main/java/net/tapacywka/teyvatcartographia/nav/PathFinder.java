@@ -4,6 +4,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 
 import java.util.Arrays;
+import net.tapacywka.teyvatcartographia.map.data.MapDataManager;
 
 /**
  * Walking path from the player towards the navigation target over the loaded terrain, for the stars in the world and
@@ -154,6 +155,9 @@ public final class PathFinder {
             building = false;
             lastTarget = null;
             handled = -1;
+            // Nothing is searched: the level of the last search is let go (after leaving a world it would stay in memory).
+            terrain = null;
+            level.forget();
             return;
         }
         if (building) {
@@ -228,7 +232,7 @@ public final class PathFinder {
             gx = far.px(guide);
             gz = far.pz(guide);
         }
-        boolean underground = net.tapacywka.teyvatcartographia.map.data.MapDataManager.get().undergroundBand() != null;
+        boolean underground = MapDataManager.get().undergroundBand() != null;
         start(level.set(mc.level, (int) Math.floor(p.getY()), underground), p.getX(), p.getY(), p.getZ(), p.isInWater(),
                 Navigation.byBoat(p), gx, gz);
     }

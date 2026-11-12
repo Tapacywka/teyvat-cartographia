@@ -15,20 +15,18 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
 import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
-import it.unimi.dsi.fastutil.longs.LongSet;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -57,7 +55,10 @@ public final class TileStore {
     /** Which chunks of regions on disk are on the map ({@link #chunkBits}), kept in {@code chunks.idx}: for the outline of the regions beside them. */
     private final Long2ObjectOpenHashMap<long[]> diskChunks = new Long2ObjectOpenHashMap<>();
     private final Long2ObjectOpenHashMap<List<ChunkShader.Result>> pending = new Long2ObjectOpenHashMap<>();
-    private final ConcurrentLinkedQueue<Object[]> loaded = new ConcurrentLinkedQueue<>();
+    /** A region read by the IO thread; {@code tile} null when it could not be read. */
+    private record Loaded(long key, MapTile tile) {}
+
+    private final ConcurrentLinkedQueue<Loaded> loaded = new ConcurrentLinkedQueue<>();
     private volatile boolean closed;
     /** What the IO thread found in the folder ({@link #open}), until {@link #takeOpened} takes it over. */
     private volatile Found found;
@@ -125,7 +126,7 @@ public final class TileStore {
         try {
             MapStorage.dropOutdated(dir);
             regions.addAll(MapStorage.listTiles(dir));
-            readIndex(chunks);
+            chunks.putAll(MapStorage.readIndex(dir));
             if (outlined) readChunkBits(chunks, bits);
             MapStorage.writeDimension(dir, dimension);
         } catch (RuntimeException e) {
@@ -242,8 +243,10 @@ public final class TileStore {
 
     // --------------------------------------------------------------- writes
 
-    /** Applies a shaded chunk; if its region is still on disk the result waits until it is loaded. */
-    /** Writes a shaded chunk; returns the sides whose edge changed ({@link MapTile#changedEdges}), 0 while its region loads. */
+    /**
+     * Writes a shaded chunk and returns the sides whose edge changed ({@link MapTile#changedEdges}); while its region is
+     * still on disk the chunk waits until it is loaded, and 0 is returned.
+     */
     int apply(ChunkShader.Result r) {
         if (!opened) {
             early.add(r);
@@ -285,8 +288,10 @@ public final class TileStore {
                 t = MapStorage.load(dir, tx, tz);
             } catch (Throwable e) {
                 TeyvatCartographia.LOGGER.warn("Failed to load map region {},{} in {}", tx, tz, dir, e);
+                // The region starts anew and is saved over these files: what could not be read is kept beside them.
+                MapStorage.setAside(dir, tx, tz);
             }
-            loaded.add(new Object[]{key, t});
+            loaded.add(new Loaded(key, t));
             // Nobody drains a closed store: a region left here would keep its native image for good.
             if (closed) discardLoaded();
         });
@@ -294,19 +299,19 @@ public final class TileStore {
 
     /** IO thread: frees the regions loaded for a store closed meanwhile (never on the GPU yet: only their image). */
     private void discardLoaded() {
-        Object[] e;
+        Loaded e;
         while ((e = loaded.poll()) != null) {
-            if (e[1] != null) ((MapTile) e[1]).release();
+            if (e.tile() != null) e.tile().release();
         }
     }
 
     /** Integrates regions loaded by the IO thread. */
     void drainLoaded() {
         takeOpened();
-        Object[] e;
+        Loaded e;
         while ((e = loaded.poll()) != null) {
-            long key = (Long) e[0];
-            MapTile t = (MapTile) e[1];
+            long key = e.key();
+            MapTile t = e.tile();
             loading.remove(key);
             if (closed) {
                 if (t != null) t.release();
@@ -440,7 +445,10 @@ public final class TileStore {
     private final ConcurrentLinkedQueue<EdgeDone> edgesDone = new ConcurrentLinkedQueue<>();
     private int edgeJobs;
     private final LongOpenHashSet chunksLoading = new LongOpenHashSet();
-    private final ConcurrentLinkedQueue<Object[]> chunksRead = new ConcurrentLinkedQueue<>();
+    /** The chunks of a region on disk ({@link #chunkBits}), read by the IO thread. */
+    private record ChunksRead(long key, long[] bits) {}
+
+    private final ConcurrentLinkedQueue<ChunksRead> chunksRead = new ConcurrentLinkedQueue<>();
 
     /** Whether the pictures of this store have the outline now. */
     public boolean outlines() {
@@ -521,8 +529,8 @@ public final class TileStore {
         // The shader came or went (the resources were loaded again, or Map edges went between animated and not): every
         // outline is made again for the other way.
         if (edgesOn && EdgeShader.inUse() != edgesByShader) switchEdges(true);
-        Object[] read;
-        while ((read = chunksRead.poll()) != null) tookChunks((Long) read[0], (long[]) read[1]);
+        ChunksRead read;
+        while ((read = chunksRead.poll()) != null) tookChunks(read.key(), read.bits());
         EdgeDone d;
         while ((d = edgesDone.poll()) != null) {
             edgeJobs--;
@@ -678,7 +686,7 @@ public final class TileStore {
         if (closed || !chunksLoading.add(key)) return;
         int tx = MapView.tileKeyX(key), tz = MapView.tileKeyZ(key);
         order.read(key, () -> {
-            if (!closed) chunksRead.add(new Object[]{key, MapStorage.readChunks(dir, tx, tz)});
+            if (!closed) chunksRead.add(new ChunksRead(key, MapStorage.readChunks(dir, tx, tz)));
         });
     }
 
@@ -742,36 +750,13 @@ public final class TileStore {
         return out.array();
     }
 
-    private void readIndex(Long2IntOpenHashMap chunks) {
-        Path index = dir.resolve("index.txt");
-        if (!Files.exists(index)) return;
-        try (BufferedReader r = Files.newBufferedReader(index, StandardCharsets.UTF_8)) {
-            String line;
-            while ((line = r.readLine()) != null) {
-                String[] p = line.trim().split(" ");
-                if (p.length == 3) chunks.put(MapView.tileKey(Integer.parseInt(p[0]), Integer.parseInt(p[1])), Integer.parseInt(p[2]));
-            }
-        } catch (IOException | NumberFormatException e) {
-            TeyvatCartographia.LOGGER.warn("Could not read map index {}", index, e);
-        }
-    }
-
     private void writeIndexAsync() {
         indexDirty = false;
-        StringBuilder sb = new StringBuilder();
-        LongSet keys = new LongOpenHashSet(diskChunkCounts.keySet());
-        for (long k : keys) {
-            sb.append(MapView.tileKeyX(k)).append(' ').append(MapView.tileKeyZ(k)).append(' ').append(diskChunkCounts.get(k)).append('\n');
-        }
-        String content = sb.toString();
+        Map<Long, Integer> counts = new HashMap<>(diskChunkCounts);
         byte[] chunkBits = outlined ? chunkBitsFile() : null;
         io.execute(() -> {
             try {
-                Path tmp = dir.resolve("index.txt.tmp");
-                try (BufferedWriter w = Files.newBufferedWriter(tmp, StandardCharsets.UTF_8)) {
-                    w.write(content);
-                }
-                Files.move(tmp, dir.resolve("index.txt"), StandardCopyOption.REPLACE_EXISTING);
+                MapStorage.writeIndex(dir, counts);
                 if (chunkBits != null) {
                     Path bitsTmp = dir.resolve("chunks.idx.tmp");
                     Files.write(bitsTmp, chunkBits);

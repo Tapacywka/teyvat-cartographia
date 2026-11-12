@@ -9,6 +9,7 @@ import java.lang.reflect.Modifier;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * The visual theme: every colour of the interface (ARGB), plus the location of the theme's assets.
@@ -32,7 +33,7 @@ public final class Theme {
     public static final String DEFAULT = "default";
 
     /** Theme ids of earlier versions (the Minecraft theme and the Genshin Impact pack): now the default theme. */
-    static final java.util.Set<String> LEGACY = java.util.Set.of("minecraft", "genshin");
+    static final Set<String> LEGACY = Set.of("minecraft", "genshin");
 
     /** The active theme (chosen in the settings, see {@link ThemeLoader}). */
     static String id = DEFAULT;
@@ -50,10 +51,6 @@ public final class Theme {
         return ResourceLocation.fromNamespaceAndPath(TeyvatCartographia.MOD_ID, "themes/" + themeId + "/" + path);
     }
 
-    /**
-     * Geometry of the active theme, from the {@code "style"} object of its {@code theme.json}. Not colours, so it
-     * lives outside the reflected colour fields.
-     */
     /**
      * The shapes the player picked in the settings, apart from the theme: the minimap square or round
      * ({@link MapConfig#MINIMAP_SHAPE}), and the interface rectangular (flat, square corners) or rounded (circles,

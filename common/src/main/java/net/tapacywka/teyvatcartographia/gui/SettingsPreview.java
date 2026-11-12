@@ -23,6 +23,22 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
 
 import java.util.List;
+import com.mojang.blaze3d.platform.NativeImage;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Deque;
+import java.util.Locale;
+import java.util.NavigableSet;
+import java.util.Objects;
+import net.minecraft.client.renderer.texture.DynamicTexture;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.level.Level;
+import net.tapacywka.teyvatcartographia.hud.MinimapLayer;
+import net.tapacywka.teyvatcartographia.map.data.CaveScanner;
+import net.tapacywka.teyvatcartographia.marker.MarkerVisibility;
+import net.tapacywka.teyvatcartographia.render.DistanceText;
+import net.tapacywka.teyvatcartographia.render.Icon;
 
 /**
  * The live previews of the Pins, System and Compatibility tabs of {@link TeyvatConfigScreen}. Each draws into the area
@@ -50,7 +66,7 @@ final class SettingsPreview {
     private static final int OFF_DIM = 0xB0222A35;
 
     private static MapConfig.PinKind kind(MarkerType t) {
-        return net.tapacywka.teyvatcartographia.marker.MarkerVisibility.kind(t);
+        return MarkerVisibility.kind(t);
     }
 
     /**
@@ -58,7 +74,7 @@ final class SettingsPreview {
      * 31.10.2026), so the Pins tab shows its own kinds alone, with the mod or without it.
      */
     private static MarkerType[] sampleTypes(boolean stones) {
-        return java.util.Arrays.stream(MarkerType.values()).filter(t -> stones || t.category != MarkerType.Category.INTERACTION).toArray(MarkerType[]::new);
+        return Arrays.stream(MarkerType.values()).filter(t -> stones || t.category != MarkerType.Category.INTERACTION).toArray(MarkerType[]::new);
     }
 
     /**
@@ -93,7 +109,7 @@ final class SettingsPreview {
                 // Straight over the lake, as a line in the air: no sea colour, no crossing.
                 n = 2;
                 ROUTE_PTS[0] = px; ROUTE_PTS[1] = pz; ROUTE_PTS[2] = tx; ROUTE_PTS[3] = pz;
-                java.util.Arrays.fill(ROUTE_WATER, false);
+                Arrays.fill(ROUTE_WATER, false);
             } else if (water) {
                 n = 4;
                 ROUTE_PTS[0] = px; ROUTE_PTS[1] = pz; ROUTE_PTS[2] = lx0; ROUTE_PTS[3] = pz;
@@ -106,24 +122,24 @@ final class SettingsPreview {
                 ROUTE_PTS[0] = px; ROUTE_PTS[1] = pz; ROUTE_PTS[2] = lx0 - fw * 0.05f; ROUTE_PTS[3] = sy;
                 ROUTE_PTS[4] = (lx0 + lx1) / 2f; ROUTE_PTS[5] = sy; ROUTE_PTS[6] = lx1 + fw * 0.05f; ROUTE_PTS[7] = sy;
                 ROUTE_PTS[8] = tx; ROUTE_PTS[9] = pz; ROUTE_PTS[10] = tx; ROUTE_PTS[11] = pz;
-                java.util.Arrays.fill(ROUTE_WATER, false);
+                Arrays.fill(ROUTE_WATER, false);
             }
             Draw.route(g, ROUTE_PTS, NO_FOG6, ROUTE_WATER, n, 2.4f, Theme.ROUTE_SHADOW, Theme.ROUTE_SHADOW, Theme.ROUTE_SHADOW, 0);
             Draw.route(g, ROUTE_PTS, NO_FOG6, ROUTE_WATER, n, 1.4f, r == MapConfig.Route.AIR ? Theme.ROUTE_AIR : Theme.worldMarkerPulse(),
                     Theme.ROUTE_FOG, Theme.ROUTE_SEA, 0);
             if (water) {
                 Draw.circle(g, lx0, pz, 5, Theme.ROUTE_SEA_BADGE);
-                Draw.icon(g, net.tapacywka.teyvatcartographia.render.Icon.SEA, lx0, pz, 8, Theme.ROUTE_SEA);
+                Draw.icon(g, Icon.SEA, lx0, pz, 8, Theme.ROUTE_SEA);
             } else if (r == MapConfig.Route.AIR) {
                 // The cloud a little ahead of the player, as on the maps.
                 float ax = px + 5 * 2.6f;
                 Draw.circle(g, ax, pz, 5, Theme.ROUTE_SEA_BADGE);
-                Draw.icon(g, net.tapacywka.teyvatcartographia.render.Icon.CLOUD, ax, pz, 8, Theme.ROUTE_AIR);
+                Draw.icon(g, Icon.CLOUD, ax, pz, 8, Theme.ROUTE_AIR);
             }
             MarkerRenderer.player(g, px, pz, 7, (float) (Math.PI / 2), 1f);
             Draw.icon(g, MarkerType.STAR.icon, tx, pz, 9, Theme.WHITE);
             if (r != chosen) Draw.rect(g, fx, top, fx + fw, top + fh, OFF_DIM);
-            Component name = Component.translatable("teyvatcartographia.config.value." + r.name().toLowerCase(java.util.Locale.ROOT));
+            Component name = Component.translatable("teyvatcartographia.config.value." + r.name().toLowerCase(Locale.ROOT));
             DrawText.room(name.getString(), fw);
             DrawText.textCentered(g, Component.literal(DrawText.fit(name.getString(), (int) fw)), Draw.snap(fx + fw / 2f), top + fh + Grid.GAP,
                     r == chosen ? Theme.CREAM : Theme.withAlpha(Theme.CREAM, 0.5f), false);
@@ -204,14 +220,14 @@ final class SettingsPreview {
      * clipping), its map scaled to fill the largest square of the area, in the middle.
      */
     static void minimap(GuiGraphics g, float x, float y, float w, float h) {
-        float[] m = net.tapacywka.teyvatcartographia.hud.MinimapLayer.preparedMap();
+        float[] m = MinimapLayer.preparedMap();
         float side = Draw.snap(Math.min(w, h)), sx = Draw.snap(x + (w - side) / 2f), sy = Draw.snap(y + (h - side) / 2f), s = side / (2 * m[2]);
         g.enableScissor((int) sx, (int) sy, (int) (sx + side), (int) (sy + side));
         g.pose().pushPose();
         g.pose().translate(sx, sy, 0);
         g.pose().scale(s, s, 1f);
         g.pose().translate(-(m[0] - m[2]), -(m[1] - m[2]), 0);
-        net.tapacywka.teyvatcartographia.hud.MinimapLayer.drawPrepared(g);
+        MinimapLayer.drawPrepared(g);
         g.pose().popPose();
         g.disableScissor();
     }
@@ -268,7 +284,7 @@ final class SettingsPreview {
 
     /** Every type for the ring of the stones' rows: a stone at the top and every third place, the other kinds between. */
     private static MarkerType[] stonesAmongAll() {
-        java.util.Deque<MarkerType> stones = new java.util.ArrayDeque<>(), others = new java.util.ArrayDeque<>();
+        Deque<MarkerType> stones = new ArrayDeque<>(), others = new ArrayDeque<>();
         for (MarkerType t : MarkerType.values()) (t.category == MarkerType.Category.INTERACTION ? stones : others).add(t);
         MarkerType[] ring = new MarkerType[stones.size() + others.size()];
         for (int k = 0; k < ring.length; k++) ring[k] = k % 3 == 0 && !stones.isEmpty() || others.isEmpty() ? stones.poll() : others.poll();
@@ -317,7 +333,7 @@ final class SettingsPreview {
         }
         Draw.icon(g, type.icon, cx, foot + 4, 10, Theme.WHITE);
         // The distance under the glyph; over it where the stars come up from below.
-        DrawText.textCentered(g, net.tapacywka.teyvatcartographia.render.DistanceText.blocks(61), cx, stars ? foot - 12 : foot + 11, Theme.WHITE, true);
+        DrawText.textCentered(g, DistanceText.blocks(61), cx, stars ? foot - 12 : foot + 11, Theme.WHITE, true);
     }
 
     /**
@@ -387,8 +403,8 @@ final class SettingsPreview {
             map.draw(g, x, y, mw, mh, null);
             return;
         }
-        java.util.NavigableSet<Integer> bands = MapDataManager.get().caveBands();
-        List<Integer> items = new java.util.ArrayList<>(net.tapacywka.teyvatcartographia.map.data.CaveScanner.layerOrder(bands.isEmpty() ? SAMPLE_BANDS : bands, sea));
+        NavigableSet<Integer> bands = MapDataManager.get().caveBands();
+        List<Integer> items = new ArrayList<>(CaveScanner.layerOrder(bands.isEmpty() ? SAMPLE_BANDS : bands, sea));
         // The shown layer: the first one under the surface (else the one over it), or the surface with no cave mapped.
         int surface = items.indexOf(null);
         Integer shown = bands.isEmpty() ? null : surface + 1 < items.size() ? items.get(surface + 1) : surface > 0 ? items.get(surface - 1) : null;
@@ -409,10 +425,10 @@ final class SettingsPreview {
         if (items.size() > 1) Draw.rect(g, fx - 0.75f, ys[0], fx + 0.75f, ys[ys.length - 1], Theme.PANEL_LINE);
         for (int i = 0; i < items.size(); i++) {
             Integer it = items.get(i);
-            boolean lit = java.util.Objects.equals(it, shown);
+            boolean lit = Objects.equals(it, shown);
             // The pointer far away: no button looks hovered, none can be pressed.
-            if (it == null) Ui.iconButton(g, fx, ys[i], CAVE_BIG, Grid.ICON_L, net.tapacywka.teyvatcartographia.render.Icon.LAYERS, lit, -1000, -1000);
-            else Ui.iconButton(g, fx, ys[i], net.tapacywka.teyvatcartographia.render.Icon.LAYERS, lit, -1000, -1000);
+            if (it == null) Ui.iconButton(g, fx, ys[i], CAVE_BIG, Grid.ICON_L, Icon.LAYERS, lit, -1000, -1000);
+            else Ui.iconButton(g, fx, ys[i], Icon.LAYERS, lit, -1000, -1000);
         }
     }
 
@@ -420,8 +436,8 @@ final class SettingsPreview {
 
     /** Chunks east and west, and north and south, of the player's in the detail samples (11 x 3 chunks, 176 x 48 blocks). */
     private static final int DETAIL_RX = 5, DETAIL_RZ = 1, DETAIL_W = 16 * (2 * DETAIL_RX + 1), DETAIL_H = 16 * (2 * DETAIL_RZ + 1);
-    private static final net.minecraft.client.renderer.texture.DynamicTexture[] DETAIL_TEX =
-            new net.minecraft.client.renderer.texture.DynamicTexture[MapConfig.Detail.values().length];
+    private static final DynamicTexture[] DETAIL_TEX =
+            new DynamicTexture[MapConfig.Detail.values().length];
     private static volatile int[][] detailPixels;
     private static int[][] detailShown;
     private static long detailAsked;
@@ -444,8 +460,8 @@ final class SettingsPreview {
         if (p != null && p != detailShown) {
             detailShown = p;
             for (int i = 0; i < DETAIL_TEX.length; i++) {
-                if (DETAIL_TEX[i] == null) DETAIL_TEX[i] = new net.minecraft.client.renderer.texture.DynamicTexture(DETAIL_W, DETAIL_H, true);
-                com.mojang.blaze3d.platform.NativeImage img = DETAIL_TEX[i].getPixels();
+                if (DETAIL_TEX[i] == null) DETAIL_TEX[i] = new DynamicTexture(DETAIL_W, DETAIL_H, true);
+                NativeImage img = DETAIL_TEX[i].getPixels();
                 for (int k = 0; k < p[i].length; k++) img.setPixelRGBA(k % DETAIL_W, k / DETAIL_W, p[i][k]);
                 DETAIL_TEX[i].upload();
             }
@@ -526,7 +542,7 @@ final class SettingsPreview {
 
     /** Blocks across the large sample of ichor or snow, and its pictures (ichor, snow), drawn again when a switch changes. */
     private static final int SIFT_BLOCKS = 48;
-    private static final net.minecraft.client.renderer.texture.DynamicTexture[] SIFT_TEX = new net.minecraft.client.renderer.texture.DynamicTexture[2];
+    private static final DynamicTexture[] SIFT_TEX = new DynamicTexture[2];
     private static final Boolean[] SIFT_SHOWN = new Boolean[2];
 
     /**
@@ -540,21 +556,21 @@ final class SettingsPreview {
         w = Draw.snap(w);
         h = Draw.snap(h);
         if (key.endsWith("_fog")) {
-            net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> dim = key.endsWith("sift_fog") ? ModCompat.SIFT_DIMENSION
-                    : key.endsWith("aether_fog") ? ModCompat.AETHER_DIMENSION : key.endsWith("nether_fog") ? net.minecraft.world.level.Level.NETHER
-                    : net.minecraft.world.level.Level.END;
+            ResourceKey<Level> dim = key.endsWith("sift_fog") ? ModCompat.SIFT_DIMENSION
+                    : key.endsWith("aether_fog") ? ModCompat.AETHER_DIMENSION : key.endsWith("nether_fog") ? Level.NETHER
+                    : Level.END;
             FogTexture.draw(g, dim, x, y, x + w, y + h, 0, 0, Theme.WHITE);
             Draw.frame(g, x, y, w, h, 1, Theme.PANEL_LINE);
         } else if (key.endsWith("compat.sift_ichor") || key.endsWith("compat.sift_snow")) {
             boolean snow = key.endsWith("sift_snow");
             int i = snow ? 1 : 0;
             boolean shimmer = MapConfig.get(snow ? MapConfig.SIFT_SNOW_SHIMMER : MapConfig.SIFT_ICHOR_SHIMMER);
-            if (SIFT_TEX[i] == null) SIFT_TEX[i] = new net.minecraft.client.renderer.texture.DynamicTexture(SIFT_BLOCKS, SIFT_BLOCKS, true);
+            if (SIFT_TEX[i] == null) SIFT_TEX[i] = new DynamicTexture(SIFT_BLOCKS, SIFT_BLOCKS, true);
             if (!Boolean.valueOf(shimmer).equals(SIFT_SHOWN[i])) {
                 SIFT_SHOWN[i] = shimmer;
                 int plainIchor = TextureColors.ichor();
                 TextureColors.Entry plainSnow = ICHOR_SNOW == null ? null : TextureColors.get(ICHOR_SNOW);
-                com.mojang.blaze3d.platform.NativeImage img = SIFT_TEX[i].getPixels();
+                NativeImage img = SIFT_TEX[i].getPixels();
                 for (int bz = 0; bz < SIFT_BLOCKS; bz++) {
                     for (int bx = 0; bx < SIFT_BLOCKS; bx++) {
                         int c = snow ? (shimmer || plainSnow == null ? 0xFF000000 | Shimmer.ichorSnow(bx, bz) : plainSnow.argb())

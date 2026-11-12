@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 
 /**
  * The client events of Waystones ({@code net.blay09.mods.waystones.api.event}): the list of the player's stones of one
@@ -53,7 +55,7 @@ final class WaystonesBridge {
         });
         // Waystones for 26.x: a static EVENT whose register takes a listener (a functional interface of its own).
         try {
-            java.lang.reflect.Field field = type.getField("EVENT");
+            Field field = type.getField("EVENT");
             Object event = field.get(null);
             // Through the field's declared (public) type: the object itself may be of a class that is not.
             for (Method m : field.getType().getMethods()) {
@@ -141,7 +143,7 @@ final class WaystonesBridge {
 
     private static Method publicMethod(Class<?> c, String name) {
         if (c == null) return null;
-        if (java.lang.reflect.Modifier.isPublic(c.getModifiers())) {
+        if (Modifier.isPublic(c.getModifiers())) {
             try {
                 return c.getMethod(name);
             } catch (NoSuchMethodException ignored) {

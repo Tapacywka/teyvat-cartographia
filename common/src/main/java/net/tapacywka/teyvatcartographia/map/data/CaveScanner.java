@@ -9,6 +9,8 @@ import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.material.MapColor;
 
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Maps one chunk of a cave layer (worker thread): the height band of {@code BAND} blocks the player is in. For every
@@ -40,8 +42,8 @@ public final class CaveScanner {
      * The layers of a layer field from top to bottom: the cave bands (given highest first) with the surface (null) among
      * them, under the bands that start above the sea level.
      */
-    public static java.util.List<Integer> layerOrder(Iterable<Integer> bandsHighestFirst, int seaLevel) {
-        java.util.List<Integer> out = new java.util.ArrayList<>();
+    public static List<Integer> layerOrder(Iterable<Integer> bandsHighestFirst, int seaLevel) {
+        List<Integer> out = new ArrayList<>();
         boolean surfacePlaced = false;
         for (int b : bandsHighestFirst) {
             if (!surfacePlaced && b * BAND <= seaLevel) {

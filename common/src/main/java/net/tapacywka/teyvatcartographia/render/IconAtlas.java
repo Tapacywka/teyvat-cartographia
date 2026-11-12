@@ -22,7 +22,7 @@ import java.util.Optional;
  * Draw with blend function (ONE, ONE_MINUS_SRC_ALPHA) and a premultiplied vertex colour (see {@link Draw#icon}).
  * <p>
  * Icons of the active theme: {@code assets/teyvatcartographia/themes/<theme>/icons/64/<name>.png}, 64 x 64 each;
- * missing ones fall back to the default {@code minecraft} theme. They are stitched into one atlas ({@link Icon} order) when
+ * missing ones fall back to the {@code default} theme. They are stitched into one atlas ({@link Icon} order) when
  * first used and again after a theme change or a resource reload ({@link #invalidate}).
  */
 public final class IconAtlas {

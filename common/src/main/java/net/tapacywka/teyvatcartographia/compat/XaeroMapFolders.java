@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
+import java.nio.file.attribute.BasicFileAttributes;
 
 /**
  * The folders of Xaero's World Map that hold the Overworld's explored map, for the import (docs/XAERO_MAP_IMPORT.md; the
@@ -72,7 +73,7 @@ public final class XaeroMapFolders {
             if (!f.getFileName().toString().matches("-?\\d+_-?\\d+\\.zip")) continue;
             n++;
             try {
-                java.nio.file.attribute.BasicFileAttributes a = Files.readAttributes(f, java.nio.file.attribute.BasicFileAttributes.class);
+                BasicFileAttributes a = Files.readAttributes(f, BasicFileAttributes.class);
                 bytes += a.size();
                 if (a.lastModifiedTime().compareTo(newest) > 0) newest = a.lastModifiedTime();
             } catch (IOException ignored) {

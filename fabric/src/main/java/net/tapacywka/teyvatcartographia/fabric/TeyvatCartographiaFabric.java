@@ -2,6 +2,7 @@ package net.tapacywka.teyvatcartographia.fabric;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientChunkEvents;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
@@ -49,6 +50,8 @@ public final class TeyvatCartographiaFabric implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(ClientEvents::tick);
         ClientChunkEvents.CHUNK_LOAD.register(ClientEvents::chunkLoaded);
         ClientPlayConnectionEvents.DISCONNECT.register((handler, mc) -> ClientEvents.loggingOut());
+        // The game closed from inside a world (the window shut): the disconnect above may not come any more.
+        ClientLifecycleEvents.CLIENT_STOPPING.register(mc -> ClientEvents.loggingOut());
         WorldRenderEvents.LAST.register(ctx ->
                 WorldMarkerLayer.afterLevel(ctx.positionMatrix(), ctx.projectionMatrix(), ctx.camera(), ctx.tickCounter()));
         // Development tests (package devtest) are not in the JAR: started by name, only when a test run asks.

@@ -24,6 +24,9 @@ import net.minecraft.world.level.material.MapColor;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
 
 import java.util.Map;
+import java.util.Set;
+import java.util.function.IntBinaryOperator;
+import net.minecraft.client.Minecraft;
 
 /**
  * Stage 1-2 of the pipeline: reads one loaded client chunk on a worker thread and produces a compact,
@@ -89,7 +92,7 @@ public final class ChunkScanner {
         // The colours of the block textures (like Xaero's Minimap), in every dimension; the theme's own colours for
         // this dimension's blocks come first.
         Map<Block, Integer> own = MapPalette.dimension(level.dimension());
-        java.util.Set<Block> plantSet = Plants.shownSet();
+        Set<Block> plantSet = Plants.shownSet();
         boolean plants = MapConfig.get(MapConfig.MAP_PLANTS), ichorShimmer = MapConfig.get(MapConfig.SIFT_ICHOR_SHIMMER),
                 snowShimmer = MapConfig.get(MapConfig.SIFT_SNOW_SHIMMER);
 
@@ -276,7 +279,7 @@ public final class ChunkScanner {
          * a darker band along that chunk border (fixed 24.10.2026). Biomes per quart, as stored (no vanilla jitter).
          */
         static TintGrid of(LevelChunk[] around, int cx, int cz, ColorResolver resolver) {
-            int radius = net.minecraft.client.Minecraft.getInstance().options.biomeBlendRadius().get();
+            int radius = Minecraft.getInstance().options.biomeBlendRadius().get();
             Loaded loaded = (ncx, ncz) -> chunk(around, cx, cz, ncx, ncz) != null;
             return new TintGrid(new TintSource() {
                 @Override
@@ -307,7 +310,7 @@ public final class ChunkScanner {
          * The average of {@code colour} over the square of {@code radius} blocks around (wx, wz), only at blocks of
          * loaded chunks; at (wx, wz) alone when none is.
          */
-        static int blend(int wx, int wz, int radius, Loaded loaded, java.util.function.IntBinaryOperator colour) {
+        static int blend(int wx, int wz, int radius, Loaded loaded, IntBinaryOperator colour) {
             int r = 0, g = 0, b = 0, n = 0;
             for (int dz = -radius; dz <= radius; dz++) {
                 for (int dx = -radius; dx <= radius; dx++) {
@@ -382,7 +385,7 @@ public final class ChunkScanner {
      */
     private static int worldTint(ClientLevel level, BlockState state, BlockPos pos, TextureColors.Entry tex) {
         try {
-            int c = net.minecraft.client.Minecraft.getInstance().getBlockColors().getColor(state, level, pos, tex.tintIndex());
+            int c = Minecraft.getInstance().getBlockColors().getColor(state, level, pos, tex.tintIndex());
             return c == -1 ? tex.texture() : TextureColors.multiply(tex.texture(), c);
         } catch (RuntimeException e) {
             return tex.argb();

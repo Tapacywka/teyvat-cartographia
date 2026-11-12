@@ -19,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
 
 import static org.junit.jupiter.api.Assertions.*;
+import java.io.UncheckedIOException;
 
 /**
  * A store reads its folder on the IO thread, behind the writes queued before it: read at once, it missed a region the
@@ -73,7 +74,7 @@ class TileStoreTest {
             try {
                 writeRegion(dir, 2, -3, 5); // the save of the store closed just before
             } catch (IOException e) {
-                throw new java.io.UncheckedIOException(e);
+                throw new UncheckedIOException(e);
             }
         });
         TileStore store = new TileStore(DIMENSION, dir, io, 1);

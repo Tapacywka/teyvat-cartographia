@@ -16,6 +16,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.junit.jupiter.api.Test;
+import net.tapacywka.teyvatcartographia.map.MapView;
 
 /** The outline drawn by the shader: its field, the breathing, and the shader's own copy of the values. */
 class MapOutlineMotionTest {
@@ -242,7 +243,7 @@ class MapOutlineMotionTest {
             Matcher m = Pattern.compile("#define TEXELS (-?[0-9.]+)").matcher(new String(in.readAllBytes(), StandardCharsets.UTF_8));
             assertTrue(m.find(), "TEXELS is not in the vertex shader");
             // Regions and far tiles are both this many pixels a side; their fields one more all round.
-            assertEquals(net.tapacywka.teyvatcartographia.map.MapView.TILE_SIZE, Float.parseFloat(m.group(1)), 1e-6); // MapTile.SIZE
+            assertEquals(MapView.TILE_SIZE, Float.parseFloat(m.group(1)), 1e-6); // MapTile.SIZE
         }
     }
 

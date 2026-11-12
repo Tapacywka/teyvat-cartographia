@@ -21,6 +21,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Stream;
+import net.minecraft.network.chat.Component;
+import net.tapacywka.aacs.api.AacsScreen;
+import net.tapacywka.teyvatcartographia.gui.TeyvatConfigScreen;
+import net.tapacywka.teyvatcartographia.gui.XaeroImportScreen;
 
 /**
  * Reads the waypoints of Xaero's Minimap (Xaero's World Map shows the same ones). Layout on disk:
@@ -35,16 +39,16 @@ public final class XaeroWaypoints {
     /** The sub-section of Compatibility for Xaero's mods ("Xaero's Map", shown only with them): the imports; the card shows only the descriptions (user request 04.11.2026). */
     public static void settings() {
         String k = "teyvatcartographia.config.";
-        net.tapacywka.teyvatcartographia.gui.TeyvatConfigScreen.compatPart("compat_xaero", ModCompat::xaero, t -> t
-                .choice(k + "compat.xaero_type", MapConfig.XAERO_PIN_TYPE, c -> c.names((MarkerType m) -> net.minecraft.network.chat.Component.translatable(m.langKey())))
-                .preview(net.tapacywka.aacs.api.AacsScreen.Preview.NONE)
+        TeyvatConfigScreen.compatPart("compat_xaero", ModCompat::xaero, t -> t
+                .choice(k + "compat.xaero_type", MapConfig.XAERO_PIN_TYPE, c -> c.names((MarkerType m) -> Component.translatable(m.langKey())))
+                .preview(AacsScreen.Preview.NONE)
                 .toggle(k + "compat.xaero_hidden", MapConfig.XAERO_HIDDEN)
-                .preview(net.tapacywka.aacs.api.AacsScreen.Preview.NONE)
+                .preview(AacsScreen.Preview.NONE)
                 .toggle(k + "compat.xaero_deaths", MapConfig.XAERO_DEATHS)
-                .preview(net.tapacywka.aacs.api.AacsScreen.Preview.NONE)
+                .preview(AacsScreen.Preview.NONE)
                 .action(k + "compat.xaero_map", k + "compat.xaero_map.button",
-                        parent -> Minecraft.getInstance().setScreen(new net.tapacywka.teyvatcartographia.gui.XaeroImportScreen(parent)))
-                .preview(net.tapacywka.aacs.api.AacsScreen.Preview.NONE));
+                        parent -> Minecraft.getInstance().setScreen(new XaeroImportScreen(parent)))
+                .preview(AacsScreen.Preview.NONE));
     }
 
     private static final String DIM_PREFIX = "dim%";

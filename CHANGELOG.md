@@ -10,6 +10,16 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 
 ## [Unreleased]
 
+### Fixed
+- A file of pins that cannot be read (cut short or broken by another program) is no longer replaced by an empty list
+  with the next change: it is kept beside it as `markers.json.broken`.
+- A region of the explored map whose files cannot be read is no longer saved over as empty land: its files are kept
+  beside it with the ending `.broken`, and the land is mapped again as you pass it.
+- Closing the game straight from a world saves the map and the pins like leaving the world does (up to a minute of
+  explored land could be lost).
+- Which blocks count as plants on the map follows the world you are in: it was worked out once, from the first world
+  opened in a game.
+
 ## [1.3.1] - 2026-11-11
 
 ### Changed

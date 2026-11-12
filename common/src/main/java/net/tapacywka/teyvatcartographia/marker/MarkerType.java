@@ -5,6 +5,9 @@ import com.mojang.serialization.DataResult;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.tapacywka.teyvatcartographia.render.Icon;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
 
 /**
  * Marker types: the pins the player makes and the automatic points that come from real data:
@@ -50,13 +53,13 @@ public enum MarkerType {
     }
 
     /** The seven custom types, in the order of the pin editor's grid. */
-    public static java.util.List<MarkerType> customTypes() {
-        return java.util.Arrays.stream(values()).filter(t -> t.category == Category.EXPLORATION).toList();
+    public static List<MarkerType> customTypes() {
+        return Arrays.stream(values()).filter(t -> t.category == Category.EXPLORATION).toList();
     }
 
     /** Translation key of the type's name (named by what its icon shows), the tooltip of its tile in the pin editor. */
     public String langKey() {
-        return "teyvatcartographia.pin.type." + name().toLowerCase(java.util.Locale.ROOT);
+        return "teyvatcartographia.pin.type." + name().toLowerCase(Locale.ROOT);
     }
 
     /**
@@ -75,7 +78,7 @@ public enum MarkerType {
     public static final Codec<MarkerType> PIN_CODEC = Codec.STRING.comapFlatMap(s -> {
         MarkerType t = parse(s);
         return t != null ? DataResult.success(t)
-                : DataResult.error(() -> "The interactive pin types are gone since 0.8.0: the " + s.toLowerCase(java.util.Locale.ROOT) + " pin is left out");
+                : DataResult.error(() -> "The interactive pin types are gone since 0.8.0: the " + s.toLowerCase(Locale.ROOT) + " pin is left out");
     }, MarkerType::name);
 
     /** The type of a tracked automatic point, by name: an error for anything but an automatic type. */

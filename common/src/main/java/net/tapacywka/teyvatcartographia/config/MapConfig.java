@@ -8,7 +8,9 @@ import net.tapacywka.aacs.api.IntValue;
 import net.tapacywka.aacs.api.ListValue;
 import net.tapacywka.aacs.api.StringValue;
 import net.tapacywka.aacs.api.Value;
-
+import java.nio.file.Path;
+import java.util.List;
+import net.tapacywka.teyvatcartographia.marker.MarkerType;
 
 /**
  * Client-side user settings (UI only). Stored in {@code config/teyvatcartographia-client.json} (AACS {@link ConfigFile}).
@@ -77,8 +79,8 @@ public final class MapConfig {
     public static final DoubleValue MAP_DEFAULT_ZOOM;
 
     /**
-     * The three kinds of pins, each with its own settings: the players' own (custom), the operators' signs,
-     * parties and structures (interactive), and the automatic world spawn and last death (system).
+     * The three kinds of pins, each with its own settings: the player's own (custom), the stones of
+     * Waystones (interactive, automatic points since 0.8.0), and the automatic world spawn and last death (system).
      */
     public enum PinKind {
         CUSTOM("custom"), INTERACTIVE("interactive"), SYSTEM("system");
@@ -185,7 +187,7 @@ public final class MapConfig {
     public static final BoolValue AETHER_FOG;
     public static final BoolValue NETHER_FOG;
     public static final BoolValue END_FOG;
-    public static final EnumValue<net.tapacywka.teyvatcartographia.marker.MarkerType> XAERO_PIN_TYPE;
+    public static final EnumValue<MarkerType> XAERO_PIN_TYPE;
     public static final BoolValue XAERO_HIDDEN;
     public static final BoolValue XAERO_DEATHS;
 
@@ -238,7 +240,7 @@ public final class MapConfig {
         MINIMAP_SHOW_DAY = b.bool("showDay", true);
         b.pop();
 
-        // Below scale 1 the maps show only the tracked target; the tracked target is always shown on them.
+        // The tracked target is always shown on the maps, whatever its kind's switches say.
         b.push("pins");
         for (PinKind kind : PinKind.values()) PINS[kind.ordinal()] = new PinOptions(b, kind);
         PATH_ROUTE = b.choice("route", Route.LAND);
@@ -265,7 +267,7 @@ public final class MapConfig {
         WORLD_BORDER = b.bool("worldBorder", false);
         // The plants switched off (user decision 24.10.2026: every plant on by default, also those of mods added later);
         // until then the list held the ones switched on (plantsShown, cactus, dead bush and chorus by default).
-        PLANTS_HIDDEN = b.list("plantsHidden", java.util.List.of(), id -> true);
+        PLANTS_HIDDEN = b.list("plantsHidden", List.of(), id -> true);
         WATER_DEPTH = b.integer("waterDepthShading", 100, 0, 100);
         SHALLOW_WATER = b.integer("shallowWater", 0, 0, 100);
         b.pop();
@@ -284,7 +286,7 @@ public final class MapConfig {
         SIFT_FOG = b.bool("fog", true);
         b.pop();
         b.push("xaero");
-        XAERO_PIN_TYPE = b.choice("pinType", net.tapacywka.teyvatcartographia.marker.MarkerType.STAR, java.util.List.copyOf(net.tapacywka.teyvatcartographia.marker.MarkerType.customTypes()));
+        XAERO_PIN_TYPE = b.choice("pinType", MarkerType.STAR, List.copyOf(MarkerType.customTypes()));
         XAERO_HIDDEN = b.bool("hidden", true);
         XAERO_DEATHS = b.bool("deaths", false);
         b.pop();
@@ -296,7 +298,7 @@ public final class MapConfig {
     private MapConfig() {}
 
     /** Reads the settings file (the TOML NeoForge wrote up to 0.4 taken over once) and writes it back complete. */
-    public static void load(java.nio.file.Path json, java.nio.file.Path oldToml) {
+    public static void load(Path json, Path oldToml) {
         OldToml.takeOver(json, oldToml);
         FILE.load(json);
         FILE.save();
@@ -306,12 +308,8 @@ public final class MapConfig {
         FILE.save();
     }
 
-    /** Safe read: config values throw if read before the config file was loaded. */
+    /** The value of a setting: its default until the file is loaded. */
     public static <T> T get(Value<T> value) {
-        try {
-            return value.get();
-        } catch (IllegalStateException e) {
-            return value.getDefault();
-        }
+        return value.get();
     }
 }

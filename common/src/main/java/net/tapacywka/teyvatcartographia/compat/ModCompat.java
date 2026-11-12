@@ -6,6 +6,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import net.tapacywka.teyvatcartographia.platform.Platform;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
+import net.tapacywka.teyvatcartographia.gui.TeyvatConfigScreen;
+import net.tapacywka.teyvatcartographia.render.Theme;
 
 /**
  * Other mods the map knows about, and their settings (the Compatibility section of the settings shows a mod's
@@ -27,12 +29,12 @@ public final class ModCompat {
      */
     public static void settings() {
         String k = "teyvatcartographia.config.";
-        net.tapacywka.teyvatcartographia.gui.TeyvatConfigScreen.compatPart("compat_aether", ModCompat::aether, t -> t
-                .toggle(k + "compat.aether_fog", MapConfig.AETHER_FOG).then(net.tapacywka.teyvatcartographia.render.Theme.Style::update));
-        net.tapacywka.teyvatcartographia.gui.TeyvatConfigScreen.compatPart("compat_sift", ModCompat::sift, t -> t
-                .toggle(k + "compat.sift_fog", MapConfig.SIFT_FOG).then(net.tapacywka.teyvatcartographia.render.Theme.Style::update)
-                .toggle(k + "compat.sift_ichor", MapConfig.SIFT_ICHOR_SHIMMER).then(net.tapacywka.teyvatcartographia.gui.TeyvatConfigScreen::remap)
-                .toggle(k + "compat.sift_snow", MapConfig.SIFT_SNOW_SHIMMER).then(net.tapacywka.teyvatcartographia.gui.TeyvatConfigScreen::remap));
+        TeyvatConfigScreen.compatPart("compat_aether", ModCompat::aether, t -> t
+                .toggle(k + "compat.aether_fog", MapConfig.AETHER_FOG).then(Theme.Style::update));
+        TeyvatConfigScreen.compatPart("compat_sift", ModCompat::sift, t -> t
+                .toggle(k + "compat.sift_fog", MapConfig.SIFT_FOG).then(Theme.Style::update)
+                .toggle(k + "compat.sift_ichor", MapConfig.SIFT_ICHOR_SHIMMER).then(TeyvatConfigScreen::remap)
+                .toggle(k + "compat.sift_snow", MapConfig.SIFT_SNOW_SHIMMER).then(TeyvatConfigScreen::remap));
     }
 
     public static final String AETHER = "aether";

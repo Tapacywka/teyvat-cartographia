@@ -74,7 +74,7 @@ public final class XaeroMapRegion {
     public int[] heights(int minY, int maxY) {
         int n = SIZE * SIZE;
         int[] y = new int[n];
-        java.util.Arrays.fill(y, Integer.MIN_VALUE);
+        Arrays.fill(y, Integer.MIN_VALUE);
         int[] queue = new int[n];
         int head = 0, tail = 0;
         for (int i = 0; i < n; i++) {

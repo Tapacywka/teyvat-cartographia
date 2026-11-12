@@ -10,10 +10,11 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import net.minecraft.resources.ResourceKey;
 
 /** The search of the pin list: names without case and "ё", every dimension, the player's dimension first by distance. */
 class SearchMatchTest {
-    private static Marker pin(String name, net.minecraft.resources.ResourceKey<Level> dim, int x) {
+    private static Marker pin(String name, ResourceKey<Level> dim, int x) {
         return Marker.custom(name, MarkerType.STAR, dim, x, 64, 0);
     }
 

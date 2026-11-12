@@ -18,6 +18,9 @@ import net.minecraft.network.chat.Component;
 
 import java.util.List;
 import java.util.function.BooleanSupplier;
+import java.util.ArrayList;
+import net.tapacywka.aacs.api.BoolValue;
+import net.tapacywka.teyvatcartographia.map.data.MapDataManager;
 
 /** Dark "Map Settings" panel with section headers and switches (reference: fullscreen_settings.png). */
 public final class SettingsPanel extends SidePanel {
@@ -28,7 +31,7 @@ public final class SettingsPanel extends SidePanel {
     }
 
     /** {@code tooltipKey}: the matching full-settings option, whose description is reused as tooltip. */
-    private static Row option(String key, String tooltipKey, net.tapacywka.aacs.api.BoolValue v) {
+    private static Row option(String key, String tooltipKey, BoolValue v) {
         return new Row(Component.translatable(key), Component.translatable("teyvatcartographia.config." + tooltipKey + ".tooltip"), false, () -> MapConfig.get(v), () -> {
             v.set(!MapConfig.get(v));
             MapConfig.save();
@@ -71,7 +74,7 @@ public final class SettingsPanel extends SidePanel {
                 false, () -> MapConfig.get(MapConfig.MAP_PLANTS), () -> {
                     MapConfig.MAP_PLANTS.set(!MapConfig.get(MapConfig.MAP_PLANTS));
                     MapConfig.save();
-                    net.tapacywka.teyvatcartographia.map.data.MapDataManager.get().remapLoaded();
+                    MapDataManager.get().remapLoaded();
                 });
     }
 
@@ -89,7 +92,7 @@ public final class SettingsPanel extends SidePanel {
      * setting of Settings > Experimental (user decision 08.11.2026): one comes here only once its feature is out in full.
      */
     private static List<Row> rows() {
-        List<Row> out = new java.util.ArrayList<>(List.of(section("teyvatcartographia.settings.section.display"),
+        List<Row> out = new ArrayList<>(List.of(section("teyvatcartographia.settings.section.display"),
                 pins("teyvatcartographia.settings.custom_pins", MapConfig.PinKind.CUSTOM),
                 pins("teyvatcartographia.settings.system_pins", MapConfig.PinKind.SYSTEM),
                 path("teyvatcartographia.settings.path", MapConfig.PinKind.CUSTOM, MapConfig.PinKind.SYSTEM), plants(),
