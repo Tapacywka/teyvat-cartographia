@@ -1,5 +1,8 @@
 package net.tapacywka.teyvatcartographia.nav;
 
+import java.util.Arrays;
+import net.minecraft.util.Util;
+
 /**
  * The path to the target as one line for the world map, the minimap and the stars in the world: the precise near path
  * over the loaded terrain ({@link PathFinder}), continued by the far path over the explored map ({@link FarPath}) from
@@ -27,7 +30,7 @@ public final class Route {
     /** Number of points of the line, collected again when a path changed. */
     public static int collect() {
         if (PathFinder.version() == kNear && FarPath.version() == kFar && DirectPath.version() == kDirect) {
-            REVEAL.update(Navigation.pathRequest(), version(), count, xz, along, fog, water, net.minecraft.util.Util.getMillis());
+            REVEAL.update(Navigation.pathRequest(), version(), count, xz, along, fog, water, Util.getMillis());
             return count;
         }
         kNear = PathFinder.version();
@@ -70,7 +73,7 @@ public final class Route {
             along[i] = i == 0 ? 0 : along[i - 1] + (float) Math.hypot(xz[2 * i] - xz[2 * i - 2], xz[2 * i + 1] - xz[2 * i - 1]);
         }
         count = n;
-        REVEAL.update(Navigation.pathRequest(), version(), count, xz, along, fog, water, net.minecraft.util.Util.getMillis());
+        REVEAL.update(Navigation.pathRequest(), version(), count, xz, along, fog, water, Util.getMillis());
         return count;
     }
 
@@ -93,7 +96,7 @@ public final class Route {
             along[i] = i == 0 ? 0 : along[i - 1] + (float) Math.hypot(xz[2 * i] - xz[2 * i - 2], xz[2 * i + 1] - xz[2 * i - 1]);
         }
         count = n;
-        REVEAL.update(Navigation.pathRequest(), version(), count, xz, along, fog, water, net.minecraft.util.Util.getMillis());
+        REVEAL.update(Navigation.pathRequest(), version(), count, xz, along, fog, water, Util.getMillis());
         return count;
     }
 
@@ -133,12 +136,12 @@ public final class Route {
         kNear = PathFinder.version();
         kFar = FarPath.version();
         kDirect = DirectPath.version();
-        xz = java.util.Arrays.copyOf(points, Math.max(2 * n, 2));
+        xz = Arrays.copyOf(points, Math.max(2 * n, 2));
         ys = new float[Math.max(n, 1)];
         along = new float[Math.max(n, 1)];
         fog = new boolean[Math.max(n, 1)];
         water = new boolean[Math.max(n, 1)];
-        java.util.Arrays.fill(ys, Float.NaN);
+        Arrays.fill(ys, Float.NaN);
         for (int i = 1; i < n; i++) along[i] = along[i - 1] + (float) Math.hypot(xz[2 * i] - xz[2 * i - 2], xz[2 * i + 1] - xz[2 * i - 1]);
         count = n;
         progressVersion = Integer.MIN_VALUE;
@@ -193,22 +196,22 @@ public final class Route {
 
     /** How far along the line (blocks) it is shown: it is drawn in from the player after a new search; else all of it. */
     public static float shownTo() {
-        return REVEAL.shownTo(net.minecraft.util.Util.getMillis(), count > 0 ? along[count - 1] : 0);
+        return REVEAL.shownTo(Util.getMillis(), count > 0 ? along[count - 1] : 0);
     }
 
     /** Whether a line is being drawn in or wiped (the minimap's cached layer redraws every frame meanwhile). */
     public static boolean revealing() {
-        return REVEAL.running(net.minecraft.util.Util.getMillis());
+        return REVEAL.running(Util.getMillis());
     }
 
     /** Points of the line shown before the last search, still being wiped from its start ({@link #oldFrom}); else 0. */
     public static int oldCount() {
-        return REVEAL.oldCount(net.minecraft.util.Util.getMillis());
+        return REVEAL.oldCount(Util.getMillis());
     }
 
     /** Where along the old line (blocks) its remaining part starts. */
     public static float oldFrom() {
-        return REVEAL.oldFrom(net.minecraft.util.Util.getMillis());
+        return REVEAL.oldFrom(Util.getMillis());
     }
 
     public static float oldX(int i) {
@@ -302,7 +305,6 @@ public final class Route {
         return cutAlong;
     }
 
-    /** Horizontal distance from (x, z) to the line; infinite without a line. */
     /** The pulse key keeps the path while the player is this close to its line (blocks); farther off it searches again. */
     public static final double NEAR_LINE = 8;
 
@@ -311,6 +313,7 @@ public final class Route {
         return distanceTo(x, z) <= NEAR_LINE;
     }
 
+    /** Horizontal distance from (x, z) to the line; infinite without a line. */
     public static double distanceTo(double x, double z) {
         int n = collect();
         double best = n == 1 ? Math.hypot(x(0) - x, z(0) - z) : Double.POSITIVE_INFINITY;

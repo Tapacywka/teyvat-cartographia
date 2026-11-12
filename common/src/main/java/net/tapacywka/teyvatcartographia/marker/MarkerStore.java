@@ -23,6 +23,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import net.minecraft.client.Minecraft;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtAccounter;
+import net.minecraft.nbt.NbtIo;
+import net.minecraft.nbt.NbtOps;
+import net.minecraft.nbt.Tag;
+import net.minecraft.world.level.storage.LevelResource;
 
 /**
  * The player's pins and the navigation target of one world, persisted as
@@ -153,12 +160,29 @@ public final class MarkerStore {
                     // A pin or an automatic point. Free points of older versions (neither) are dropped.
                     saved.target().filter(t -> t.markerId() != null || t.auto() != null).ifPresent(Navigation::restore);
                     TeyvatCartographia.LOGGER.info("Teyvat Cartographia: loaded {} markers for {}", markers.size(), id);
+                } else {
+                    keepUnreadable(file);
                 }
             } catch (IOException | RuntimeException e) {
                 TeyvatCartographia.LOGGER.error("Could not read markers from {}", file, e);
+                keepUnreadable(file);
             }
         }
         takeOldSharedPins();
+    }
+
+    /**
+     * A pin file that could not be read at all is copied to {@code markers.json.broken}: the list starts empty, and the
+     * next change would write over the only copy of the player's pins.
+     */
+    static void keepUnreadable(Path file) {
+        Path kept = file.resolveSibling(file.getFileName() + ".broken");
+        try {
+            Files.copy(file, kept, StandardCopyOption.REPLACE_EXISTING);
+            TeyvatCartographia.LOGGER.warn("The unreadable pin file was kept as {}", kept);
+        } catch (IOException e) {
+            TeyvatCartographia.LOGGER.error("Could not keep a copy of the unreadable pin file {}", file, e);
+        }
     }
 
     /**
@@ -167,12 +191,12 @@ public final class MarkerStore {
      * On a server they stay in its save, out of reach of the client.
      */
     private static void takeOldSharedPins() {
-        var server = net.minecraft.client.Minecraft.getInstance().getSingleplayerServer();
+        var server = Minecraft.getInstance().getSingleplayerServer();
         if (server == null) return;
-        Path old = server.getWorldPath(net.minecraft.world.level.storage.LevelResource.ROOT).resolve("data").resolve(TeyvatCartographia.MOD_ID + "_pins.dat");
+        Path old = server.getWorldPath(LevelResource.ROOT).resolve("data").resolve(TeyvatCartographia.MOD_ID + "_pins.dat");
         if (!Files.isRegularFile(old)) return;
         try {
-            var root = net.minecraft.nbt.NbtIo.readCompressed(old, net.minecraft.nbt.NbtAccounter.unlimitedHeap());
+            var root = NbtIo.readCompressed(old, NbtAccounter.unlimitedHeap());
             List<Marker> pins = readOldShared(root);
             Added a = addAll(pins);
             Files.move(old, old.resolveSibling(old.getFileName() + ".moved"), StandardCopyOption.REPLACE_EXISTING);
@@ -184,10 +208,10 @@ public final class MarkerStore {
     }
 
     /** The pins of an old shared pins file: {@code {data: {pins: [...]}}} as the server saved them. */
-    static List<Marker> readOldShared(net.minecraft.nbt.CompoundTag root) {
-        net.minecraft.nbt.Tag list = root.getCompoundOrEmpty("data").get("pins");
+    static List<Marker> readOldShared(CompoundTag root) {
+        Tag list = root.getCompoundOrEmpty("data").get("pins");
         if (list == null) return List.of();
-        return Marker.CODEC.listOf().parse(net.minecraft.nbt.NbtOps.INSTANCE, list)
+        return Marker.CODEC.listOf().parse(NbtOps.INSTANCE, list)
                 .resultOrPartial(e -> TeyvatCartographia.LOGGER.error("Problem in the old shared pins: {}", e)).orElse(List.of());
     }
 

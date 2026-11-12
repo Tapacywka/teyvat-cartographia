@@ -10,6 +10,7 @@ import org.lwjgl.system.MemoryUtil;
 import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.util.function.Consumer;
+import org.lwjgl.sdl.SDLError;
 
 /**
  * The system's save and open dialogs, SDL3's side (26.3 has no tinyfd; src/glfw has the GLFW games'). Shown from the
@@ -47,7 +48,7 @@ public final class Dialogs {
                         long first = MemoryUtil.memGetAddress(files);
                         if (first != 0) path = MemoryUtil.memUTF8(first);
                     } else {
-                        TeyvatCartographia.LOGGER.error("File dialog failed: {}", org.lwjgl.sdl.SDLError.SDL_GetError());
+                        TeyvatCartographia.LOGGER.error("File dialog failed: {}", SDLError.SDL_GetError());
                     }
                     String answer = path;
                     Minecraft.getInstance().execute(Dialogs::free);

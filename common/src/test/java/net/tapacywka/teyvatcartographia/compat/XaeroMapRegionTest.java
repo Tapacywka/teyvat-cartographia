@@ -14,6 +14,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.io.ByteArrayInputStream;
+import java.util.Arrays;
 
 /** Xaero's World Map regions (format 6.8): written here byte by byte as Xaero writes them, then read back. */
 class XaeroMapRegionTest {
@@ -193,7 +195,7 @@ class XaeroMapRegionTest {
             out.putNextEntry(new ZipEntry("region.xaero"));
             out.write(steps());
         }
-        assertEquals(1, countChunks(XaeroMapRegion.readZip(new java.io.ByteArrayInputStream(zip.toByteArray()))));
+        assertEquals(1, countChunks(XaeroMapRegion.readZip(new ByteArrayInputStream(zip.toByteArray()))));
     }
 
     @Test
@@ -202,7 +204,7 @@ class XaeroMapRegionTest {
         byte[] other = good.clone();
         other[4] = 9; // version 6.9
         assertThrows(IOException.class, () -> XaeroMapRegion.read(other));
-        byte[] cut = java.util.Arrays.copyOf(good, good.length - 7);
+        byte[] cut = Arrays.copyOf(good, good.length - 7);
         assertThrows(IOException.class, () -> XaeroMapRegion.read(cut));
         byte[] old = good.clone();
         old[0] = 0;

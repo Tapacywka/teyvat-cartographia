@@ -37,8 +37,10 @@ public final class LodStore {
 
     private final TileStore store;
     private final Long2ObjectOpenHashMap<LodTile> tiles = new Long2ObjectOpenHashMap<>();
-    /** Thumbnails read by the IO thread: {LodTile, cell index, NativeImage or null}. */
-    private final ConcurrentLinkedQueue<Object[]> loaded = new ConcurrentLinkedQueue<>();
+    /** Thumbnails read by the IO thread ({@code image} null when there is none). */
+    private record Thumbnail(LodTile tile, int cell, NativeImage image) {}
+
+    private final ConcurrentLinkedQueue<Thumbnail> loaded = new ConcurrentLinkedQueue<>();
     /** Regions (tile keys) whose cell is to be redrawn from the region in memory, in turn. */
     private final LongArrayFIFOQueue memoryQueue = new LongArrayFIFOQueue();
     /**
@@ -216,7 +218,9 @@ public final class LodStore {
                 if (thumb != null) thumb.close();
                 return;
             }
-            loaded.add(new Object[]{t, cell, thumb});
+            loaded.add(new Thumbnail(t, cell, thumb));
+            // Closed while this one was read: nobody drains the queue any more, so its image is freed here.
+            if (closed) discardLoaded();
         });
     }
 
@@ -288,11 +292,11 @@ public final class LodStore {
 
     /** Applies thumbnails read by the IO thread and redraws a few cells from regions in memory. Once per frame. */
     public void update() {
-        Object[] e;
+        Thumbnail e;
         while ((e = loaded.poll()) != null) {
-            LodTile t = (LodTile) e[0];
-            NativeImage thumb = (NativeImage) e[2];
-            if (!closed && tiles.get(t.key) == t) blit(t, (Integer) e[1], thumb);
+            LodTile t = e.tile();
+            NativeImage thumb = e.image();
+            if (!closed && tiles.get(t.key) == t) blit(t, e.cell(), thumb);
             if (thumb != null) thumb.close();
         }
         for (int budget = MEMORY_CHUNKS_PER_FRAME; budget > 0 && !memoryQueue.isEmpty(); ) {
@@ -342,10 +346,15 @@ public final class LodStore {
         }
     }
 
+    /** Frees the thumbnails nobody will take in any more (also from the IO thread, after the store closed). */
+    private void discardLoaded() {
+        Thumbnail e;
+        while ((e = loaded.poll()) != null) if (e.image() != null) e.image().close();
+    }
+
     void close() {
         closed = true;
-        Object[] e;
-        while ((e = loaded.poll()) != null) if (e[2] != null) ((NativeImage) e[2]).close();
+        discardLoaded();
         for (LodTile t : tiles.values()) t.release();
         tiles.clear();
         memoryQueue.clear();

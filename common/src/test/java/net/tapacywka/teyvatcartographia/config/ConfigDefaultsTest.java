@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import net.tapacywka.aacs.api.BoolValue;
+import net.tapacywka.teyvatcartographia.marker.MarkerType;
 
 /** The settings a new game starts with (and "Reset" goes back to). */
 class ConfigDefaultsTest {
@@ -53,7 +55,7 @@ class ConfigDefaultsTest {
     void everyPinKindAndItsPathAreOn() {
         for (MapConfig.PinKind kind : MapConfig.PinKind.values()) {
             MapConfig.PinOptions o = MapConfig.pins(kind);
-            for (var v : new net.tapacywka.aacs.api.BoolValue[]{o.enabled, o.map, o.minimap, o.marker, o.beam, o.path, o.pathMap, o.pathMinimap, o.pathWorld}) {
+            for (var v : new BoolValue[]{o.enabled, o.map, o.minimap, o.marker, o.beam, o.path, o.pathMap, o.pathMinimap, o.pathWorld}) {
                 assertTrue(v.getDefault(), kind + " " + v.path());
             }
         }
@@ -85,7 +87,7 @@ class ConfigDefaultsTest {
         assertTrue(MapConfig.SIFT_FOG.getDefault());
         assertTrue(MapConfig.SIFT_ICHOR_SHIMMER.getDefault());
         assertTrue(MapConfig.SIFT_SNOW_SHIMMER.getDefault());
-        assertEquals(net.tapacywka.teyvatcartographia.marker.MarkerType.STAR, MapConfig.XAERO_PIN_TYPE.getDefault());
+        assertEquals(MarkerType.STAR, MapConfig.XAERO_PIN_TYPE.getDefault());
         assertTrue(MapConfig.XAERO_HIDDEN.getDefault());
         assertFalse(MapConfig.XAERO_DEATHS.getDefault());
     }

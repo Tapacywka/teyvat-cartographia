@@ -20,14 +20,10 @@ import net.tapacywka.teyvatcartographia.compat.XaeroMapRegion;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
 import net.tapacywka.teyvatcartographia.map.MapView;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,6 +32,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.LinkedHashMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
+import net.minecraft.tags.FluidTags;
+import net.minecraft.world.level.biome.Biomes;
+import net.minecraft.world.level.dimension.BuiltinDimensionTypes;
+import net.minecraft.world.level.dimension.DimensionType;
+import net.minecraft.world.level.material.MapColor;
 
 /**
  * Writes the surface of the Overworld mapped by Xaero's World Map into this mod's map of it (user request 03.11.2026,
@@ -56,7 +64,7 @@ public final class XaeroImport {
     /** Progress for the screen: regions done of all, chunks written, regions Xaero left broken. */
     public final AtomicInteger done = new AtomicInteger(), total = new AtomicInteger(), chunks = new AtomicInteger(), broken = new AtomicInteger();
     /** Bytes of Xaero's files of the regions done, for the time left ({@link #secondsLeft}). */
-    private final java.util.concurrent.atomic.AtomicLong bytesDone = new java.util.concurrent.atomic.AtomicLong();
+    private final AtomicLong bytesDone = new AtomicLong();
     /** Bytes of all the files, and when the work began ({@link System#nanoTime}); set once the regions are listed. */
     private volatile long totalBytes, began;
     public final AtomicBoolean cancel = new AtomicBoolean();
@@ -92,8 +100,8 @@ public final class XaeroImport {
         this.level = level;
         this.sources = sources;
         this.target = target;
-        net.minecraft.world.level.dimension.DimensionType overworld = level.registryAccess().lookupOrThrow(Registries.DIMENSION_TYPE)
-                .getOrThrow(net.minecraft.world.level.dimension.BuiltinDimensionTypes.OVERWORLD).value();
+        DimensionType overworld = level.registryAccess().lookupOrThrow(Registries.DIMENSION_TYPE)
+                .getOrThrow(BuiltinDimensionTypes.OVERWORLD).value();
         this.minY = overworld.minY();
         this.maxY = overworld.minY() + overworld.height() - 1;
         this.own = MapPalette.dimension(Level.OVERWORLD);
@@ -116,16 +124,16 @@ public final class XaeroImport {
     /** Imports every region; returns the chunks written. */
     public int run() {
         // Per Xaero region, its file in every folder that has it, the first folder first.
-        Map<Long, List<Path>> work = new java.util.LinkedHashMap<>();
+        Map<Long, List<Path>> work = new LinkedHashMap<>();
         for (Path s : sources) regions(s).forEach((key, file) -> work.computeIfAbsent(key, k -> new ArrayList<>()).add(file));
         long bytes = 0;
         for (List<Path> files : work.values()) bytes += size(files);
         totalBytes = bytes;
         total.set(work.size());
-        Map<Long, Integer> index = new java.util.concurrent.ConcurrentHashMap<>(readIndex(target));
+        Map<Long, Integer> index = new ConcurrentHashMap<>(MapStorage.readIndex(target));
         // Regions on every core but one (the game keeps one): a Xaero region writes its own four regions of this mod,
         // never one another region writes (512 blocks against 256, aligned).
-        java.util.concurrent.ExecutorService pool = java.util.concurrent.Executors.newFixedThreadPool(threads, r -> {
+        ExecutorService pool = Executors.newFixedThreadPool(threads, r -> {
             Thread t = new Thread(r, "Teyvat Cartographia Xaero import");
             t.setDaemon(true);
             t.setPriority(Thread.MIN_PRIORITY);
@@ -136,12 +144,12 @@ public final class XaeroImport {
         // A faster PNG level and one row filter during the import were tried (03.11.2026): 6% less time on the whole
         // map, 9% larger files, the game's PNG writer changed meanwhile; left out.
         try {
-            List<java.util.concurrent.Future<?>> jobs = new ArrayList<>();
+            List<Future<?>> jobs = new ArrayList<>();
             work.forEach((key, files) -> jobs.add(pool.submit(() -> region(key, files, index))));
             for (var job : jobs) {
                 try {
                     job.get();
-                } catch (java.util.concurrent.ExecutionException e) {
+                } catch (ExecutionException e) {
                     TeyvatCartographia.LOGGER.error("Import of a Xaero map region failed", e.getCause());
                 }
             }
@@ -151,7 +159,11 @@ public final class XaeroImport {
         } finally {
             pool.shutdownNow();
         }
-        writeIndex(target, index);
+        try {
+            MapStorage.writeIndex(target, index);
+        } catch (IOException e) {
+            TeyvatCartographia.LOGGER.warn("Could not write map index in {}", target, e);
+        }
         // Imported from another dimension into an Overworld not visited yet: without this file its map is not listed.
         if (chunks.get() > 0) MapStorage.writeDimension(target, Level.OVERWORLD);
         TeyvatCartographia.LOGGER.info("Xaero import: {} regions, {} chunks in {} ms on {} threads; per phase (ms over all threads): read {}, heights {}, colours {}, shade {}, save {}",
@@ -161,8 +173,8 @@ public final class XaeroImport {
     }
 
     /** Time spent per phase over all threads: reading, heights, colours and tints, shading, saving. */
-    private final java.util.concurrent.atomic.AtomicLong[] nanos = {new java.util.concurrent.atomic.AtomicLong(), new java.util.concurrent.atomic.AtomicLong(),
-            new java.util.concurrent.atomic.AtomicLong(), new java.util.concurrent.atomic.AtomicLong(), new java.util.concurrent.atomic.AtomicLong()};
+    private final AtomicLong[] nanos = {new AtomicLong(), new AtomicLong(),
+            new AtomicLong(), new AtomicLong(), new AtomicLong()};
 
     private long since(int phase, long from) {
         long now = System.nanoTime();
@@ -248,7 +260,7 @@ public final class XaeroImport {
         List<Holder<Biome>> biomes = new ArrayList<>();
         for (String b : r.biomes) biomes.add(biome(b));
         int[][] tints = tints(r, biomes, rx, rz);
-        int water = TextureColors.water(), stone = MapPalette.standard(net.minecraft.world.level.material.MapColor.STONE);
+        int water = TextureColors.water(), stone = MapPalette.standard(MapColor.STONE);
         for (int i = 0; i < n; i++) {
             if (y[i] == Integer.MIN_VALUE) continue;
             Look l = r.state[i] < 0 ? null : looks[r.state[i]];
@@ -373,8 +385,8 @@ public final class XaeroImport {
     }
 
     private Look look(BlockState st) {
-        boolean water = st.getFluidState().is(net.minecraft.tags.FluidTags.WATER), lava = st.getFluidState().is(net.minecraft.tags.FluidTags.LAVA);
-        if (st.getBlock() instanceof SnowLayerBlock) return new Look(water, lava, TextureColors.snow() != 0 ? TextureColors.snow() : MapPalette.standard(net.minecraft.world.level.material.MapColor.SNOW), 0);
+        boolean water = st.getFluidState().is(FluidTags.WATER), lava = st.getFluidState().is(FluidTags.LAVA);
+        if (st.getBlock() instanceof SnowLayerBlock) return new Look(water, lava, TextureColors.snow() != 0 ? TextureColors.snow() : MapPalette.standard(MapColor.SNOW), 0);
         Integer mine = own == null ? null : own.get(st.getBlock());
         if (mine != null) return new Look(water, lava, mine, 0);
         TextureColors.Entry tex = TextureColors.get(st);
@@ -469,38 +481,6 @@ public final class XaeroImport {
             var h = registry.get(ResourceKey.create(Registries.BIOME, id));
             if (h.isPresent()) return h.get();
         }
-        return registry.getOrThrow(net.minecraft.world.level.biome.Biomes.PLAINS);
-    }
-
-    // ------------------------------------------------------------------ index
-
-    private static Map<Long, Integer> readIndex(Path dir) {
-        Map<Long, Integer> out = new HashMap<>();
-        Path index = dir.resolve("index.txt");
-        if (!Files.exists(index)) return out;
-        try (BufferedReader r = Files.newBufferedReader(index, StandardCharsets.UTF_8)) {
-            for (String line; (line = r.readLine()) != null; ) {
-                String[] p = line.trim().split(" ");
-                if (p.length == 3) out.put(MapView.tileKey(Integer.parseInt(p[0]), Integer.parseInt(p[1])), Integer.parseInt(p[2]));
-            }
-        } catch (IOException | NumberFormatException e) {
-            TeyvatCartographia.LOGGER.warn("Could not read map index {}", index, e);
-        }
-        return out;
-    }
-
-    private void writeIndex(Path dir, Map<Long, Integer> index) {
-        StringBuilder sb = new StringBuilder();
-        index.forEach((k, v) -> sb.append(MapView.tileKeyX(k)).append(' ').append(MapView.tileKeyZ(k)).append(' ').append(v).append('\n'));
-        try {
-            Files.createDirectories(dir);
-            Path tmp = dir.resolve("index.txt.tmp");
-            try (BufferedWriter w = Files.newBufferedWriter(tmp, StandardCharsets.UTF_8)) {
-                w.write(sb.toString());
-            }
-            Files.move(tmp, dir.resolve("index.txt"), StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException e) {
-            TeyvatCartographia.LOGGER.warn("Could not write map index in {}", dir, e);
-        }
+        return registry.getOrThrow(Biomes.PLAINS);
     }
 }

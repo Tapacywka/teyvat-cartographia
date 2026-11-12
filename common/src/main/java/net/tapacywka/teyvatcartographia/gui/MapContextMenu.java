@@ -100,7 +100,7 @@ final class MapContextMenu {
             if (a < SEEN) continue;
             float rx = x + TRAVEL * (1 - a), ry = y + i * STEP, cap = ROW_H / 2f;
             boolean hot = it == hover;
-            row(g, rx, ry, hot, phase, a);
+            Ui.pickRow(g, rx, ry, w, hot, phase, a);
             if (hot) {
                 float cy = ry + cap, px = rx - 3 - POINTER_SWAY * phase;
                 Draw.triangle(g, px, cy, px - 5, cy - 4, px - 5, cy + 4, Theme.withAlpha(Theme.PICK_POINTER, a));
@@ -109,34 +109,5 @@ final class MapContextMenu {
             Draw.icon(g, it.icon(), rx + cap, ry + cap, Grid.ICON_L, Theme.withAlpha(Theme.WHITE, a));
             DrawText.text(g, labels[i], rx + ROW_H + Grid.GAP, DrawText.textY(ry, ROW_H), Theme.withAlpha(color, a), false);
         }
-    }
-
-    /**
-     * One row, as the pick list draws its rows (user request 24.10.2026): a dark band fading out to the right, with a
-     * thin outline (the rounded or straight left end, then the top and bottom edges fading out with the band). The
-     * hovered row's outline pulses from grey to white and back.
-     */
-    private void row(GuiGraphicsExtractor g, float rx, float ry, boolean hot, float phase, float alpha) {
-        int fill = Theme.withAlpha(hot ? Theme.PICK_ROW_HOVER : Theme.PICK_ROW, alpha);
-        float h = ROW_H, r = h / 2f, x0 = rx;
-        if (!Theme.Style.squareUi) { // rounded left end
-            Draw.sector(g, rx + r, ry + r, r, (float) (-Math.PI / 2), (float) (Math.PI / 2), fill, fill);
-            x0 = rx + r;
-        }
-        float fadeFrom = rx + w * 0.45f;
-        Draw.rect(g, x0, ry, fadeFrom, ry + h, fill);
-        Draw.gradientRectH(g, fadeFrom, ry, rx + w, ry + h, fill, fill & 0x00FFFFFF);
-        int line = Theme.withAlpha(hot ? Theme.lerp(Theme.PICK_OUTLINE, Theme.PICK_OUTLINE_HOVER, phase) : Theme.PICK_OUTLINE, alpha);
-        if (Theme.Style.squareUi) Draw.rect(g, rx, ry, rx + 1, ry + h, line);
-        else Draw.arc(g, rx + r, ry + r, r - 0.5f, 1f, (float) Math.PI, (float) (2 * Math.PI), line);
-        edgeLine(g, rx, x0, ry, line);
-        edgeLine(g, rx, x0, ry + h - 1, line);
-    }
-
-    /** Top or bottom outline: solid, then fading out with the band. */
-    private void edgeLine(GuiGraphicsExtractor g, float rx, float x0, float ly, int line) {
-        float fade = rx + w * 0.4f;
-        Draw.rect(g, x0, ly, fade, ly + 1, line);
-        Draw.gradientRectH(g, fade, ly, rx + w * 0.95f, ly + 1, line, line & 0x00FFFFFF);
     }
 }

@@ -28,6 +28,21 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.BooleanSupplier;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.level.FoliageColor;
+import net.minecraft.world.level.GrassColor;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.phys.Vec3;
+import net.tapacywka.teyvatcartographia.map.data.TextureColors;
+import net.tapacywka.teyvatcartographia.map.data.TileStore;
+import net.tapacywka.teyvatcartographia.render.BorderLine;
+import net.tapacywka.teyvatcartographia.render.CachedLayer;
+import net.tapacywka.teyvatcartographia.render.DayLight;
+import net.tapacywka.teyvatcartographia.render.DrawText;
+import net.tapacywka.teyvatcartographia.render.EdgeShader;
+import net.tapacywka.teyvatcartographia.render.MapLayerRenderer;
+import net.tapacywka.teyvatcartographia.render.MarkerRenderer;
 
 /**
  * The settings screen, laid out by Actually Amazing Config Screen (AACS) over the values of {@link MapConfig}: six
@@ -230,7 +245,7 @@ public final class TeyvatConfigScreen {
      * A sub-section of Compatibility for a supported mod ({@code id}: its title {@code subsection.<id>}), shown only
      * while {@code loaded}; added the way other mods add theirs, its values in the mod's own settings file.
      */
-    public static void compatPart(String id, java.util.function.BooleanSupplier loaded, Consumer<AacsScreen.Tab> rows) {
+    public static void compatPart(String id, BooleanSupplier loaded, Consumer<AacsScreen.Tab> rows) {
         AacsScreen.extend("teyvatcartographia", COMPATIBILITY, "teyvatcartographia", MapConfig.FILE, t -> {
             t.defaultPreview(COMPAT_PICTURES);
             rows.accept(t);
@@ -253,12 +268,12 @@ public final class TeyvatConfigScreen {
      * mod's own (the library reads them by the row's key): teyvatcartographia.config.plants.find,
      * teyvatcartographia.config.plants.count, teyvatcartographia.config.plants.none.
      */
-    private static int plantColour(net.minecraft.world.level.block.Block b) {
-        var c = net.tapacywka.teyvatcartographia.map.data.TextureColors.get(b);
+    private static int plantColour(Block b) {
+        var c = TextureColors.get(b);
         if (c == null) return Theme.PANEL_LINE;
         return switch (c.tint()) {
-            case GRASS -> net.tapacywka.teyvatcartographia.map.data.TextureColors.multiply(c.argb(), net.minecraft.world.level.GrassColor.getDefaultColor());
-            case FOLIAGE -> net.tapacywka.teyvatcartographia.map.data.TextureColors.multiply(c.argb(), net.minecraft.world.level.FoliageColor.FOLIAGE_DEFAULT);
+            case GRASS -> TextureColors.multiply(c.argb(), GrassColor.getDefaultColor());
+            case FOLIAGE -> TextureColors.multiply(c.argb(), FoliageColor.FOLIAGE_DEFAULT);
             default -> c.argb();
         };
     }
@@ -267,7 +282,7 @@ public final class TeyvatConfigScreen {
     private static List<AacsScreen.ListEntry> plants() {
         List<AacsScreen.ListEntry> out = new ArrayList<>();
         for (var block : Plants.all()) {
-            out.add(new AacsScreen.ListEntry(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(block).toString(),
+            out.add(new AacsScreen.ListEntry(BuiltInRegistries.BLOCK.getKey(block).toString(),
                     block.getName(), plantColour(block)));
         }
         out.sort(Comparator.comparing(e -> e.name().getString().toLowerCase(Locale.ROOT)));
@@ -383,12 +398,12 @@ public final class TeyvatConfigScreen {
          * The preview's regions while Map edges is drawn by its shader ({@link net.tapacywka.teyvatcartographia.render.EdgeShader}),
          * as large as the window; one for the game, kept once made.
          */
-        private static final net.tapacywka.teyvatcartographia.render.CachedLayer PREVIEW_EDGES = new net.tapacywka.teyvatcartographia.render.CachedLayer();
+        private static final CachedLayer PREVIEW_EDGES = new CachedLayer();
 
         /** A short note in the middle of the area (no world, the minimap off, no preview yet). */
         private static void note(GuiGraphicsExtractor g, float x, float y, float w, float h, String key) {
-            Component t = Component.literal(net.tapacywka.teyvatcartographia.render.DrawText.fit(Component.translatable(key).getString(), (int) w));
-            net.tapacywka.teyvatcartographia.render.DrawText.textCentered(g, t, Draw.snap(x + w / 2f), Draw.snap(y + h / 2f - 4), Theme.TEXT_MUTED, false);
+            Component t = Component.literal(DrawText.fit(Component.translatable(key).getString(), (int) w));
+            DrawText.textCentered(g, t, Draw.snap(x + w / 2f), Draw.snap(y + h / 2f - 4), Theme.TEXT_MUTED, false);
         }
 
         /**
@@ -400,43 +415,43 @@ public final class TeyvatConfigScreen {
         }
 
         /** As above, drawing {@code store} (a cave layer for the cave map's preview). */
-        private void map(GuiGraphicsExtractor g, float x, float y, float w, float h, double zoom, float pt, net.tapacywka.teyvatcartographia.map.data.TileStore store) {
+        private void map(GuiGraphicsExtractor g, float x, float y, float w, float h, double zoom, float pt, TileStore store) {
             Minecraft mc = Minecraft.getInstance();
-            net.minecraft.world.phys.Vec3 pos = mc.player.getPosition(pt);
+            Vec3 pos = mc.player.getPosition(pt);
             float mx = Draw.snap(x + w / 2f), my = Draw.snap(y + h / 2f);
             view.set(pos.x, pos.z, zoom, 0, mx, my);
             boolean cave = store != null && store.cave;
             g.enableScissor((int) x, (int) y, (int) (x + w), (int) (y + h));
             FogTexture.draw(g, store == null || cave ? null : store.dimension, x, y, x + w, y + h, (float) (pos.x * zoom), (float) (pos.z * zoom), Theme.WHITE);
             if (store != null && !cave) {
-                net.tapacywka.teyvatcartographia.render.MapLayerRenderer.drawFar(g, MapDataManager.get().farLand(store.dimension), view, x, y, x + w, y + h, false);
+                MapLayerRenderer.drawFar(g, MapDataManager.get().farLand(store.dimension), view, x, y, x + w, y + h, false);
             }
-            int tint = cave ? 0xFFFFFFFF : net.tapacywka.teyvatcartographia.render.DayLight.tint(pt);
-            float night = cave ? 0f : net.tapacywka.teyvatcartographia.render.DayLight.night(pt);
-            if (store != null && !cave && MapConfig.get(MapConfig.MAP_OUTLINE) && net.tapacywka.teyvatcartographia.render.EdgeShader.inUse()) {
+            int tint = cave ? 0xFFFFFFFF : DayLight.tint(pt);
+            float night = cave ? 0f : DayLight.night(pt);
+            if (store != null && !cave && MapConfig.get(MapConfig.MAP_OUTLINE) && EdgeShader.inUse()) {
                 // The edge's shader takes its values only in the mod's layers: the regions go into one, then onto the area.
                 var window = mc.getWindow();
                 PREVIEW_EDGES.bind(g, window.getWidth(), window.getHeight(), false);
                 try {
-                    net.tapacywka.teyvatcartographia.render.MapLayerRenderer.drawRect(g, store, view, x, y, x + w, y + h, tint, night);
+                    MapLayerRenderer.drawRect(g, store, view, x, y, x + w, y + h, tint, night);
                 } finally {
                     PREVIEW_EDGES.unbind();
                 }
                 float gw = window.getGuiScaledWidth(), gh = window.getGuiScaledHeight();
                 Draw.texturedQuadPremultiplied(g, PREVIEW_EDGES.tex(), x, y, x + w, y + h,
-                        x / gw, net.tapacywka.teyvatcartographia.render.CachedLayer.v(1 - y / gh),
-                        (x + w) / gw, net.tapacywka.teyvatcartographia.render.CachedLayer.v(1 - (y + h) / gh));
+                        x / gw, CachedLayer.v(1 - y / gh),
+                        (x + w) / gw, CachedLayer.v(1 - (y + h) / gh));
             } else {
-                net.tapacywka.teyvatcartographia.render.MapLayerRenderer.drawRect(g, store, view, x, y, x + w, y + h, tint, night);
+                MapLayerRenderer.drawRect(g, store, view, x, y, x + w, y + h, tint, night);
             }
-            if (store != null) net.tapacywka.teyvatcartographia.render.BorderLine.draw(g, store.dimension, view, x, y, x + w, y + h);
+            if (store != null) BorderLine.draw(g, store.dimension, view, x, y, x + w, y + h);
             if (MapConfig.get(MapConfig.MAP_SHOW_GRID)) grid(g, x, y, w, h, zoom);
             if (MapConfig.get(MapConfig.MAP_SHOW_LABELS)) {
-                net.tapacywka.teyvatcartographia.render.MapLayerRenderer.drawBiomeLabels(g, store, view, x, y, x + w, y + h, List.of());
+                MapLayerRenderer.drawBiomeLabels(g, store, view, x, y, x + w, y + h, List.of());
             }
             float heading = (float) view.headingOnScreen(mc.player.getViewYRot(pt));
             if (MapConfig.get(MapConfig.PLAYER_CONE)) Draw.sector(g, mx, my, 24, heading, 0.7f, Theme.VIEW_CONE, Theme.withAlpha(Theme.VIEW_CONE, 0f));
-            net.tapacywka.teyvatcartographia.render.MarkerRenderer.player(g, mx, my, 16, heading, 1f);
+            MarkerRenderer.player(g, mx, my, 16, heading, 1f);
             g.disableScissor();
             Draw.frame(g, x, y, w, h, 1, Theme.PANEL_LINE);
         }

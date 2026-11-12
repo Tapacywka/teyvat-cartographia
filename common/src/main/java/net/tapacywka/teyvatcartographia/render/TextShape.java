@@ -17,6 +17,7 @@ import org.joml.Matrix4f;
 
 import java.util.ArrayList;
 import java.util.List;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 /**
  * The glyphs of one prepared text (of one pipeline and font texture) as one GUI element, drawn once or at several
@@ -51,7 +52,7 @@ final class TextShape implements GuiElementRenderState {
      * Hands the prepared text to {@link Draw#submit} as one element per pipeline and font texture, at {@code offsets}
      * (pairs of x, y) from {@code pose}.
      */
-    static void submit(net.minecraft.client.gui.GuiGraphicsExtractor g, Font.PreparedText text, Matrix3x2f pose, float[] offsets) {
+    static void submit(GuiGraphicsExtractor g, Font.PreparedText text, Matrix3x2f pose, float[] offsets) {
         ScreenRectangle local = text.bounds();
         if (local == null) return;
         int grow = offsets == OUTLINE ? 1 : 0;

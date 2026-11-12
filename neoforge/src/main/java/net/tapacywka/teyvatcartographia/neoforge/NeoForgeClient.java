@@ -17,6 +17,7 @@ import net.neoforged.neoforge.client.event.RegisterRenderPipelinesEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.GameShuttingDownEvent;
 import net.neoforged.neoforge.event.level.ChunkEvent;
 import net.tapacywka.teyvatcartographia.TeyvatCartographia;
 import net.tapacywka.teyvatcartographia.client.ClientEvents;
@@ -54,6 +55,8 @@ final class NeoForgeClient {
             if (e.getLevel() instanceof ClientLevel level && e.getChunk() instanceof LevelChunk chunk) ClientEvents.chunkLoaded(level, chunk);
         });
         NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut e) -> ClientEvents.loggingOut());
+        // The game closed from inside a world (the window shut): the logging out above may not come any more.
+        NeoForge.EVENT_BUS.addListener((GameShuttingDownEvent e) -> ClientEvents.loggingOut());
         NeoForge.EVENT_BUS.addListener((RenderLevelStageEvent.AfterLevel e) -> {
             Minecraft mc = Minecraft.getInstance();
             WorldMarkerLayer.afterLevel(e.getModelViewMatrix(), Game.camera(), mc.getDeltaTracker());

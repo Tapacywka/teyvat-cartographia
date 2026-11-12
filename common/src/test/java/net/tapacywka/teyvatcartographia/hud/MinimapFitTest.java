@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import net.tapacywka.teyvatcartographia.config.MapConfig;
 
 /** The minimap stays on screen: a large one is drawn smaller (B23), a wide pill at the edge is shifted inward (B22). */
 class MinimapFitTest {
@@ -73,9 +74,9 @@ class MinimapFitTest {
 
     @Test
     void theClockIn24And12Hours() {
-        var h24 = net.tapacywka.teyvatcartographia.config.MapConfig.TimeFormat.HOURS_24;
-        var h12 = net.tapacywka.teyvatcartographia.config.MapConfig.TimeFormat.HOURS_12;
-        var ampm = net.tapacywka.teyvatcartographia.config.MapConfig.TimeFormat.HOURS_12_AM_PM;
+        var h24 = MapConfig.TimeFormat.HOURS_24;
+        var h12 = MapConfig.TimeFormat.HOURS_12;
+        var ampm = MapConfig.TimeFormat.HOURS_12_AM_PM;
         assertEquals("14:35", MinimapFit.clock(14 * 60 + 35, h24));
         assertEquals("00:05", MinimapFit.clock(5, h24));
         assertEquals("2:35", MinimapFit.clock(14 * 60 + 35, h12));

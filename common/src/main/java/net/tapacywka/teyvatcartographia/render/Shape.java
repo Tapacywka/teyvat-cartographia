@@ -5,6 +5,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.gui.navigation.ScreenRectangle;
 import net.minecraft.client.gui.render.TextureSetup;
 import net.minecraft.client.renderer.state.gui.GuiElementRenderState;
+import java.util.Arrays;
 
 /**
  * One draw of the mod's own triangles as a GUI element: the game sorts it among its own elements by its bounds (one
@@ -49,7 +50,7 @@ final class Shape implements GuiElementRenderState {
             bounds = scissor.intersection(bounds);
             if (bounds == null) return null;
         }
-        return new Shape(pipeline, textures, java.util.Arrays.copyOf(d, n * Mesh.STRIDE), n, textured, scissor, bounds);
+        return new Shape(pipeline, textures, Arrays.copyOf(d, n * Mesh.STRIDE), n, textured, scissor, bounds);
     }
 
     /** As {@link #of}, a picture of the map for {@link EdgeShader}, with its values. */

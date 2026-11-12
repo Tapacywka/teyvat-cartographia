@@ -45,6 +45,12 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
 import java.util.TimeZone;
+import java.util.Arrays;
+import net.minecraft.network.chat.FormattedText;
+import net.minecraft.network.chat.Style;
+import net.tapacywka.teyvatcartographia.compat.SodiumExtraOverlay;
+import net.tapacywka.teyvatcartographia.map.data.FarLand;
+import net.tapacywka.teyvatcartographia.render.BorderLine;
 
 /**
  * The HUD minimap (reference: minimap.png): the map fading out towards a thin frame (a circle, or a square with
@@ -128,6 +134,23 @@ public final class MinimapLayer {
         Draw.texturedQuadPremultiplied(g, m.layer.tex(), m.kBx0, m.kBy0, m.kBx1, m.kBy1, 0f, CachedLayer.v(1f), 1f, CachedLayer.v(0f));
     }
 
+    /**
+     * The player left the world: what the minimap kept of it (the level its biome was read in, the map it drew) is let
+     * go, as nothing draws the minimap at the title screen and it would stay in memory until the next world.
+     */
+    public static void forgetWorld() {
+        MinimapLayer m = instance;
+        if (m == null) return;
+        m.biomeLevel = null;
+        m.biomeHolder = null;
+        m.biome = null;
+        m.cacheStore = null;
+        m.cacheFar = null;
+        m.cacheValid = false;
+        m.kTarget = null;
+        m.kDim = null;
+    }
+
     /** The area (GUI units: left, top, right, bottom) of the minimap prepared last, with its pills. */
     public static int[] preparedBounds() {
         MinimapLayer m = instance;
@@ -196,7 +219,7 @@ public final class MinimapLayer {
         int ox = MapConfig.get(MapConfig.MINIMAP_OFFSET_X), oy = MapConfig.get(MapConfig.MINIMAP_OFFSET_Y);
         MapConfig.Corner corner = MapConfig.get(MapConfig.MINIMAP_CORNER);
         // Clear of Sodium Extra's FPS overlay when it writes in the same corner.
-        int overlay = net.tapacywka.teyvatcartographia.compat.SodiumExtraOverlay.clearance(corner);
+        int overlay = SodiumExtraOverlay.clearance(corner);
         float cx, cy;
         switch (corner) {
             case TOP_RIGHT -> {
@@ -246,7 +269,7 @@ public final class MinimapLayer {
         Navigation.setPathWanted(Navigation.PATH_MINIMAP, path);
         int route = path ? Route.version() : Integer.MIN_VALUE;
         // While a line is drawn in (3 s after a new search) the layer is redrawn every frame.
-        if (path && Route.revealing()) route += 7919 * (int) (net.minecraft.util.Util.getMillis() / 8);
+        if (path && Route.revealing()) route += 7919 * (int) (Util.getMillis() / 8);
         // The layer spans the map and the pills (shifted inward at the screen edge).
         Component[] cl = coordsLine == null ? null : coordsLines, bl = biomeLine == null ? null : biomeLines, tl = timeLine == null ? null : timeLines;
         Component[] t2 = timeWrap && time2Line != null ? time2Lines : null;
@@ -360,7 +383,6 @@ public final class MinimapLayer {
             biomeW = pillWidth(biomeLines) * pillScale;
             time1W = pillWidth(timeLines) * pillScale;
             time2W = pillWidth(time2Lines) * pillScale;
-            // Wider than the map, the real time goes to a row of its own under the clock row.
             // Both times shown: the real time always in a row of its own under the clock (user decision 31.10.2026;
             // beside it while the two fitted the map's width, so the line spacing moved it from row to row).
             timeWrap = time2Lines != null;
@@ -596,9 +618,9 @@ public final class MinimapLayer {
 
     private void point(float x, float y, boolean fog, boolean water) {
         if (pieceN == routeFog.length) {
-            routeXY = java.util.Arrays.copyOf(routeXY, 4 * pieceN);
-            routeFog = java.util.Arrays.copyOf(routeFog, 2 * pieceN);
-            routeWater = java.util.Arrays.copyOf(routeWater, 2 * pieceN);
+            routeXY = Arrays.copyOf(routeXY, 4 * pieceN);
+            routeFog = Arrays.copyOf(routeFog, 2 * pieceN);
+            routeWater = Arrays.copyOf(routeWater, 2 * pieceN);
         }
         routeXY[2 * pieceN] = x;
         routeXY[2 * pieceN + 1] = y;
@@ -752,8 +774,8 @@ public final class MinimapLayer {
         if (text == null) return null;
         int room = Math.max(MIN_WRAP, maxWidth - PILL_H);
         if (!wrap || DrawText.width(text) <= room) return new Component[]{text};
-        java.util.List<net.minecraft.network.chat.FormattedText> parts =
-                DrawText.font().getSplitter().splitLines(text, room, net.minecraft.network.chat.Style.EMPTY);
+        List<FormattedText> parts =
+                DrawText.font().getSplitter().splitLines(text, room, Style.EMPTY);
         Component[] lines = new Component[parts.size()];
         for (int i = 0; i < lines.length; i++) lines[i] = Component.literal(parts.get(i).getString());
         return lines;
@@ -839,7 +861,7 @@ public final class MinimapLayer {
     private final MapView cacheView = new MapView();
     private final CachedLayer cache = new CachedLayer();
     private TileStore cacheStore;
-    private net.tapacywka.teyvatcartographia.map.data.FarLand cacheFar;
+    private FarLand cacheFar;
     private int cacheVersion, cacheFarVersion, cacheBorder, cacheR, cacheSize, cacheTint, cacheNight, cacheTheme;
     private double cacheX, cacheZ, cacheZoom;
     private long cacheTime;
@@ -856,9 +878,9 @@ public final class MinimapLayer {
         int nightQ = Math.round(night * 32);
         long now = Util.getMillis();
         // The far land under the map, not under a cave layer.
-        net.tapacywka.teyvatcartographia.map.data.FarLand far = store == null || store.cave ? null : net.tapacywka.teyvatcartographia.map.data.MapDataManager.get().farLand(store.dimension);
+        FarLand far = store == null || store.cave ? null : MapDataManager.get().farLand(store.dimension);
         int farVersion = MapLayerRenderer.farVersion(far, cacheView.set(px, pz, zoom, 0, cR, cR));
-        int border = store == null ? 0 : net.tapacywka.teyvatcartographia.render.BorderLine.stamp(store.dimension);
+        int border = store == null ? 0 : BorderLine.stamp(store.dimension);
         boolean stale = !cacheValid || !cache.exists()
                 || store != cacheStore || zoom != cacheZoom || cR != cacheR || size != cacheSize
                 || tint != cacheTint || nightQ != cacheNight || Theme.generation() != cacheTheme
@@ -889,7 +911,7 @@ public final class MinimapLayer {
             // The backdrop made the square opaque, and the GUI's blending keeps it so (alpha one, one minus source alpha).
             boolean farDone = MapLayerRenderer.drawFar(g, far, cacheView, 0, 0, 2 * cR, 2 * cR, false);
             complete = MapLayerRenderer.drawRect(g, store, cacheView, 0, 0, 2 * cR, 2 * cR, tint, night) && farDone;
-            net.tapacywka.teyvatcartographia.render.BorderLine.draw(g, store.dimension, cacheView, 0, 0, 2 * cR, 2 * cR);
+            BorderLine.draw(g, store.dimension, cacheView, 0, 0, 2 * cR, 2 * cR);
         }
         g.pose().popMatrix();
         cache.unbind();

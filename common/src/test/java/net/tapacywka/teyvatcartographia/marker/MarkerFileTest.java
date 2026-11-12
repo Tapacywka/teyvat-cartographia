@@ -77,6 +77,15 @@ class MarkerFileTest {
     }
 
     @Test
+    void anUnreadablePinFileIsKeptBesideIt() throws IOException {
+        Path file = dir.resolve("markers.json");
+        Files.writeString(file, "{\"markers\": [ broken", StandardCharsets.UTF_8);
+        MarkerStore.keepUnreadable(file);
+        assertEquals("{\"markers\": [ broken", Files.readString(dir.resolve("markers.json.broken"), StandardCharsets.UTF_8));
+        assertTrue(Files.exists(file));
+    }
+
+    @Test
     void otherFilesAreRefused() throws IOException {
         Path notJson = dir.resolve("notes.json");
         Files.writeString(notJson, "this is not json {", StandardCharsets.UTF_8);

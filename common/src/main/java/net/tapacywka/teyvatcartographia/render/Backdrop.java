@@ -3,6 +3,7 @@ package net.tapacywka.teyvatcartographia.render;
 import com.mojang.blaze3d.platform.Window;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import org.joml.Matrix3x2fc;
 
 /**
  * Frosted-glass backdrop for menus, as strong as the game's "Menu Background Blur" (Options > Accessibility; 0: no blur,
@@ -82,7 +83,7 @@ public final class Backdrop {
         if (!ready) return;
         float gw = g.guiWidth(), gh = g.guiHeight();
         Mesh b = Draw.beginTex();
-        org.joml.Matrix3x2fc m = g.pose();
+        Matrix3x2fc m = g.pose();
         Draw.vtx(b, m, x1, y1, x1 / gw, CachedLayer.v(1 - y1 / gh), 0xFFFFFFFF);
         Draw.vtx(b, m, x2, y2, x2 / gw, CachedLayer.v(1 - y2 / gh), 0xFFFFFFFF);
         Draw.vtx(b, m, x3, y3, x3 / gw, CachedLayer.v(1 - y3 / gh), 0xFFFFFFFF);

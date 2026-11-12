@@ -7,6 +7,8 @@ import net.tapacywka.teyvatcartographia.render.Icon;
 import net.tapacywka.teyvatcartographia.render.Theme;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
+import java.util.List;
+import net.minecraft.util.FormattedCharSequence;
 
 /**
  * Reference-styled widgets on a common layout grid. Every size below is a multiple of the 4-unit grid step,
@@ -246,6 +248,37 @@ public final class Ui {
         }
     }
 
+    /**
+     * One row of the pin pick list and of the map's context menu, {@link Grid#ACTION_H} high and {@code w} wide: a dark
+     * band fading out to the right, with a thin outline (the rounded or straight left end, then the top and bottom edges
+     * fading out with the band). The outline of the row under the pointer ({@code hot}) pulses from grey to white and
+     * back with {@code phase} (0 to 1).
+     */
+    static void pickRow(GuiGraphicsExtractor g, float rx, float ry, float w, boolean hot, float phase, float alpha) {
+        int fill = Theme.withAlpha(hot ? Theme.PICK_ROW_HOVER : Theme.PICK_ROW, alpha);
+        float h = Grid.ACTION_H, r = h / 2f, x0 = rx;
+        if (!Theme.Style.squareUi) { // rounded left end
+            Draw.sector(g, rx + r, ry + r, r, (float) (-Math.PI / 2), (float) (Math.PI / 2), fill, fill);
+            x0 = rx + r;
+        }
+        // Solid for the first part, then fading out towards the right end.
+        float fadeFrom = rx + w * 0.45f;
+        Draw.rect(g, x0, ry, fadeFrom, ry + h, fill);
+        Draw.gradientRectH(g, fadeFrom, ry, rx + w, ry + h, fill, fill & 0x00FFFFFF);
+        int line = Theme.withAlpha(hot ? Theme.lerp(Theme.PICK_OUTLINE, Theme.PICK_OUTLINE_HOVER, phase) : Theme.PICK_OUTLINE, alpha);
+        if (Theme.Style.squareUi) Draw.rect(g, rx, ry, rx + 1, ry + h, line);
+        else Draw.arc(g, rx + r, ry + r, r - 0.5f, 1f, (float) Math.PI, (float) (2 * Math.PI), line);
+        pickRowEdge(g, rx, x0, ry, w, line);
+        pickRowEdge(g, rx, x0, ry + h - 1, w, line);
+    }
+
+    /** The top or bottom outline of {@link #pickRow}: solid, then fading out with the band. */
+    private static void pickRowEdge(GuiGraphicsExtractor g, float rx, float x0, float ly, float w, int line) {
+        float fade = rx + w * 0.4f;
+        Draw.rect(g, x0, ly, fade, ly + 1, line);
+        Draw.gradientRectH(g, fade, ly, rx + w * 0.95f, ly + 1, line, line & 0x00FFFFFF);
+    }
+
     /** Tooltip box: rounded in the rounded style; in the rectangular one a vanilla tooltip (fill with an inset outline). */
     static void tooltipBox(GuiGraphicsExtractor g, float x, float y, float w, float h) {
         if (Theme.Style.squareUi) {
@@ -260,9 +293,9 @@ public final class Ui {
     /** Tooltip with a gold title and a word-wrapped description (max ~200 units wide), kept on screen. */
     public static void wrappedTooltip(GuiGraphicsExtractor g, Component title, Component body, int mx, int my, int screenW, int screenH) {
         int maxW = Math.min(200, screenW - 2 * Grid.MARGIN - 2 * Grid.PAD);
-        java.util.List<net.minecraft.util.FormattedCharSequence> lines = DrawText.font().split(body, maxW);
+        List<FormattedCharSequence> lines = DrawText.font().split(body, maxW);
         int w = DrawText.width(title);
-        for (net.minecraft.util.FormattedCharSequence l : lines) w = Math.max(w, DrawText.font().width(l));
+        for (FormattedCharSequence l : lines) w = Math.max(w, DrawText.font().width(l));
         w += 2 * Grid.PAD;
         int lineStep = DrawText.LINE + 2;
         int h = 2 * Grid.PAD + DrawText.LINE + Grid.GAP + lines.size() * lineStep - 2;
@@ -274,7 +307,7 @@ public final class Ui {
         tooltipBox(g, x, y, w, h);
         DrawText.text(g, title, x + Grid.PAD, y + Grid.PAD, Theme.GOLD, false);
         float ty = y + Grid.PAD + DrawText.LINE + Grid.GAP;
-        for (net.minecraft.util.FormattedCharSequence l : lines) {
+        for (FormattedCharSequence l : lines) {
             g.pose().pushMatrix();
             g.pose().translate(Draw.snap(x + Grid.PAD), Draw.snap(ty));
             g.text(DrawText.font(), l, 0, 0, Theme.CREAM, false);
@@ -308,18 +341,18 @@ public final class Ui {
      * the side panels it is frosted glass: the vanilla menu blur ({@link Backdrop}) under the translucent panel colour,
      * box and pointer as one shape with one outline.
      */
-    public static void popupLeftOf(GuiGraphicsExtractor g, Component title, java.util.List<Component> lines, float tipX, float cy, float bottom) {
+    public static void popupLeftOf(GuiGraphicsExtractor g, Component title, List<Component> lines, float tipX, float cy, float bottom) {
         popupLeftOf(g, title, lines, 0, 0, tipX, cy, bottom);
     }
 
-    private static int popupBoxWidth(Component title, java.util.List<Component> lines, int minW) {
+    private static int popupBoxWidth(Component title, List<Component> lines, int minW) {
         int w = Math.max(minW, DrawText.width(title));
         for (Component l : lines) w = Math.max(w, DrawText.width(l));
         return w + 2 * Grid.PAD;
     }
 
     /** How far a popup reaches left of its tip: how far it travels to slide behind what it points out of. */
-    public static float popupReach(Component title, java.util.List<Component> lines) {
+    public static float popupReach(Component title, List<Component> lines) {
         return popupBoxWidth(title, lines, 0) + 2 * POINTER_L;
     }
 
@@ -330,7 +363,7 @@ public final class Ui {
      * {@link #popupLeftOf} at least {@code minW} wide inside its padding, with {@code extraH} more room under the lines
      * (for buttons); returns its box.
      */
-    public static Box popupLeftOf(GuiGraphicsExtractor g, Component title, java.util.List<Component> lines, int minW, int extraH, float tipX, float cy, float bottom) {
+    public static Box popupLeftOf(GuiGraphicsExtractor g, Component title, List<Component> lines, int minW, int extraH, float tipX, float cy, float bottom) {
         int w = popupBoxWidth(title, lines, minW);
         int lineStep = DrawText.LINE + 2;
         int h = 2 * Grid.PAD + DrawText.LINE + Grid.GAP + lines.size() * lineStep - 2 + extraH;

@@ -34,6 +34,7 @@ import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
 import org.joml.Vector4f;
+import java.util.Objects;
 
 /**
  * The tracked target as a marker in the 3D world (references: ingame_waypoint_*), drawn on the HUD at the target's
@@ -134,10 +135,9 @@ public final class WorldMarkerLayer {
     }
 
     /**
-     * The marker is shown for a minute after tracking starts or the pulse key is pressed, then fades out; it
-     * fades in and out ({@link MarkerTiming}).
+     * The marker is shown for a minute after tracking starts or the pulse key is pressed, fading in and out
+     * ({@link MarkerTiming}): the target the timer belongs to (a new target starts it again) and when its showing began.
      */
-    /** Target the timer belongs to (a new target starts it again) and when its showing began. */
     private static Navigation.Target shownTarget;
     private static long shownSince;
     /**
@@ -170,7 +170,7 @@ public final class WorldMarkerLayer {
 
     /** Keeps the timer on the tracked target: tracking another target (or the same one again) shows it for a minute. */
     private static void trackTimer(Navigation.Target t) {
-        if (!java.util.Objects.equals(t, shownTarget)) {
+        if (!Objects.equals(t, shownTarget)) {
             shownTarget = t;
             shownSince = Util.getMillis();
         }
@@ -214,7 +214,7 @@ public final class WorldMarkerLayer {
         double ty = targetY(mc, t, py);
         double dx = t.x() - px, dy = ty - py, dz = t.z() - pz;
         double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        nearFade = smooth(dist / FADE_FAR);
+        nearFade = MarkerTiming.smooth(dist / FADE_FAR);
         float alpha = nearFade * shown;
         if (alpha <= 0.01f) return;
 
@@ -380,7 +380,6 @@ public final class WorldMarkerLayer {
                 0f, CachedLayer.v(1f), 1f, CachedLayer.v(0f), alpha);
     }
 
-    /** The path to the target as stars in the world, shown and faded on the marker's timer. */
     /**
      * The path stars, then the beam, after the whole level. In Fabulous graphics the water, the particles, the clouds
      * and the weather are laid together by depth at the end: stars drawn after the particles and the beam drawn after
@@ -471,11 +470,6 @@ public final class WorldMarkerLayer {
             }
         }
     }
-    private static float smooth(double t) {
-        float x = (float) Math.max(0, Math.min(1, t));
-        return x * x * (3 - 2 * x);
-    }
-
     private static float sq(float v) {
         return v * v;
     }

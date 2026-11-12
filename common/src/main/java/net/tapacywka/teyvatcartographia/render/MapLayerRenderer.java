@@ -17,6 +17,8 @@ import net.minecraft.network.chat.Component;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Stage 5: draws the visible map regions straight from their textures. Used by the world map every frame and by
@@ -421,7 +423,7 @@ public final class MapLayerRenderer {
      * intersects any of the {@code avoid} rectangles (x0, y0, x1, y1). All labels are flushed in one batch.
      */
     public static void drawBiomeLabels(GuiGraphicsExtractor g, TileStore store, MapView view, float x0, float y0, float x1, float y1,
-                                       java.util.List<float[]> avoid) {
+                                       List<float[]> avoid) {
         // Shown from 1/8 up (user request 25.10.2026, they were shown from 1/4 to 4): at 1/16 and 1/32 they crowd.
         if (store == null || view.scale < MapView.DETAIL_FROM - 1e-6) return;
         int count = 0;
@@ -451,8 +453,8 @@ public final class MapLayerRenderer {
             }
             if (dup) continue;
             if (count == placedIds.length) {
-                placedIds = java.util.Arrays.copyOf(placedIds, count * 2);
-                placed = java.util.Arrays.copyOf(placed, count * 8);
+                placedIds = Arrays.copyOf(placedIds, count * 2);
+                placed = Arrays.copyOf(placed, count * 8);
             }
             placed[count * 4] = sx;
             placed[count * 4 + 1] = sy;

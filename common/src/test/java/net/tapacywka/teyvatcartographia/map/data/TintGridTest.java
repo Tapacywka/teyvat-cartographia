@@ -6,6 +6,7 @@ import java.util.function.IntPredicate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import java.util.function.IntBinaryOperator;
 
 /** The biome tint of the map's columns between the sampled quarts, also across chunk borders (no straight seams). */
 class TintGridTest {
@@ -65,7 +66,7 @@ class TintGridTest {
     @Test
     void theBlendLeavesOutUnloadedChunks() {
         // Chunk 0 is all A; chunk -1 would answer B (the default biome) while it is not loaded.
-        java.util.function.IntBinaryOperator colour = (x, z) -> x < 0 ? B : A;
+        IntBinaryOperator colour = (x, z) -> x < 0 ? B : A;
         assertEquals(A, ChunkScanner.TintGrid.blend(1, 8, 3, (cx, cz) -> cx >= 0, colour), "unloaded: the chunk's own colour only");
         int both = ChunkScanner.TintGrid.blend(1, 8, 3, (cx, cz) -> true, colour);
         assertTrue(green(both) > green(A) && green(both) < green(B), "loaded: blended with the neighbour");

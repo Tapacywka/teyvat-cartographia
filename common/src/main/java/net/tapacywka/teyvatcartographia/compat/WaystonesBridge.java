@@ -13,6 +13,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 
 /**
  * The client events of Waystones ({@code net.blay09.mods.waystones.api.event}): the list of the player's stones of one
@@ -53,7 +57,7 @@ final class WaystonesBridge {
         });
         // Waystones for 26.x: a static EVENT whose register takes a listener (a functional interface of its own).
         try {
-            java.lang.reflect.Field field = type.getField("EVENT");
+            Field field = type.getField("EVENT");
             Object event = field.get(null);
             // Through the field's declared (public) type: the object itself may be of a class that is not. Its register
             // takes the callback as a type parameter (erased to Object; Balm's EventMapper<Consumer<TEvent>>), so the
@@ -86,10 +90,10 @@ final class WaystonesBridge {
     }
 
     /** The interface of the callback an event field takes ({@code Consumer} for {@code EventMapper<Consumer<E>>}), or null. */
-    private static Class<?> callbackType(java.lang.reflect.Field field) {
-        if (field.getGenericType() instanceof java.lang.reflect.ParameterizedType p && p.getActualTypeArguments().length == 1) {
-            java.lang.reflect.Type arg = p.getActualTypeArguments()[0];
-            if (arg instanceof java.lang.reflect.ParameterizedType pa) arg = pa.getRawType();
+    private static Class<?> callbackType(Field field) {
+        if (field.getGenericType() instanceof ParameterizedType p && p.getActualTypeArguments().length == 1) {
+            Type arg = p.getActualTypeArguments()[0];
+            if (arg instanceof ParameterizedType pa) arg = pa.getRawType();
             if (arg instanceof Class<?> c && c.isInterface()) return c;
         }
         return null;
@@ -161,7 +165,7 @@ final class WaystonesBridge {
 
     private static Method publicMethod(Class<?> c, String name) {
         if (c == null) return null;
-        if (java.lang.reflect.Modifier.isPublic(c.getModifiers())) {
+        if (Modifier.isPublic(c.getModifiers())) {
             try {
                 return c.getMethod(name);
             } catch (NoSuchMethodException ignored) {

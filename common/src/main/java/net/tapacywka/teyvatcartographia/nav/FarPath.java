@@ -225,6 +225,9 @@ public final class FarPath {
         pointCount = 0;
         searching = building = retry = false;
         lastTarget = null;
+        // The map of the last search is let go (after leaving a world it would stay in memory).
+        store = null;
+        lastStore = null;
     }
 
     private void begin(LocalPlayer p, Navigation.Target t, TileStore s, boolean boat) {

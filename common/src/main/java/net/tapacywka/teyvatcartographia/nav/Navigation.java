@@ -17,6 +17,8 @@ import net.minecraft.world.level.Level;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import net.minecraft.world.entity.vehicle.boat.AbstractBoat;
+import net.tapacywka.teyvatcartographia.config.MapConfig;
 
 /**
  * Navigation target shared by the world map, the minimap and the marker in the world: distance and level. The walking
@@ -125,7 +127,7 @@ public final class Navigation {
 
     /** Whether the player sits in a boat (the path then goes by water). */
     public static boolean inBoat(LocalPlayer player) {
-        return player.getVehicle() instanceof net.minecraft.world.entity.vehicle.boat.AbstractBoat;
+        return player.getVehicle() instanceof AbstractBoat;
     }
 
     /**
@@ -133,7 +135,7 @@ public final class Navigation {
      * the player sits in a boat.
      */
     public static boolean byBoat(LocalPlayer player) {
-        return net.tapacywka.teyvatcartographia.config.MapConfig.PATH_ROUTE.get() == net.tapacywka.teyvatcartographia.config.MapConfig.Route.WATER
+        return MapConfig.PATH_ROUTE.get() == MapConfig.Route.WATER
                 || inBoat(player);
     }
 

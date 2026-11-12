@@ -28,6 +28,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.function.Function;
+import net.minecraft.resources.Identifier;
+import net.tapacywka.teyvatcartographia.gui.TeyvatConfigScreen;
 
 /**
  * Waystones (BlayTheNinth) on the maps, like the teleport waypoints and domains of Genshin Impact (user decisions
@@ -49,9 +56,9 @@ public final class WaystonesCompat {
      * path to them show (the interactive pins, user decision 31.10.2026).
      */
     public static void settings() {
-        net.tapacywka.teyvatcartographia.gui.TeyvatConfigScreen.compatPart("compat_waystones", ModCompat::waystones, t -> {
-            net.tapacywka.teyvatcartographia.gui.TeyvatConfigScreen.pinRow(t, MapConfig.PinKind.INTERACTIVE);
-            net.tapacywka.teyvatcartographia.gui.TeyvatConfigScreen.pathRow(t, MapConfig.PinKind.INTERACTIVE);
+        TeyvatConfigScreen.compatPart("compat_waystones", ModCompat::waystones, t -> {
+            TeyvatConfigScreen.pinRow(t, MapConfig.PinKind.INTERACTIVE);
+            TeyvatConfigScreen.pathRow(t, MapConfig.PinKind.INTERACTIVE);
         });
     }
 
@@ -142,9 +149,9 @@ public final class WaystonesCompat {
      * place of an activated one).
      */
     static List<Marker> markers(ResourceKey<Level> dimension, Map<Long, Stone> seen, Iterable<Stone> active,
-                                java.util.function.Function<Stone, String> nameOf) {
+                                Function<Stone, String> nameOf) {
         List<Marker> out = new ArrayList<>();
-        java.util.Set<Long> activePlaces = new java.util.HashSet<>();
+        Set<Long> activePlaces = new HashSet<>();
         for (Stone s : active) {
             if (s.dimension() != dimension) continue;
             activePlaces.add(s.key());
@@ -157,7 +164,7 @@ public final class WaystonesCompat {
             }
         }
         // A stable order: the minimap and the map compare lists to know when to redraw.
-        out.sort(java.util.Comparator.comparingLong((Marker m) -> BlockPos.asLong(m.x, m.y, m.z)));
+        out.sort(Comparator.comparingLong((Marker m) -> BlockPos.asLong(m.x, m.y, m.z)));
         return out;
     }
 
@@ -188,7 +195,7 @@ public final class WaystonesCompat {
     /** The points of the stones of every known dimension (for the map search). */
     public static List<Marker> everywhere() {
         if (!loaded()) return List.of();
-        java.util.Set<ResourceKey<Level>> dims = new java.util.LinkedHashSet<>(SEEN.keySet());
+        Set<ResourceKey<Level>> dims = new LinkedHashSet<>(SEEN.keySet());
         for (Stone s : ACTIVE.values()) dims.add(s.dimension());
         List<Marker> out = new ArrayList<>();
         for (ResourceKey<Level> d : dims) out.addAll(forDimension(d));
@@ -206,7 +213,9 @@ public final class WaystonesCompat {
         if (!loaded()) return;
         List<Stone> found = new ArrayList<>();
         for (BlockEntity be : chunk.getBlockEntities().values()) {
-            Kind kind = kindOfBlockEntity(String.valueOf(BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(be.getType())));
+            // By the id's namespace first: every chest and sign of a chunk comes through here.
+            var id = BuiltInRegistries.BLOCK_ENTITY_TYPE.getKey(be.getType());
+            Kind kind = id == null || !id.getNamespace().equals(MOD_ID) ? null : kindOfBlockEntity(id.toString());
             if (kind == null) continue;
             Boolean dungeon = dungeonOfState(be.getBlockState().toString());
             if (dungeon == null) continue;
@@ -310,7 +319,7 @@ public final class WaystonesCompat {
             for (var e : arr) {
                 JsonObject o = e.getAsJsonObject();
                 ResourceKey<Level> dim = ResourceKey.create(Registries.DIMENSION,
-                        net.minecraft.resources.Identifier.parse(o.get("dimension").getAsString()));
+                        Identifier.parse(o.get("dimension").getAsString()));
                 Kind kind = Kind.valueOf(o.get("kind").getAsString());
                 BlockPos pos = new BlockPos(o.get("x").getAsInt(), o.get("y").getAsInt(), o.get("z").getAsInt());
                 Stone s = new Stone(dim, pos, kind, o.has("dungeon") && o.get("dungeon").getAsBoolean(), null, null);

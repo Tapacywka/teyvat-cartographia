@@ -5,6 +5,7 @@ import net.tapacywka.teyvatcartographia.version.Game;
 import net.tapacywka.teyvatcartographia.compat.WaystonesCompat;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
 import net.tapacywka.teyvatcartographia.gui.WorldMapScreen;
+import net.tapacywka.teyvatcartographia.hud.MinimapLayer;
 import net.tapacywka.teyvatcartographia.hud.WorldMarkerLayer;
 import net.tapacywka.teyvatcartographia.map.MapView;
 import net.tapacywka.teyvatcartographia.map.data.MapDataManager;
@@ -73,5 +74,6 @@ public final class ClientEvents {
         MapDataManager.get().closeAll(true);
         MarkerStore.switchWorld(null);
         WaystonesCompat.leave();
+        MinimapLayer.forgetWorld();
     }
 }

@@ -11,6 +11,7 @@ import net.tapacywka.teyvatcartographia.render.Tex;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Collections;
 
 /**
  * One 256x256-block map region: rendered pixels (NativeImage, RGBA), per-column heights and flags used for
@@ -350,7 +351,7 @@ public final class MapTile {
         NativeImage copy = new NativeImage(SIZE, SIZE, false);
         copy.copyFrom(image);
         return new TileSnapshot(tx, tz, copy, heights.clone(), flags.clone(), light.clone(), chunkState.clone(), chunkBiome.clone(),
-                java.util.Collections.unmodifiableList(new ArrayList<>(biomePalette)));
+                Collections.unmodifiableList(new ArrayList<>(biomePalette)));
     }
 
     record TileSnapshot(int tx, int tz, NativeImage image, short[] heights, byte[] flags, byte[] light, byte[] chunkState,

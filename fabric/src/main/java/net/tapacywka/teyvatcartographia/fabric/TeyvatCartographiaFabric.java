@@ -4,6 +4,7 @@ import net.tapacywka.teyvatcartographia.version.Game;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientChunkEvents;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
@@ -44,6 +45,8 @@ public final class TeyvatCartographiaFabric implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(ClientEvents::tick);
         ClientChunkEvents.CHUNK_LOAD.register(ClientEvents::chunkLoaded);
         ClientPlayConnectionEvents.DISCONNECT.register((handler, mc) -> ClientEvents.loggingOut());
+        // The game closed from inside a world (the window shut): the disconnect above may not come any more.
+        ClientLifecycleEvents.CLIENT_STOPPING.register(mc -> ClientEvents.loggingOut());
         LevelRenderEvents.END_MAIN.register(ctx -> {
             Minecraft mc = Minecraft.getInstance();
             WorldMarkerLayer.afterLevel(ctx.levelState().cameraRenderState.viewRotationMatrix, Game.camera(), mc.getDeltaTracker());

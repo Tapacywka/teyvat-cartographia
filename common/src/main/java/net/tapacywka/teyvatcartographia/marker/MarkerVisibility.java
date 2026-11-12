@@ -2,6 +2,9 @@ package net.tapacywka.teyvatcartographia.marker;
 
 import net.tapacywka.teyvatcartographia.config.MapConfig;
 import net.tapacywka.teyvatcartographia.nav.Navigation;
+import java.util.Objects;
+import net.minecraft.client.Minecraft;
+import net.tapacywka.teyvatcartographia.map.data.CaveScanner;
 
 /** Which pins the world map and the minimap draw (the pin list shows them all). */
 public final class MarkerVisibility {
@@ -55,19 +58,19 @@ public final class MarkerVisibility {
      * 0 on the same layer. Cave bands from the sea level up are above the surface, the others below it.
      */
     public static int layerRelation(Marker m, Integer band) {
-        var level = net.minecraft.client.Minecraft.getInstance().level;
+        var level = Minecraft.getInstance().level;
         return layerRelation(m.band, band, level == null ? 63 : level.getSeaLevel());
     }
 
     /** {@link #layerRelation(Marker, Integer)} of a pin on {@code pinBand} with {@code band} shown, at that sea level. */
     static int layerRelation(Integer pinBand, Integer band, int seaLevel) {
-        if (java.util.Objects.equals(pinBand, band)) return 0;
+        if (Objects.equals(pinBand, band)) return 0;
         return Integer.compare(layerHeight(pinBand, seaLevel), layerHeight(band, seaLevel));
     }
 
     /** Height order of a layer (twice the band's lowest Y; the surface just under the first band above the sea). */
     private static int layerHeight(Integer band, int seaLevel) {
-        if (band != null) return 2 * band * net.tapacywka.teyvatcartographia.map.data.CaveScanner.BAND;
+        if (band != null) return 2 * band * CaveScanner.BAND;
         return 2 * seaLevel + 1;
     }
 

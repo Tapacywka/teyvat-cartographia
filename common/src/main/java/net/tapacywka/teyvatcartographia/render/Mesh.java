@@ -1,6 +1,7 @@
 package net.tapacywka.teyvatcartographia.render;
 
 import org.joml.Matrix3x2fc;
+import java.util.Arrays;
 
 /**
  * Triangles being built for one draw: position (already moved by the GUI pose), texture coordinates and colour per
@@ -20,7 +21,7 @@ public final class Mesh {
 
     public void add(Matrix3x2fc pose, float x, float y, float u, float v, int argb) {
         int k = vertices * STRIDE;
-        if (k + STRIDE > data.length) data = java.util.Arrays.copyOf(data, data.length * 2);
+        if (k + STRIDE > data.length) data = Arrays.copyOf(data, data.length * 2);
         data[k] = pose.m00() * x + pose.m10() * y + pose.m20();
         data[k + 1] = pose.m01() * x + pose.m11() * y + pose.m21();
         data[k + 2] = u;

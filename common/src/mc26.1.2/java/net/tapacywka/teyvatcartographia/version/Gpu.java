@@ -21,6 +21,9 @@ import net.minecraft.client.renderer.RenderPipelines;
 
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
+import com.mojang.blaze3d.shaders.UniformType;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 /** The GPU calls that changed between the 26.x games: Minecraft 26.1.2's side (mc26.2 and mc26.3 have the others). */
 public final class Gpu {
@@ -111,17 +114,17 @@ public final class Gpu {
 
     /** The edge shader's bindings beside the GUI's own: its second texture and its block of values. */
     public static RenderPipeline.Builder edgeBindings(RenderPipeline.Builder builder, String sampler, String uniforms) {
-        return builder.withSampler(sampler).withUniform(uniforms, com.mojang.blaze3d.shaders.UniformType.UNIFORM_BUFFER);
+        return builder.withSampler(sampler).withUniform(uniforms, UniformType.UNIFORM_BUFFER);
     }
 
     /** A small block of float values for a pipeline, written whole before each pass that binds it. */
     public static final class Uniforms {
-        private final com.mojang.blaze3d.buffers.GpuBuffer buffer;
-        private final java.nio.ByteBuffer data;
+        private final GpuBuffer buffer;
+        private final ByteBuffer data;
 
         public Uniforms(String label, int floats) {
-            buffer = RenderSystem.getDevice().createBuffer(() -> label, com.mojang.blaze3d.buffers.GpuBuffer.USAGE_UNIFORM | com.mojang.blaze3d.buffers.GpuBuffer.USAGE_COPY_DST, floats * 4L);
-            data = java.nio.ByteBuffer.allocateDirect(floats * 4).order(java.nio.ByteOrder.nativeOrder());
+            buffer = RenderSystem.getDevice().createBuffer(() -> label, GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST, floats * 4L);
+            data = ByteBuffer.allocateDirect(floats * 4).order(ByteOrder.nativeOrder());
         }
 
         /** Writes the values (outside a render pass). */

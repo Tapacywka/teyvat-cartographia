@@ -36,7 +36,8 @@ public final class Plants {
 
     /** The plants switched on, read again when the setting changes; read by the chunk workers. */
     private static volatile Set<Block> shown = Set.of();
-    private static List<? extends String> shownFrom;
+    /** The setting the set was built from; null: build it again. Written after {@code shown}, so a reader that sees it sees the set. */
+    private static volatile List<? extends String> shownFrom;
 
     /** Whether a block is a plant (switched on or not). */
     public static boolean plant(Block b) {
@@ -65,7 +66,15 @@ public final class Plants {
         return !shown.contains(b) && plant(b);
     }
 
-    /** The plants shown now (empty with the plants off), read once per chunk by the scanner. */
+    /**
+     * A world was opened: the set is built again, as which blocks are plants also follows the block tags, and those
+     * come with the world (none at the title screen, others on another server).
+     */
+    public static void worldOpened() {
+        shownFrom = null;
+    }
+
+    /** The plants shown now (empty with the plants off), read once per chunk by the scanner, on its worker thread. */
     public static Set<Block> shownSet() {
         List<? extends String> ids = MapConfig.get(MapConfig.PLANTS_HIDDEN);
         if (ids != shownFrom) {
@@ -86,5 +95,4 @@ public final class Plants {
         for (Block b : BuiltInRegistries.BLOCK) if (plant(b)) out.add(b);
         return out;
     }
-
 }

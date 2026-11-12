@@ -19,6 +19,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 import java.util.Optional;
+import java.io.IOException;
 
 /**
  * The mouse pointer in the mod's menus (the world map with its panels, the settings): system cursors (GLFW, SDL3 on 26.3), so they
@@ -173,7 +174,7 @@ public final class Cursors {
     }
 
     /** A mask of the active theme, or of the default one; null if neither has it. */
-    private static NativeImage read(String file) throws java.io.IOException {
+    private static NativeImage read(String file) throws IOException {
         Optional<Resource> res = resource(file);
         if (res.isEmpty()) return null;
         try (InputStream in = res.get().open()) {

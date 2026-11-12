@@ -12,6 +12,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import com.mojang.serialization.JsonOps;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtOps;
 
 /**
  * Pins and the import (no world open, so nothing is saved): the limit of 300, repeats left out, interactive pins
@@ -68,11 +72,11 @@ class ImportRulesTest {
     @Test
     void theInteractivePinsOfEarlierVersionsAreLeftOut() {
         // A pin file of 0.7 with a party pin and a custom one: the interactive types went in 0.8.0 with every such pin.
-        com.google.gson.JsonArray arr = Marker.CODEC.listOf().encodeStart(com.mojang.serialization.JsonOps.INSTANCE,
+        com.google.gson.JsonArray arr = Marker.CODEC.listOf().encodeStart(JsonOps.INSTANCE,
                 List.of(pin("Statue", MarkerType.FLOWER, 1), pin("Camp", MarkerType.DEMON, 2))).getOrThrow().getAsJsonArray();
         arr.get(0).getAsJsonObject().addProperty("type", "PARTY");
         // Read as markers.json and the import read a list: a pin that does not decode is left out, the others stay.
-        List<Marker> read = Marker.CODEC.listOf().parse(com.mojang.serialization.JsonOps.INSTANCE, arr).resultOrPartial(e -> {}).orElseThrow();
+        List<Marker> read = Marker.CODEC.listOf().parse(JsonOps.INSTANCE, arr).resultOrPartial(e -> {}).orElseThrow();
         assertEquals(1, read.size(), "the party pin is gone, not turned into another type");
         assertEquals("Camp", read.get(0).name);
     }
@@ -82,20 +86,20 @@ class ImportRulesTest {
         // As a 0.1.2 server saved them: data/teyvatcartographia_pins.dat = {DataVersion, data: {pins: [...]}}.
         Marker star = pin("Star", MarkerType.STAR, 4);
         star.band = -1;
-        net.minecraft.nbt.CompoundTag data = new net.minecraft.nbt.CompoundTag();
-        net.minecraft.nbt.ListTag pins = (net.minecraft.nbt.ListTag) Marker.CODEC.listOf().encodeStart(net.minecraft.nbt.NbtOps.INSTANCE,
+        CompoundTag data = new CompoundTag();
+        ListTag pins = (ListTag) Marker.CODEC.listOf().encodeStart(NbtOps.INSTANCE,
                 List.of(star, pin("Statue", MarkerType.STAR, 5))).getOrThrow();
         // The second one a statue of 0.1.2, an interactive type: left out since 0.8.0.
         pins.getCompound(1).orElseThrow().putString("type", "STATUE");
         data.put("pins", pins);
-        net.minecraft.nbt.CompoundTag root = new net.minecraft.nbt.CompoundTag();
+        CompoundTag root = new CompoundTag();
         root.putInt("DataVersion", 3955);
         root.put("data", data);
         List<Marker> read = MarkerStore.readOldShared(root);
         assertEquals(1, read.size());
         assertEquals(star.id, read.get(0).id);
         assertEquals(-1, read.get(0).band);
-        assertTrue(MarkerStore.readOldShared(new net.minecraft.nbt.CompoundTag()).isEmpty(), "a file without pins: none");
+        assertTrue(MarkerStore.readOldShared(new CompoundTag()).isEmpty(), "a file without pins: none");
     }
 
     @Test

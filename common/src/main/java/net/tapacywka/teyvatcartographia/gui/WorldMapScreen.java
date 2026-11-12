@@ -51,6 +51,15 @@ import com.mojang.blaze3d.platform.Window;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.NavigableSet;
+import java.util.Objects;
+import net.minecraft.locale.Language;
+import net.minecraft.util.Util;
+import net.tapacywka.teyvatcartographia.marker.MarkerType;
 
 /**
  * Full-screen world map in the style of the references: fog-of-war backdrop, painted map regions, biome labels,
@@ -146,7 +155,7 @@ public final class WorldMapScreen extends Screen {
     // ================================================================== helpers
 
     /** Dimension names; asked several times per frame, built once (a translatable name follows the language). */
-    private static final java.util.Map<ResourceKey<Level>, Component> DIMENSION_NAMES = new java.util.HashMap<>();
+    private static final Map<ResourceKey<Level>, Component> DIMENSION_NAMES = new HashMap<>();
 
     public static Component dimensionName(ResourceKey<Level> dimension) {
         return DIMENSION_NAMES.computeIfAbsent(dimension, WorldMapScreen::buildDimensionName);
@@ -154,8 +163,8 @@ public final class WorldMapScreen extends Screen {
 
     /** The mod's name for a dimension, else its id's path made readable ("the_aether" as "The Aether"). */
     private static Component buildDimensionName(ResourceKey<Level> dimension) {
-        String key = net.minecraft.util.Util.makeDescriptionId("teyvatcartographia.dimension", dimension.identifier());
-        if (net.minecraft.locale.Language.getInstance().has(key)) return Component.translatable(key);
+        String key = Util.makeDescriptionId("teyvatcartographia.dimension", dimension.identifier());
+        if (Language.getInstance().has(key)) return Component.translatable(key);
         String pretty = readableName(dimension.identifier().getPath());
         return Component.literal(pretty.isEmpty() ? dimension.identifier().toString() : pretty);
     }
@@ -740,8 +749,8 @@ public final class WorldMapScreen extends Screen {
 
     private int gridLine(int n, float x0, float y0, float x1, float y1, int color) {
         if (n == gridColors.length) {
-            gridColors = java.util.Arrays.copyOf(gridColors, n * 2);
-            gridRects = java.util.Arrays.copyOf(gridRects, n * 8);
+            gridColors = Arrays.copyOf(gridColors, n * 2);
+            gridRects = Arrays.copyOf(gridRects, n * 8);
         }
         gridRects[n * 4] = x0;
         gridRects[n * 4 + 1] = y0;
@@ -775,7 +784,7 @@ public final class WorldMapScreen extends Screen {
         LocalPlayer p = Minecraft.getInstance().player;
         if (n < 2 && Route.oldCount() < 2 || p == null) return;
         // The walked part is gone: the line starts at its point nearest the player.
-        net.minecraft.world.phys.Vec3 me = p.getPosition(Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(true));
+        Vec3 me = p.getPosition(Minecraft.getInstance().getDeltaTracker().getGameTimeDeltaPartialTick(true));
         int first = Route.cut(me.x, me.z);
         // By air near white, dark grey through the fog (user decision 27.10.2026); else golden, grey through the fog.
         boolean air = DirectPath.active();
@@ -862,9 +871,9 @@ public final class WorldMapScreen extends Screen {
     /** Adds the world point (x, z) to the line being drawn. */
     private void linePoint(float x, float z, boolean fog, boolean water) {
         if (lineN == routeFog.length) {
-            routeXY = java.util.Arrays.copyOf(routeXY, 4 * lineN + 4);
-            routeFog = java.util.Arrays.copyOf(routeFog, 2 * lineN + 2);
-            routeWater = java.util.Arrays.copyOf(routeWater, 2 * lineN + 2);
+            routeXY = Arrays.copyOf(routeXY, 4 * lineN + 4);
+            routeFog = Arrays.copyOf(routeFog, 2 * lineN + 2);
+            routeWater = Arrays.copyOf(routeWater, 2 * lineN + 2);
         }
         routeXY[2 * lineN] = view.screenX(x, z);
         routeXY[2 * lineN + 1] = view.screenY(x, z);
@@ -1284,8 +1293,8 @@ public final class WorldMapScreen extends Screen {
         double guiScale = w.getGuiScale();
         boolean dirty = !chrome.exists() || !chromeValid || hover != kHover || scale != kScale || barsOn != kBars
                 || locate != kLocate || width != kWidth || height != kHeight || guiScale != kGuiScale || Theme.generation() != kChromeTheme
-                || cursor != kCursor || player != kPlayer || explored != kExplored || !java.util.Objects.equals(area, kArea)
-                || viewedDim != kDim || !java.util.Objects.equals(viewedBand, kBand)
+                || cursor != kCursor || player != kPlayer || explored != kExplored || !Objects.equals(area, kArea)
+                || viewedDim != kDim || !Objects.equals(viewedBand, kBand)
                 || MapDataManager.get().caveBands().size() != kBandCount || layerShownFrom() != kLayerFirst || layersOpen != kLayersOpen
                 || layerSlide.amount() != kLayerAmount;
         if (dirty) {
@@ -1490,7 +1499,7 @@ public final class WorldMapScreen extends Screen {
 
     /** The items of the field, rebuilt when a band is added (drawing does not iterate the set). */
     private int[] items() {
-        java.util.NavigableSet<Integer> set = MapDataManager.get().caveBands();
+        NavigableSet<Integer> set = MapDataManager.get().caveBands();
         if (set.size() != layerBands.length) {
             layerBands = new int[set.size()];
             int i = 0, sea = Minecraft.getInstance().level == null ? 63 : Minecraft.getInstance().level.getSeaLevel();
@@ -1673,7 +1682,7 @@ public final class WorldMapScreen extends Screen {
         return s != null && s.cave ? viewedBand : null;
     }
     // Labels of the bands, built once each.
-    private final java.util.Map<Integer, Component> cavesTexts = new java.util.HashMap<>();
+    private final Map<Integer, Component> cavesTexts = new HashMap<>();
 
     /** "Height 64 to 79" over the surface, "Height 63 to 48" under it: the tooltip of a cave layer's button. */
     private Component cavesText(int band) {
@@ -1825,7 +1834,7 @@ public final class WorldMapScreen extends Screen {
         for (Marker m : visibleMarkers(false)) {
             if (screenDistance(m, mx, my) <= r) hits.add(m);
         }
-        hits.sort(java.util.Comparator.comparingDouble(m -> screenDistance(m, mx, my)));
+        hits.sort(Comparator.comparingDouble(m -> screenDistance(m, mx, my)));
         return hits;
     }
 
@@ -1921,7 +1930,7 @@ public final class WorldMapScreen extends Screen {
             selX = bx + 0.5;
             selZ = bz + 0.5;
             items.add(new MapContextMenu.Item(Icon.NEW_PIN, Component.translatable("teyvatcartographia.map.menu.new_pin"), () -> newPinAt(bx, y, bz)));
-            if (net.tapacywka.teyvatcartographia.marker.MarkerType.isOperator()) {
+            if (MarkerType.isOperator()) {
                 items.add(new MapContextMenu.Item(Icon.TARGET, Component.translatable("teyvatcartographia.map.menu.teleport"),
                         () -> {
                     if (teleportTo(viewedDim, bx, y, bz)) onClose();
@@ -1950,7 +1959,7 @@ public final class WorldMapScreen extends Screen {
      */
     private static boolean teleportTo(ResourceKey<Level> dim, int bx, int y, int bz) {
         LocalPlayer p = Minecraft.getInstance().player;
-        if (p == null || !net.tapacywka.teyvatcartographia.marker.MarkerType.isOperator()) return false; // re-checked: /deop meanwhile
+        if (p == null || !MarkerType.isOperator()) return false; // re-checked: /deop meanwhile
         String in = "execute in " + dim.identifier() + " ";
         if (y != Integer.MIN_VALUE) p.connection.sendCommand(in + "run tp @s " + bx + ".5 " + y + " " + bz + ".5");
         else if (dim == Level.NETHER) p.connection.sendCommand(in + "run spreadplayers " + bx + ".5 " + bz + ".5 0 8 under 120 false @s");

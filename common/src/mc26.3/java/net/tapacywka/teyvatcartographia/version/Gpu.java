@@ -25,6 +25,9 @@ import org.joml.Vector4fc;
 import java.nio.ByteBuffer;
 import java.util.Optional;
 import java.util.OptionalDouble;
+import com.mojang.renderpearl.api.pipeline.BindGroupLayout;
+import com.mojang.renderpearl.api.pipeline.UniformType;
+import java.nio.ByteOrder;
 
 /** The GPU calls that changed between the 26.x games: Minecraft 26.3's side (mc26.1.2 and mc26.2 have the others). */
 public final class Gpu {
@@ -136,17 +139,17 @@ public final class Gpu {
 
     /** The edge shader's bindings beside the GUI's own: its second texture and its block of values. */
     public static RenderPipeline.Builder edgeBindings(RenderPipeline.Builder builder, String sampler, String uniforms) {
-        return builder.withBindGroupLayout(com.mojang.renderpearl.api.pipeline.BindGroupLayout.builder().withUniform(sampler, com.mojang.renderpearl.api.pipeline.UniformType.COMBINED_IMAGE_SAMPLER).withUniform(uniforms, com.mojang.renderpearl.api.pipeline.UniformType.UNIFORM_BUFFER).build());
+        return builder.withBindGroupLayout(BindGroupLayout.builder().withUniform(sampler, UniformType.COMBINED_IMAGE_SAMPLER).withUniform(uniforms, UniformType.UNIFORM_BUFFER).build());
     }
 
     /** A small block of float values for a pipeline, written whole before each pass that binds it. */
     public static final class Uniforms {
         private final GpuBuffer buffer;
-        private final java.nio.ByteBuffer data;
+        private final ByteBuffer data;
 
         public Uniforms(String label, int floats) {
             buffer = RenderSystem.getDevice().createBuffer(() -> label, GpuBuffer.USAGE_UNIFORM | GpuBuffer.USAGE_COPY_DST, floats * 4L);
-            data = java.nio.ByteBuffer.allocateDirect(floats * 4).order(java.nio.ByteOrder.nativeOrder());
+            data = ByteBuffer.allocateDirect(floats * 4).order(ByteOrder.nativeOrder());
         }
 
         /** Writes the values (outside a render pass). */

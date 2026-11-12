@@ -13,6 +13,7 @@ import net.tapacywka.teyvatcartographia.map.MapView;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -23,13 +24,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+import java.util.Arrays;
 
 /**
  * Disk format of the explored map (separate from user settings):
@@ -38,12 +42,11 @@ import java.util.zip.GZIPOutputStream;
  */
 public final class MapStorage {
     private static final int MAGIC = 0x54594D31; // "TYM1"
-    /** v2: surface sampled at the correct height (v1 read the block below the surface); v1 regions are rebuilt. */
-    /** v3: no water rim highlight along coasts. */
-    /** v4: no zoom-dependent alpha fade on the explored edge (drawn in screen space instead). */
-    /** v5: stronger biome tint for grass, foliage and water. */
-    /** v6: per-column block light (light sources on the map). */
-    /** v7 (0.2.0): colours of the block textures, plants, shallow water; older regions are deleted ({@link #dropOutdated}). */
+    /**
+     * The format of a region's metadata. 7 since 0.2.0 (colours of the block textures, plants, shallow water); regions of
+     * an older one are deleted ({@link #dropOutdated}). Before it: 2 the surface sampled at the right height, 3 no rim
+     * of light along coasts, 4 no fade of the explored edge in the picture, 5 a stronger biome tint, 6 block light.
+     */
     static final int VERSION = 7;
     private static final Pattern TILE_FILE = Pattern.compile("r\\.(-?\\d+)\\.(-?\\d+)\\.png");
 
@@ -113,8 +116,8 @@ public final class MapStorage {
         byte[] light = new byte[MapTile.SIZE * MapTile.SIZE];
         short[] chunkBiome = new short[MapTile.CHUNKS * MapTile.CHUNKS];
         List<ResourceKey<Biome>> palette = new ArrayList<>();
-        java.util.Arrays.fill(heights, MapTile.UNKNOWN_HEIGHT);
-        java.util.Arrays.fill(chunkBiome, (short) -1);
+        Arrays.fill(heights, MapTile.UNKNOWN_HEIGHT);
+        Arrays.fill(chunkBiome, (short) -1);
         if (Files.exists(dat)) {
             try (DataInputStream in = new DataInputStream(new BufferedInputStream(new GZIPInputStream(Files.newInputStream(dat))))) {
                 if (in.readInt() == MAGIC && in.readInt() == VERSION) {
@@ -134,6 +137,22 @@ public final class MapStorage {
         tile.biomePalette.addAll(palette);
         tile.gpuDirty = true;
         return tile;
+    }
+
+    /**
+     * Renames the picture and the metadata of a region that could not be read to {@code <name>.broken}, so the region
+     * mapped anew in its place does not write over them. Best effort: a file that cannot be moved stays where it is.
+     */
+    static void setAside(Path dir, int tx, int tz) {
+        for (String ext : new String[]{".png", ".dat"}) {
+            Path file = dir.resolve("r." + tx + "." + tz + ext);
+            if (!Files.exists(file)) continue;
+            try {
+                Files.move(file, file.resolveSibling(file.getFileName() + ".broken"), StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException e) {
+                TeyvatCartographia.LOGGER.warn("Could not set the unreadable map file {} aside", file, e);
+            }
+        }
     }
 
     /** The biome of every chunk of a region: palette indices ({@code -1} = unknown) and the palette. */
@@ -169,7 +188,7 @@ public final class MapStorage {
                 in.readFully(state);
             }
         } catch (IOException e) {
-            java.util.Arrays.fill(state, (byte) 0);
+            Arrays.fill(state, (byte) 0);
         }
         return TileStore.chunkBits(state);
     }
@@ -191,6 +210,35 @@ public final class MapStorage {
     static void writePalette(DataOutputStream out, List<ResourceKey<Biome>> palette) throws IOException {
         out.writeInt(palette.size());
         for (ResourceKey<Biome> b : palette) out.writeUTF(b == null ? "" : b.identifier().toString());
+    }
+
+    /**
+     * The chunk counts of the regions on disk, as {@code index.txt} keeps them (a line {@code <tx> <tz> <chunks>} per
+     * region, by {@link MapView#tileKey}); empty without the file or when it cannot be read.
+     */
+    static Map<Long, Integer> readIndex(Path dir) {
+        Map<Long, Integer> out = new HashMap<>();
+        Path index = dir.resolve("index.txt");
+        if (!Files.exists(index)) return out;
+        try (BufferedReader r = Files.newBufferedReader(index, StandardCharsets.UTF_8)) {
+            for (String line; (line = r.readLine()) != null; ) {
+                String[] p = line.trim().split(" ");
+                if (p.length == 3) out.put(MapView.tileKey(Integer.parseInt(p[0]), Integer.parseInt(p[1])), Integer.parseInt(p[2]));
+            }
+        } catch (IOException | NumberFormatException e) {
+            TeyvatCartographia.LOGGER.warn("Could not read map index {}", index, e);
+        }
+        return out;
+    }
+
+    /** Writes {@code index.txt} ({@link #readIndex}) through a temporary file. */
+    static void writeIndex(Path dir, Map<Long, Integer> counts) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        counts.forEach((k, v) -> sb.append(MapView.tileKeyX(k)).append(' ').append(MapView.tileKeyZ(k)).append(' ').append(v).append('\n'));
+        Files.createDirectories(dir);
+        Path tmp = dir.resolve("index.txt.tmp");
+        Files.writeString(tmp, sb, StandardCharsets.UTF_8);
+        Files.move(tmp, dir.resolve("index.txt"), StandardCopyOption.REPLACE_EXISTING);
     }
 
     /** Matches a region's metadata file, {@code r.<tx>.<tz>.dat}. */
