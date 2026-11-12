@@ -5,6 +5,7 @@ import net.tapacywka.teyvatcartographia.version.Game;
 import net.minecraft.world.level.Level;
 import net.minecraft.resources.ResourceKey;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
+import net.tapacywka.teyvatcartographia.radar.Radar;
 import net.tapacywka.teyvatcartographia.gui.Ui;
 import net.tapacywka.teyvatcartographia.gui.Ui.Grid;
 import net.tapacywka.teyvatcartographia.map.MapView;
@@ -279,6 +280,10 @@ public final class MinimapLayer {
         int by0 = (int) Math.floor(textBelow ? cy - r - 4 : cy - r - 4 - textBlock);
         int by1 = (int) Math.ceil(textBelow ? cy + r + 4 + textBlock : cy + r + 4);
         float heading = (float) view.headingOnScreen(yaw);
+        // The radar's dots move on their own: where they are on the map is part of what the layer was drawn from.
+        radarPt = pt;
+        radarY = pos.y;
+        long radar = Radar.any() ? Radar.signature(view, pt, cx, cy, innerRadius(Math.max(8, r - padding)), Theme.Style.squareMap, pos.y) : 0;
         if (!preview) {
             shown = true;
             shownX0 = bx0;
@@ -301,7 +306,7 @@ public final class MinimapLayer {
                 || (time2Line == null) != (kTime2 == null) || pillScale != kPillScale;
         boolean moved = pos.x != kX || pos.z != kZ || heading != kHeading || view.rotation != kRotation
                 || cacheGeneration != kGeneration || coordsLine != kCoords || biomeLine != kBiome || timeLine != kTime || time2Line != kTime2
-                || bx0 != kBx0 || by0 != kBy0 || bx1 != kBx1 || by1 != kBy1 || route != kRoute;
+                || bx0 != kBx0 || by0 != kBy0 || bx1 != kBx1 || by1 != kBy1 || route != kRoute || radar != kRadar;
         long now = Util.getNanos();
         if (changed || moved && now - kDrawnNs >= MapConfig.get(MapConfig.MINIMAP_UPDATE_RATE).intervalNs) {
             kDrawnNs = now;
@@ -328,9 +333,15 @@ public final class MinimapLayer {
             kPadding = padding; kRotating = rotating; kFadeStart = fadeStart; kFadeEdge = fadeEdge; kInfoGap = infoGap;
             kPillOpacity = pillOpacity;
             kCone = cone;
+            kRadar = radar;
         }
         return true;
     }
+
+    /** The radar's frame time and the player's height of the frame the layer is drawn in. */
+    private float radarPt;
+    private double radarY;
+    private long kRadar;
 
     // Composite layer and the inputs it was drawn from.
     private final CachedLayer layer = new CachedLayer();
@@ -441,6 +452,9 @@ public final class MinimapLayer {
         // request 26.10.2026), so they end where the map is still half seen.
         float edge = fadeEdge >= 1f ? mapR - TARGET_EDGE : Math.min(mapR - TARGET_EDGE, mapR * (1 + fadeStart) / 2);
         if (path) drawRoute(g, cx, cy, edge, inner, alpha);
+        // The radar under the pins (they matter more), inside the same circle.
+        Draw.snapIcons(false);
+        if (Radar.any()) Radar.draw(g, view, radarPt, true, cx, cy, inner, Theme.Style.squareMap, radarY, alpha, -1, -1);
         // Pins by MarkerVisibility, at any zoom; the target itself is drawn just after. The map under them moves
         // smoothly between pixels, so they are not snapped to the pixel grid (snapped, they shook).
         Draw.snapIcons(false);

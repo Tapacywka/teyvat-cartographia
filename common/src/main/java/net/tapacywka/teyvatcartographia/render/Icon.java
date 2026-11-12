@@ -16,7 +16,9 @@ public enum Icon {
     // The path over deep water (where a crossing begins) and by air (where the straight line begins)
     SEA, CLOUD,
     // Waystones (compat/WaystonesCompat): a waystone, one of a dungeon, a sharestone, a warp plate
-    WAYSTONE, DUNGEON, SHARESTONE, WARP_PLATE;
+    WAYSTONE, DUNGEON, SHARESTONE, WARP_PLATE,
+    // A sub-level of Sable on the radar (radar/SableRadar), while its silhouette is not ready or too small
+    SHIP;
 
     public static final int COLUMNS = 8, CELL = 64, ATLAS_W = 512, ATLAS_H = 512;
 

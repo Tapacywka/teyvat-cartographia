@@ -11,6 +11,7 @@ import net.tapacywka.aacs.api.Value;
 import java.nio.file.Path;
 import java.util.List;
 import net.tapacywka.teyvatcartographia.marker.MarkerType;
+import net.tapacywka.teyvatcartographia.radar.RadarRules;
 
 /**
  * Client-side user settings (UI only). Stored in {@code config/teyvatcartographia-client.json} (AACS {@link ConfigFile}).
@@ -72,6 +73,14 @@ public final class MapConfig {
     public static final EnumValue<TimeSource> MINIMAP_TIME_SOURCE;
     public static final EnumValue<TimeFormat> MINIMAP_TIME_FORMAT;
     public static final BoolValue MINIMAP_SHOW_DAY;
+
+    // Radar (user decisions 12.11.2026, docs/RADAR_SPEC.md): shared rows first, then where each kind shows.
+    public static final BoolValue RADAR_ENABLED;
+    public static final IntValue RADAR_RANGE;
+    public static final BoolValue RADAR_HEIGHT;
+    /** On a server the mobs and the rest too (fair play: off by default, other players only). */
+    public static final BoolValue RADAR_SERVER_MOBS;
+    public static final EnumValue<RadarRules.Show> RADAR_PLAYERS, RADAR_HOSTILE, RADAR_PASSIVE, RADAR_PETS, RADAR_OTHER;
 
     // World map
     public static final BoolValue MAP_SHOW_LABELS;
@@ -190,6 +199,8 @@ public final class MapConfig {
     public static final EnumValue<MarkerType> XAERO_PIN_TYPE;
     public static final BoolValue XAERO_HIDDEN;
     public static final BoolValue XAERO_DEATHS;
+    /** Where Sable's sub-levels show on the radar (radar/SableRadar). */
+    public static final EnumValue<RadarRules.Show> SABLE_RADAR;
 
     public enum Detail { LOW, MEDIUM, HIGH }
 
@@ -256,6 +267,19 @@ public final class MapConfig {
         MINIMAP_SHOW_DAY = b.bool("showDay", true);
         b.pop();
 
+        b.push("radar");
+        RADAR_ENABLED = b.bool("enabled", true);
+        // In chunks like the mapping radius (user request 12.11.2026; until then blocks under "range").
+        RADAR_RANGE = b.integer("rangeChunks", 8, 2, 16);
+        RADAR_HEIGHT = b.bool("heightArrows", true);
+        RADAR_SERVER_MOBS = b.bool("serverMobs", false);
+        RADAR_PLAYERS = b.choice("players", RadarRules.Show.BOTH);
+        RADAR_HOSTILE = b.choice("hostile", RadarRules.Show.BOTH);
+        RADAR_PASSIVE = b.choice("passive", RadarRules.Show.BOTH);
+        RADAR_PETS = b.choice("pets", RadarRules.Show.BOTH);
+        RADAR_OTHER = b.choice("other", RadarRules.Show.OFF);
+        b.pop();
+
         // The tracked target is always shown on the maps, whatever its kind's switches say.
         b.push("pins");
         for (PinKind kind : PinKind.values()) PINS[kind.ordinal()] = new PinOptions(b, kind);
@@ -306,6 +330,9 @@ public final class MapConfig {
         XAERO_PIN_TYPE = b.choice("pinType", MarkerType.STAR, List.copyOf(MarkerType.customTypes()));
         XAERO_HIDDEN = b.bool("hidden", true);
         XAERO_DEATHS = b.bool("deaths", false);
+        b.pop();
+        b.push("sable");
+        SABLE_RADAR = b.choice("radar", RadarRules.Show.BOTH);
         b.pop();
         b.pop();
 

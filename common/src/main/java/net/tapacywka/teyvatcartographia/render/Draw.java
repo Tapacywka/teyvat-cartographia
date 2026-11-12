@@ -660,6 +660,32 @@ public final class Draw {
     }
 
     /**
+     * Many convex quadrilaterals in one draw call, without soft edges, so quads sharing a side meet without a seam (the
+     * blocks of a Sable sub-level turned by its pose): {@code xy} holds four corners in order (x, y each) per quad,
+     * {@code colors} one ARGB colour each.
+     */
+    public static void quads(GuiGraphicsExtractor g, float[] xy, int[] colors, int count) {
+        if (count <= 0) return;
+        Matrix3x2fc m = mat(g);
+        Mesh b = beginColor();
+        for (int i = 0; i < count; i++) {
+            int o = i * 8;
+            float ax = xy[o], ay = xy[o + 1], bx = xy[o + 2], by = xy[o + 3], cx = xy[o + 4], cy = xy[o + 5], dx = xy[o + 6], dy = xy[o + 7];
+            // Always turning the same way, as {@link #quad}.
+            if ((bx - ax) * (cy - ay) - (by - ay) * (cx - ax) > 0) {
+                float x = bx, y = by;
+                bx = dx;
+                by = dy;
+                dx = x;
+                dy = y;
+            }
+            tri(b, m, ax, ay, bx, by, cx, cy, colors[i]);
+            tri(b, m, ax, ay, cx, cy, dx, dy, colors[i]);
+        }
+        endColor(g, b);
+    }
+
+    /**
      * Many axis-aligned rectangles in one draw call: {@code rects} holds x0, y0, x1, y1 per rectangle and
      * {@code colors} one ARGB colour each (e.g. the map grid).
      */

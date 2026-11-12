@@ -8,6 +8,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.tapacywka.aacs.api.AacsScreen;
 import net.tapacywka.aacs.api.BoolValue;
+import net.tapacywka.aacs.api.EnumValue;
+import net.tapacywka.teyvatcartographia.radar.RadarRules;
 import net.tapacywka.aacs.api.Palette;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
 import net.tapacywka.teyvatcartographia.config.StepChoice;
@@ -45,8 +47,8 @@ import net.tapacywka.teyvatcartographia.render.MapLayerRenderer;
 import net.tapacywka.teyvatcartographia.render.MarkerRenderer;
 
 /**
- * The settings screen, laid out by Actually Amazing Config Screen (AACS) over the values of {@link MapConfig}: six
- * tabs, each answering one question: how the map looks and what it shows (Map), the minimap, the pins, how much work
+ * The settings screen, laid out by Actually Amazing Config Screen (AACS) over the values of {@link MapConfig}: seven
+ * tabs, each answering one question: how the map looks and what it shows (Map), the minimap, the radar, the pins, how much work
  * the mapping may take (System), what was made for Minecraft's dimensions and other mods (Compatibility), and what is
  * still being tried (Experimental). AACS scrolls the tabs between two arrows, as they do not fit in the panel. The
  * pictures of the card beside the list stay here ({@link Pictures}, {@link SettingsPreview}).
@@ -99,6 +101,13 @@ public final class TeyvatConfigScreen {
                 s -> setSteps(s, o.path, o.pathMap, o.pathMinimap, o.pathWorld));
     }
 
+
+    private static final String[] RADAR_STEPS = {K + "step.off", K + "step.minimap", K + "step.maps"};
+
+    /** Where a kind of the radar shows: off, the minimap, both maps. */
+    public static void radarRow(AacsScreen.Tab t, String key, EnumValue<RadarRules.Show> value) {
+        t.steps(K + key, RADAR_STEPS, () -> value.get().ordinal(), s -> value.set(RadarRules.Show.values()[s]));
+    }
 
     private static AacsScreen build() {
         Runnable remap = () -> MapDataManager.get().remapLoaded(); // the chunks around mapped again in the new way
@@ -183,6 +192,22 @@ public final class TeyvatConfigScreen {
                     ? Component.translatable(K + "value.auto").getString() : Integer.toString((int) Math.round(d))));
             t.slider(K + "minimap_pill_opacity", MapConfig.MINIMAP_PILL_OPACITY, s -> s.unit("%"));
             t.slider(K + "minimap_info_gap", MapConfig.MINIMAP_INFO_GAP, s -> {});
+        });
+        // Radar (user decisions 12.11.2026; a tab of its own right after the minimap, user request the same day): the rows
+        // for every kind first, then where each kind shows. Its pictures are the minimap's (the minimap alone, large).
+        b.tab(K + "tab.radar", t -> {
+            t.defaultPreview(new Pictures(K + "tab.minimap"));
+            t.section(K + "subsection.radar");
+            t.toggle(K + "radar_enabled", MapConfig.RADAR_ENABLED);
+            t.slider(K + "radar_range", MapConfig.RADAR_RANGE, s -> {});
+            t.toggle(K + "radar_height", MapConfig.RADAR_HEIGHT);
+            t.toggle(K + "radar_server_mobs", MapConfig.RADAR_SERVER_MOBS);
+            t.section(K + "subsection.radar_kinds");
+            radarRow(t, "radar_players", MapConfig.RADAR_PLAYERS);
+            radarRow(t, "radar_hostile", MapConfig.RADAR_HOSTILE);
+            radarRow(t, "radar_passive", MapConfig.RADAR_PASSIVE);
+            radarRow(t, "radar_pets", MapConfig.RADAR_PETS);
+            radarRow(t, "radar_other", MapConfig.RADAR_OTHER);
         });
         // Pins: each kind as one choice (off, the map, both maps, in the world with the marker, everywhere with the beam);
         // then the path to a tracked pin of each kind (off, the map, both maps, everywhere with the stars). The
@@ -322,7 +347,10 @@ public final class TeyvatConfigScreen {
     private static final Set<String> PLACE_ROWS = Set.of(K + "minimap_radius", K + "minimap_corner", K + "minimap_offset_x", K + "minimap_offset_y");
 
     /** The minimap's look: their preview is the minimap alone, without the lines under it. */
-    private static final Set<String> LOOK_ROWS = Set.of(K + "minimap_shape", K + "minimap_opacity",K + "minimap_padding", K + "minimap_fade_width", K + "minimap_fade_strength");
+    private static final Set<String> LOOK_ROWS = Set.of(K + "minimap_shape", K + "minimap_opacity",K + "minimap_padding", K + "minimap_fade_width", K + "minimap_fade_strength",
+            // The radar's rows: the minimap alone too, large, so its dots show.
+            K + "radar_enabled", K + "radar_range", K + "radar_height", K + "radar_server_mobs", K + "radar_players", K + "radar_hostile",
+            K + "radar_passive", K + "radar_pets", K + "radar_other");
 
     /** The far land, the map edges and the world border: the map from farther out, where they show. */
     private static final Set<String> FAR_ROWS = Set.of(K + "far_land", K + "map_outline", K + "world_border");

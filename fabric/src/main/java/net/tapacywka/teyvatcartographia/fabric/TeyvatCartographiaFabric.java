@@ -7,6 +7,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientChunkEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
@@ -44,6 +45,9 @@ public final class TeyvatCartographiaFabric implements ClientModInitializer {
         ResourceLoader.get(PackType.CLIENT_RESOURCES).registerReloadListener(id("themes"), new ThemeLoader());
         ClientTickEvents.END_CLIENT_TICK.register(ClientEvents::tick);
         ClientChunkEvents.CHUNK_LOAD.register(ClientEvents::chunkLoaded);
+        // Xaero's fair play codes come in the chat (Radar).
+        ClientReceiveMessageEvents.GAME.register((message, overlay) -> ClientEvents.chat(message));
+        ClientReceiveMessageEvents.CHAT.register((message, signed, sender, params, time) -> ClientEvents.chat(message));
         ClientPlayConnectionEvents.DISCONNECT.register((handler, mc) -> ClientEvents.loggingOut());
         // The game closed from inside a world (the window shut): the disconnect above may not come any more.
         ClientLifecycleEvents.CLIENT_STOPPING.register(mc -> ClientEvents.loggingOut());

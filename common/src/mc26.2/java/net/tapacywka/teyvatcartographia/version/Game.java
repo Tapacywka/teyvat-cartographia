@@ -88,4 +88,9 @@ public final class Game {
     public static void toggleFullscreen() {
         Minecraft.getInstance().getWindow().toggleFullScreen();
     }
+
+    /** A team's colour as RGB, or null for a team without one (the radar's players). */
+    public static Integer teamColour(net.minecraft.world.scores.Team team) {
+        return team.getColor().map(net.minecraft.world.scores.TeamColor::rgb).orElse(null);
+    }
 }

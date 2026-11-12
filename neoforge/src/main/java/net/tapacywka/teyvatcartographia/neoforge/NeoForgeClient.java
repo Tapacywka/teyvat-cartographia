@@ -8,6 +8,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModContainer;
+import net.neoforged.neoforge.client.event.ClientChatReceivedEvent;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.AddClientReloadListenersEvent;
@@ -55,6 +56,8 @@ final class NeoForgeClient {
             if (e.getLevel() instanceof ClientLevel level && e.getChunk() instanceof LevelChunk chunk) ClientEvents.chunkLoaded(level, chunk);
         });
         NeoForge.EVENT_BUS.addListener((ClientPlayerNetworkEvent.LoggingOut e) -> ClientEvents.loggingOut());
+        // Xaero's fair play codes come in the chat (Radar); the system messages too, a kind of this event.
+        NeoForge.EVENT_BUS.addListener((ClientChatReceivedEvent e) -> ClientEvents.chat(e.getMessage()));
         // The game closed from inside a world (the window shut): the logging out above may not come any more.
         NeoForge.EVENT_BUS.addListener((GameShuttingDownEvent e) -> ClientEvents.loggingOut());
         NeoForge.EVENT_BUS.addListener((RenderLevelStageEvent.AfterLevel e) -> {

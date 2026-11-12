@@ -93,4 +93,9 @@ public final class Game {
         // Through the option, as the video settings do: it sets the window (26.3 has no toggleFullScreen).
         Minecraft.getInstance().options.fullscreen().set(!fullscreen());
     }
+
+    /** A team's colour as RGB, or null for a team without one (the radar's players). */
+    public static Integer teamColour(net.minecraft.world.scores.Team team) {
+        return team.getColor().map(net.minecraft.world.scores.TeamColor::rgb).orElse(null);
+    }
 }
