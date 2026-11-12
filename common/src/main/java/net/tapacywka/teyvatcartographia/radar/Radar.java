@@ -15,6 +15,7 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.OwnableEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Enemy;
+import net.minecraft.world.entity.npc.AbstractVillager;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.vehicle.VehicleEntity;
 import net.minecraft.world.level.Level;
@@ -72,6 +73,7 @@ public final class Radar {
             case PLAYERS -> MapConfig.RADAR_PLAYERS;
             case HOSTILE -> MapConfig.RADAR_HOSTILE;
             case PASSIVE -> MapConfig.RADAR_PASSIVE;
+            case VILLAGERS -> MapConfig.RADAR_VILLAGERS;
             case PETS -> MapConfig.RADAR_PETS;
             case OTHER -> MapConfig.RADAR_OTHER;
         });
@@ -220,6 +222,7 @@ public final class Radar {
         if (e instanceof Player p) return p.isSpectator() ? null : RadarRules.Kind.PLAYERS;
         if (e instanceof OwnableEntity o && me.equals(o.getOwnerUUID())) return RadarRules.Kind.PETS;
         if (e instanceof Enemy) return RadarRules.Kind.HOSTILE;
+        if (e instanceof AbstractVillager) return RadarRules.Kind.VILLAGERS;
         if (e instanceof Mob) return RadarRules.Kind.PASSIVE;
         if (e instanceof VehicleEntity || e instanceof ItemEntity) return RadarRules.Kind.OTHER;
         return null;
@@ -248,6 +251,7 @@ public final class Radar {
             case PLAYERS -> Theme.RADAR_PLAYER;
             case HOSTILE -> Theme.RADAR_HOSTILE;
             case PASSIVE -> Theme.RADAR_PASSIVE;
+            case VILLAGERS -> Theme.RADAR_VILLAGER;
             case PETS -> Theme.RADAR_PET;
             case OTHER -> Theme.RADAR_OTHER;
         };

@@ -9,7 +9,7 @@ public final class RadarRules {
     private RadarRules() {}
 
     /** The kinds of entities on the radar, each with a setting of its own. */
-    public enum Kind { PLAYERS, HOSTILE, PASSIVE, PETS, OTHER }
+    public enum Kind { PLAYERS, HOSTILE, PASSIVE, VILLAGERS, PETS, OTHER }
 
     /** Where a kind shows: nowhere, on the minimap, on both maps. */
     public enum Show {

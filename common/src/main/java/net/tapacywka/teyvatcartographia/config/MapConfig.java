@@ -80,7 +80,7 @@ public final class MapConfig {
     public static final BoolValue RADAR_HEIGHT;
     /** On a server the mobs and the rest too (fair play: off by default, other players only). */
     public static final BoolValue RADAR_SERVER_MOBS;
-    public static final EnumValue<RadarRules.Show> RADAR_PLAYERS, RADAR_HOSTILE, RADAR_PASSIVE, RADAR_PETS, RADAR_OTHER;
+    public static final EnumValue<RadarRules.Show> RADAR_PLAYERS, RADAR_HOSTILE, RADAR_PASSIVE, RADAR_VILLAGERS, RADAR_PETS, RADAR_OTHER;
 
     // World map
     public static final BoolValue MAP_SHOW_LABELS;
@@ -276,6 +276,7 @@ public final class MapConfig {
         RADAR_PLAYERS = b.choice("players", RadarRules.Show.BOTH);
         RADAR_HOSTILE = b.choice("hostile", RadarRules.Show.BOTH);
         RADAR_PASSIVE = b.choice("passive", RadarRules.Show.BOTH);
+        RADAR_VILLAGERS = b.choice("villagers", RadarRules.Show.BOTH);
         RADAR_PETS = b.choice("pets", RadarRules.Show.BOTH);
         RADAR_OTHER = b.choice("other", RadarRules.Show.OFF);
         b.pop();

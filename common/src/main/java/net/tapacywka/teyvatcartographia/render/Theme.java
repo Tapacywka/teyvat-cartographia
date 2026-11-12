@@ -198,6 +198,7 @@ public final class Theme {
      */
     public static int RADAR_HOSTILE = 0xFFF25555;
     public static int RADAR_PASSIVE = 0xFFFFFFFF;
+    public static int RADAR_VILLAGER = 0xFFFFD84A;
     public static int RADAR_PET = 0xFF6FE3C8;
     public static int RADAR_OTHER = 0xFFB9A7FF;
     public static int RADAR_PLAYER = 0xFFFFA640;

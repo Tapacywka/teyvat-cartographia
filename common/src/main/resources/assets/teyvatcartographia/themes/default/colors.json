@@ -85,6 +85,7 @@
     "world_border_beyond": "#85141C24",
     "radar_hostile": "#FFF25555",
     "radar_passive": "#FFFFFFFF",
+    "radar_villager": "#FFFFD84A",
     "radar_pet": "#FF6FE3C8",
     "radar_other": "#FFB9A7FF",
     "radar_player": "#FFFFA640",
