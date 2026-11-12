@@ -46,6 +46,8 @@ public final class SableRadar {
     public static final String MOD_ID = "sable";
     /** How often a silhouette is read again from the sub-level's blocks (ticks): ships are built on while they sail. */
     private static final int REREAD_TICKS = 100;
+    /** How often one with no blocks read yet is asked again: its chunks come to the client after the sub-level itself. */
+    private static final int RETRY_TICKS = 10;
     /** At most this many columns are read per sub-level (a larger one shows as its icon). */
     private static final int MAX_COLUMNS = 16384;
 
@@ -55,7 +57,8 @@ public final class SableRadar {
         String name;
         int[] cx = new int[0], cz = new int[0], colour = new int[0];
         int columns, minX, minZ, maxX, maxZ, top;
-        int readAt = Integer.MIN_VALUE;
+        int readAt;
+        boolean neverRead = true;
         double lastX = Double.NaN, lastZ, vx, vz;
         boolean seen;
     }
@@ -128,7 +131,8 @@ public final class SableRadar {
                 }
                 s.lastX = p.x();
                 s.lastZ = p.z();
-                if (ticks - s.readAt >= REREAD_TICKS) {
+                if (s.neverRead || ticks - s.readAt >= (s.columns == 0 ? RETRY_TICKS : REREAD_TICKS)) {
+                    s.neverRead = false;
                     s.readAt = ticks;
                     read(s, getPlot.invoke(sub));
                 }
