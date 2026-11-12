@@ -10,6 +10,8 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 
 ## [Unreleased]
 
+## [1.3.2] - 2026-11-12
+
 ### Fixed
 - A file of pins that cannot be read (cut short or broken by another program) is no longer replaced by an empty list
   with the next change: it is kept beside it as `markers.json.broken`.
@@ -19,6 +21,8 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
   explored land could be lost).
 - Which blocks count as plants on the map follows the world you are in: it was worked out once, from the first world
   opened in a game.
+- Settings are saved also on a drive that cannot replace a file in one step (some network drives), with Actually
+  Amazing Config Screen 1.3.2 inside.
 
 ## [1.3.1] - 2026-11-11
 
@@ -546,7 +550,8 @@ The first public release, for Minecraft 1.21.1 on NeoForge 21.1. Client only.
 - Cached HUD layers, chunk work on worker threads and path searches in short slices: the mod is meant to cost at most
   2 to 3% FPS.
 
-[Unreleased]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.3.1...HEAD
+[Unreleased]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.3.2...HEAD
+[1.3.2]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.3.1...v1.3.2
 [1.3.1]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.1.0...v1.2.0
