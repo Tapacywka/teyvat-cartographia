@@ -137,12 +137,62 @@ public final class MapDataManager {
     private MapDataManager() {}
 
     /**
-     * Whether the active dimension has cave layers: a sky and no ceiling, the setting on, and not a dimension where a
-     * mod's world makes no sense of them (the Aether's floating islands, see {@link ModCompat}).
+     * Whether the active dimension has cave layers: a sky and no ceiling, the setting on for either map, and not a
+     * dimension where a mod's world makes no sense of them (the Aether's floating islands, see {@link ModCompat}).
+     * The caves are mapped while either map shows them.
      */
     public boolean cavesSupported() {
+        return cavesHere() && (MapConfig.get(MapConfig.CAVES_ENABLED) || MapConfig.get(MapConfig.CAVES_MINIMAP));
+    }
+
+    /** Cave layers on the world map (user decision 13.11.2026: each map its own switch). */
+    public boolean cavesOnMap() {
+        return cavesHere() && MapConfig.get(MapConfig.CAVES_ENABLED);
+    }
+
+    /** Cave layers on the minimap. */
+    public boolean cavesOnMinimap() {
+        return cavesHere() && MapConfig.get(MapConfig.CAVES_MINIMAP);
+    }
+
+    private boolean cavesHere() {
         return level != null && active != null && level.dimensionType().hasSkyLight() && !level.dimensionType().hasCeiling()
-                && MapConfig.get(MapConfig.CAVES_ENABLED) && ModCompat.caves(level.dimension());
+                && ModCompat.caves(level.dimension());
+    }
+
+    /** Natural blocks above an entity looked for at most, from its head (less than the player's: many a tick). */
+    private static final int ENTITY_ROOF_SCAN = 64;
+    private static final BlockPos.MutableBlockPos ENTITY_POS = new BlockPos.MutableBlockPos();
+    private final Underground.Roof entityRoof = new Underground.Roof();
+
+    /**
+     * Whether an entity at ({@code x}, {@code y}, {@code z}) is underground (the radar's layers, user decision
+     * 13.11.2026), as the player is: a run of natural blocks over its head, looked for up to the mapped ground there.
+     * At or over the mapped ground it is not; where the client has no blocks (a mob the game's server told of), more
+     * than {@link Underground#ROOF} blocks under the mapped ground is. Main thread.
+     */
+    public boolean underground(net.minecraft.world.level.Level level, double x, double y, double z) {
+        int bx = net.minecraft.util.Mth.floor(x), bz = net.minecraft.util.Mth.floor(z), by = net.minecraft.util.Mth.floor(y);
+        int ground = active == null ? Integer.MIN_VALUE : active.heightAt(bx, bz);
+        if (ground != Integer.MIN_VALUE && by >= ground - 1) return false;
+        if (!level.hasChunk(bx >> 4, bz >> 4)) return ground != Integer.MIN_VALUE && by < ground - Underground.ROOF;
+        int top = Math.min(level.getMaxBuildHeight(), Math.min(by + 2 + ENTITY_ROOF_SCAN, ground == Integer.MIN_VALUE ? Integer.MAX_VALUE : ground + 1));
+        entityRoof.reset();
+        for (int yy = by + 2; yy < top && entityRoof.best() < Underground.ROOF; yy++) {
+            entityRoof.add(Underground.natural(level.getBlockState(ENTITY_POS.set(bx, yy, bz))));
+        }
+        return entityRoof.best() >= Underground.ROOF;
+    }
+
+    /** The cave band of the mapped ground at a column, or {@code fallback} where it is not mapped. */
+    public int groundBand(double x, double z, int fallback) {
+        int h = active == null ? Integer.MIN_VALUE : active.heightAt(net.minecraft.util.Mth.floor(x), net.minecraft.util.Mth.floor(z));
+        return h == Integer.MIN_VALUE ? fallback : CaveScanner.band(h);
+    }
+
+    /** The cave band the minimap shows (the player's while underground and the minimap shows caves), or null. */
+    public Integer minimapBand() {
+        return cavesOnMinimap() ? underground.current() : null;
     }
 
     /** The cave band the player is in, or null above ground (or without cave layers). */
@@ -168,7 +218,7 @@ public final class MapDataManager {
 
     /** What the minimap shows: the cave band the player is in, else the surface. */
     public TileStore shownStore() {
-        Integer band = undergroundBand();
+        Integer band = minimapBand();
         return band != null ? caveStore(band) : active;
     }
 

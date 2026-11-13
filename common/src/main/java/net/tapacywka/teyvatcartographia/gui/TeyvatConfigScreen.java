@@ -12,6 +12,7 @@ import net.tapacywka.aacs.api.EnumValue;
 import net.tapacywka.teyvatcartographia.radar.RadarRules;
 import net.tapacywka.aacs.api.Palette;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
+import net.tapacywka.teyvatcartographia.config.PinParts;
 import net.tapacywka.teyvatcartographia.config.StepChoice;
 import net.tapacywka.teyvatcartographia.hud.MinimapLayer;
 import net.tapacywka.teyvatcartographia.map.MapView;
@@ -64,38 +65,45 @@ public final class TeyvatConfigScreen {
 
     private static final String[] CLOCK_OPTIONS = {K + "step.off", K + "step.game", K + "step.real", K + "step.both"};
     private static final String[] EDGE_STEPS = {K + "step.off", K + "step.edges_still", K + "step.edges_breathing", K + "step.edges_surf"};
-    private static final String[] PIN_STEPS ={K + "step.off", K + "step.map", K + "step.maps", K + "step.world", K + "step.everywhere"};
-    private static final String[] PATH_STEPS = {K + "step.off", K + "step.map", K + "step.maps", K + "step.everywhere"};
+
     /** The minimap's redraws a second, from the cheapest to the smoothest (the names of {@link MapConfig.UpdateRate}). */
     private static final String[] RATE_STEPS = {K + "value.rate_10", K + "value.rate_20", K + "value.rate_30", K + "value.rate_60", K + "value.unlimited"};
     private static final String[] SHOW_STEPS = {K + "value.show_30s", K + "value.show_60s", K + "value.show_2m", K + "value.show_5m", K + "value.always"};
 
-    /** Sets an on/off setting and its three parts from a step (see {@link StepChoice}); off leaves the parts as they are. */
-    private static void setSteps(int step, BoolValue on, BoolValue map, BoolValue minimap, BoolValue world) {
-        on.set(StepChoice.on(step));
-        if (!StepChoice.on(step)) return;
-        map.set(StepChoice.map(step));
-        minimap.set(StepChoice.minimap(step));
-        world.set(StepChoice.world(step));
+    /** The names of the boxes of the pins' and the paths' rows: those of the pictures on the card. */
+    private static final String FRAME = K + "preview.frame.";
+    /** The beam (part 3 of a kind's pins) counts only with the marker (part 2): its box is dim without it. */
+    public static final int BEAM = 3, MARKER = 2;
+
+    /** A row of boxes, one for each map, over two switches (cave map, view cone; user decision 13.11.2026). */
+    private static void mapsRow(AacsScreen.Tab t, String key, BoolValue map, BoolValue minimap) {
+        t.checks(key, K + "step.everywhere", K + "step.off", K + "step.some", List.of(
+                new AacsScreen.Check(FRAME + "map", map::get, map::set),
+                new AacsScreen.Check(FRAME + "minimap", minimap::get, minimap::set)));
     }
 
-    /** Where a kind of pins shows: off, the map, both maps, in the world with the marker, everywhere with the beam. */
+    /**
+     * Where a kind of pins shows (user decision 13.11.2026, a box each instead of the steps): the world map, the
+     * minimap, the marker over a tracked one in the world, its beam (only with the marker).
+     */
     public static void pinRow(AacsScreen.Tab t, MapConfig.PinKind kind) {
         MapConfig.PinOptions o = MapConfig.pins(kind);
-        t.steps(K + "pins." + kind.id, PIN_STEPS,
-                () -> StepChoice.level(o.enabled.get(), o.map.get(), o.minimap.get(), o.marker.get(), o.beam.get()),
-                s -> {
-                    setSteps(Math.min(s, StepChoice.IN_WORLD), o.enabled, o.map, o.minimap, o.marker);
-                    if (StepChoice.on(s)) o.beam.set(StepChoice.beam(s));
-                });
+        BoolValue[] parts = {o.map, o.minimap, o.marker, o.beam};
+        t.checks(K + "pins." + kind.id, K + "step.everywhere", K + "step.off", K + "step.some", List.of(
+                new AacsScreen.Check(FRAME + "map", o::onMap, on -> PinParts.set(o.enabled, parts, 0, on, BEAM, MARKER)),
+                new AacsScreen.Check(FRAME + "minimap", o::onMinimap, on -> PinParts.set(o.enabled, parts, 1, on, BEAM, MARKER)),
+                new AacsScreen.Check(FRAME + "marker", o::marker, on -> PinParts.set(o.enabled, parts, 2, on, BEAM, MARKER)),
+                new AacsScreen.Check(FRAME + "beam", o::beam, on -> PinParts.set(o.enabled, parts, 3, on, BEAM, MARKER), o::marker)));
     }
 
-    /** Where the path to a tracked pin of a kind shows: off, the map, both maps, everywhere with the stars. */
+    /** Where the path to a tracked pin of a kind shows, a box each: the world map, the minimap, the stars in the world. */
     public static void pathRow(AacsScreen.Tab t, MapConfig.PinKind kind) {
         MapConfig.PinOptions o = MapConfig.pins(kind);
-        t.steps(K + "path." + kind.id, PATH_STEPS,
-                () -> StepChoice.level(o.path.get(), o.pathMap.get(), o.pathMinimap.get(), o.pathWorld.get()),
-                s -> setSteps(s, o.path, o.pathMap, o.pathMinimap, o.pathWorld));
+        BoolValue[] parts = {o.pathMap, o.pathMinimap, o.pathWorld};
+        t.checks(K + "path." + kind.id, K + "step.everywhere", K + "step.off", K + "step.some", List.of(
+                new AacsScreen.Check(FRAME + "map", o::pathOnMap, on -> PinParts.set(o.path, parts, 0, on, -1, -1)),
+                new AacsScreen.Check(FRAME + "minimap", o::pathOnMinimap, on -> PinParts.set(o.path, parts, 1, on, -1, -1)),
+                new AacsScreen.Check(FRAME + "stars", o::pathInWorld, on -> PinParts.set(o.path, parts, 2, on, -1, -1))));
     }
 
 
@@ -130,9 +138,9 @@ public final class TeyvatConfigScreen {
             t.choice(K + "interface_style", MapConfig.INTERFACE_STYLE, c -> {}).then(Theme.Style::update).noPreview();
             // The caves first, the largest of them (user decision 09.11.2026).
             t.section(K + "section.map_content");
-            t.toggle(K + "caves", MapConfig.CAVES_ENABLED);
+            mapsRow(t, K + "caves", MapConfig.CAVES_ENABLED, MapConfig.CAVES_MINIMAP);
             t.toggleList(K + "plants", MapConfig.MAP_PLANTS, MapConfig.PLANTS_HIDDEN, TeyvatConfigScreen::plants, remap).then(remap);
-            t.toggle(K + "player_cone", MapConfig.PLAYER_CONE);
+            mapsRow(t, K + "player_cone", MapConfig.PLAYER_CONE, MapConfig.PLAYER_CONE_MINIMAP);
             // How the map is coloured: relief, water.
             t.section(K + "section.colours");
             // A choice with arrows, not a slider (user request 24.10.2026: three steps made it the one short slider).
@@ -207,10 +215,11 @@ public final class TeyvatConfigScreen {
                     || MapConfig.get(MapConfig.RADAR_PASSIVE) != RadarRules.Show.OFF || MapConfig.get(MapConfig.RADAR_VILLAGERS) != RadarRules.Show.OFF
                     || MapConfig.get(MapConfig.RADAR_PETS) != RadarRules.Show.OFF));
             t.section(K + "subsection.radar_kinds");
+            // Villagers right after the players (user request 13.11.2026).
             radarRow(t, "radar_players", MapConfig.RADAR_PLAYERS);
+            radarRow(t, "radar_villagers", MapConfig.RADAR_VILLAGERS);
             radarRow(t, "radar_hostile", MapConfig.RADAR_HOSTILE);
             radarRow(t, "radar_passive", MapConfig.RADAR_PASSIVE);
-            radarRow(t, "radar_villagers", MapConfig.RADAR_VILLAGERS);
             radarRow(t, "radar_pets", MapConfig.RADAR_PETS);
             radarRow(t, "radar_other", MapConfig.RADAR_OTHER);
         });
@@ -466,8 +475,8 @@ public final class TeyvatConfigScreen {
                 MapLayerRenderer.drawBiomeLabels(g, store, view, x, y, x + w, y + h, List.of());
             }
             float heading = (float) view.headingOnScreen(mc.player.getViewYRot(pt));
-            if (MapConfig.get(MapConfig.PLAYER_CONE)) Draw.sector(g, mx, my, 24, heading, 0.7f, Theme.VIEW_CONE, Theme.withAlpha(Theme.VIEW_CONE, 0f));
-            MarkerRenderer.player(g, mx, my, 16, heading, 1f);
+            if (MapConfig.get(MapConfig.PLAYER_CONE) || MapConfig.get(MapConfig.PLAYER_CONE_MINIMAP)) Draw.sector(g, mx, my, 24, heading, 0.7f, Theme.VIEW_CONE, Theme.withAlpha(Theme.VIEW_CONE, 0f));
+            MarkerRenderer.player(g, mx, my, 16, heading, 1f, MapConfig.get(MapConfig.PLAYER_CONE) || MapConfig.get(MapConfig.PLAYER_CONE_MINIMAP));
             g.disableScissor();
             Draw.frame(g, x, y, w, h, 1, Theme.PANEL_LINE);
         }

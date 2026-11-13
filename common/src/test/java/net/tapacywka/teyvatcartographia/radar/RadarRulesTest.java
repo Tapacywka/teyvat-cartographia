@@ -82,4 +82,29 @@ class RadarRulesTest {
         assertTrue(RadarRules.inRange(60, 80, 100));
         assertFalse(RadarRules.inRange(80, 80, 100));
     }
+
+    /** Layers -1 and -2 mapped (the surface is layer 4: ground at y 64 to 79). */
+    private static final java.util.function.IntPredicate MAPPED = b -> b == -1 || b == -2;
+
+    @Test
+    void withoutCaveLayersOnlyTheSurfaceShows() {
+        assertTrue(RadarRules.onLayer(false, null, false, 4, 4, MAPPED));
+        assertFalse(RadarRules.onLayer(false, null, true, 3, 4, MAPPED), "a mob in a cave");
+    }
+
+    @Test
+    void theSurfaceShowsUndergroundOnesUpToTwoLayersDownInMappedLayers() {
+        assertTrue(RadarRules.onLayer(true, null, true, 2, 4, b -> true));
+        assertFalse(RadarRules.onLayer(true, null, true, 1, 4, b -> true), "three layers under the ground");
+        assertFalse(RadarRules.onLayer(true, null, true, 3, 4, MAPPED), "a layer not mapped yet");
+        assertTrue(RadarRules.onLayer(true, null, true, -1, 0, MAPPED), "low ground, a mapped layer under it");
+    }
+
+    @Test
+    void aCaveLayerShowsTwoLayersAboveAndBelow() {
+        assertTrue(RadarRules.onLayer(true, -1, true, -2, 4, MAPPED));
+        assertFalse(RadarRules.onLayer(true, -1, true, -4, 4, MAPPED), "three layers below");
+        assertTrue(RadarRules.onLayer(true, -1, false, 1, 1, MAPPED), "on the ground two layers above");
+        assertFalse(RadarRules.onLayer(true, -1, false, 4, 4, MAPPED), "on the ground far above");
+    }
 }

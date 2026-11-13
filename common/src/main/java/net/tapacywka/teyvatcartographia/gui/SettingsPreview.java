@@ -1,5 +1,6 @@
 package net.tapacywka.teyvatcartographia.gui;
 
+import net.tapacywka.aacs.api.AacsScreen;
 import net.tapacywka.teyvatcartographia.compat.ModCompat;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
 import net.tapacywka.teyvatcartographia.gui.Ui.Grid;
@@ -136,7 +137,7 @@ final class SettingsPreview {
                 Draw.circle(g, ax, pz, 5, Theme.ROUTE_SEA_BADGE);
                 Draw.icon(g, Icon.CLOUD, ax, pz, 8, Theme.ROUTE_AIR);
             }
-            MarkerRenderer.player(g, px, pz, 7, (float) (Math.PI / 2), 1f);
+            MarkerRenderer.player(g, px, pz, 7, (float) (Math.PI / 2), 1f, MapConfig.get(MapConfig.PLAYER_CONE));
             Draw.icon(g, MarkerType.STAR.icon, tx, pz, 9, Theme.WHITE);
             if (r != chosen) Draw.rect(g, fx, top, fx + fw, top + fh, OFF_DIM);
             Component name = Component.translatable("teyvatcartographia.config.value." + r.name().toLowerCase(Locale.ROOT));
@@ -207,7 +208,9 @@ final class SettingsPreview {
             }
             if (!on[i]) Draw.rect(g, fx, fy, fx + fw2, fy + fh2, OFF_DIM);
             g.disableScissor();
-            Draw.frame(g, fx, fy, fw2, fh2, 1, Theme.PANEL_LINE);
+            // The picture of the box pointed at in the row lit (user decision 13.11.2026).
+            boolean pointed = AacsScreen.pointedCheck() == i;
+            Draw.frame(g, fx, fy, fw2, fh2, pointed ? 2 : 1, pointed ? Theme.GOLD : Theme.PANEL_LINE);
             Component caption = Component.translatable(keys[i]);
             DrawText.room(caption, fw2);
             DrawText.textCentered(g, Component.literal(DrawText.fit(caption.getString(), (int) fw2)), Draw.snap(fx + fw2 / 2f), fy + fh2 + Grid.GAP,
@@ -399,7 +402,7 @@ final class SettingsPreview {
         float mw = w, mh = h;
         var level = Minecraft.getInstance().level;
         int sea = level == null ? 63 : level.getSeaLevel();
-        if (!MapConfig.get(MapConfig.CAVES_ENABLED)) {
+        if (!MapConfig.get(MapConfig.CAVES_ENABLED) && !MapConfig.get(MapConfig.CAVES_MINIMAP)) {
             map.draw(g, x, y, mw, mh, null);
             return;
         }

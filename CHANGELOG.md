@@ -35,6 +35,19 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 - Arrows at both ends of every scroll bar (the pin list and its search, the list of overlapping pins, the quick
   settings and the pin types on the world map, the settings, the plant list and long descriptions): a click scrolls a row,
   held it goes on scrolling; dim where the list cannot go further.
+- The map's quick settings: Cave map and View cone and glow, for the world map.
+
+### Changed
+
+- Settings > Pins: where each kind of pins and each path shows is a row of boxes instead of a slider in steps, one box
+  for each picture on the card (the world map, the minimap, the marker, the beam or the stars); the beam only with the
+  marker. The map's quick settings are the World map box of these rows.
+- Cave map and View cone and glow have a box for each map, the world map and the minimap.
+- The radar shows the entities of the layer the map shows: without cave layers only those on the surface; on the surface
+  also those in caves up to two layers down, in layers mapped already; on a cave layer those up to two layers above or
+  below it.
+- Settings > Radar: villagers right after players.
+- The arrows of the plant list and of the sub-sections of Compatibility are white, gold under the pointer and while open.
 
 ## [1.3.2] - 2026-11-12
 

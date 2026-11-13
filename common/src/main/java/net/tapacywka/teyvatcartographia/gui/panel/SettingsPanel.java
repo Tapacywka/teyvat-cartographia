@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.function.BooleanSupplier;
 import java.util.ArrayList;
 import net.tapacywka.aacs.api.BoolValue;
+import net.tapacywka.teyvatcartographia.config.PinParts;
 import net.tapacywka.teyvatcartographia.map.data.MapDataManager;
 
 /** Dark "Map Settings" panel with section headers and switches (reference: fullscreen_settings.png). */
@@ -40,15 +41,14 @@ public final class SettingsPanel extends SidePanel {
     }
 
     /**
-     * A kind of pins on the world map: on while the kind and its map switch are both on; turning it on turns on both
-     * (the tooltip is the kind's own).
+     * A kind of pins on the world map: the box World map of its row in All settings (user decision 13.11.2026: every
+     * switch here is that map's part of a setting there; the tooltip is the kind's own).
      */
     private static Row pins(String key, MapConfig.PinKind kind) {
         MapConfig.PinOptions o = MapConfig.pins(kind);
+        BoolValue[] parts = {o.map, o.minimap, o.marker, o.beam};
         return new Row(Component.translatable(key), Component.translatable(key + ".tooltip"), false, o::onMap, () -> {
-            boolean on = !o.onMap();
-            o.map.set(on);
-            if (on) o.enabled.set(true);
+            PinParts.set(o.enabled, parts, 0, !o.onMap(), TeyvatConfigScreen.BEAM, TeyvatConfigScreen.MARKER);
             MapConfig.save();
         });
     }
@@ -62,8 +62,7 @@ public final class SettingsPanel extends SidePanel {
             boolean on = !anyPathOnMap(kinds);
             for (MapConfig.PinKind kind : kinds) {
                 MapConfig.PinOptions o = MapConfig.pins(kind);
-                o.pathMap.set(on);
-                if (on) o.path.set(true);
+                PinParts.set(o.path, new BoolValue[] {o.pathMap, o.pathMinimap, o.pathWorld}, 0, on, -1, -1);
             }
             MapConfig.save();
         });
@@ -96,7 +95,10 @@ public final class SettingsPanel extends SidePanel {
         List<Row> out = new ArrayList<>(List.of(section("teyvatcartographia.settings.section.display"),
                 pins("teyvatcartographia.settings.custom_pins", MapConfig.PinKind.CUSTOM),
                 pins("teyvatcartographia.settings.system_pins", MapConfig.PinKind.SYSTEM),
-                path("teyvatcartographia.settings.path", MapConfig.PinKind.CUSTOM, MapConfig.PinKind.SYSTEM), plants(),
+                path("teyvatcartographia.settings.path", MapConfig.PinKind.CUSTOM, MapConfig.PinKind.SYSTEM),
+                // The world map's parts of Cave map and View cone (user request 13.11.2026), round the plants.
+                option("teyvatcartographia.settings.caves", "caves", MapConfig.CAVES_ENABLED), plants(),
+                option("teyvatcartographia.settings.player_cone", "player_cone", MapConfig.PLAYER_CONE),
                 option("teyvatcartographia.settings.labels", "map_labels", MapConfig.MAP_SHOW_LABELS),
                 option("teyvatcartographia.settings.grid", "map_grid", MapConfig.MAP_SHOW_GRID)));
         if (ModCompat.waystones()) {
