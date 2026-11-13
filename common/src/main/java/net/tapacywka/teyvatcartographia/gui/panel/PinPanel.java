@@ -4,6 +4,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.resources.ResourceKey;
 import net.tapacywka.teyvatcartographia.gui.ChipField;
 import net.tapacywka.teyvatcartographia.gui.Cursors;
+import net.tapacywka.teyvatcartographia.gui.ScrollArrows;
 import net.tapacywka.teyvatcartographia.gui.SmoothScroll;
 import net.tapacywka.teyvatcartographia.gui.Ui;
 import net.tapacywka.teyvatcartographia.gui.Ui.Grid;
@@ -199,6 +200,12 @@ public final class PinPanel extends SidePanel {
     }
 
     private static final float BAR_W = 3;
+    private final ScrollArrows gridArrows = new ScrollArrows();
+
+    /** The middle of the type grid's scroll bar, in the panel's right padding 2 units clear of the tiles. */
+    private float gridBarMiddle() {
+        return x + w - Grid.PAD + 2 + BAR_W / 2f;
+    }
 
     @Override
     protected void renderBody(GuiGraphics g, int mx, int my, float bx, float by, float bw) {
@@ -227,6 +234,7 @@ public final class PinPanel extends SidePanel {
                 int i = TYPES.indexOf(type);
                 if (i >= 0) gridScroller.jump(slotY(i) + Grid.SLOT - gridViewBottom());
             }
+            gridArrows.update(gridScroller, CELL, System.nanoTime());
             gridScroll = gridScroller.update(max);
             float viewTop = gridY(), viewBottom = gridViewBottom();
             if (max > 0) g.enableScissor((int) Math.floor(x), (int) viewTop, (int) Math.ceil(x + w), (int) viewBottom);
@@ -243,11 +251,13 @@ public final class PinPanel extends SidePanel {
             }
             if (max > 0) {
                 g.disableScissor();
-                float barX = x + w - Grid.PAD + 2, h = viewBottom - viewTop; // 2 units clear of the tiles
-                float th = Math.max(8, h * h / gridHeight());
-                Draw.rect(g, barX, viewTop, barX + BAR_W, viewBottom, Theme.PANEL_LIGHT_FIELD);
-                float thumbY = viewTop + (h - th) * gridScroll / max;
+                float barX = gridBarMiddle() - BAR_W / 2f, h = viewBottom - viewTop;
+                float tt = viewTop + ScrollArrows.ROOM, track = h - 2 * ScrollArrows.ROOM;
+                float th = Math.min(track, Math.max(8, track * h / gridHeight()));
+                Draw.rect(g, barX, tt, barX + BAR_W, tt + track, Theme.PANEL_LIGHT_FIELD);
+                float thumbY = tt + (track - th) * gridScroll / max;
                 Draw.rect(g, barX, thumbY, barX + BAR_W, thumbY + th, Theme.TEXT_DARK);
+                Ui.scrollArrows(g, gridBarMiddle(), viewTop, viewBottom, gridScroller, gridArrows, mx, my, Theme.TEXT_DARK, true);
             }
             // Total pins bar (delete button when editing)
             float ty = totalY();
@@ -299,6 +309,11 @@ public final class PinPanel extends SidePanel {
         }
         if (readOnly()) return true;
         if (name.click(mx, my, button)) return true;
+        int arrow = maxGridScroll() > 0 ? ScrollArrows.at(mx, my, gridBarMiddle(), gridY(), gridViewBottom()) : 0;
+        if (arrow != 0) {
+            gridArrows.press(arrow, gridScroller, CELL, System.nanoTime());
+            return true;
+        }
         for (int i = 0; i < TYPES.size() && inGridView(my); i++) {
             if (Draw.inRect(mx, my, slotX(i), slotY(i), Grid.SLOT, Grid.SLOT)) {
                 type = TYPES.get(i);
@@ -341,6 +356,11 @@ public final class PinPanel extends SidePanel {
         // Half a tile per wheel step; only the type grid scrolls, and only where it does not fit.
         if (!readOnly()) gridScroller.wheel(amount, CELL / 2f);
         return true;
+    }
+
+    @Override
+    public void mouseReleased() {
+        gridArrows.release();
     }
 
     @Override

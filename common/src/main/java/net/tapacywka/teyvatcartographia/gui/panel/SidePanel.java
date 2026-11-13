@@ -140,6 +140,9 @@ public abstract class SidePanel {
         return contains(mx, my);
     }
 
+    /** The mouse button let go anywhere (a held scroll arrow stops). */
+    public void mouseReleased() {}
+
     public boolean keyPressed(int key, int scan, int mods) {
         return false;
     }

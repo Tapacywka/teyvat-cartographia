@@ -32,6 +32,9 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
   grown rabbits in their new look; with Vanilla Backport too, its babies come first (the warm and cold calves, piglets
   and chicks in its colours).
 - Settings > Compatibility > Vanilla Backport > Mob faces and Tiny Takeover Backport > Baby faces, each shown with its mod.
+- Arrows at both ends of every scroll bar (the pin list and its search, the list of overlapping pins, the quick
+  settings and the pin types on the world map, the settings, the plant list and long descriptions): a click scrolls a row,
+  held it goes on scrolling; dim where the list cannot go further.
 
 ## [1.3.2] - 2026-11-12
 

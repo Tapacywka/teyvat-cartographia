@@ -110,6 +110,30 @@ public final class Ui {
         return Draw.inRect(mx, my, x, y, w, Grid.ACTION_H);
     }
 
+    // ------------------------------------------------------------------ scroll bar arrows
+
+    /**
+     * The arrows of a scroll bar whose middle is {@code cx}, in the room {@link ScrollArrows#ROOM} at both ends of
+     * {@code top} to {@code bottom}: in the thumb's colour {@code colour}, gold pointed at or held (darker on a light
+     * panel, {@code light}), dim where the list cannot go on.
+     */
+    public static void scrollArrows(GuiGraphics g, float cx, float top, float bottom, SmoothScroll s, ScrollArrows a,
+                                    int mx, int my, int colour, boolean light) {
+        int hover = light ? Theme.lerp(Theme.GOLD, 0xFF000000, 0.35f) : Theme.GOLD;
+        scrollArrow(g, -1, cx, top, bottom, s, a, mx, my, colour, hover);
+        scrollArrow(g, 1, cx, top, bottom, s, a, mx, my, colour, hover);
+    }
+
+    private static void scrollArrow(GuiGraphics g, int dir, float cx, float top, float bottom, SmoothScroll s, ScrollArrows a,
+                                    int mx, int my, int colour, int hoverColour) {
+        boolean can = ScrollArrows.can(dir, s), hover = ScrollArrows.at(mx, my, cx, top, bottom) == dir;
+        if (hover) Cursors.want(can ? Cursors.Shape.HAND : Cursors.Shape.UNAVAILABLE);
+        int c = !can ? (colour & 0xFFFFFF) | 0x4D000000 : hover || a.held() == dir ? hoverColour : colour;
+        float cy = ScrollArrows.middle(dir, top, bottom), hw = ScrollArrows.HALF_W, hh = ScrollArrows.TRI_H / 2f;
+        if (dir < 0) Draw.triangle(g, cx, cy - hh, cx + hw, cy + hh, cx - hw, cy + hh, c);
+        else Draw.triangle(g, cx - hw, cy - hh, cx + hw, cy - hh, cx, cy + hh, c);
+    }
+
     /**
      * Small icon button ({@link Grid#TOOL} square, e.g. "delete pin" at the end of a field), styled like the icon
      * badge of the action buttons (dark fill, yellow icon): a circle in the rounded style, a square in the rectangular one.

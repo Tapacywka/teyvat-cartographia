@@ -2,6 +2,7 @@ package net.tapacywka.teyvatcartographia.gui.panel;
 
 import net.tapacywka.teyvatcartographia.compat.ModCompat;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
+import net.tapacywka.teyvatcartographia.gui.ScrollArrows;
 import net.tapacywka.teyvatcartographia.gui.SmoothScroll;
 import net.tapacywka.teyvatcartographia.gui.TeyvatConfigScreen;
 import net.tapacywka.teyvatcartographia.gui.Ui;
@@ -132,6 +133,7 @@ public final class SettingsPanel extends SidePanel {
      * when they do not fit (GUI 4 at 1080p with Waystones, user request 03.11.2026).
      */
     private final SmoothScroll scroller = new SmoothScroll();
+    private final ScrollArrows arrows = new ScrollArrows();
     private static final float BAR_W = 2;
     /** Height of the dissolving edges of the rows, GUI units. */
     private static final float FADE = 10;
@@ -157,6 +159,11 @@ public final class SettingsPanel extends SidePanel {
         return my >= listTop() && my < listTop() + listHeight() && mx >= contentX() && mx < contentX() + contentW();
     }
 
+    /** The middle of the scroll bar, in the panel's right margin. */
+    private float barMiddle() {
+        return contentX() + contentW() + Grid.PAD / 2f;
+    }
+
     private float rowY(int i) {
         return listTop() + i * Grid.ROW - scroller.pos();
     }
@@ -179,6 +186,7 @@ public final class SettingsPanel extends SidePanel {
 
     @Override
     protected void renderBody(GuiGraphics g, int mx, int my, float bx, float by, float bw) {
+        arrows.update(scroller, Grid.ROW, System.nanoTime());
         float s = scroller.update(maxScroll()), top = listTop(), h = listHeight(), rw = rowsW();
         boolean inside = inList(mx, my);
         int hx = inside ? mx : -10_000, hy = inside ? my : -10_000;
@@ -201,12 +209,15 @@ public final class SettingsPanel extends SidePanel {
         EdgeFade.draw(g, bx, bx + rw, top, top + h, FADE, Math.min(1, s / FADE), Math.min(1, (scroller.max() - s) / FADE));
         EdgeFade.release();
         if (scrollable()) {
-            // Track over the rows' area in the right margin, thumb over the visible part (as in the pin list).
+            // Track over the rows' area in the right margin between its arrows, thumb over the visible part (as in the
+            // pin list).
             float barX = bx + bw + (Grid.PAD - BAR_W) / 2f, total = rows.size() * Grid.ROW;
-            Draw.rect(g, barX, top, barX + BAR_W, top + h, Theme.SCROLL_TRACK);
-            float th = Math.max(8, h * h / total);
-            float thy = top + (h - th) * scroller.fraction();
+            float tt = top + ScrollArrows.ROOM, track = h - 2 * ScrollArrows.ROOM;
+            Draw.rect(g, barX, tt, barX + BAR_W, tt + track, Theme.SCROLL_TRACK);
+            float th = Math.min(track, Math.max(8, track * h / total));
+            float thy = tt + (track - th) * scroller.fraction();
             Draw.rect(g, barX, thy, barX + BAR_W, thy + th, Theme.SCROLL_THUMB);
+            Ui.scrollArrows(g, barX + BAR_W / 2f, top, top + h, scroller, arrows, mx, my, Theme.SCROLL_THUMB, false);
         }
         Ui.actionButton(g, bx, bottomActionY(), bw, Component.translatable("teyvatcartographia.settings.all"), Icon.GEAR, true, mx, my);
         // Tooltip for the option whose label is under the cursor.
@@ -224,6 +235,11 @@ public final class SettingsPanel extends SidePanel {
     @Override
     public boolean mouseClicked(double mx, double my, int button) {
         if (closeClicked(mx, my)) return true;
+        int arrow = scrollable() ? ScrollArrows.at(mx, my, barMiddle(), listTop(), listTop() + listHeight()) : 0;
+        if (arrow != 0) {
+            arrows.press(arrow, scroller, Grid.ROW, System.nanoTime());
+            return true;
+        }
         if (inList(mx, my)) {
             for (int i = 0; i < rows.size(); i++) {
                 Row r = rows.get(i);
@@ -245,5 +261,10 @@ public final class SettingsPanel extends SidePanel {
         if (!contains(mx, my)) return false;
         scroller.wheel(amount, Grid.ROW);
         return true;
+    }
+
+    @Override
+    public void mouseReleased() {
+        arrows.release();
     }
 }
