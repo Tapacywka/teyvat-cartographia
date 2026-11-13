@@ -559,12 +559,13 @@ public final class Radar {
             Tex tex = Tex.clamped(Minecraft.getInstance().getTextureManager().getTexture(location), false);
             float tw = face.texW()[n], th = face.texH()[n];
             int u = p[k + 1], v = p[k + 2], sw = p[k + 3], sh = p[k + 4];
-            // Where it lies is in halves of a pixel of the texture; a tenth of one inside each part, so no pixel beside
-            // it (a neck, the side of the head) is ever sampled.
+            // Where it lies is in halves of a pixel of the texture; the texture moved a little (MobFaces.lead) so no
+            // screen pixel samples on the line between two of its pixels, nor any pixel beside the part.
             int ax = MobFaces.at(p[k + 5], side, face), ay = MobFaces.at(p[k + 6], side, face);
             int bx = MobFaces.at(p[k + 5] + 2 * sw, side, face), by = MobFaces.at(p[k + 6] + 2 * sh, side, face);
+            float lu = MobFaces.lead(bx - ax), lv = MobFaces.lead(by - ay);
             Draw.texturedQuad(g, tex, x0 + ax / s, y0 + ay / s, x0 + bx / s, y0 + by / s,
-                    (u + 0.1f) / tw, (v + 0.1f) / th, (u + sw - 0.1f) / tw, (v + sh - 0.1f) / th, white);
+                    (u + lu) / tw, (v + lv) / th, (u + sw + lu) / tw, (v + sh + lv) / th, white);
         }
     }
 
@@ -633,10 +634,9 @@ public final class Radar {
                 int nx = MobFaces.at(p[k + 5] + 2 * sw, side, face) - ax, ny = MobFaces.at(p[k + 6] + 2 * sh, side, face) - ay;
                 for (int y = 0; y < ny && ay + y < ph; y++)
                     for (int x = 0; x < nx && ax + x < pw; x++) {
-                        // the texel this screen pixel samples, a tenth of one inside the part as head() draws it
-                        int tx = Math.min(sw - 1, (int) (0.1f + (x + 0.5f) / nx * (sw - 0.2f)));
-                        int ty = Math.min(sh - 1, (int) (0.1f + (y + 0.5f) / ny * (sh - 0.2f)));
-                        int u = (int) ((p[k + 1] + tx + 0.5f) * fu), v = (int) ((p[k + 2] + ty + 0.5f) * fv);
+                        // the pixel of the texture this screen pixel samples, as head() draws it
+                        int u = (int) ((p[k + 1] + MobFaces.sample(x, nx, sw)) * fu);
+                        int v = (int) ((p[k + 2] + MobFaces.sample(y, ny, sh)) * fv);
                         // getPixel is ARGB since 26.1: the alpha is the high byte as before
                         if (image == null || u >= image.getWidth() || v >= image.getHeight() || (image.getPixel(u, v) >>> 24) != 0)
                             seen[(ay + y) * pw + ax + x] = true;

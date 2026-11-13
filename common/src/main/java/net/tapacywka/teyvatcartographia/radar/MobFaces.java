@@ -265,4 +265,22 @@ public final class MobFaces {
     public static int at(int halves, int side, Face face) {
         return Math.round(halves * side / (2f * Math.max(face.w(), face.h())));
     }
+
+    /** How many times finer than its model a texture may be with every pixel still sampled at a clear place. */
+    public static final int FINEST = 16;
+
+    /**
+     * How far each part's texture is moved, in pixels of the texture, when {@code texels} of them span {@code pixels}
+     * screen pixels: never a pixel's middle on the line between two pixels of the texture, even one {@link #FINEST}
+     * times finer. Sampled right on such a line the two triangles of a part took a pixel each on their side of it,
+     * which left steps in the allay's eyes (user report 13.11.2026).
+     */
+    public static float lead(int pixels) {
+        return 1f / (4 * pixels * FINEST);
+    }
+
+    /** Where in the texture, in its pixels from the part's corner, screen pixel {@code pixel} of {@code pixels} samples. */
+    public static double sample(int pixel, int pixels, int texels) {
+        return ((2.0 * pixel + 1) * 2 * texels * FINEST + 1) / (4.0 * pixels * FINEST);
+    }
 }
