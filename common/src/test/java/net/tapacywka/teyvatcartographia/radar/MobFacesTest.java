@@ -113,6 +113,27 @@ class MobFacesTest {
         assertEquals(16, MobFaces.at(32, 16, ghast));
     }
 
+    /** No screen pixel samples on the line between two pixels of a texture, even one 16 times finer (the allay's eyes). */
+    @Test
+    void noPixelSamplesOnALine() {
+        for (int texels = 1; texels <= 32; texels++)
+            for (int pixels = 1; pixels <= 128; pixels++)
+                for (int x = 0; x < pixels; x++) {
+                    double at = MobFaces.sample(x, pixels, texels);
+                    assertTrue(at > 0 && at < texels, texels + " in " + pixels + ", pixel " + x);
+                    double fine = at * MobFaces.FINEST;
+                    assertTrue(Math.abs(fine - Math.rint(fine)) > 1e-3, texels + " in " + pixels + ", pixel " + x);
+                }
+        // the allay: 5 pixels of its texture over 24 screen pixels, each pixel after the one before
+        int last = 0;
+        for (int x = 0; x < 24; x++) {
+            int t = (int) MobFaces.sample(x, 24, 5);
+            assertTrue(t == last || t == last + 1);
+            last = t;
+        }
+        assertEquals(4, last);
+    }
+
     /** Vanilla Backport (user request 13.11.2026): its mobs, the faces of its warm and cold models, the golem's eyes. */
     @Test
     void vanillaBackportsMobsHaveFaces() {
