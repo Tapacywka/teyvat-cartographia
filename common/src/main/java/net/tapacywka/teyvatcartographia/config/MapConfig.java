@@ -81,6 +81,8 @@ public final class MapConfig {
     /** On a server the mobs and the rest too (fair play: off by default, other players only). */
     public static final BoolValue RADAR_SERVER_MOBS;
     public static final EnumValue<RadarRules.Show> RADAR_PLAYERS, RADAR_HOSTILE, RADAR_PASSIVE, RADAR_VILLAGERS, RADAR_PETS, RADAR_OTHER;
+    /** Players as arrows or as the heads of their skins. */
+    public static final EnumValue<RadarRules.PlayerLook> RADAR_PLAYER_LOOK;
 
     // World map
     public static final BoolValue MAP_SHOW_LABELS;
@@ -274,6 +276,7 @@ public final class MapConfig {
         RADAR_HEIGHT = b.bool("heightArrows", true);
         RADAR_SERVER_MOBS = b.bool("serverMobs", false);
         RADAR_PLAYERS = b.choice("players", RadarRules.Show.BOTH);
+        RADAR_PLAYER_LOOK = b.choice("playerLook", RadarRules.PlayerLook.ARROWS);
         RADAR_HOSTILE = b.choice("hostile", RadarRules.Show.BOTH);
         RADAR_PASSIVE = b.choice("passive", RadarRules.Show.BOTH);
         RADAR_VILLAGERS = b.choice("villagers", RadarRules.Show.BOTH);

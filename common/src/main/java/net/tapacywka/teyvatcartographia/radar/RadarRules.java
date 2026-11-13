@@ -11,6 +11,9 @@ public final class RadarRules {
     /** The kinds of entities on the radar, each with a setting of its own. */
     public enum Kind { PLAYERS, HOSTILE, PASSIVE, VILLAGERS, PETS, OTHER }
 
+    /** How players show (user decision 13.11.2026): arrows in their team's colour, or their skins' heads in a frame of it. */
+    public enum PlayerLook { ARROWS, HEADS }
+
     /** Where a kind shows: nowhere, on the minimap, on both maps. */
     public enum Show {
         OFF, MINIMAP, BOTH;

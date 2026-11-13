@@ -202,6 +202,8 @@ public final class Theme {
     public static int RADAR_PET = 0xFF6FE3C8;
     public static int RADAR_OTHER = 0xFFB9A7FF;
     public static int RADAR_PLAYER = 0xFFFFA640;
+    /** The frame of a player's head (look Heads) when their team has no colour. */
+    public static int RADAR_PLAYER_FRAME = 0xFFFFFFFF;
     public static int RADAR_OUTLINE = 0x8C000000;
     public static int RADAR_HEIGHT = 0xE6FFFFFF;
     /** The shadow a Sable sub-level casts on the map under its silhouette (radar/SableRadar). */

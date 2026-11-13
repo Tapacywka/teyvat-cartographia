@@ -201,6 +201,9 @@ public final class TeyvatConfigScreen {
             t.toggle(K + "radar_server_mobs", MapConfig.RADAR_SERVER_MOBS);
             t.section(K + "subsection.radar_kinds");
             radarRow(t, "radar_players", MapConfig.RADAR_PLAYERS);
+            // Arrows or the heads of their skins (user decision 13.11.2026: right under Players, arrows by default).
+            t.choice(K + "radar_player_look", MapConfig.RADAR_PLAYER_LOOK,
+                    c -> c.activeWhen(() -> MapConfig.get(MapConfig.RADAR_PLAYERS) != RadarRules.Show.OFF));
             radarRow(t, "radar_hostile", MapConfig.RADAR_HOSTILE);
             radarRow(t, "radar_passive", MapConfig.RADAR_PASSIVE);
             radarRow(t, "radar_villagers", MapConfig.RADAR_VILLAGERS);
@@ -347,7 +350,7 @@ public final class TeyvatConfigScreen {
     /** The minimap's look: their preview is the minimap alone, without the lines under it. */
     private static final Set<String> LOOK_ROWS = Set.of(K + "minimap_shape", K + "minimap_opacity",K + "minimap_padding", K + "minimap_fade_width", K + "minimap_fade_strength",
             // The radar's rows: the minimap alone too, large, so its dots show.
-            K + "radar_enabled", K + "radar_range", K + "radar_height", K + "radar_server_mobs", K + "radar_players", K + "radar_hostile",
+            K + "radar_enabled", K + "radar_range", K + "radar_height", K + "radar_server_mobs", K + "radar_players", K + "radar_player_look", K + "radar_hostile",
             K + "radar_passive", K + "radar_villagers", K + "radar_pets", K + "radar_other");
 
     /** The far land, the map edges and the world border: the map from farther out, where they show. */
