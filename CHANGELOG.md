@@ -31,7 +31,7 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 - Tiny Takeover Backport (1.21.1): babies on the radar with the faces of its new baby models and their own colours, and
   grown rabbits in their new look; with Vanilla Backport too, its babies come first (the warm and cold calves, piglets
   and chicks in its colours).
-- Settings > Compatibility > Backports, shown with either mod: a switch for the faces of each.
+- Settings > Compatibility > Vanilla Backport > Mob faces and Tiny Takeover Backport > Baby faces, each shown with its mod.
 
 ## [1.3.2] - 2026-11-12
 

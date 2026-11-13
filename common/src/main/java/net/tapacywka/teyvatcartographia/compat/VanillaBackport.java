@@ -37,15 +37,16 @@ public final class VanillaBackport {
     private static final IdentityHashMap<EntityType<?>, IdentityHashMap<Object, Variant>> VARIANTS = new IdentityHashMap<>();
 
     /**
-     * The sub-section Backports of Compatibility (user decision 13.11.2026: one for both mods), shown with either; a row
-     * for each of them in the game. The mods in the game are known when the game starts, before this.
+     * A sub-section of Compatibility for each mod, named after it and shown with it (user decision 13.11.2026, after one
+     * shared "Backports"): Vanilla Backport > Mob faces, Tiny Takeover Backport > Baby faces. The mods in the game are
+     * known when the game starts, before this.
      */
     public static void settings() {
         String k = "teyvatcartographia.config.";
-        TeyvatConfigScreen.compatPart("compat_backports", () -> loaded() || TinyTakeover.loaded(), t -> {
-            if (loaded()) t.toggle(k + "compat.vanilla_backport_faces", MapConfig.VANILLA_BACKPORT_FACES);
-            if (TinyTakeover.loaded()) t.toggle(k + "compat.tiny_takeover_faces", MapConfig.TINY_TAKEOVER_FACES);
-        });
+        TeyvatConfigScreen.compatPart("compat_vanilla_backport", VanillaBackport::loaded,
+                t -> t.toggle(k + "compat.vanilla_backport_faces", MapConfig.VANILLA_BACKPORT_FACES));
+        TeyvatConfigScreen.compatPart("compat_tiny_takeover", TinyTakeover::loaded,
+                t -> t.toggle(k + "compat.tiny_takeover_faces", MapConfig.TINY_TAKEOVER_FACES));
     }
 
     /** Whether the mod is in the game. */
