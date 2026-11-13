@@ -83,6 +83,8 @@ public final class MapConfig {
     public static final EnumValue<RadarRules.Show> RADAR_PLAYERS, RADAR_HOSTILE, RADAR_PASSIVE, RADAR_VILLAGERS, RADAR_PETS, RADAR_OTHER;
     /** Players as arrows or as the heads of their skins. */
     public static final EnumValue<RadarRules.PlayerLook> RADAR_PLAYER_LOOK;
+    /** Mobs as dots or as the faces of their textures (radar/MobFaces). */
+    public static final EnumValue<RadarRules.MobLook> RADAR_MOB_LOOK;
 
     // World map
     public static final BoolValue MAP_SHOW_LABELS;
@@ -203,6 +205,10 @@ public final class MapConfig {
     public static final BoolValue XAERO_DEATHS;
     /** Where Sable's sub-levels show on the radar (radar/SableRadar). */
     public static final EnumValue<RadarRules.Show> SABLE_RADAR;
+    /** The radar's faces of Vanilla Backport's mobs and warm and cold variants (compat/VanillaBackport). */
+    public static final BoolValue VANILLA_BACKPORT_FACES;
+    /** The radar's faces of Tiny Takeover Backport's babies and new adult rabbits (compat/TinyTakeover). */
+    public static final BoolValue TINY_TAKEOVER_FACES;
 
     public enum Detail { LOW, MEDIUM, HIGH }
 
@@ -277,6 +283,7 @@ public final class MapConfig {
         RADAR_SERVER_MOBS = b.bool("serverMobs", false);
         RADAR_PLAYERS = b.choice("players", RadarRules.Show.BOTH);
         RADAR_PLAYER_LOOK = b.choice("playerLook", RadarRules.PlayerLook.ARROWS);
+        RADAR_MOB_LOOK = b.choice("mobLook", RadarRules.MobLook.DOTS);
         RADAR_HOSTILE = b.choice("hostile", RadarRules.Show.BOTH);
         RADAR_PASSIVE = b.choice("passive", RadarRules.Show.BOTH);
         RADAR_VILLAGERS = b.choice("villagers", RadarRules.Show.BOTH);
@@ -337,6 +344,10 @@ public final class MapConfig {
         b.pop();
         b.push("sable");
         SABLE_RADAR = b.choice("radar", RadarRules.Show.BOTH);
+        b.pop();
+        b.push("backports");
+        VANILLA_BACKPORT_FACES = b.bool("vanillaBackportFaces", true);
+        TINY_TAKEOVER_FACES = b.bool("tinyTakeoverFaces", true);
         b.pop();
         b.pop();
 

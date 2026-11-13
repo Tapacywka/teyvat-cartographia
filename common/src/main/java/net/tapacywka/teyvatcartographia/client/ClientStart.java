@@ -5,6 +5,7 @@ import net.tapacywka.teyvatcartographia.platform.Platform;
 
 import java.nio.file.Path;
 import net.tapacywka.teyvatcartographia.compat.ModCompat;
+import net.tapacywka.teyvatcartographia.compat.VanillaBackport;
 import net.tapacywka.teyvatcartographia.compat.WaystonesCompat;
 import net.tapacywka.teyvatcartographia.radar.SableRadar;
 import net.tapacywka.teyvatcartographia.compat.XaeroWaypoints;
@@ -23,5 +24,6 @@ public final class ClientStart {
         XaeroWaypoints.settings();
         WaystonesCompat.settings();
         SableRadar.settings();
+        VanillaBackport.settings();
     }
 }
