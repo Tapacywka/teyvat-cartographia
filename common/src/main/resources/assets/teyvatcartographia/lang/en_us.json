@@ -318,7 +318,7 @@
   "teyvatcartographia.config.subsection.compat_waystones": "Waystones",
   "teyvatcartographia.config.subsection.compat_sable": "Sable",
   "teyvatcartographia.config.compat.sable_radar": "Moving structures",
-  "teyvatcartographia.config.compat.sable_radar.tooltip": "Ships and other structures of Sable on the radar, drawn from their own blocks and turned as they sail; an icon while they are too small on the map.",
+  "teyvatcartographia.config.compat.sable_radar.tooltip": "Ships and other structures of Sable on the radar, drawn from their own blocks and turned as they sail; far out an icon.",
 
   "teyvatcartographia.config.value.top_left": "Top left",
   "teyvatcartographia.config.value.top_right": "Top right",
