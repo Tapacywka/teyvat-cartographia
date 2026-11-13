@@ -89,6 +89,7 @@
     "radar_pet": "#FF6FE3C8",
     "radar_other": "#FFB9A7FF",
     "radar_player": "#FFFFA640",
+    "radar_player_frame": "#FFFFFFFF",
     "radar_outline": "#8C000000",
     "radar_height": "#E6FFFFFF",
     "radar_ship_shadow": "#50000000",
