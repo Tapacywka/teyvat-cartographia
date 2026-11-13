@@ -318,7 +318,7 @@
   "teyvatcartographia.config.subsection.compat_waystones": "Waystones",
   "teyvatcartographia.config.subsection.compat_sable": "Sable",
   "teyvatcartographia.config.compat.sable_radar": "Движущиеся постройки",
-  "teyvatcartographia.config.compat.sable_radar.tooltip": "Корабли и другие постройки Sable на радаре, нарисованные из их блоков и повёрнутые по курсу; значком, пока они слишком малы на карте.",
+  "teyvatcartographia.config.compat.sable_radar.tooltip": "Корабли и другие постройки Sable на радаре, нарисованные из их блоков и повёрнутые по курсу; издали значком.",
 
   "teyvatcartographia.config.value.top_left": "Слева сверху",
   "teyvatcartographia.config.value.top_right": "Справа сверху",
