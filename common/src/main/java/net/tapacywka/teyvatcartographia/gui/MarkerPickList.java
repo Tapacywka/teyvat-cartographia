@@ -15,7 +15,7 @@ import java.util.List;
  * of rows (icon + name) at the right edge of the screen; clicking a row selects that pin.
  * <ul>
  *   <li>At most {@link #MAX_ROWS} rows at a time; longer lists scroll without steps (mouse wheel), their rows
- *   dissolving at the edges, and show a thin scroll bar.</li>
+ *   dissolving at the edges, and show a thin scroll bar with an arrow at each end (a row a click, on while held).</li>
  *   <li>Rows are dark bands with a rounded (rounded style) or straight left end that fade out to the right.</li>
  *   <li>The list sits in the lower right corner, with the off-screen indicators' gap to the right and bottom edges.</li>
  * </ul>
@@ -42,6 +42,7 @@ final class MarkerPickList {
     private final float travel;
     /** How far the rows are scrolled, without steps. */
     private final SmoothScroll scroller = new SmoothScroll();
+    private final ScrollArrows arrows = new ScrollArrows();
     /** Height of the dissolving edges of the rows, GUI units. */
     private static final float FADE = 10;
 
@@ -89,7 +90,7 @@ final class MarkerPickList {
 
     /** Pin of the row under the point, or null. */
     Marker rowAt(double mx, double my) {
-        if (!contains(mx, my)) return null;
+        if (!contains(mx, my) || arrowAt(mx, my) != 0) return null;
         double at = my - y + scroller.pos();
         int k = (int) (at / STEP);
         if (at - k * STEP >= ROW_H) return null; // in the gap between rows
@@ -100,6 +101,23 @@ final class MarkerPickList {
         if (!contains(mx, my)) return false;
         scroller.wheel(amount, STEP);
         return true;
+    }
+
+    /** The arrow of the scroll bar under the point: -1 up, 1 down, 0 none (or the list does not scroll). */
+    private int arrowAt(double mx, double my) {
+        return items.size() > visible ? ScrollArrows.at(mx, my, x + w - BAR_W / 2f, y, y + height()) : 0;
+    }
+
+    /** A press on an arrow of the scroll bar; true when it was on one. */
+    boolean clickArrow(double mx, double my) {
+        int dir = arrowAt(mx, my);
+        if (dir == 0) return false;
+        arrows.press(dir, scroller, STEP, System.nanoTime());
+        return true;
+    }
+
+    void release() {
+        arrows.release();
     }
 
     /** The furthest scroll: the last row on the list's bottom edge. */
@@ -115,6 +133,7 @@ final class MarkerPickList {
         float phase = 0.5f + 0.5f * (float) Math.sin(time * HOVER_SPEED); // 0 = grey / pointer in, 1 = white / out
         boolean scrolls = items.size() > visible;
         float out = scrolls ? slide.offset(travel) : 0;
+        arrows.update(scroller, STEP, System.nanoTime());
         float s = scroller.update(maxScroll()), h = height(), left = x + out - 3 - POINTER_SWAY - 6;
         // Rows cut by the list's edges too, dissolving there (over the map) like the settings list's own.
         if (scrolls) {
@@ -141,16 +160,18 @@ final class MarkerPickList {
             g.disableScissor();
             EdgeFade.draw(g, left, x + out + w - BAR_W - 1, y, y + h, FADE, Math.min(1, s / FADE), Math.min(1, (scroller.max() - s) / FADE));
             EdgeFade.release();
-            scrollBar(g, x + out);
+            scrollBar(g, x + out, mx, my);
         }
     }
 
-    /** Thin bar at the list's right end: track over all items, thumb over the visible ones. */
-    private void scrollBar(GuiGraphicsExtractor g, float rx) {
-        float bx = rx + w - BAR_W, h = height();
-        Draw.rect(g, bx, y, bx + BAR_W, y + h, Theme.SCROLL_TRACK);
-        float th = Math.max(8, h * h / (items.size() * STEP - Grid.GAP));
-        float ty = y + (h - th) * scroller.fraction();
+    /** Thin bar at the list's right end, between its arrows: track over all items, thumb over the visible ones. */
+    private void scrollBar(GuiGraphicsExtractor g, float rx, int mx, int my) {
+        float bx = rx + w - BAR_W, h = height(), top = y + ScrollArrows.ROOM, track = h - 2 * ScrollArrows.ROOM;
+        Draw.rect(g, bx, top, bx + BAR_W, top + track, Theme.SCROLL_TRACK);
+        float th = Math.min(track, Math.max(8, track * h / (items.size() * STEP - Grid.GAP)));
+        float ty = top + (track - th) * scroller.fraction();
         Draw.rect(g, bx, ty, bx + BAR_W, ty + th, Theme.SCROLL_THUMB);
+        boolean still = rx == x; // sliding, the arrows take no pointer
+        Ui.scrollArrows(g, bx + BAR_W / 2f, y, y + h, scroller, arrows, still ? mx : -10_000, still ? my : -10_000, Theme.SCROLL_THUMB, false);
     }
 }

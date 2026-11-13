@@ -8,6 +8,7 @@ import net.tapacywka.teyvatcartographia.gui.Cursors;
 import net.tapacywka.teyvatcartographia.gui.FileDialogs;
 import net.tapacywka.teyvatcartographia.gui.MapSearch;
 import net.tapacywka.teyvatcartographia.gui.PinTransfer;
+import net.tapacywka.teyvatcartographia.gui.ScrollArrows;
 import net.tapacywka.teyvatcartographia.gui.SmoothScroll;
 import net.tapacywka.teyvatcartographia.gui.Ui;
 import net.tapacywka.teyvatcartographia.gui.Ui.Grid;
@@ -71,6 +72,7 @@ public final class MarkerListPanel extends SidePanel {
 
     /** How far the rows are scrolled, without steps. */
     private final SmoothScroll scroller = new SmoothScroll();
+    private final ScrollArrows arrows = new ScrollArrows();
     /** Height of the dissolving edges of the rows, GUI units. */
     private static final float FADE = 10;
     private List<Marker> items = List.of();
@@ -373,6 +375,7 @@ public final class MarkerListPanel extends SidePanel {
         // Again when the list changed, or when the room for it did (the import choice, the window size).
         if (rebuilt || rowWidth(bw) != rowsWidth) buildRows(bw);
         float rw = rowsWidth;
+        arrows.update(scroller, ROW_STEP, System.nanoTime());
         float s = scroller.update(maxScroll());
         if (rows.isEmpty()) {
             DrawText.text(g, Component.translatable("teyvatcartographia.list.empty"), bx, DrawText.textY(listTop(), Grid.ROW), Theme.TEXT_MUTED, false);
@@ -391,12 +394,13 @@ public final class MarkerListPanel extends SidePanel {
         EdgeFade.draw(g, bx, bx + rw, top, top + h, FADE, Math.min(1, s / FADE), Math.min(1, (scroller.max() - s) / FADE));
         EdgeFade.release();
         if (scrollable()) {
-            // Track over the block of rows, thumb over the visible part (as in the map's pick list).
-            float barX = bx + bw - BAR_W;
-            Draw.rect(g, barX, top, barX + BAR_W, top + h, Theme.SCROLL_TRACK);
-            float th = Math.max(8, h * h / total());
-            float ty = top + (h - th) * scroller.fraction();
+            // Track over the block of rows between its arrows, thumb over the visible part (as in the map's pick list).
+            float barX = bx + bw - BAR_W, tt = top + ScrollArrows.ROOM, track = h - 2 * ScrollArrows.ROOM;
+            Draw.rect(g, barX, tt, barX + BAR_W, tt + track, Theme.SCROLL_TRACK);
+            float th = Math.min(track, Math.max(8, track * h / total()));
+            float ty = tt + (track - th) * scroller.fraction();
             Draw.rect(g, barX, ty, barX + BAR_W, ty + th, Theme.SCROLL_THUMB);
+            Ui.scrollArrows(g, barX + BAR_W / 2f, top, top + h, scroller, arrows, mx, my, Theme.SCROLL_THUMB, false);
         }
     }
 
@@ -452,6 +456,11 @@ public final class MarkerListPanel extends SidePanel {
         if (closeClicked(mx, my)) return true;
         if (field.click(mx, my, button)) return true;
         if (transferClicked(mx, my)) return true;
+        int arrow = scrollable() ? ScrollArrows.at(mx, my, contentX() + contentW() - BAR_W / 2f, listTop(), listTop() + blockHeight()) : 0;
+        if (arrow != 0) {
+            arrows.press(arrow, scroller, ROW_STEP, System.nanoTime());
+            return true;
+        }
         Row r = rowAt(mx, my);
         if (r != null) {
             open(r);
@@ -465,6 +474,11 @@ public final class MarkerListPanel extends SidePanel {
         if (!contains(mx, my)) return false;
         scroller.wheel(amount, ROW_STEP);
         return true;
+    }
+
+    @Override
+    public void mouseReleased() {
+        arrows.release();
     }
 
     @Override

@@ -1738,7 +1738,8 @@ public final class WorldMapScreen extends Screen {
         }
         if (button != InputConstants.MOUSE_BUTTON_LEFT) return true; // otherwise the map screen reacts to the left and right buttons only
         if (pick != null) {
-            // Any click closes the pick list; a click on a row selects that pin.
+            // Any click closes the pick list but one on an arrow of its scroll bar; a click on a row selects that pin.
+            if (pick.clickArrow(mx, my)) return true;
             Marker m = pick.rowAt(mx, my);
             closePick();
             if (m != null) selectMarker(m);
@@ -1895,6 +1896,8 @@ public final class WorldMapScreen extends Screen {
     public boolean mouseReleased(MouseButtonEvent event) {
         double mx = event.x(), my = event.y();
         int button = event.button();
+        if (pick != null) pick.release();
+        if (panel != null) panel.mouseReleased();
         if (sliderDrag) {
             sliderDrag = false;
             return true;
