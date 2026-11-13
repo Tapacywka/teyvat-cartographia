@@ -7,7 +7,8 @@ import java.util.Map;
  * Where the face of each mob of the game lies in its textures (user decision 13.11.2026: mobs as heads like players,
  * from the game's own textures, no pictures of the mod's): a table of numbers only, so resource packs change the faces
  * with the mobs. A face is drawn from parts, each seven numbers: which of the face's textures, its place there (u, v,
- * width, height) in pixels of the texture and where it lies on the face (dx, dy) in halves of them (a wolf's nose lies 1.5\n * pixels in, as the game draws it: user report 13.11.2026); the first part is the front of the
+ * width, height) in pixels of the texture and where it lies on the face (dx, dy) in halves of them (a wolf's nose lies 1.5
+ * pixels in, as the game draws it: user report 13.11.2026); the first part is the front of the
  * head, the rest lie over it (a nose, a snout, a hat layer, a rabbit's ears, an overlay like the bogged's moss or the
  * enderman's eyes). The front of a head box made by {@code texOffs(u, v).addBox(.., w, h, d)} is at (u + d, v + d), w by h.
  * <p>
@@ -26,8 +27,7 @@ public final class MobFaces {
     /**
      * A face: its textures (paths in the game's namespace, under {@code textures/}, and their sizes), its parts as above,
      * its size on the screen in pixels of the texture ({@code w} by {@code h}, every part inside), whether the first
-     * texture is always the table's, and whether a part lies half a pixel off (then a pixel of the texture is drawn an
-     * even number of screen pixels).
+     * texture is always the table's, and whether a part lies half a pixel off.
      */
     public record Face(String[] textures, int[] texW, int[] texH, int[] parts, int w, int h, boolean fixed, boolean halves) {}
 
@@ -271,9 +271,21 @@ public final class MobFaces {
         return Math.max(1, Math.round(size * scale / longerSide));
     }
 
-    /** As {@link #texel}, an even number for a face with a part half a pixel off (so it lies on whole screen pixels). */
-    public static int texel(float size, float scale, Face face) {
-        int t = texel(size, scale, Math.max(face.w(), face.h()));
-        return face.halves() ? Math.max(2, t / 2 * 2) : t;
+    /**
+     * Screen pixels of every face's longer side (user choice 13.11.2026, variant B: one size for every head, like the
+     * pins): what a face of 8 pixels gets on whole screen pixels a pixel, so the usual heads (a player's, a zombie's)
+     * stay exact and the others (a chicken's 6, a ghast's 16) are drawn as large, their pixels at most one screen pixel
+     * apart in width.
+     */
+    public static int side(float size, float scale) {
+        return 8 * texel(size, scale, 8);
+    }
+
+    /**
+     * Where a point of a face lies on the screen, in whole screen pixels from its corner: {@code halves} in halves of a
+     * pixel of its texture, the face's longer side {@code side} screen pixels.
+     */
+    public static int at(int halves, int side, Face face) {
+        return Math.round(halves * side / (2f * Math.max(face.w(), face.h())));
     }
 }

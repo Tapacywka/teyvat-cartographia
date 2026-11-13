@@ -78,17 +78,39 @@ class MobFacesTest {
         assertEquals(9, MobFaces.of("minecraft:rabbit").h());
     }
 
-    /** The wolf's nose 1.5 pixels in (user report 13.11.2026): drawn an even number of screen pixels a texel. */
+    /** The wolf's nose 1.5 pixels in (user report 13.11.2026), on whole screen pixels in a head of the one size. */
     @Test
     void theWolfsNoseLiesInTheMiddle() {
         MobFaces.Face wolf = MobFaces.of("minecraft:wolf");
         assertTrue(wolf.halves());
         int[] p = wolf.parts();
         assertEquals(3, p[MobFaces.PART + 5], "1.5 pixels in, in halves");
-        assertEquals(2, MobFaces.texel(5.3f, 3, wolf));
-        assertEquals(4, MobFaces.texel(8, 3, wolf));
+        // the world map at GUI 3: 24 pixels for the wolf's 6, the nose 6 in, 12 wide
+        assertEquals(6, MobFaces.at(3, 24, wolf));
+        assertEquals(18, MobFaces.at(3 + 2 * 3, 24, wolf));
         assertFalse(MobFaces.of("minecraft:cow").halves());
-        assertEquals(3, MobFaces.texel(8, 3, MobFaces.of("minecraft:cow")));
+    }
+
+    /** One size for every head (user choice 13.11.2026, variant B): the longer side as an 8-pixel face's on whole pixels. */
+    @Test
+    void everyHeadIsAsLarge() {
+        assertEquals(24, MobFaces.side(8, 3));
+        assertEquals(16, MobFaces.side(5.3f, 3));
+        assertEquals(32, MobFaces.side(8, 4));
+        assertEquals(24, MobFaces.side(5.3f, 4));
+        for (String id : new String[]{"minecraft:cow", "minecraft:chicken", "minecraft:wolf", "minecraft:ghast", "minecraft:iron_golem",
+                "minecraft:rabbit", "minecraft:copper_golem", "minecraft:happy_ghast"}) {
+            MobFaces.Face f = MobFaces.of(id);
+            int longer = Math.max(MobFaces.at(2 * f.w(), 24, f), MobFaces.at(2 * f.h(), 24, f));
+            assertEquals(24, longer, id);
+        }
+        // the chicken's face is narrower than tall, the same height as the others
+        MobFaces.Face chicken = MobFaces.of("minecraft:chicken");
+        assertEquals(16, MobFaces.at(2 * chicken.w(), 24, chicken));
+        // the parts lie on whole pixels, from 0 to the side
+        MobFaces.Face ghast = MobFaces.of("minecraft:ghast");
+        assertEquals(0, MobFaces.at(0, 16, ghast));
+        assertEquals(16, MobFaces.at(32, 16, ghast));
     }
 
     /** Vanilla Backport (user request 13.11.2026): its mobs, the faces of its warm and cold models, the golem's eyes. */

@@ -19,7 +19,7 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
   pets turquoise, boats, minecarts and items lavender, mobs of other mods by their kind. Those well above or below you are fainter, with a small arrow up or down. Settings > Radar, a new tab
   after Minimap: the radar, its range (2 to 16 chunks; in single player farther than the server sends mobs), the height
   arrows, mobs on servers, whether players are arrows or heads and mobs dots or the faces of the game's mobs in a frame
-  of their kind's colour (resource packs change them too; mobs of other mods stay dots), and where each kind shows (off,
+  of their kind's colour, every face as large (resource packs change them too; mobs of other mods stay dots), and where each kind shows (off,
   the minimap, both maps).
 - Fair play: on a server the radar shows only other players unless you allow mobs there, and nothing at all when the
   server forbids a radar with the code Xaero's Minimap reads.

@@ -95,7 +95,7 @@ public final class Radar {
     private static final IdentityHashMap<EntityType<?>, MobFaces.Face> FACE_OF = new IdentityHashMap<>();
     private static final MobFaces.Face NO_FACE = new MobFaces.Face(new String[0], new int[0], new int[0], new int[0], 1, 1, true, false);
     private static final IdentityHashMap<MobFaces.Face, ResourceLocation[]> TEXTURES_OF = new IdentityHashMap<>();
-    /** The outline of each face by the screen pixels a texel is drawn at, for the GUI scale {@link #outlineScale}. */
+    /** The outline of each face by its size on the screen ({@link MobFaces#side} over 8), for the GUI scale {@link #outlineScale}. */
     private static final IdentityHashMap<MobFaces.Face, FaceOutline[]> OUTLINES = new IdentityHashMap<>();
     private static float outlineScale;
     /** Opacity of what is well above or below. */
@@ -484,18 +484,20 @@ public final class Radar {
      * A head (look Heads): the face from its texture and the parts over it (a player's hat layer, a mob's nose or snout),
      * its longer side about {@code size} GUI units, in a frame of {@code frame} with a dark rim (user choices
      * 13.11.2026, variant B of the players' mockup, variant A of the mobs': the frame in the colour of the kind). Laid
-     * on whole screen pixels: each pixel of the texture a whole number of them, the frame and rim as thick on every side
-     * (user report 13.11.2026: at 7 units, 21 pixels for 8 of the skin and edges rounded each on its own, the pixels and
-     * the frame came out uneven). The frame and the rim a screen pixel each at GUI 2 and 3, together within a pixel of
-     * the GUI (user request 13.11.2026), the frame two at GUI 4.
+     * on whole screen pixels, the frame and rim as thick on every side (user report 13.11.2026: at 7 units, 21 pixels
+     * for 8 of the skin and edges rounded each on its own, the pixels and the frame came out uneven). Every head's
+     * longer side is as long ({@link MobFaces#side}: a face of 8 pixels on whole screen pixels a pixel, the others as
+     * large, user choice 13.11.2026, variant B), each part from and to whole screen pixels. The frame and the rim a
+     * screen pixel each at GUI 2 and 3, together within a pixel of the GUI (user request 13.11.2026), the frame two at
+     * GUI 4.
      */
     private static void head(GuiGraphics g, ResourceLocation texture, MobFaces.Face face, float x, float y, float size, int frame, float alpha) {
         float s = Draw.guiScale();
-        int texel = MobFaces.texel(size, s, face);
-        int pw = face.w() * texel, ph = face.h() * texel;
-        float x0 = Math.round(x * s - pw / 2f) / s, y0 = Math.round(y * s - ph / 2f) / s, t = texel / s;
+        int side = MobFaces.side(size, s);
+        int pw = MobFaces.at(2 * face.w(), side, face), ph = MobFaces.at(2 * face.h(), side, face);
+        float x0 = Math.round(x * s - pw / 2f) / s, y0 = Math.round(y * s - ph / 2f) / s;
         // The rim, then the frame, along the shape of the seen pixels (user report 13.11.2026).
-        FaceOutline outline = outline(face, texel, s);
+        FaceOutline outline = outline(face, side, s);
         rects(g, outline.rim, x0, y0, s, Theme.withAlpha(Theme.RADAR_OUTLINE, alpha));
         rects(g, outline.frame, x0, y0, s, Theme.withAlpha(frame, alpha));
         int white = Theme.withAlpha(0xFFFFFFFF, alpha);
@@ -508,8 +510,9 @@ public final class Radar {
             int u = p[k + 1], v = p[k + 2], sw = p[k + 3], sh = p[k + 4];
             // Where it lies is in halves of a pixel of the texture; a tenth of one inside each part, so no pixel beside
             // it (a neck, the side of the head) is ever sampled.
-            float px = x0 + p[k + 5] * t / 2, py = y0 + p[k + 6] * t / 2;
-            Draw.texturedQuad(g, id, px, py, px + sw * t, py + sh * t,
+            int ax = MobFaces.at(p[k + 5], side, face), ay = MobFaces.at(p[k + 6], side, face);
+            int bx = MobFaces.at(p[k + 5] + 2 * sw, side, face), by = MobFaces.at(p[k + 6] + 2 * sh, side, face);
+            Draw.texturedQuad(g, id, x0 + ax / s, y0 + ay / s, x0 + bx / s, y0 + by / s,
                     (u + 0.1f) / tw, (v + 0.1f) / th, (u + sw - 0.1f) / tw, (v + sh - 0.1f) / th, white);
         }
     }
@@ -533,31 +536,35 @@ public final class Radar {
     }
 
     /**
-     * The outline of a face drawn {@code texel} screen pixels a pixel of its texture, made once (the seen pixels read from
-     * the textures as the game has them, so resource packs count) and again when the GUI scale changes.
+     * The outline of a face whose longer side is {@code side} screen pixels, made once (the seen pixels read from the
+     * textures as the game has them, so resource packs count) and again when the GUI scale changes.
      */
-    private static FaceOutline outline(MobFaces.Face face, int texel, float s) {
+    private static FaceOutline outline(MobFaces.Face face, int side, float s) {
         if (s != outlineScale) {
             OUTLINES.clear();
             outlineScale = s;
         }
-        FaceOutline[] byTexel = OUTLINES.get(face);
-        if (byTexel == null) {
-            byTexel = new FaceOutline[17];
-            OUTLINES.put(face, byTexel);
+        FaceOutline[] bySide = OUTLINES.get(face);
+        if (bySide == null) {
+            bySide = new FaceOutline[17];
+            OUTLINES.put(face, bySide);
         }
-        int slot = Math.min(texel, byTexel.length - 1);
-        FaceOutline o = byTexel[slot];
-        if (o == null || slot != texel) {
-            o = FaceOutline.of(face == MobFaces.PLAYER ? null : seen(face, texel), face.w() * texel, face.h() * texel, frameLine(s), rimLine(s));
-            byTexel[slot] = o;
+        int slot = Math.min(side / 8, bySide.length - 1);
+        FaceOutline o = bySide[slot];
+        if (o == null || slot != side / 8) {
+            o = FaceOutline.of(face == MobFaces.PLAYER ? null : seen(face, side), MobFaces.at(2 * face.w(), side, face),
+                    MobFaces.at(2 * face.h(), side, face), frameLine(s), rimLine(s));
+            bySide[slot] = o;
         }
         return o;
     }
 
-    /** Which screen pixels of a face drawn {@code texel} pixels a pixel of its texture are seen (any part not see-through). */
-    private static boolean[] seen(MobFaces.Face face, int texel) {
-        int pw = face.w() * texel, ph = face.h() * texel;
+    /**
+     * Which screen pixels of a face whose longer side is {@code side} of them are seen (any part not see-through): each
+     * part's screen pixels taken at their middles, as the game's nearest sampling of {@link #head} takes them.
+     */
+    private static boolean[] seen(MobFaces.Face face, int side) {
+        int pw = MobFaces.at(2 * face.w(), side, face), ph = MobFaces.at(2 * face.h(), side, face);
         boolean[] seen = new boolean[pw * ph];
         NativeImage[] images = new NativeImage[face.textures().length];
         try {
@@ -570,14 +577,17 @@ public final class Radar {
                 // of each of the model's pixels
                 float fu = image == null ? 1 : image.getWidth() / (float) face.texW()[tex];
                 float fv = image == null ? 1 : image.getHeight() / (float) face.texH()[tex];
-                for (int ty = 0; ty < p[k + 4]; ty++)
-                    for (int tx = 0; tx < p[k + 3]; tx++) {
+                int sw = p[k + 3], sh = p[k + 4];
+                int ax = MobFaces.at(p[k + 5], side, face), ay = MobFaces.at(p[k + 6], side, face);
+                int nx = MobFaces.at(p[k + 5] + 2 * sw, side, face) - ax, ny = MobFaces.at(p[k + 6] + 2 * sh, side, face) - ay;
+                for (int y = 0; y < ny && ay + y < ph; y++)
+                    for (int x = 0; x < nx && ax + x < pw; x++) {
+                        // the texel this screen pixel samples, a tenth of one inside the part as head() draws it
+                        int tx = Math.min(sw - 1, (int) (0.1f + (x + 0.5f) / nx * (sw - 0.2f)));
+                        int ty = Math.min(sh - 1, (int) (0.1f + (y + 0.5f) / ny * (sh - 0.2f)));
                         int u = (int) ((p[k + 1] + tx + 0.5f) * fu), v = (int) ((p[k + 2] + ty + 0.5f) * fv);
-                        boolean opaque = image == null || u >= image.getWidth() || v >= image.getHeight() || (image.getPixelRGBA(u, v) >>> 24) != 0;
-                        if (!opaque) continue;
-                        int sx = p[k + 5] * texel / 2 + tx * texel, sy = p[k + 6] * texel / 2 + ty * texel;
-                        for (int y = sy; y < Math.min(ph, sy + texel); y++)
-                            for (int x = sx; x < Math.min(pw, sx + texel); x++) seen[y * pw + x] = true;
+                        if (image == null || u >= image.getWidth() || v >= image.getHeight() || (image.getPixelRGBA(u, v) >>> 24) != 0)
+                            seen[(ay + y) * pw + ax + x] = true;
                     }
             }
         } finally {
@@ -608,8 +618,8 @@ public final class Radar {
     /** Half the width ({@code across}) or height of a head with its frame and rim, in GUI units. */
     private static float reach(MobFaces.Face face, float size, boolean across) {
         float s = Draw.guiScale();
-        int texel = MobFaces.texel(size, s, face);
-        return ((across ? face.w() : face.h()) * texel / 2f + frameLine(s) + rimLine(s)) / s;
+        int side = MobFaces.side(size, s);
+        return (MobFaces.at(2 * (across ? face.w() : face.h()), side, face) / 2f + frameLine(s) + rimLine(s)) / s;
     }
 
     /** A small white triangle pointing up ({@code dir} 1) or down (-1), with a dark rim, like the pins of other layers. */
