@@ -52,6 +52,23 @@ public final class RadarRules {
         return dy > HEIGHT ? 1 : dy < -HEIGHT ? -1 : 0;
     }
 
+    /** Cave layers above or below the one a map shows whose entities it shows too (user decision 13.11.2026). */
+    public static final int LAYERS_AROUND = 2;
+
+    /**
+     * Whether an entity shows on a map that shows cave layer {@code viewed} (null: the surface), by the layers of the
+     * cave map (user decisions 13.11.2026): without cave layers on that map only those on the surface; on the surface
+     * also those underground up to {@link #LAYERS_AROUND} layers under the ground at their place, in a layer mapped
+     * already; on a cave layer those up to that many layers above or below it (underground ones in a mapped layer).
+     * {@code band} is the entity's layer, {@code surfaceBand} that of the ground above it.
+     */
+    public static boolean onLayer(boolean caves, Integer viewed, boolean underground, int band, int surfaceBand,
+                                  java.util.function.IntPredicate mapped) {
+        if (!caves) return !underground;
+        if (viewed == null) return !underground || surfaceBand - band <= LAYERS_AROUND && mapped.test(band);
+        return Math.abs(band - viewed) <= LAYERS_AROUND && (!underground || mapped.test(band));
+    }
+
     /** Whether the radar is forbidden after a chat message, given whether it was before. */
     public static boolean forbiddenAfter(String message, boolean before) {
         if (message.contains(RESET)) return false;

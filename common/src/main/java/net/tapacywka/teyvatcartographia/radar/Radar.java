@@ -40,6 +40,8 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.scores.Team;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
 import net.tapacywka.teyvatcartographia.map.MapView;
+import net.tapacywka.teyvatcartographia.map.data.CaveScanner;
+import net.tapacywka.teyvatcartographia.map.data.MapDataManager;
 import net.tapacywka.teyvatcartographia.render.Draw;
 import net.tapacywka.teyvatcartographia.render.Icon;
 import net.tapacywka.teyvatcartographia.render.Tex;
@@ -82,6 +84,14 @@ public final class Radar {
     private static MobFaces.Face[] faces = new MobFaces.Face[64];
     private static Identifier[] skins = new Identifier[64];
     private static int[] teams = new int[64];
+    /**
+     * Underground or not, the cave layer and that of the ground above (the maps' layers, user decision 13.11.2026):
+     * see {@link RadarRules#onLayer}.
+     */
+    private static boolean[] under = new boolean[64];
+    private static int[] bands = new int[64], surfaceBands = new int[64];
+    /** Whether a cave layer has map data in the active dimension. */
+    private static final java.util.function.IntPredicate MAPPED = b -> MapDataManager.get().caveBands().contains(b);
     /** The ids of the entities the client knows (the game's server gives them the same ids). */
     private static final IntOpenHashSet known = new IntOpenHashSet();
     /** The server forbade a radar (Xaero's fair play code in its chat) since the player joined. */
@@ -167,6 +177,7 @@ public final class Radar {
             x1[i] = e.getX();
             z1[i] = e.getZ();
             ys[i] = e.getY();
+            layer(mc, i);
             kinds[i] = kind;
             if (kind == RadarRules.Kind.PLAYERS) {
                 yaw0[i] = e.yRotO;
@@ -205,6 +216,7 @@ public final class Radar {
                 x1[i] = f.x1[j];
                 z1[i] = f.z1[j];
                 ys[i] = f.y[j];
+                layer(mc, i);
                 kinds[i] = kind;
                 yaw0[i] = f.yaw0[j];
                 yaw1[i] = f.yaw1[j];
@@ -271,6 +283,19 @@ public final class Radar {
         return new Far(n, id, kind, ax, az, bx, bz, y, ya, yb, team, name, uuid, type);
     }
 
+    /** Where entry {@code i} is among the cave layers (its place and height set). */
+    private static void layer(Minecraft mc, int i) {
+        MapDataManager md = MapDataManager.get();
+        under[i] = md.underground(mc.level, x1[i], ys[i], z1[i]);
+        bands[i] = CaveScanner.band(Mth.floor(ys[i]));
+        surfaceBands[i] = md.groundBand(x1[i], z1[i], bands[i]);
+    }
+
+    /** Whether entry {@code i} shows on a map with cave layers or not ({@code caves}) that shows layer {@code viewed}. */
+    private static boolean onLayer(int i, boolean caves, Integer viewed) {
+        return RadarRules.onLayer(caves, viewed, under[i], bands[i], surfaceBands[i], MAPPED);
+    }
+
     /** One more dot; the arrays grow when full. */
     private static int add() {
         if (count == x0.length) {
@@ -288,6 +313,9 @@ public final class Radar {
             skins = Arrays.copyOf(skins, size);
             faces = Arrays.copyOf(faces, size);
             teams = Arrays.copyOf(teams, size);
+            under = Arrays.copyOf(under, size);
+            bands = Arrays.copyOf(bands, size);
+            surfaceBands = Arrays.copyOf(surfaceBands, size);
         }
         return count++;
     }
@@ -457,13 +485,13 @@ public final class Radar {
      * A number that changes whenever what the minimap's radar shows moves by half a GUI unit or turns (its layer is
      * redrawn then, at the minimap's update rate), 0 with nothing to show.
      */
-    public static long signature(MapView view, float pt, float cx, float cy, float r, boolean square, double playerY) {
+    public static long signature(MapView view, float pt, float cx, float cy, float r, boolean square, double playerY, boolean caves, Integer viewed) {
         long h = SableRadar.signature(view, pt, cx, cy, r, square);
         boolean arrows = MapConfig.get(MapConfig.RADAR_HEIGHT);
         boolean heads = MapConfig.get(MapConfig.RADAR_PLAYER_LOOK) == RadarRules.PlayerLook.HEADS;
         for (int i = 0; i < count; i++) {
             RadarRules.Kind kind = kinds[i];
-            if (!show(kind).on(true)) continue;
+            if (!show(kind).on(true) || !onLayer(i, caves, viewed)) continue;
             double x = Mth.lerp(pt, x0[i], x1[i]), z = Mth.lerp(pt, z0[i], z1[i]);
             float sx = view.screenX(x, z), sy = view.screenY(x, z);
             if (!inside(sx, sy, cx, cy, r, square)) continue;
@@ -480,11 +508,12 @@ public final class Radar {
 
     /**
      * Draws the radar over a map: the minimap (inside {@code r} of its centre, round or square) or the world map (the
-     * whole screen, {@code r} 0). Returns the name of the player pointed at ({@code mx}, {@code my}; world map only),
+     * whole screen, {@code r} 0), the entities of the layer it shows ({@code viewed}, null the surface; {@code caves}:
+     * whether that map shows cave layers). Returns the name of the player pointed at ({@code mx}, {@code my}; world map only),
      * or null.
      */
     public static Component draw(GuiGraphicsExtractor g, MapView view, float pt, boolean minimap, float cx, float cy, float r, boolean square,
-                                 double playerY, float alpha, int mx, int my) {
+                                 double playerY, float alpha, int mx, int my, boolean caves, Integer viewed) {
         Component pointed = null;
         float dot = minimap ? DOT_MINIMAP : DOT_MAP, arrow = minimap ? ARROW_MINIMAP : ARROW_MAP;
         float playerHead = minimap ? HEAD_MINIMAP : HEAD_MAP, mobHead = minimap ? MOB_HEAD_MINIMAP : MOB_HEAD_MAP;
@@ -497,7 +526,7 @@ public final class Radar {
             for (int i = 0; i < count; i++) {
                 RadarRules.Kind kind = kinds[i];
                 boolean player = kind == RadarRules.Kind.PLAYERS;
-                if (player != (pass == 1) || !show(kind).on(minimap)) continue;
+                if (player != (pass == 1) || !show(kind).on(minimap) || !onLayer(i, caves, viewed)) continue;
                 double x = Mth.lerp(pt, x0[i], x1[i]), z = Mth.lerp(pt, z0[i], z1[i]);
                 float sx = view.screenX(x, z), sy = view.screenY(x, z);
                 if (r > 0 && !inside(sx, sy, cx, cy, r, square)) continue;

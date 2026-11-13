@@ -168,9 +168,13 @@ public final class MapConfig {
     public static final IntValue SCAN_RADIUS;
     public static final IntValue MAX_CACHED_TILES;
     public static final EnumValue<Detail> DETAIL;
+    /** Cave layers on the world map (its layer field); {@link #CAVES_MINIMAP} on the minimap (user decision 13.11.2026). */
     public static final BoolValue CAVES_ENABLED;
+    public static final BoolValue CAVES_MINIMAP;
     public static final BoolValue MAP_PLANTS;
+    /** The view cone and the glow under the player's arrow on the world map; {@link #PLAYER_CONE_MINIMAP} on the minimap. */
     public static final BoolValue PLAYER_CONE;
+    public static final BoolValue PLAYER_CONE_MINIMAP;
     /** The land beyond what was explored, worked out from the world's generator (FarLand, 07.11.2026): single player, off by default. */
     public static final BoolValue FAR_LAND;
     /**
@@ -307,8 +311,10 @@ public final class MapConfig {
         MAX_CACHED_TILES = b.integer("maxCachedTiles", 160, 32, 1024);
         DETAIL = b.choice("detail", Detail.HIGH);
         CAVES_ENABLED = b.bool("caves", true);
+        CAVES_MINIMAP = b.bool("cavesMinimap", true);
         MAP_PLANTS = b.bool("plants", true);
         PLAYER_CONE = b.bool("playerCone", true);
+        PLAYER_CONE_MINIMAP = b.bool("playerConeMinimap", true);
         FAR_LAND = b.bool("farLand", false);
         MAP_OUTLINE = b.bool("mapOutline", false);
         MAP_OUTLINE_MOTION = b.choice("mapOutlineMotion", EdgeMotion.BREATHING);

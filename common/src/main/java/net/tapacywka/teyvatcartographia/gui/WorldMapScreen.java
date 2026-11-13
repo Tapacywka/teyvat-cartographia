@@ -128,7 +128,7 @@ public final class WorldMapScreen extends Screen {
             centerX = targetX = p.getX();
             centerZ = targetZ = p.getZ();
             viewedDim = p.level().dimension();
-            viewedBand = MapDataManager.get().undergroundBand(); // opens on the layer the player is in
+            viewedBand = MapDataManager.get().cavesOnMap() ? MapDataManager.get().undergroundBand() : null; // opens on the layer the player is in
         }
         scale = targetScale = clampScale(MapConfig.get(MapConfig.MAP_DEFAULT_ZOOM));
     }
@@ -192,7 +192,7 @@ public final class WorldMapScreen extends Screen {
 
     private TileStore store() {
         if (viewedDim == null) return null;
-        if (viewedBand != null && viewingPlayerDim() && MapDataManager.get().cavesSupported()) return MapDataManager.get().caveStore(viewedBand);
+        if (viewedBand != null && viewingPlayerDim() && MapDataManager.get().cavesOnMap()) return MapDataManager.get().caveStore(viewedBand);
         return MapDataManager.get().viewStore(viewedDim);
     }
 
@@ -425,7 +425,7 @@ public final class WorldMapScreen extends Screen {
         clearSelection();
         viewedBand = null;
         if (viewingPlayerDim()) {
-            viewedBand = MapDataManager.get().undergroundBand();
+            viewedBand = MapDataManager.get().cavesOnMap() ? MapDataManager.get().undergroundBand() : null;
             LocalPlayer p = Minecraft.getInstance().player;
             jumpTo(p.getX(), p.getZ());
         } else {
@@ -648,7 +648,7 @@ public final class WorldMapScreen extends Screen {
         if (Radar.any() && viewingPlayerDim()) {
             boolean overUi = exiting || overPanels(mx, my) || pick != null && pick.contains(mx, my) || menu != null && menu.contains(mx, my);
             radarPointed = Radar.draw(g, view, pt, false, 0, 0, 0, false, Minecraft.getInstance().player.getY(), 1f,
-                    overUi || dragging ? -1000 : mx, overUi || dragging ? -1000 : my);
+                    overUi || dragging ? -1000 : mx, overUi || dragging ? -1000 : my, MapDataManager.get().cavesOnMap(), viewedBand());
         }
         hovered = null;
         drawMarkers(g, mx, my);
@@ -1124,7 +1124,7 @@ public final class WorldMapScreen extends Screen {
         float heading = (float) view.headingOnScreen(p.getViewYRot(pt));
         if (inArea(sx, sy)) {
             if (MapConfig.get(MapConfig.PLAYER_CONE)) Draw.sector(g, sx, sy, 32, heading, 0.7f, Theme.VIEW_CONE, Theme.withAlpha(Theme.VIEW_CONE, 0f));
-            MarkerRenderer.player(g, sx, sy, 20, heading, 1f);
+            MarkerRenderer.player(g, sx, sy, 20, heading, 1f, MapConfig.get(MapConfig.PLAYER_CONE));
             return;
         }
         clampToEdge(sx, sy);
@@ -1525,7 +1525,7 @@ public final class WorldMapScreen extends Screen {
 
     /** The field is there in the player's dimension once it has cave layers. */
     private boolean layersOn() {
-        return viewingPlayerDim() && MapDataManager.get().cavesSupported() && !MapDataManager.get().caveBands().isEmpty();
+        return viewingPlayerDim() && MapDataManager.get().cavesOnMap() && !MapDataManager.get().caveBands().isEmpty();
     }
 
     /** It takes the mouse while no side panel is open. */

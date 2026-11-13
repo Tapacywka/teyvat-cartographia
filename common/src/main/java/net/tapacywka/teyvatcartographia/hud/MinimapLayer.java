@@ -180,7 +180,7 @@ public final class MinimapLayer {
         fadeEdge = 1 - MapConfig.get(MapConfig.MINIMAP_FADE_STRENGTH) / 100f;
         infoGap = MapConfig.get(MapConfig.MINIMAP_INFO_GAP);
         pillOpacity = MapConfig.get(MapConfig.MINIMAP_PILL_OPACITY) / 100f;
-        cone = MapConfig.get(MapConfig.PLAYER_CONE);
+        cone = MapConfig.get(MapConfig.PLAYER_CONE_MINIMAP);
         float alpha = MapConfig.get(MapConfig.MINIMAP_OPACITY).floatValue();
         double zoom = MapView.snapZoom(MapConfig.get(MapConfig.MINIMAP_ZOOM));
         boolean rotate = MapConfig.get(MapConfig.MINIMAP_ORIENTATION) == MapConfig.Orientation.PLAYER_UP;
@@ -283,7 +283,8 @@ public final class MinimapLayer {
         // The radar's dots move on their own: where they are on the map is part of what the layer was drawn from.
         radarPt = pt;
         radarY = pos.y;
-        long radar = Radar.any() ? Radar.signature(view, pt, cx, cy, innerRadius(Math.max(8, r - padding)), Theme.Style.squareMap, pos.y) : 0;
+        long radar = Radar.any() ? Radar.signature(view, pt, cx, cy, innerRadius(Math.max(8, r - padding)), Theme.Style.squareMap, pos.y,
+                MapDataManager.get().cavesOnMinimap(), MapDataManager.get().minimapBand()) : 0;
         if (!preview) {
             shown = true;
             shownX0 = bx0;
@@ -454,7 +455,8 @@ public final class MinimapLayer {
         if (path) drawRoute(g, cx, cy, edge, inner, alpha);
         // The radar under the pins (they matter more), inside the same circle.
         Draw.snapIcons(false);
-        if (Radar.any()) Radar.draw(g, view, radarPt, true, cx, cy, inner, Theme.Style.squareMap, radarY, alpha, -1, -1);
+        if (Radar.any()) Radar.draw(g, view, radarPt, true, cx, cy, inner, Theme.Style.squareMap, radarY, alpha, -1, -1,
+                MapDataManager.get().cavesOnMinimap(), MapDataManager.get().minimapBand());
         // Pins by MarkerVisibility, at any zoom; the target itself is drawn just after. The map under them moves
         // smoothly between pixels, so they are not snapped to the pixel grid (snapped, they shook).
         Draw.snapIcons(false);
@@ -471,7 +473,7 @@ public final class MinimapLayer {
 
         // View cone and player arrow
         if (cone) Draw.sector(g, cx, cy, r * 0.8f, heading, 0.72f, Theme.withAlpha(Theme.MINIMAP_VIEW_CONE, alpha), Theme.withAlpha(Theme.MINIMAP_VIEW_CONE, 0f));
-        MarkerRenderer.player(g, cx, cy, ARROW, heading, alpha);
+        MarkerRenderer.player(g, cx, cy, ARROW, heading, alpha, cone);
 
         // "N": inside the circle, no background, pointing to world north.
         // Vanilla-font letters in the frame's colour, with a faint dark outline so they stay readable on light ground
@@ -657,7 +659,7 @@ public final class MinimapLayer {
         if (Theme.Style.squareMap ? Math.abs(sx - cx) <= inner && Math.abs(sy - cy) <= inner : Draw.inCircle(sx, sy, cx, cy, inner)) {
             // Pins on another layer than the one shown (the cave band the player is in, or the surface) get an arrow.
             MarkerRenderer.draw(g, m.type, sx, sy, MarkerRenderer.SIZE_SMALL, false, false, alpha,
-                    MarkerVisibility.layerRelation(m, MapDataManager.get().undergroundBand()), m.inactive);
+                    MarkerVisibility.layerRelation(m, MapDataManager.get().minimapBand()), m.inactive);
         }
     }
 
