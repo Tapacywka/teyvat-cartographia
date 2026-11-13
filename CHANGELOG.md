@@ -18,12 +18,20 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
   skins in a frame of it (their name when you point at one on the world map), hostile mobs as red dots, peaceful mobs white, villagers and wandering traders yellow, your
   pets turquoise, boats, minecarts and items lavender, mobs of other mods by their kind. Those well above or below you are fainter, with a small arrow up or down. Settings > Radar, a new tab
   after Minimap: the radar, its range (2 to 16 chunks; in single player farther than the server sends mobs), the height
-  arrows, mobs on servers, where each kind shows (off, the minimap, both maps) and whether players are arrows or heads.
+  arrows, mobs on servers, whether players are arrows or heads and mobs dots or the faces of the game's mobs in a frame
+  of their kind's colour (resource packs change them too; mobs of other mods stay dots), and where each kind shows (off,
+  the minimap, both maps).
 - Fair play: on a server the radar shows only other players unless you allow mobs there, and nothing at all when the
   server forbids a radar with the code Xaero's Minimap reads.
 - Sable (1.21.1): its ships and other moving structures on the radar, drawn from their own blocks and turned as they
   sail, with a shadow and their name on the world map; a ship icon with an arrow of its course while they are too small
   on the map. Settings > Compatibility > Sable.
+- Vanilla Backport (1.21.1): the radar's mob faces for its creaking, copper golem (its eyes as it oxidizes), happy ghast
+  and parched, and its warm and cold cows, pigs and chickens with the faces and colours of their own kind.
+- Tiny Takeover Backport (1.21.1): babies on the radar with the faces of its new baby models and their own colours, and
+  grown rabbits in their new look; with Vanilla Backport too, its babies come first (the warm and cold calves, piglets
+  and chicks in its colours).
+- Settings > Compatibility > Backports, shown with either mod: a switch for the faces of each.
 
 ## [1.3.2] - 2026-11-12
 

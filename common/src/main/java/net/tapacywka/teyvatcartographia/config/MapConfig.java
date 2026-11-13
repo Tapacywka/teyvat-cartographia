@@ -83,6 +83,8 @@ public final class MapConfig {
     public static final EnumValue<RadarRules.Show> RADAR_PLAYERS, RADAR_HOSTILE, RADAR_PASSIVE, RADAR_VILLAGERS, RADAR_PETS, RADAR_OTHER;
     /** Players as arrows or as the heads of their skins. */
     public static final EnumValue<RadarRules.PlayerLook> RADAR_PLAYER_LOOK;
+    /** Mobs as dots or as the faces of their textures (radar/MobFaces). */
+    public static final EnumValue<RadarRules.MobLook> RADAR_MOB_LOOK;
 
     // World map
     public static final BoolValue MAP_SHOW_LABELS;
@@ -277,6 +279,7 @@ public final class MapConfig {
         RADAR_SERVER_MOBS = b.bool("serverMobs", false);
         RADAR_PLAYERS = b.choice("players", RadarRules.Show.BOTH);
         RADAR_PLAYER_LOOK = b.choice("playerLook", RadarRules.PlayerLook.ARROWS);
+        RADAR_MOB_LOOK = b.choice("mobLook", RadarRules.MobLook.DOTS);
         RADAR_HOSTILE = b.choice("hostile", RadarRules.Show.BOTH);
         RADAR_PASSIVE = b.choice("passive", RadarRules.Show.BOTH);
         RADAR_VILLAGERS = b.choice("villagers", RadarRules.Show.BOTH);

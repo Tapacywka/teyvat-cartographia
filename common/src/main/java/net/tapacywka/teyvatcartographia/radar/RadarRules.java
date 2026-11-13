@@ -14,6 +14,9 @@ public final class RadarRules {
     /** How players show (user decision 13.11.2026): arrows in their team's colour, or their skins' heads in a frame of it. */
     public enum PlayerLook { ARROWS, HEADS }
 
+    /** How mobs show (user decision 13.11.2026): dots in the colour of their kind, or their faces in a frame of it. */
+    public enum MobLook { DOTS, HEADS }
+
     /** Where a kind shows: nowhere, on the minimap, on both maps. */
     public enum Show {
         OFF, MINIMAP, BOTH;
