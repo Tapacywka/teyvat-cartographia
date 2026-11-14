@@ -2,7 +2,6 @@ package net.tapacywka.teyvatcartographia.render;
 
 import net.tapacywka.teyvatcartographia.marker.MarkerType;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.tapacywka.teyvatcartographia.config.MapConfig;
 
 /**
  * Marker symbols in two styles, like Genshin Impact's custom pins:
