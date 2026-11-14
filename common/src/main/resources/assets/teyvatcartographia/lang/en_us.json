@@ -97,6 +97,7 @@
   "teyvatcartographia.settings.plants.tooltip": "Plants colour their spot on the map. Which plants: All settings > Map. Places already mapped change when you pass by again.",
   "teyvatcartographia.settings.caves": "Cave map",
   "teyvatcartographia.settings.player_cone": "View cone and glow",
+  "teyvatcartographia.settings.radar": "Radar",
   "teyvatcartographia.settings.labels": "Biome names",
   "teyvatcartographia.settings.grid": "Chunk grid",
   "teyvatcartographia.settings.all": "All settings",

@@ -75,7 +75,9 @@ public final class MapConfig {
     public static final BoolValue MINIMAP_SHOW_DAY;
 
     // Radar (user decisions 12.11.2026, docs/RADAR_SPEC.md): shared rows first, then where each kind shows.
+    /** The radar on the world map; {@link #RADAR_MINIMAP} on the minimap (user decision 14.11.2026, one switch before). */
     public static final BoolValue RADAR_ENABLED;
+    public static final BoolValue RADAR_MINIMAP;
     public static final IntValue RADAR_RANGE;
     public static final BoolValue RADAR_HEIGHT;
     /** On a server the mobs and the rest too (fair play: off by default, other players only). */
@@ -277,6 +279,7 @@ public final class MapConfig {
 
         b.push("radar");
         RADAR_ENABLED = b.bool("enabled", true);
+        RADAR_MINIMAP = b.bool("enabledMinimap", true);
         // In chunks like the mapping radius (user request 12.11.2026; until then blocks under "range").
         RADAR_RANGE = b.integer("rangeChunks", 8, 2, 16);
         RADAR_HEIGHT = b.bool("heightArrows", true);
