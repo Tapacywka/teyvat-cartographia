@@ -205,7 +205,7 @@ public final class TeyvatConfigScreen {
         b.tab(K + "tab.radar", t -> {
             t.defaultPreview(new Pictures(K + "tab.minimap"));
             t.section(K + "subsection.radar");
-            t.toggle(K + "radar_enabled", MapConfig.RADAR_ENABLED);
+            mapsRow(t, K + "radar_enabled", MapConfig.RADAR_ENABLED, MapConfig.RADAR_MINIMAP);
             t.slider(K + "radar_range", MapConfig.RADAR_RANGE, s -> {});
             t.toggle(K + "radar_height", MapConfig.RADAR_HEIGHT);
             t.toggle(K + "radar_server_mobs", MapConfig.RADAR_SERVER_MOBS);

@@ -92,16 +92,18 @@ public final class SettingsPanel extends SidePanel {
      * setting of Settings > Experimental (user decision 08.11.2026): one comes here only once its feature is out in full.
      */
     private static List<Row> rows() {
+        // In the order of All settings (user rule 14.11.2026): the rows of its tab Map first, then Radar, then Pins, each
+        // tab's rows in its own order. Cave map, View cone and Radar are their World map box there (user request 13 and
+        // 14.11.2026).
         List<Row> out = new ArrayList<>(List.of(section("teyvatcartographia.settings.section.display"),
-                pins("teyvatcartographia.settings.custom_pins", MapConfig.PinKind.CUSTOM),
-                pins("teyvatcartographia.settings.system_pins", MapConfig.PinKind.SYSTEM),
-                path("teyvatcartographia.settings.path", MapConfig.PinKind.CUSTOM, MapConfig.PinKind.SYSTEM),
-                // The world map's parts of Cave map and View cone (user request 13.11.2026), after the plants (user
-                // request 14.11.2026, as in the settings screen).
                 plants(), option("teyvatcartographia.settings.caves", "caves", MapConfig.CAVES_ENABLED),
                 option("teyvatcartographia.settings.player_cone", "player_cone", MapConfig.PLAYER_CONE),
                 option("teyvatcartographia.settings.labels", "map_labels", MapConfig.MAP_SHOW_LABELS),
-                option("teyvatcartographia.settings.grid", "map_grid", MapConfig.MAP_SHOW_GRID)));
+                option("teyvatcartographia.settings.grid", "map_grid", MapConfig.MAP_SHOW_GRID),
+                option("teyvatcartographia.settings.radar", "radar_enabled", MapConfig.RADAR_ENABLED),
+                pins("teyvatcartographia.settings.custom_pins", MapConfig.PinKind.CUSTOM),
+                pins("teyvatcartographia.settings.system_pins", MapConfig.PinKind.SYSTEM),
+                path("teyvatcartographia.settings.path", MapConfig.PinKind.CUSTOM, MapConfig.PinKind.SYSTEM)));
         if (ModCompat.waystones()) {
             out.add(section("teyvatcartographia.config.subsection.compat_waystones"));
             out.add(pins("teyvatcartographia.settings.stones", MapConfig.PinKind.INTERACTIVE));

@@ -133,7 +133,7 @@ public final class Radar {
         count = 0;
         SableRadar.tick(mc);
         LocalPlayer player = mc.player;
-        if (player == null || mc.level == null || !MapConfig.get(MapConfig.RADAR_ENABLED)) {
+        if (player == null || mc.level == null || !on(false) && !on(true)) {
             far = null;
             return;
         }
@@ -413,6 +413,11 @@ public final class Radar {
         };
     }
 
+    /** Whether the radar shows on the minimap ({@code minimap}) or on the world map. */
+    public static boolean on(boolean minimap) {
+        return MapConfig.get(minimap ? MapConfig.RADAR_MINIMAP : MapConfig.RADAR_ENABLED);
+    }
+
     /** Whether anything is on the radar at all. */
     public static boolean any() {
         return count > 0 || SableRadar.any();
@@ -435,6 +440,7 @@ public final class Radar {
      * redrawn then, at the minimap's update rate), 0 with nothing to show.
      */
     public static long signature(MapView view, float pt, float cx, float cy, float r, boolean square, double playerY, boolean caves, Integer viewed) {
+        if (!on(true)) return 0;
         long h = SableRadar.signature(view, pt, cx, cy, r, square);
         boolean arrows = MapConfig.get(MapConfig.RADAR_HEIGHT);
         boolean heads = MapConfig.get(MapConfig.RADAR_PLAYER_LOOK) == RadarRules.PlayerLook.HEADS;
@@ -463,6 +469,7 @@ public final class Radar {
      */
     public static Component draw(GuiGraphics g, MapView view, float pt, boolean minimap, float cx, float cy, float r, boolean square,
                                  double playerY, float alpha, int mx, int my, boolean caves, Integer viewed) {
+        if (!on(minimap)) return null;
         Component pointed = null;
         float dot = minimap ? DOT_MINIMAP : DOT_MAP, arrow = minimap ? ARROW_MINIMAP : ARROW_MAP;
         float playerHead = minimap ? HEAD_MINIMAP : HEAD_MAP, mobHead = minimap ? MOB_HEAD_MINIMAP : MOB_HEAD_MAP;

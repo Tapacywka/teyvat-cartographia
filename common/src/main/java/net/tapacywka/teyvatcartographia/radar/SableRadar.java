@@ -99,7 +99,7 @@ public final class SableRadar {
     public static void tick(Minecraft mc) {
         shown.clear();
         ticks++;
-        if (broken || mc.level == null || mc.player == null || !MapConfig.get(MapConfig.RADAR_ENABLED)
+        if (broken || mc.level == null || mc.player == null || !Radar.on(false) && !Radar.on(true)
                 || MapConfig.get(MapConfig.SABLE_RADAR) == RadarRules.Show.OFF || !loaded()) {
             if (mc.level == null) ships.clear();
             return;

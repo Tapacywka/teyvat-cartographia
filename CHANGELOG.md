@@ -16,6 +16,10 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 - Settings > Radar: where each kind shows (and the radar of Sable in Compatibility) is a box for each map instead of
   the steps Off, Minimap, Both maps, so a kind can now show on the world map alone.
 - Settings > Map and the map's quick settings: Plants come before Cave map.
+- Settings > Radar: the radar itself is a box for each map, so it can show on the world map alone or on the minimap
+  alone.
+- The map's quick settings follow the order of the settings screen (the Map tab's rows, then the radar, then the pins)
+  and have a switch for the radar on the world map.
 - Shown after tracking says "1 min" instead of "60 s".
 
 ### Fixed

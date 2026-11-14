@@ -97,6 +97,7 @@
   "teyvatcartographia.settings.plants.tooltip": "Растения окрашивают своё место на карте. Какие именно: Все настройки > Карта. Уже нанесённые места изменятся, когда вы снова пройдёте рядом.",
   "teyvatcartographia.settings.caves": "Карта пещер",
   "teyvatcartographia.settings.player_cone": "Конус обзора и подсветка",
+  "teyvatcartographia.settings.radar": "Радар",
   "teyvatcartographia.settings.labels": "Названия биомов",
   "teyvatcartographia.settings.grid": "Сетка чанков",
   "teyvatcartographia.settings.all": "Все настройки",
