@@ -10,6 +10,8 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-11-14
+
 ### Changed
 - Settings: the check boxes of Cave map, View cone and the paths stand in the same columns as those of the pins
   (World map, Minimap, ...) instead of spreading over the whole row.
@@ -608,7 +610,8 @@ The first public release, for Minecraft 1.21.1 on NeoForge 21.1. Client only.
 - Cached HUD layers, chunk work on worker threads and path searches in short slices: the mod is meant to cost at most
   2 to 3% FPS.
 
-[Unreleased]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.4.1...HEAD
+[1.4.1]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.3.2...v1.4.0
 [1.3.2]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.3.1...v1.3.2
 [1.3.1]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.3.0...v1.3.1
