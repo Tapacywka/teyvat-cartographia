@@ -39,6 +39,9 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 
 ### Changed
 
+- Actually Amazing Config Screen, the library of the settings screen, is no longer inside the mod's file: install it
+  beside the mod, the file for the same game and loader (Prism Launcher, the Modrinth App and the CurseForge App
+  offer it with the mod). A newer version of it then comes without waiting for this mod.
 - Settings > Pins: where each kind of pins and each path shows is a row of boxes instead of a slider in steps, one box
   for each picture on the card (the world map, the minimap, the marker, the beam or the stars); the beam only with the
   marker. The map's quick settings are the World map box of these rows.

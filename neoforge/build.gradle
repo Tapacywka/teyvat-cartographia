@@ -67,6 +67,7 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 dependencies {
-    // The settings screen and file (Actually Amazing Config Screen), inside the JAR.
-    jarJar(implementation("net.tapacywka.aacs:aacs-neoforge:${aacs_version}+mc${minecraft_version}-neoforge"))
+    // The settings screen and file (Actually Amazing Config Screen): a mod of its own the player installs beside this one
+    // (user decision 14.11.2026; inside the JAR from 0.9.0 to 1.3.2), required in neoforge.mods.toml.
+    implementation "net.tapacywka.aacs:aacs-neoforge:${aacs_version}+mc${minecraft_version}-neoforge"
 }

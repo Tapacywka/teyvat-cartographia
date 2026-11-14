@@ -48,7 +48,7 @@ env:
   MODRINTH_PROJECT: teyvat-cartographia
   CURSEFORGE_PROJECT: '1764160'
   USER_AGENT: Tapacywka/teyvat-cartographia (publish workflow)
-  # Actually Amazing Config Screen, embedded in the JARs: its project on each site.
+  # Actually Amazing Config Screen, a required mod of its own since 1.4.0 (embedded from 0.9.0 to 1.3.2): its project on each site.
   AACS_MODRINTH: actually-amazing-config-screen
   AACS_CURSEFORGE: actually-amazing-config-screen
   # Both files on a release; one of them when run by hand (to finish an upload refused for one).
@@ -113,8 +113,8 @@ jobs:
           id=$(jq -r .id <<< "$project")
           echo "Modrinth project $MODRINTH_PROJECT: id $id, status $(jq -r .status <<< "$project")"
           aacs=$(curl -sf -H "Authorization: $TOKEN" -H "User-Agent: $USER_AGENT" "$api/project/$AACS_MODRINTH" | jq -r .id) \
-            || { echo "Modrinth: the project $AACS_MODRINTH (the embedded library) cannot be read"; exit 1; }
-          echo "Modrinth: embedded library $AACS_MODRINTH, id $aacs"
+            || { echo "Modrinth: the project $AACS_MODRINTH (the required library) cannot be read"; exit 1; }
+          echo "Modrinth: required library $AACS_MODRINTH, id $aacs"
           # The versions there already (none uploaded twice); without Read versions a project not public yet lists none.
           echo "Modrinth: $(jq '.versions | length' <<< "$project") versions in the project"
           code=$(curl -s -o versions.json -w '%{http_code}' -H "Authorization: $TOKEN" -H "User-Agent: $USER_AGENT" "$api/project/$id/version")
@@ -132,12 +132,12 @@ jobs:
               jar="dist/teyvatcartographia-v$number.jar"
               if [ ! -f "$jar" ]; then echo "Modrinth: no $jar in the release"; continue; fi
               if grep -qxF "$number" <<< "$existing"; then echo "Modrinth: $number is there already"; continue; fi
-              # Actually Amazing Config Screen comes inside the JAR (since 0.9.0): shown as embedded.
-              embedded=$(jq -nc --arg p "$aacs" '[{"project_id":$p,"dependency_type":"embedded"}]')
+              # Actually Amazing Config Screen, a mod of its own the player installs too (since 1.4.0; embedded before).
+              required=$(jq -nc --arg p "$aacs" '[{"project_id":$p,"dependency_type":"required"}]')
               if [ "$loader" = fabric ]; then
-                deps=$(jq -c '. + [{"project_id":"P7dR8mSH","dependency_type":"required"},{"project_id":"mOgUt4GM","dependency_type":"optional"}]' <<< "$embedded")
+                deps=$(jq -c '. + [{"project_id":"P7dR8mSH","dependency_type":"required"},{"project_id":"mOgUt4GM","dependency_type":"optional"}]' <<< "$required")
               else
-                deps=$embedded
+                deps=$required
               fi
               data=$(jq -n --arg id "$id" --arg number "$number" --arg name "$number" --rawfile changelog changelog.md \
                 --arg loader "$loader" --arg game "$game" --argjson deps "$deps" --arg type "$RELEASE_TYPE" \
@@ -189,13 +189,13 @@ jobs:
               number="$VERSION+mc$game-$loader"
               jar="dist/teyvatcartographia-v$number.jar"
               if [ ! -f "$jar" ]; then echo "CurseForge: no $jar in the release"; continue; fi
-              # Actually Amazing Config Screen comes inside the JAR (since 0.9.0): an embedded library.
+              # Actually Amazing Config Screen, a mod of its own the player installs too (since 1.4.0; embedded before).
               if [ "$loader" = fabric ]; then
                 ids="[$gameId, $client, $java, $fabric]"
-                relations='{"projects":[{"slug":"fabric-api","type":"requiredDependency"},{"slug":"modmenu","type":"optionalDependency"},{"slug":"'"$AACS_CURSEFORGE"'","type":"embeddedLibrary"}]}'
+                relations='{"projects":[{"slug":"fabric-api","type":"requiredDependency"},{"slug":"modmenu","type":"optionalDependency"},{"slug":"'"$AACS_CURSEFORGE"'","type":"requiredDependency"}]}'
               else
                 ids="[$gameId, $client, $java, $neoforge]"
-                relations='{"projects":[{"slug":"'"$AACS_CURSEFORGE"'","type":"embeddedLibrary"}]}'
+                relations='{"projects":[{"slug":"'"$AACS_CURSEFORGE"'","type":"requiredDependency"}]}'
               fi
               metadata=$(jq -n --arg name "$number" --rawfile changelog changelog.md --argjson ids "$ids" --argjson relations "$relations" \
                 --arg type "$RELEASE_TYPE" \
