@@ -52,6 +52,16 @@ class RadarRulesTest {
         assertTrue(RadarRules.Show.MINIMAP.on(true));
         assertFalse(RadarRules.Show.MINIMAP.on(false));
         assertTrue(RadarRules.Show.BOTH.on(false));
+        assertTrue(RadarRules.Show.MAP.on(false));
+        assertFalse(RadarRules.Show.MAP.on(true));
+    }
+
+    @Test
+    void aBoxForEachMap() {
+        for (RadarRules.Show s : RadarRules.Show.values()) {
+            assertEquals(s, RadarRules.Show.of(s.on(false), s.on(true)), s.name());
+        }
+        assertEquals(RadarRules.Show.MAP, RadarRules.Show.of(true, false));
     }
 
     @Test
