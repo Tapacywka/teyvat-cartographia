@@ -15,6 +15,12 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
   (World map, Minimap, ...) instead of spreading over the whole row.
 - Settings > Radar: where each kind shows (and the radar of Sable in Compatibility) is a box for each map instead of
   the steps Off, Minimap, Both maps, so a kind can now show on the world map alone.
+- Settings > Map and the map's quick settings: Plants come before Cave map.
+- Shown after tracking says "1 min" instead of "60 s".
+
+### Fixed
+- In the Rounded interface style the world map's zoom slider and the settings' sliders and check boxes stopped a few
+  pixels short of where they stand in the Rectangular style.
 
 ## [1.4.0] - 2026-11-14
 

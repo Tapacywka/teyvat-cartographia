@@ -1428,16 +1428,19 @@ public final class WorldMapScreen extends Screen {
         Draw.icon(g, icon, x, y, 8, Theme.ZOOM_BUTTON_ICON);
     }
 
-    /** Half the thumb along the zoom track: the square handle, or the diamond (the larger one while hovered). */
+    /**
+     * How far in from the track's ends the thumb's middle stops: the square handle's half, the same for the diamond
+     * (user request 14.11.2026: at 8 the Rounded thumb stopped short of where the square one goes).
+     */
     private static float thumbHalf() {
-        return Theme.Style.squareUi ? 4 : 8;
+        return 4;
     }
 
     private void drawZoomSlider(GuiGraphicsExtractor g, int mx, int my) {
         float x = leftColumnX(), top = sliderTop(), bottom = sliderBottom();
         sliderEnd(g, x, sliderPlusY(), Icon.PLUS, Draw.inCircle(mx, my, x, sliderPlusY(), 9));
         sliderEnd(g, x, sliderMinusY(), Icon.MINUS, Draw.inCircle(mx, my, x, sliderMinusY(), 9));
-        // The thumb stays inside the track: its edge, not its centre, meets the track ends at 1/16 and 16.
+        // The thumb's middle stops thumbHalf() inside the track's ends at the least and the most zoom, in both styles.
         float ty = (float) (bottom - thumbHalf() - scaleToT(thumbAtTarget ? targetScale : scale) * (bottom - top - 2 * thumbHalf()));
         boolean thumbHover = sliderDrag || Draw.inCircle(mx, my, x, ty, 9);
         if (Theme.Style.squareUi) {
