@@ -345,7 +345,7 @@
   "teyvatcartographia.config.value.rectangular": "Прямоугольный",
   "teyvatcartographia.config.value.rounded": "Скруглённый",
   "teyvatcartographia.config.value.show_30s": "30 с",
-  "teyvatcartographia.config.value.show_60s": "60 с",
+  "teyvatcartographia.config.value.show_60s": "1 мин",
   "teyvatcartographia.config.value.show_2m": "2 мин",
   "teyvatcartographia.config.value.show_5m": "5 мин",
   "teyvatcartographia.config.value.always": "Всегда",

@@ -345,7 +345,7 @@
   "teyvatcartographia.config.value.rectangular": "Rectangular",
   "teyvatcartographia.config.value.rounded": "Rounded",
   "teyvatcartographia.config.value.show_30s": "30 s",
-  "teyvatcartographia.config.value.show_60s": "60 s",
+  "teyvatcartographia.config.value.show_60s": "1 min",
   "teyvatcartographia.config.value.show_2m": "2 min",
   "teyvatcartographia.config.value.show_5m": "5 min",
   "teyvatcartographia.config.value.always": "Always",

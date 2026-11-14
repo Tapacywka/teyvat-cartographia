@@ -138,10 +138,10 @@ public final class TeyvatConfigScreen {
             t.choice(K + "theme", MapConfig.THEME, ThemeLoader::available, ThemeLoader::displayName, c -> c.activeWhen(() -> ThemeLoader.available().size() > 1))
                     .then(ThemeLoader::applyNow).noPreview();
             t.choice(K + "interface_style", MapConfig.INTERFACE_STYLE, c -> {}).then(Theme.Style::update).noPreview();
-            // The caves first, the largest of them (user decision 09.11.2026).
+            // The plants first, then the rows of boxes (user request 14.11.2026; the caves first since 09.11.2026 before).
             t.section(K + "section.map_content");
-            mapsRow(t, K + "caves", MapConfig.CAVES_ENABLED, MapConfig.CAVES_MINIMAP);
             t.toggleList(K + "plants", MapConfig.MAP_PLANTS, MapConfig.PLANTS_HIDDEN, TeyvatConfigScreen::plants, remap).then(remap);
+            mapsRow(t, K + "caves", MapConfig.CAVES_ENABLED, MapConfig.CAVES_MINIMAP);
             mapsRow(t, K + "player_cone", MapConfig.PLAYER_CONE, MapConfig.PLAYER_CONE_MINIMAP);
             // How the map is coloured: relief, water.
             t.section(K + "section.colours");

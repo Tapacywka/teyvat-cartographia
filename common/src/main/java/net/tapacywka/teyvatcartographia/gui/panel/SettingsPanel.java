@@ -96,8 +96,9 @@ public final class SettingsPanel extends SidePanel {
                 pins("teyvatcartographia.settings.custom_pins", MapConfig.PinKind.CUSTOM),
                 pins("teyvatcartographia.settings.system_pins", MapConfig.PinKind.SYSTEM),
                 path("teyvatcartographia.settings.path", MapConfig.PinKind.CUSTOM, MapConfig.PinKind.SYSTEM),
-                // The world map's parts of Cave map and View cone (user request 13.11.2026), round the plants.
-                option("teyvatcartographia.settings.caves", "caves", MapConfig.CAVES_ENABLED), plants(),
+                // The world map's parts of Cave map and View cone (user request 13.11.2026), after the plants (user
+                // request 14.11.2026, as in the settings screen).
+                plants(), option("teyvatcartographia.settings.caves", "caves", MapConfig.CAVES_ENABLED),
                 option("teyvatcartographia.settings.player_cone", "player_cone", MapConfig.PLAYER_CONE),
                 option("teyvatcartographia.settings.labels", "map_labels", MapConfig.MAP_SHOW_LABELS),
                 option("teyvatcartographia.settings.grid", "map_grid", MapConfig.MAP_SHOW_GRID)));
