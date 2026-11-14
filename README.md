@@ -38,9 +38,13 @@
 - **Experimental**, off by default: Far land (the outline of unexplored land from the world's generator), soft animated map edges, the world border on the map.
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/map-village-path.jpg" alt="A village on the world map, pins and the path to a tracked pin" width="49%">
-  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/map-search.jpg" alt="Searching pins and biomes by name" width="49%">
-  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/settings-pins.jpg" alt="Settings with a live preview of the pins" width="49%">
+  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/world-map-water-path.jpg" alt="The path to a tracked pin across an island, going on over water, with the radar's mobs" width="49%">
+  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/world-map-radar.jpg" alt="The path around bays and rivers to a tracked pin, pins and mobs on the world map" width="49%">
+  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/pin-search.jpg" alt="Searching pins and biomes by name in the pin list" width="49%">
+  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/pin-pick-list.jpg" alt="A list to pick from where several pins lie on one spot" width="49%">
+  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/settings-checkboxes.jpg" alt="Settings: a box for each place a kind of pin or path shows, with a live preview" width="49%">
+  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/settings-compat.jpg" alt="Settings: a section for each supported mod in the game" width="49%">
+  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/aether-map.jpg" alt="The map of the Aether over its sea of clouds" width="49%">
   <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/beam-sparkles.jpg" alt="The beam of light over a tracked pin and the path sparkles" width="49%">
 </p>
 
