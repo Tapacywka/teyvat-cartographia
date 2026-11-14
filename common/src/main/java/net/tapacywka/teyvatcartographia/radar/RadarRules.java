@@ -17,12 +17,20 @@ public final class RadarRules {
     /** How mobs show (user decision 13.11.2026): dots in the colour of their kind, or their faces in a frame of it. */
     public enum MobLook { DOTS, HEADS }
 
-    /** Where a kind shows: nowhere, on the minimap, on both maps. */
+    /**
+     * Where a kind shows: nowhere, on the minimap, on both maps, on the world map alone (since 14.11.2026, when the
+     * steps became a box per map; last, so the names of older files keep their meaning).
+     */
     public enum Show {
-        OFF, MINIMAP, BOTH;
+        OFF, MINIMAP, BOTH, MAP;
 
         public boolean on(boolean minimap) {
-            return this == BOTH || this == MINIMAP && minimap;
+            return this == BOTH || (minimap ? this == MINIMAP : this == MAP);
+        }
+
+        /** The value with the world map's and the minimap's boxes as given. */
+        public static Show of(boolean map, boolean minimap) {
+            return map ? (minimap ? BOTH : MAP) : (minimap ? MINIMAP : OFF);
         }
     }
 

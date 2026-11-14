@@ -107,11 +107,13 @@ public final class TeyvatConfigScreen {
     }
 
 
-    private static final String[] RADAR_STEPS = {K + "step.off", K + "step.minimap", K + "step.maps"};
-
-    /** Where a kind of the radar shows: off, the minimap, both maps. */
+    /** Where a kind of the radar shows, a box for each map (user request 14.11.2026, the steps before). */
     public static void radarRow(AacsScreen.Tab t, String key, EnumValue<RadarRules.Show> value) {
-        t.steps(K + key, RADAR_STEPS, () -> value.get().ordinal(), s -> value.set(RadarRules.Show.values()[s]));
+        t.checks(K + key, K + "step.everywhere", K + "step.off", K + "step.some", List.of(
+                new AacsScreen.Check(FRAME + "map", () -> value.get().on(false),
+                        on -> value.set(RadarRules.Show.of(on, value.get().on(true)))),
+                new AacsScreen.Check(FRAME + "minimap", () -> value.get().on(true),
+                        on -> value.set(RadarRules.Show.of(value.get().on(false), on)))));
     }
 
     private static AacsScreen build() {

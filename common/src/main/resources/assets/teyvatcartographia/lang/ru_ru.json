@@ -202,8 +202,6 @@
   "teyvatcartographia.config.step.real": "Реальное",
   "teyvatcartographia.config.step.both": "Оба",
   "teyvatcartographia.config.step.map": "Карта",
-  "teyvatcartographia.config.step.maps": "Обе карты",
-  "teyvatcartographia.config.step.minimap": "Мини-карта",
   "teyvatcartographia.config.step.world": "В мире",
   "teyvatcartographia.config.step.everywhere": "Везде",
   "teyvatcartographia.config.step.some": "Выборочно",

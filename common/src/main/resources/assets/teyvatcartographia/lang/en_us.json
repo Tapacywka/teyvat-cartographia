@@ -202,8 +202,6 @@
   "teyvatcartographia.config.step.real": "Real",
   "teyvatcartographia.config.step.both": "Both",
   "teyvatcartographia.config.step.map": "Map",
-  "teyvatcartographia.config.step.maps": "Both maps",
-  "teyvatcartographia.config.step.minimap": "Minimap",
   "teyvatcartographia.config.step.world": "In the world",
   "teyvatcartographia.config.step.everywhere": "Everywhere",
   "teyvatcartographia.config.step.some": "Some",

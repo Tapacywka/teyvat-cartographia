@@ -10,6 +10,12 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 
 ## [Unreleased]
 
+### Changed
+- Settings: the check boxes of Cave map, View cone and the paths stand in the same columns as those of the pins
+  (World map, Minimap, ...) instead of spreading over the whole row.
+- Settings > Radar: where each kind shows (and the radar of Sable in Compatibility) is a box for each map instead of
+  the steps Off, Minimap, Both maps, so a kind can now show on the world map alone.
+
 ## [1.4.0] - 2026-11-14
 
 ### Added
