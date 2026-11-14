@@ -17,9 +17,9 @@ dependencies {
     implementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
     // The settings button in the mod list (Mod Menu on Fabric, Connector Extras' bridge on NeoForge).
     compileOnly "com.terraformersmc:modmenu:${modmenu_version}"
-    // The settings screen and file (Actually Amazing Config Screen), inside the JAR.
+    // The settings screen and file (Actually Amazing Config Screen): a mod of its own the player installs beside this one
+    // (user decision 14.11.2026; inside the JAR from 0.9.0 to 1.3.2), required in fabric.mod.json.
     implementation "net.tapacywka.aacs:aacs-fabric:${aacs_version}+mc${minecraft_version}-fabric"
-    include "net.tapacywka.aacs:aacs-fabric:${aacs_version}+mc${minecraft_version}-fabric"
 }
 
 processResources {

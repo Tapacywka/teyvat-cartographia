@@ -27,7 +27,7 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      # Actually Amazing Config Screen (the settings screen packed into both JARs), at the version gradle.properties
+      # Actually Amazing Config Screen (the settings screen, a required mod of its own), at the version gradle.properties
       # names (its mc26 branch, tag v<version>+mc26, built for this job's game), into the local Maven repository the build
       # reads it from.
       - name: Actually Amazing Config Screen
