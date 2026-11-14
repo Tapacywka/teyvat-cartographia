@@ -32,8 +32,9 @@
 - **Pins**: seven types, up to 300 per world. Right-click the map to place one, or press **B** where you stand.
 - **Tracking**: a golden beam of light over the pin, sparkles on the ground and a line on both maps that walks you there, around water and mountains. Or by boat, or straight through the air for elytra.
 - **Caves**: underground, the map switches to the layer you are in.
+- **Radar**: other players as arrows or their skins' heads, mobs as dots or their faces, on the minimap and the world map, by the cave layer you look at. On servers only players, unless you allow mobs.
 - **Every dimension** gets its own map, The Nether and The End their own fog.
-- **Settings** with a live preview of whatever you point at. English and Russian.
+- **Settings** with a live preview of whatever you point at; pick where each kind of pin and path shows, box by box. English and Russian.
 - **Experimental**, off by default: Far land (the outline of unexplored land from the world's generator), soft animated map edges, the world border on the map.
 
 <p align="center">
@@ -76,6 +77,8 @@ Blocks of any mod are drawn in the colours of their textures, so most mods just 
 [Xaero's Minimap](https://modrinth.com/mod/xaeros-minimap) (import its waypoints) and
 [Xaero's World Map](https://modrinth.com/mod/xaeros-world-map) (import the explored map),
 [The Aether](https://github.com/The-Aether-Team/The-Aether) and [Mielon's The Sift](https://modrinth.com/mod/mielons-the-sift) (their own fog),
+[Sable](https://github.com/ryanhcode/sable) (its ships on the radar, 1.21.1),
+[Vanilla Backport](https://github.com/ItsBlackGear/VanillaBackport) and [Tiny Takeover Backport](https://github.com/evanbones/Tiny-Takeover-Backport) (their mobs' faces on the radar, 1.21.1),
 [Sodium](https://github.com/CaffeineMC/sodium), [Iris](https://github.com/IrisShaders/Iris),
 [VulkanMod](https://github.com/xCollateral/VulkanMod) and [Mod Menu](https://github.com/TerraformersMC/ModMenu).
 

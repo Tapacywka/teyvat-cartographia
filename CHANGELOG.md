@@ -10,6 +10,8 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-11-14
+
 ### Added
 
 - Settings > Pins > Path to the target: "Shown after tracking", how long the marker, beam and stars of a tracked pin show
@@ -20,7 +22,9 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
   after Minimap: the radar, its range (2 to 16 chunks; in single player farther than the server sends mobs), the height
   arrows, mobs on servers, whether players are arrows or heads and mobs dots or the faces of the game's mobs in a frame
   of their kind's colour, every face as large (resource packs change them too; mobs of other mods stay dots), and where each kind shows (off,
-  the minimap, both maps).
+  the minimap, both maps). A map shows the entities of the layer it shows: without cave layers only those on the
+  surface; on the surface also those in caves up to two layers down, in layers mapped already; on a cave layer those up
+  to two layers above or below it.
 - Fair play: on a server the radar shows only other players unless you allow mobs there, and nothing at all when the
   server forbids a radar with the code Xaero's Minimap reads.
 - Sable (1.21.1): its ships and other moving structures on the radar, drawn from their own blocks and turned as they
@@ -46,10 +50,6 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
   for each picture on the card (the world map, the minimap, the marker, the beam or the stars); the beam only with the
   marker. The map's quick settings are the World map box of these rows.
 - Cave map and View cone and glow have a box for each map, the world map and the minimap.
-- The radar shows the entities of the layer the map shows: without cave layers only those on the surface; on the surface
-  also those in caves up to two layers down, in layers mapped already; on a cave layer those up to two layers above or
-  below it.
-- Settings > Radar: villagers right after players.
 - The arrows of the plant list and of the sub-sections of Compatibility are white, gold under the pointer and while open.
 
 ## [1.3.2] - 2026-11-12
@@ -592,7 +592,8 @@ The first public release, for Minecraft 1.21.1 on NeoForge 21.1. Client only.
 - Cached HUD layers, chunk work on worker threads and path searches in short slices: the mod is meant to cost at most
   2 to 3% FPS.
 
-[Unreleased]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.3.2...HEAD
+[Unreleased]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.3.2...v1.4.0
 [1.3.2]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.3.1...v1.3.2
 [1.3.1]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.2.0...v1.3.0
