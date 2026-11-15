@@ -33,7 +33,7 @@ import java.util.stream.Stream;
  */
 public final class FarLand {
     /**
-     * The far land's own format, in {@code far/format.txt}: 2 since 08.11.2026 (every level drawn from the same answers,
+     * The far land's own format, in {@code far/format.txt}: 2 (every level drawn from the same answers,
      * no level of every column); pictures of an older one are deleted once, as they no longer match.
      */
     private static final int FORMAT = 2;
@@ -57,8 +57,8 @@ public final class FarLand {
     private static final int MAX_TILES = 72, MAX_OTHER_TILES = 16;
     private static final int TICKS_EVICT = 100, TICKS_SAVE = 1200, TICKS_LOOK_AGAIN = 40;
     /**
-     * How far around the player the far land is worked out with every column while the map is closed, in blocks. A setting
-     * (512 to 8192) until 07.11.2026, when the user asked for one middle value in its place.
+     * How far around the player the far land is worked out with every column while the map is closed, in blocks: one
+     * middle value, as a setting (512 to 8192) only made it a guess.
      */
     public static final int RADIUS = 2048;
     /** For the in-game tests only: another radius, so a scan ends sooner or reaches farther (0: {@link #RADIUS}). */
@@ -372,8 +372,9 @@ public final class FarLand {
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-        } catch (Throwable e) {
-            // A mod's generator that does not take this: the map goes on without more far land.
+        } catch (Exception | LinkageError | StackOverflowError e) {
+            // A mod's generator that does not take this (its classes missing, too deep a recursion): the map goes on
+            // without more far land.
             if (failure == null) TeyvatCartographia.LOGGER.error("The far land could not be worked out", e);
             failure = e;
         }

@@ -39,10 +39,10 @@ public final class Backdrop {
     /**
      * Under VulkanMod the raw frame copies come out black or empty, so the frame is copied by the game's own
      * post-processing instead ({@code shaders/post/frame_copy.json}, opaque), which VulkanMod runs like the blur itself,
-     * and the sharp frame is laid back as an ordinary textured quad (26.10.2026). One chain for the sharp copy, one for
+     * and the sharp frame is laid back as an ordinary textured quad. One chain for the sharp copy, one for
      * the blurred one. Its program is {@code minecraft:shaders/program/teyvatcartographia_frame_copy}: the game reads a
      * post pass's program from its own namespace only (NeoForge also takes "mod:name"), so on Fabric with the original
-     * VulkanMod the chain failed to load and the menus had no blur (30.10.2026).
+     * VulkanMod the chain failed to load and the menus had no blur.
      */
     private static final ResourceLocation FRAME_COPY =
             ResourceLocation.fromNamespaceAndPath(TeyvatCartographia.MOD_ID, "shaders/post/frame_copy.json");

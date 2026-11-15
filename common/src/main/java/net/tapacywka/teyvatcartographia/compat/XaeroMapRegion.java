@@ -13,7 +13,7 @@ import java.util.zip.ZipInputStream;
 
 /**
  * One region of Xaero's World Map (512 x 512 blocks, the file {@code <x>_<z>.zip} with {@code region.xaero} in it), read
- * for the import of an explored map (user request 03.11.2026, docs/XAERO_MAP_IMPORT.md). Format 6.8 of Xaero's World Map
+ * for the import of an explored map. Format 6.8 of Xaero's World Map
  * 1.46, worked out from a player's files: big-endian; a 0xFF byte and the version int, then tile chunks (64 x 64 blocks)
  * to the end: their position byte ({@code x << 4 | z}), 16 chunks ({@code -1} for an empty one, else 256 columns and a
  * tail of a byte, an int and a byte). A column is a parameter int and, by its bits: 0 a block (21 a new one as NBT, else

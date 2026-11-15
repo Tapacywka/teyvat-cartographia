@@ -1,6 +1,6 @@
 #version 150
 
-// The outline of the explored map, drawn per screen pixel (user decision 08.11.2026): the map ends on a rough line with
+// The outline of the explored map, drawn per screen pixel: the map ends on a rough line with
 // a stroke and a glow into the Fog of War, and on the world map the edge breathes, swelling out and drawing back as
 // water would. What does not move comes worked out per pixel of the picture (MapOutline.field, Sampler1); the line
 // is the softer minimum of the lobes' line, breathing, and the guard's. The values below are MapOutline's own
@@ -109,7 +109,7 @@ void main() {
         float glow = l >= 0.0 ? 0.0 : exp(l / GLOW) * reach * GLOW_STRENGTH;
         float wave = 0.0;
         if (EdgeSurf.z > 0.5 && EdgeBreath > 0.0 && reach > 0.0) {
-            // The surf (variant C): the glow swells and ebbs, thin waves run from the edge into the fog and fade, gone
+            // The surf: the glow swells and ebbs, thin waves run from the edge into the fog and fade, gone
             // where they would be thinner than a pixel.
             glow *= EdgeSurf.y;
             float d = -l, w = (fract(d / RIPPLE_GAP - EdgeSurf.x) - 0.5) * RIPPLE_GAP;

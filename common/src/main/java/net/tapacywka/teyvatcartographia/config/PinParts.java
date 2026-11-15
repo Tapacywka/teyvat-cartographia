@@ -3,7 +3,7 @@ package net.tapacywka.teyvatcartographia.config;
 import net.tapacywka.aacs.api.BoolValue;
 
 /**
- * The parts of a setting shown as check boxes (user decision 13.11.2026: the pins' and the paths' steps became a box per
+ * The parts of a setting shown as check boxes (the pins' and the paths' steps became a box per
  * place): a switch of the whole ({@code whole}, a kind of pins on or off) and the places it shows in ({@code parts}).
  * A box reads as ticked while the whole is on and its part too; with none ticked the whole goes off, and the first box
  * ticked again starts from that one alone (the parts of before do not come back with it). {@code needs} names a part

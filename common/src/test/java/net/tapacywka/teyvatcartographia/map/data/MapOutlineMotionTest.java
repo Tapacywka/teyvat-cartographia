@@ -84,7 +84,7 @@ class MapOutlineMotionTest {
 
     /**
      * A field's border is the next picture's own pixels, so sampled between pixels the GPU runs on across the edge
-     * (tester report 08.11.2026: without it the line, the glow and the waves broke off at every region's border).
+     * (without it the line, the glow and the waves broke off at every region's border).
      */
     @Test
     void theFieldsBorderIsTheNextPicturesPixels() {
@@ -128,7 +128,7 @@ class MapOutlineMotionTest {
 
     /**
      * A region with nothing explored ({@link EdgeOnly}): in a concave corner of explored land the smooth outline cuts across
-     * its corner, so the line and the glow come in and it needs a picture of its own (user request 09.11.2026: without it
+     * its corner, so the line and the glow come in and it needs a picture of its own (without it
      * they broke off along its borders); beside a straight edge nothing comes in, and it needs none.
      */
     @Test

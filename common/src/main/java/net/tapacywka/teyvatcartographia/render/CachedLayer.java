@@ -49,7 +49,7 @@ public final class CachedLayer {
     /**
      * A texture coordinate v of a layer as OpenGL reads it (0 at the bottom row), for the texture as the renderer keeps
      * it: the original VulkanMod keeps the top row first ({@link ModCompat#vulkanTopFirst}; under it the minimap, the
-     * settings rows and the zoom bar came out upside down, 30.10.2026).
+     * settings rows and the zoom bar came out upside down).
      */
     public static float v(float v) {
         if (topFirst == 0) topFirst = ModCompat.vulkanTopFirst() ? 1 : -1; // asked once: the mods are known from the start

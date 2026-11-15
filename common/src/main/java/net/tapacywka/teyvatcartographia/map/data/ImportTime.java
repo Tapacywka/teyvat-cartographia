@@ -1,11 +1,11 @@
 package net.tapacywka.teyvatcartographia.map.data;
 
 /**
- * About how long the import of Xaero's map takes (user request 08.11.2026): before it, from the regions and bytes of the
+ * About how long the import of Xaero's map takes: before it, from the regions and bytes of the
  * folders chosen; while it runs, from the same model scaled by the speed seen so far. Pure.
  * <p>
  * The model, per thread: a fixed part per Xaero region (this mod's four regions there read and written) and a part per
- * byte of its file (read, coloured, shaded). Measured 03.11.2026 on the whole map of a player (1179 regions, 186 MB,
+ * byte of its file (read, coloured, shaded). Measured on the whole map of a player (1179 regions, 186 MB,
  * 711 000 chunks): 29.5 s on 15 threads of 16 logical cores, 442 thread-seconds; how they split between the two parts is
  * a guess, and the speed seen while the import runs corrects the whole within seconds (another machine, a busy game,
  * places already on the map, which are skipped).
@@ -28,7 +28,7 @@ public final class ImportTime {
     /**
      * Seconds the import of {@code regions} regions of {@code bytes} bytes takes on {@code threads}, {@code speed} times
      * as slow as measured: a region is one thread's work, so a few regions keep only as many threads busy (3 regions on
-     * 15 threads took 0.5 s, 08.11.2026, not a fifth of that).
+     * 15 threads took 0.5 s, not a fifth of that).
      */
     public static double seconds(int regions, long bytes, int threads, double speed) {
         return work(regions, bytes) / Math.max(1, Math.min(threads, regions)) * speed;

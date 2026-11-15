@@ -37,11 +37,11 @@ import net.minecraft.resources.ResourceLocation;
 import net.tapacywka.teyvatcartographia.gui.TeyvatConfigScreen;
 
 /**
- * Waystones (BlayTheNinth) on the maps, like the teleport waypoints and domains of Genshin Impact (user decisions
- * 31.10.2026): every waystone, sharestone and warp plate the player has activated, as Waystones sends them to the client
- * ({@link WaystonesBridge}: the list at login, then each change), and the ones seen in loaded chunks but not activated
- * yet, grey. A waystone a structure placed as a dungeon's (origin "dungeon") is a dungeon. They are automatic points: only
- * tracked from the map; teleporting stays with Waystones and its own rules.
+ * Waystones (BlayTheNinth) on the maps, like the teleport waypoints and domains of Genshin Impact: every waystone,
+ * sharestone and warp plate the player has activated, as Waystones sends them to the client ({@link WaystonesBridge}:
+ * the list at login, then each change), and the ones seen in loaded chunks but not activated yet, grey. A waystone a
+ * structure placed as a dungeon's (origin "dungeon") is a dungeon. They are automatic points: only tracked from the
+ * map; teleporting stays with Waystones and its own rules.
  *
  * <p>Nothing here names a class of Waystones: the waystones in loaded chunks are found by their block entity's id and their
  * block state, and the bridge reads the events by reflection, so this mod needs no Waystones to build or run and the same
@@ -53,7 +53,7 @@ public final class WaystonesCompat {
 
     /**
      * The sub-section of Compatibility for Waystones (shown only with it): where the stones and the
-     * path to them show (the interactive pins, user decision 31.10.2026).
+     * path to them show (the interactive pins).
      */
     public static void settings() {
         TeyvatConfigScreen.compatPart("compat_waystones", ModCompat::waystones, t -> {

@@ -111,7 +111,7 @@ class MapOutlineTest {
 
     @Test
     void theMiddleOfExploredLandIsNeverDimmed() {
-        // The trap of the mockups: lobes reaching past where the distance ends darkened the middle of an island.
+        // A trap: lobes reaching past where the distance ends darkened the middle of an island.
         MapOutline.Picture p = region(0, 0, (x, z) -> x >= 0);
         for (int z = 0; z < 256; z++) {
             for (int x = 64; x < 256; x++) {

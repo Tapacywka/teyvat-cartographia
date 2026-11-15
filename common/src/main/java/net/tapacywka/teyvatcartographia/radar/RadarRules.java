@@ -1,7 +1,7 @@
 package net.tapacywka.teyvatcartographia.radar;
 
 /**
- * The rules of the radar (user decisions 12.11.2026, docs/RADAR_SPEC.md), apart from the world and the screen so they
+ * The rules of the radar, apart from the world and the screen so they
  * can be tested: which kinds of entities a player may see where, how far above or below one counts as another height,
  * and the signals of servers that forbid a radar.
  */
@@ -11,15 +11,15 @@ public final class RadarRules {
     /** The kinds of entities on the radar, each with a setting of its own. */
     public enum Kind { PLAYERS, HOSTILE, PASSIVE, VILLAGERS, PETS, OTHER }
 
-    /** How players show (user decision 13.11.2026): arrows in their team's colour, or their skins' heads in a frame of it. */
+    /** How players show: arrows in their team's colour, or their skins' heads in a frame of it. */
     public enum PlayerLook { ARROWS, HEADS }
 
-    /** How mobs show (user decision 13.11.2026): dots in the colour of their kind, or their faces in a frame of it. */
+    /** How mobs show: dots in the colour of their kind, or their faces in a frame of it. */
     public enum MobLook { DOTS, HEADS }
 
     /**
-     * Where a kind shows: nowhere, on the minimap, on both maps, on the world map alone (since 14.11.2026, when the
-     * steps became a box per map; last, so the names of older files keep their meaning).
+     * Where a kind shows: nowhere, on the minimap, on both maps, on the world map alone (last,
+     * so the names of older files keep their meaning).
      */
     public enum Show {
         OFF, MINIMAP, BOTH, MAP;
@@ -46,7 +46,7 @@ public final class RadarRules {
     public static final String RESET = "§r§e§s§e§t§x§a§e§r§o";
 
     /**
-     * Whether a kind may show at all (fair play, user decision 12.11.2026): in single player everything; on a server
+     * Whether a kind may show at all (fair play): in single player everything; on a server
      * the other players, and the mobs and the rest only when the player allowed it; nothing while the server forbids a
      * radar.
      */
@@ -60,12 +60,12 @@ public final class RadarRules {
         return dy > HEIGHT ? 1 : dy < -HEIGHT ? -1 : 0;
     }
 
-    /** Cave layers above or below the one a map shows whose entities it shows too (user decision 13.11.2026). */
+    /** Cave layers above or below the one a map shows whose entities it shows too. */
     public static final int LAYERS_AROUND = 2;
 
     /**
      * Whether an entity shows on a map that shows cave layer {@code viewed} (null: the surface), by the layers of the
-     * cave map (user decisions 13.11.2026): without cave layers on that map only those on the surface; on the surface
+     * cave map: without cave layers on that map only those on the surface; on the surface
      * also those underground up to {@link #LAYERS_AROUND} layers under the ground at their place, in a layer mapped
      * already; on a cave layer those up to that many layers above or below it (underground ones in a mapped layer).
      * {@code band} is the entity's layer, {@code surfaceBand} that of the ground above it.
@@ -94,7 +94,7 @@ public final class RadarRules {
     }
 
     /**
-     * Whether a sub-level is drawn as its silhouette (variant C) or as its icon (A, user decision 12.11.2026): the icon
+     * Whether a sub-level is drawn as its silhouette or as its icon: the icon
      * while no silhouette is read yet ({@code columns} 0) or while it would be too small to tell on the map.
      */
     public static boolean shipSilhouette(int columns, float longestSideOnScreen) {

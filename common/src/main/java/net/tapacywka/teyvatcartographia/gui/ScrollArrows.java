@@ -1,7 +1,7 @@
 package net.tapacywka.teyvatcartographia.gui;
 
 /**
- * The two arrows at the ends of a scroll bar (user decision 13.11.2026, variant C of the mockup, after Genshin's
+ * The two arrows at the ends of a scroll bar (after Genshin's
  * lists, as in Actually Amazing Config Screen): small triangles above and below the track, which loses their room. A click scrolls one row; held, the list
  * goes on scrolling smoothly after a short pause. Where the list cannot go on, the arrow is dim and takes no click.
  * Pure: the drawing is {@link Ui#scrollArrows}; the time comes from the caller.

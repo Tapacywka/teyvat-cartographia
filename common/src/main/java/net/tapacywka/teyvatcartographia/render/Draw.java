@@ -65,7 +65,7 @@ public final class Draw {
     // ================================================================== batches
 
     /**
-     * Shapes drawn one after another as one draw (item 8 of the profile, 09.11.2026: a draw each, 1 to 3% of the game's
+     * Shapes drawn one after another as one draw (a draw each took 1 to 3% of the game's
      * thread with the map open). Between {@link #batch} and {@link #endBatch} a shape of the same kind (colours; a
      * texture; a premultiplied texture) and texture as the one before goes into the same mesh, drawn when another kind
      * comes, before text ({@link DrawText}), before anything drawn at once ({@link #beginTex}: the edge shader, opaque
@@ -385,7 +385,7 @@ public final class Draw {
      * The loop in PX/PY without a point a rounding error from the one before it (also the last against the first);
      * returns the new count. In a capsule (the radius half its width) a corner starts where the last one ended, and
      * the two points a rounding error apart left a sliver that both fan triangles covered: a lighter line down the
-     * middle of a translucent capsule (the rounded scroll bars, user report 03.11.2026). Not for the outlines, which
+     * middle of a translucent capsule (the rounded scroll bars). Not for the outlines, which
      * pair the points of two loops by their index.
      */
     private static int distinct(int n) {
@@ -691,8 +691,8 @@ public final class Draw {
     }
 
     /**
-     * As above, and in {@code seaArgb} between two points marked in {@code water} (deep water: the colour of the sea,
-     * user decision 26.10.2026); the fog colour goes first ({@code water} null: none).
+     * As above, and in {@code seaArgb} between two points marked in {@code water} (deep water: the colour of the sea);
+     * the fog colour goes first ({@code water} null: none).
      */
     public static void route(GuiGraphics g, float[] xy, boolean[] fog, boolean[] water, int n, float width, int argb, int fogArgb,
                              int seaArgb, float phase) {

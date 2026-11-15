@@ -66,7 +66,8 @@ public final class FileDialogs {
             String chosen = null;
             try {
                 chosen = dialog.show();
-            } catch (Throwable e) {
+            } catch (Exception | LinkageError e) {
+                // LinkageError: the dialogs' native library missing.
                 TeyvatCartographia.LOGGER.error("File dialog failed", e);
             }
             Path result = null;

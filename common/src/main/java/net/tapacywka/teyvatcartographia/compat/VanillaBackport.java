@@ -15,7 +15,7 @@ import java.util.Locale;
 import java.util.Optional;
 
 /**
- * Vanilla Backport (BlackGear, user request 13.11.2026): the warm and cold cows, pigs and chickens of later games. It
+ * Vanilla Backport (BlackGear): the warm and cold cows, pigs and chickens of later games. It
  * keeps a farm animal's variant in data of its own and draws it with its own code, while the game's renderer still names
  * the usual texture, so the radar's heads read the variant here: its model (cold, warm or the usual) picks the face of the
  * table ({@code minecraft:cow/cold}), its texture the colours. Read by reflection through the mod's own names (no build
@@ -37,7 +37,7 @@ public final class VanillaBackport {
     private static final IdentityHashMap<EntityType<?>, IdentityHashMap<Object, Variant>> VARIANTS = new IdentityHashMap<>();
 
     /**
-     * A sub-section of Compatibility for each mod, named after it and shown with it (user decision 13.11.2026, after one
+     * A sub-section of Compatibility for each mod, named after it and shown with it (after one
      * shared "Backports"): Vanilla Backport > Mob faces, Tiny Takeover Backport > Baby faces. The mods in the game are
      * known when the game starts, before this.
      */

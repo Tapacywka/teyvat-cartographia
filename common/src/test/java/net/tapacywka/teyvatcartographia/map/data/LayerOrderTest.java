@@ -28,7 +28,7 @@ class LayerOrderTest {
         assertEquals(Arrays.asList(7, 6, null), CaveScanner.layerOrder(List.of(7, 6), 63));
     }
 
-    /** The tooltip names the heights away from the surface: upwards over it, downwards under it (25.10.2026). */
+    /** The tooltip names the heights away from the surface: upwards over it, downwards under it. */
     @Test
     void heightsGoAwayFromTheSurface() {
         assertEquals(List.of(64, 79), toList(CaveScanner.heights(4, 63)), "over the surface: bottom to top");

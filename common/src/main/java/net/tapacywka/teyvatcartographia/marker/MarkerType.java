@@ -15,7 +15,7 @@ import java.util.Locale;
  *   <li>{@link Category#EXPLORATION} (shown as "Custom"): the seven custom pin types of Genshin Impact;</li>
  *   <li>{@link Category#INTERACTION} (shown as "Interactive"): the stones of Waystones, like the teleport waypoints and
  *       domains of Genshin Impact (automatic points since 0.8.0; until then the player's own sign, party and structure
- *       pins, removed with every such pin, user decision 31.10.2026);</li>
+ *       pins, removed with every such pin);</li>
  *   <li>{@link Category#AUTO}: the spawn point and the last death.</li>
  * </ul>
  */

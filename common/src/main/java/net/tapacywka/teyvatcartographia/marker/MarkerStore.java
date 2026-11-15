@@ -33,8 +33,8 @@ import net.minecraft.world.level.storage.LevelResource;
 
 /**
  * The player's pins and the navigation target of one world, persisted as
- * {@code <gameDir>/teyvatcartographia/<world>/markers.json}. Every pin is the player's own, interactive ones too (the
- * pins a server shared with every player were removed on 24.10.2026). Main thread only.
+ * {@code <gameDir>/teyvatcartographia/<world>/markers.json}. Every pin is the player's own, interactive ones too (no
+ * pins shared by a server). Main thread only.
  */
 public final class MarkerStore {
     private MarkerStore() {}

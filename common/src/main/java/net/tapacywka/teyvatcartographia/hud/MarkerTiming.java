@@ -19,7 +19,7 @@ final class MarkerTiming {
 
     /**
      * Visibility 0..1 of the marker {@code elapsedMs} after it was shown for {@code showMs} (the setting
-     * {@link net.tapacywka.teyvatcartographia.config.MapConfig#MARKER_SHOW_FOR}, user request 12.11.2026); 0 or less:
+     * {@link net.tapacywka.teyvatcartographia.config.MapConfig#MARKER_SHOW_FOR}); 0 or less:
      * it never fades out.
      */
     static float visibility(long elapsedMs, long showMs) {
@@ -35,7 +35,7 @@ final class MarkerTiming {
 
     /**
      * Seconds the beam takes to fade in when the marker comes onto the screen from the limiter ellipse, and to fade out
-     * when it goes onto the ellipse (user request 25.10.2026), after dimming on the way there ({@link #approach}).
+     * when it goes onto the ellipse, after dimming on the way there ({@link #approach}).
      */
     static final float EDGE_FADE_SECONDS = 1f;
 
@@ -50,8 +50,8 @@ final class MarkerTiming {
 
     /**
      * Where on the way to the limiter ellipse the beam starts to dim (as a share of the ellipse's radius), and how bright
-     * it is on the ellipse, before the timed fade there ({@link #edgeStep}) takes it the rest of the way (user choice
-     * 25.10.2026: both together).
+     * it is on the ellipse, before the timed fade there ({@link #edgeStep}) takes it the rest of the way (both
+     * together).
      */
     static final float APPROACH_FROM = 0.8f, APPROACH_LOW = 0.5f;
 

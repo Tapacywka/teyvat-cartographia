@@ -10,12 +10,11 @@ import net.tapacywka.teyvatcartographia.config.MapConfig;
 import net.tapacywka.teyvatcartographia.map.data.MapOutline;
 
 /**
- * The mod's own shader for the map's pictures with their outline ({@code shaders/core/map_edge}, user decision
- * 08.11.2026): the line, its stroke and glow worked out per screen pixel from what does not move
- * ({@link MapOutline#field}), so on the world map the edge breathes ({@link MapOutline#breath}) and is smooth at every
- * zoom. Each loader registers it while the game loads its shaders. Without it (not loaded, or under VulkanMod, which
- * builds its pipelines from the game's own shaders), and with Map edges not animated, the outline is baked into the
- * pictures as in 1.2.0, a pixel a block ({@link #inUse}).
+ * The mod's own shader for the map's pictures with their outline ({@code shaders/core/map_edge}): the line, its stroke
+ * and glow worked out per screen pixel from what does not move ({@link MapOutline#field}), so on the world map the edge
+ * breathes ({@link MapOutline#breath}) and is smooth at every zoom. Each loader registers it while the game loads its
+ * shaders. Without it (not loaded, or under VulkanMod, which builds its pipelines from the game's own shaders), and
+ * with Map edges not animated, the outline is baked into the pictures as in 1.2.0, a pixel a block ({@link #inUse}).
  */
 public final class EdgeShader {
     private EdgeShader() {}
@@ -57,8 +56,8 @@ public final class EdgeShader {
 
     /**
      * Whether the outline is drawn by this shader now: it is loaded and Map edges moves the edge (animated, or with
-     * waves). Not animated, the outline is baked into the pictures as in 1.2.0, a pixel a block (user request
-     * 08.11.2026); the stores make every outline again when this changes.
+     * waves). Not animated, the outline is baked into the pictures as in 1.2.0, a pixel a block; the stores make every
+     * outline again when this changes.
      */
     public static boolean inUse() {
         return shader != null && MapConfig.get(MapConfig.MAP_OUTLINE_MOTION) != MapConfig.EdgeMotion.STILL;

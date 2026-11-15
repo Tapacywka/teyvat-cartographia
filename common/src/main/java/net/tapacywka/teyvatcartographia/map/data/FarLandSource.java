@@ -23,12 +23,12 @@ import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Supplier;
 
 /**
- * Land or water from the world's own generator, without making a chunk (user decisions 07.11.2026, measured by the
+ * Land or water from the world's own generator, without making a chunk (measured by the
  * suite's category farland): only the generator's formulas are asked, nothing of the world, so any thread may ask, also
  * after the world closed. No reflection by name: on Fabric the game's names differ in a released game.
  * <p>
  * The density around the sea (about 30 microseconds) is asked every {@link FarLandRules#FINE} blocks and blended between
- * (98.5% of the columns as the real map), the same answers for every level (user decision 08.11.2026), and asked there
+ * (98.5% of the columns as the real map), the same answers for every level, and asked there
  * only near a coast: the corners of each {@link FarLandRules#SQUARE} first, and between them only where they are not
  * all sure of one thing ({@link FarLandRules#sure}). Carvers, structures and features are not seen (a spring's stream,
  * a village's farms), nor ice on the water.
@@ -43,13 +43,13 @@ final class FarLandSource {
     private final ThreadLocal<Scratch> scratch = ThreadLocal.withInitial(Scratch::new);
     /**
      * Made by the first thread that asks ({@link #answers()}): made with the source it was filled on the game's thread,
-     * a frame of 13 ms when the far land came on (profile 09.11.2026).
+     * a frame of 13 ms when the far land came on.
      */
     private volatile Answers answers;
     private final LongAdder asked = new LongAdder();
     /**
      * The world's densities were compiled by a mod into classes of its own, which take no parts of others (C2ME: "cannot
-     * be cast to IFastCacheLike", Project Amber 08.11.2026): the threads copy the functions they were made from.
+     * be cast to IFastCacheLike"): the threads copy the functions they were made from.
      */
     private volatile boolean compiled;
     /** How the densities are asked, said once: 0 not yet, 1 copied, 2 as they are. */
@@ -66,7 +66,7 @@ final class FarLandSource {
             Columns columns = new Columns();
             DensityFunction d = copy(FarLandSource.this.density, columns), s = d == null ? null : copy(softDensity, columns);
             if (d == null || s == null) {
-                // Slower, as before 08.11.2026, but the same answers.
+                // Slower, but the same answers.
                 d = FarLandSource.this.density;
                 s = softDensity;
                 if (told != 2) TeyvatCartographia.LOGGER.info("The far land asks the world's densities as they are, a part per column anew");
@@ -144,7 +144,7 @@ final class FarLandSource {
      * Makes each part the game keeps per column ({@code flat_cache}, {@code cache_2d}: the continents, the erosion, the
      * splines of the height) one that keeps its last answer, parts alike one part: the five densities of a place all ask
      * them at one column, and the game's own densities, asked outside a chunk, worked them out anew each time. Measured
-     * by the trial (08.11.2026): 15.7 microseconds a question in place of 91.7, not a pixel otherwise. For one thread: the
+     * by the trial: 15.7 microseconds a question in place of 91.7, not a pixel otherwise. For one thread: the
      * copies hold what they last worked out.
      */
     private static final class Columns implements DensityFunction.Visitor {

@@ -174,7 +174,7 @@ public final class MapTile {
         boolean known = (chunkState[lcz * CHUNKS + lcx] & 0x80) != 0;
         changedEdges = 0;
         // A chunk not on the map yet has nothing to compare with: its pixels go in without reading the old ones first
-        // (the far land lays thousands of new cells while it fills the map, 3% of the game's thread, profile 09.11.2026).
+        // (the far land lays thousands of new cells while it fills the map, 3% of the game's thread).
         boolean fresh = !known && !merge;
         if (fresh) pixels = true;
         for (int z = 0; z < 16; z++) {

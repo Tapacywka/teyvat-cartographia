@@ -104,7 +104,7 @@ public final class WorldMapScreen extends Screen {
 
     private final MapPicture picture = new MapPicture();
 
-    // What slides (user request 06.11.2026, see Slide): the map itself, dissolving into the game and back, with the zoom
+    // What slides (see Slide): the map itself, dissolving into the game and back, with the zoom
     // slider; the other buttons and texts, away while a side panel is open, those of the right side (rightBars) also
     // while the pick list is; the small buttons of the layer field.
     private final Slide entry = new Slide(), bars = new Slide(), rightBars = new Slide(), layerSlide = new Slide();
@@ -129,7 +129,7 @@ public final class WorldMapScreen extends Screen {
 
     /**
      * The map opened by the quick pin key: the new pin editor at the player's block, on the layer they are in (it
-     * used to add a star pin at once; user request 24.10.2026).
+     * used to add a star pin at once).
      */
     public static WorldMapScreen newPinHere() {
         WorldMapScreen s = new WorldMapScreen();
@@ -680,9 +680,9 @@ public final class WorldMapScreen extends Screen {
         if (menu != null) menu.render(g, mx, my, time, dt);
         else if (pick == null && panel == null && !exiting && entry.settled() && !dragging && !drawLayerTooltip(g, mx, my)) {
             if (hovered != null) drawTooltip(g, hovered, mx, my);
-            // Another player of the radar: their name (user decision 12.11.2026).
+            // Another player of the radar: their name.
             else if (radarPointed != null) Ui.tooltip(g, radarPointed.getString(), null, mx, my, width, height);
-            // The sea icon where a crossing of the path begins (user requests 25 and 26.10.2026).
+            // The sea icon where a crossing of the path begins.
             else if (overSeaIcon(mx, my)) Ui.tooltip(g, Component.translatable("teyvatcartographia.nav.sea").getString(), null, mx, my, width, height);
             else if (airIcon && Math.hypot(mx - airX, my - airY) <= SEA_BADGE) Ui.tooltip(g, Component.translatable("teyvatcartographia.nav.air").getString(), null, mx, my, width, height);
         }
@@ -765,7 +765,7 @@ public final class WorldMapScreen extends Screen {
 
     /**
      * The path to the tracked target ({@link Route}), if its kind shows it on the map, as a dash-dot line: golden, grey
-     * through the fog, in the colour of the sea over deep water (user decision 26.10.2026), with the sea icon where each
+     * through the fog, in the colour of the sea over deep water, with the sea icon where each
      * crossing begins.
      */
     private void drawRoute(GuiGraphics g) {
@@ -779,7 +779,7 @@ public final class WorldMapScreen extends Screen {
         // The walked part is gone: the line starts at its point nearest the player.
         Vec3 me = p.getPosition(Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(true));
         int first = Route.cut(me.x, me.z);
-        // By air near white, dark grey through the fog (user decision 27.10.2026); else golden, grey through the fog.
+        // By air near white, dark grey through the fog; else golden, grey through the fog.
         boolean air = DirectPath.active();
         int color = air ? Theme.ROUTE_AIR : Theme.worldMarkerPulse();
         lineFog = air ? Theme.ROUTE_AIR_FOG : Theme.ROUTE_FOG;
@@ -800,7 +800,7 @@ public final class WorldMapScreen extends Screen {
             }
             drawLine(g, color, (float) (from * scale));
         }
-        // After a new search the line is drawn in from the player up to shownTo (user request 26.10.2026).
+        // After a new search the line is drawn in from the player up to shownTo.
         float to = Route.shownTo(), pa = 0, px = 0, pz = 0;
         lineN = 0;
         for (int i = first; i < n; i++) {
@@ -829,7 +829,7 @@ public final class WorldMapScreen extends Screen {
                 SEA_ICONS[2 * seaIcons++ + 1] = sy;
             }
         }
-        // By air (27.10.2026): a cloud on the straight line a little ahead of where it begins, so not over the player.
+        // By air: a cloud on the straight line a little ahead of where it begins, so not over the player.
         if (DirectPath.active() && lineN >= 2) {
             float x0 = routeXY[0], y0 = routeXY[1], dx = routeXY[2 * lineN - 2] - x0, dy = routeXY[2 * lineN - 1] - y0;
             float len = (float) Math.hypot(dx, dy), ahead = SEA_BADGE * AIR_AHEAD;
@@ -1428,7 +1428,7 @@ public final class WorldMapScreen extends Screen {
 
     /**
      * How far in from the track's ends the thumb's middle stops: the square handle's half, the same for the diamond
-     * (user request 14.11.2026: at 8 the Rounded thumb stopped short of where the square one goes).
+     * (at 8 the Rounded thumb stopped short of where the square one goes).
      */
     private static float thumbHalf() {
         return 4;
@@ -1454,7 +1454,7 @@ public final class WorldMapScreen extends Screen {
             Draw.diamond(g, x, ty, thumbHover ? 9 : 8, Theme.ZOOM_THUMB);
             Draw.diamond(g, x, ty, 4, Theme.ZOOM_THUMB_CORE);
         }
-        // The zoom beside the thumb, moving with it (user request 25.10.2026): "1/4", "1", "8", outlined like the
+        // The zoom beside the thumb, moving with it: "1/4", "1", "8", outlined like the
         // biome names so it reads over any land.
         String label = MapView.zoomLabel(thumbAtTarget ? targetScale : scale);
         if (!label.equals(zoomLabel)) {
@@ -1762,8 +1762,8 @@ public final class WorldMapScreen extends Screen {
         if (Draw.inRect(mx, my, sx - 9, sliderTop() - 4, 18, sliderBottom() - sliderTop() + 8)) {
             sliderDrag = true;
             setSliderFrom(my);
-            // A click on the track: the thumb eases there with the map, as the settings sliders do (user report
-            // 31.10.2026: it jumped); dragging it further holds it under the pointer again.
+            // A click on the track: the thumb eases there with the map, as the settings sliders do (it jumped);
+            // dragging it further holds it under the pointer again.
             thumbAtTarget = false;
             return true;
         }

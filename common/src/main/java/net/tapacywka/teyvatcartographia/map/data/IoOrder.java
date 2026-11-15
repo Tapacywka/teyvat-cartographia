@@ -5,12 +5,12 @@ import java.util.concurrent.Executor;
 
 /**
  * Which thread reads a region of a store (or a file of it): the reading thread, unless a write of that region is queued
- * or running on the writing thread; then that one, behind the write. One IO thread did both until 09.11.2026, so a
- * region the map asked for waited behind every save queued before it (15 ms a region, half a second for 36, profile
- * 09.11.2026). A region is written only while it is in memory and read only while it is not, so a read sent to the
- * reading thread never meets a write of its own; a read sent while a write waits goes behind it, as on one thread (a
- * region read before its save was done lost what was new, audit 06.11.2026). Everything else of the folder (opening it,
- * the index) stays on the writing thread, behind the writes.
+ * or running on the writing thread; then that one, behind the write. With one IO thread for both a
+ * region the map asked for waited behind every save queued before it (15 ms a region, half a second for 36). A region
+ * is written only while it is in memory and read only while it is not, so a read sent to the reading thread never meets
+ * a write of its own; a read sent while a write waits goes behind it, as on one thread (a region read before its save
+ * was done lost what was new). Everything else of the folder (opening it, the index) stays on the writing thread,
+ * behind the writes.
  */
 final class IoOrder {
     private final Executor writes, reads;

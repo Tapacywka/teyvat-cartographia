@@ -46,8 +46,8 @@ public final class LodStore {
     /** Regions (tile keys) whose cell is to be redrawn from the region in memory, in turn. */
     private final LongArrayFIFOQueue memoryQueue = new LongArrayFIFOQueue();
     /**
-     * Their chunks to redraw, a bit each ({@link MapStorage#thumbnailChunks}), all of them for a whole cell: a changed
-     * chunk redrew the region's whole thumbnail until 09.11.2026, 2% of the game's thread while mapping at far zoom.
+     * Their chunks to redraw, a bit each ({@link MapStorage#thumbnailChunks}), all of them for a whole cell: redrawing
+     * a region's whole thumbnail for each changed chunk took 2% of the game's thread while mapping at far zoom.
      */
     private final Long2ObjectOpenHashMap<long[]> memoryDirty = new Long2ObjectOpenHashMap<>();
     private final CellCopy cellCopy = new CellCopy();
@@ -228,7 +228,7 @@ public final class LodStore {
             NativeImage thumb = null;
             try {
                 thumb = MapStorage.loadThumbnail(store.dir, tx, tz);
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 TeyvatCartographia.LOGGER.debug("No map thumbnail for region {},{}", tx, tz, e);
             }
             if (closed) {

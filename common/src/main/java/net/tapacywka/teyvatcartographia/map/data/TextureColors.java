@@ -214,7 +214,7 @@ public final class TextureColors {
         if (index >= 0 && vanilla && state.is(Blocks.SPRUCE_LEAVES)) fixed = 0x619961;
         else if (index >= 0 && vanilla && state.is(Blocks.BIRCH_LEAVES)) fixed = 0x80A755;
         // Mangrove leaves fall through to the biome's foliage: in the world the game tints them so since 1.21 (their fixed
-        // colour only without one; on the map they were too light, 24.10.2026).
+        // colour only without one; on the map they were too light).
         // The game's own leaves, vines and grass: the biome's colour, sampled per chunk (fast). Asked per column they
         // gave the same colour at twice the scan time (other mods, like Vanilla Backport, replace their handlers). By class,
         // not tag: the colours are read at the title screen, before the world brings the block tags.
@@ -247,7 +247,7 @@ public final class TextureColors {
     /**
      * The tint of the game's own leaves and vines from what their colour handler gives ({@link #fixedTint}): none
      * without a handler. Cherry leaves have a tinted model but no handler, so the game leaves them pink; tinted with the
-     * biome's foliage they turned beige on the map (fixed 24.10.2026).
+     * biome's foliage they turned beige on the map.
      */
     static Tint leafTint(int handler) {
         return handler == -1 ? Tint.NONE : Tint.FOLIAGE;
@@ -300,7 +300,7 @@ public final class TextureColors {
 
     /**
      * Pixels at least this opaque count: the game draws leaves and plants cut out at half opacity, so the faint dark
-     * pixels of some leaf textures do not show (they made every kind of leaves 14% darker on the map; 24.10.2026).
+     * pixels of some leaf textures do not show (they made every kind of leaves 14% darker on the map).
      */
     static final int SEEN_ALPHA = 128;
 

@@ -51,7 +51,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * The radar of players and entities on both maps (user decisions 12.11.2026, docs/RADAR_SPEC.md): the entities around
+ * The radar of players and entities on both maps: the entities around
  * the player, gathered once a tick, drawn as dots in the colour of their kind (players as an arrow in their team's
  * colour, or the head of their skin in a frame of it), fainter with a small arrow when well above or below. The rules are in {@link RadarRules}.
  * <p>
@@ -77,7 +77,7 @@ public final class Radar {
     private static ResourceLocation[] skins = new ResourceLocation[64];
     private static int[] teams = new int[64];
     /**
-     * Underground or not, the cave layer and that of the ground above (the maps' layers, user decision 13.11.2026):
+     * Underground or not, the cave layer and that of the ground above (the maps' layers):
      * see {@link RadarRules#onLayer}.
      */
     private static boolean[] under = new boolean[64];
@@ -99,7 +99,7 @@ public final class Radar {
     public static final float DOT_MINIMAP = 1.5f, DOT_MAP = 2f, ARROW_MINIMAP = 10f, ARROW_MAP = 13f;
     /** Players' heads (look Heads): the face's side, the frame around it and its dark rim, in GUI units (whole screen pixels when drawn). */
     public static final float HEAD_MINIMAP = 7f, HEAD_MAP = 10f, HEAD_FRAME = 0.4f, HEAD_RIM = 0.25f;
-    /** Mobs' heads (look Heads), the longer side of the face: smaller than players' (user choice 13.11.2026). */
+    /** Mobs' heads (look Heads), the longer side of the face: smaller than players'. */
     public static final float MOB_HEAD_MINIMAP = 5.3f, MOB_HEAD_MAP = 8f;
     /** The face of each kind of mob, found once (none: {@link #NO_FACE}); the texture of each face by its path. */
     private static final IdentityHashMap<EntityType<?>, MobFaces.Face> FACE_OF = new IdentityHashMap<>();
@@ -518,13 +518,12 @@ public final class Radar {
 
     /**
      * A head (look Heads): the face from its texture and the parts over it (a player's hat layer, a mob's nose or snout),
-     * its longer side about {@code size} GUI units, in a frame of {@code frame} with a dark rim (user choices
-     * 13.11.2026, variant B of the players' mockup, variant A of the mobs': the frame in the colour of the kind). Laid
-     * on whole screen pixels, the frame and rim as thick on every side (user report 13.11.2026: at 7 units, 21 pixels
+     * its longer side about {@code size} GUI units, in a frame of {@code frame} with a dark rim (the frame in the
+     * colour of the kind). Laid on whole screen pixels, the frame and rim as thick on every side (at 7 units, 21 pixels
      * for 8 of the skin and edges rounded each on its own, the pixels and the frame came out uneven). Every head's
      * longer side is as long ({@link MobFaces#side}: a face of 8 pixels on whole screen pixels a pixel, the others as
-     * large, user choice 13.11.2026, variant B), each part from and to whole screen pixels. The frame and the rim a
-     * screen pixel each at GUI 2 and 3, together within a pixel of the GUI (user request 13.11.2026), the frame two at
+     * large), each part from and to whole screen pixels. The frame and the rim a
+     * screen pixel each at GUI 2 and 3, together within a pixel of the GUI, the frame two at
      * GUI 4.
      */
     private static void head(GuiGraphics g, ResourceLocation texture, MobFaces.Face face, float x, float y, float size, int frame, float alpha) {
@@ -532,7 +531,7 @@ public final class Radar {
         int side = MobFaces.side(size, s);
         int pw = MobFaces.at(2 * face.w(), side, face), ph = MobFaces.at(2 * face.h(), side, face);
         float x0 = Math.round(x * s - pw / 2f) / s, y0 = Math.round(y * s - ph / 2f) / s;
-        // The rim, then the frame, along the shape of the seen pixels (user report 13.11.2026).
+        // The rim, then the frame, along the shape of the seen pixels.
         FaceOutline outline = outline(face, side, s);
         rects(g, outline.rim, x0, y0, s, Theme.withAlpha(Theme.RADAR_OUTLINE, alpha));
         rects(g, outline.frame, x0, y0, s, Theme.withAlpha(frame, alpha));

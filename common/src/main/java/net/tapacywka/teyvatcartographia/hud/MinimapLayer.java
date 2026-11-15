@@ -121,7 +121,7 @@ public final class MinimapLayer implements LayeredDraw.Layer {
 
     /**
      * As above at a radius of its own ({@code radius} above 0), whatever the Size setting says: the preview of the look
-     * is scaled up to the card, so a large radius keeps it sharp (user request 06.11.2026).
+     * is scaled up to the card, so a large radius keeps it sharp.
      */
     public static boolean preparePreview(GuiGraphics g, DeltaTracker delta, int radius) {
         Minecraft mc = Minecraft.getInstance();
@@ -403,8 +403,8 @@ public final class MinimapLayer implements LayeredDraw.Layer {
             biomeW = pillWidth(biomeLines) * pillScale;
             time1W = pillWidth(timeLines) * pillScale;
             time2W = pillWidth(time2Lines) * pillScale;
-            // Both times shown: the real time always in a row of its own under the clock (user decision 31.10.2026;
-            // beside it while the two fitted the map's width, so the line spacing moved it from row to row).
+            // Both times shown: the real time always in a row of its own under the clock (beside it while the two
+            // fitted the map's width, so the line spacing moved it from row to row).
             timeWrap = time2Lines != null;
         }
         int pills = (coordsLine != null ? 1 : 0) + (biomeLine != null ? 1 : 0) + (timeLine != null ? 1 : 0) + (timeWrap ? 1 : 0);
@@ -457,8 +457,8 @@ public final class MinimapLayer implements LayeredDraw.Layer {
         float inner = innerRadius(mapR);
         // The path to the target under them, and the target itself when it is off the map, both held the same distance
         // inside the map's edge, like the "N", E, S and W (nearer the frame than the circle bounding the other pins).
-        // With a faded edge (settings: fade width), in the middle of the fading band when that lies farther in (user
-        // request 26.10.2026), so they end where the map is still half seen.
+        // With a faded edge (settings: fade width), in the middle of the fading band when that lies farther in, so they
+        // end where the map is still half seen.
         float edge = fadeEdge >= 1f ? mapR - TARGET_EDGE : Math.min(mapR - TARGET_EDGE, mapR * (1 + fadeStart) / 2);
         if (path) drawRoute(g, cx, cy, edge, inner, alpha);
         // The radar under the pins (they matter more), inside the same circle.
@@ -492,7 +492,7 @@ public final class MinimapLayer implements LayeredDraw.Layer {
         for (int i = 0; i < (rotating ? 4 : 1); i++) {
             double angle = view.rotation + i * Math.PI / 2; // screen angle of the direction, clockwise from up
             float ns = (float) Math.sin(angle), nc = (float) Math.cos(angle);
-            // At the edge the path ends at ({@code edge}), or (square map) on that square's side (user request 26.10.2026; it was the
+            // At the edge the path ends at ({@code edge}), or (square map) on that square's side (it was the
             // inner circle of the other pins).
             float nk = Theme.Style.squareMap ? edge / Math.max(Math.abs(ns), Math.abs(nc)) : edge;
             float a = i == 0 ? alpha : alpha * SIDE_LETTER_ALPHA;
@@ -512,9 +512,9 @@ public final class MinimapLayer implements LayeredDraw.Layer {
         order[1] = biomeLine == null ? null : biomeLines;
         order[2] = timeLine == null ? null : timeLines;
         order[3] = timeWrap && timeLine != null ? time2Lines : null;
-        // From the outer edge of the frame: at a gap of 0 the first pill touches the map (user report 31.10.2026: 3 units
+        // From the outer edge of the frame: at a gap of 0 the first pill touches the map (3 units
         // were always added). Bare text under the map keeps one font pixel from it, as each line keeps one under its
-        // letters from the next (user request 31.10.2026); over the map the bottom line's own pixel does that.
+        // letters from the next; over the map the bottom line's own pixel does that.
         float lead = textBelow && pillOpacity <= 0 ? pillScale : 0;
         float ty = textBelow ? cy + r + FRAME_OUT + lead + infoGap : cy - r - FRAME_OUT - textBlock + infoGap;
         for (int i = 0; i < order.length; i++) ty = pill(g, cx, ty, order[textBelow ? i : order.length - 1 - i], Theme.WHITE, alpha);
@@ -523,15 +523,15 @@ public final class MinimapLayer implements LayeredDraw.Layer {
     private final Component[][] pillOrder = new Component[4][];
 
     /**
-     * The path as a dash-dot line, golden, grey through the fog and in the colour of the sea over deep water (user
-     * decision 26.10.2026), cut exactly where it leaves the map at {@code edge} (user report 25.10.2026: dropping the
-     * points beyond the circle of the "N" ended it up to a point spacing short of that circle, far inside the frame),
-     * with the sea icon where each crossing begins (inside the circle bounding the pins, {@code inner}).
+     * The path as a dash-dot line, golden, grey through the fog and in the colour of the sea over deep water, cut
+     * exactly where it leaves the map at {@code edge} (dropping the points beyond the circle of the "N" ended it up to
+     * a point spacing short of that circle, far inside the frame), with the sea icon where each crossing begins (inside
+     * the circle bounding the pins, {@code inner}).
      */
     private void drawRoute(GuiGraphics g, float cx, float cy, float edge, float inner, float alpha) {
         int n = Route.collect();
         if (n < 2 && Route.oldCount() < 2) return;
-        // By air near white, dark grey through the fog (user decision 27.10.2026); else golden, grey through the fog.
+        // By air near white, dark grey through the fog; else golden, grey through the fog.
         boolean air = DirectPath.active();
         pieceLine = Theme.withAlpha(air ? Theme.ROUTE_AIR : Theme.worldMarkerPulse(), alpha);
         pieceFog = Theme.withAlpha(air ? Theme.ROUTE_AIR_FOG : Theme.ROUTE_FOG, alpha);
@@ -569,7 +569,7 @@ public final class MinimapLayer implements LayeredDraw.Layer {
             Draw.circle(g, sx, sy, SEA_BADGE, badge);
             Draw.icon(g, Icon.SEA, sx, sy, SEA_BADGE * 1.6f, pieceSea);
         }
-        // By air (27.10.2026): a cloud on the straight line a little ahead of the player, once the line is drawn in so far.
+        // By air: a cloud on the straight line a little ahead of the player, once the line is drawn in so far.
         if (DirectPath.active() && n >= 2) {
             float total = Route.along(n - 1), shown = Math.min(to, total);
             float x0 = view.screenX(Route.cutX(), Route.cutZ()), y0 = view.screenY(Route.cutX(), Route.cutZ());
@@ -594,9 +594,9 @@ public final class MinimapLayer implements LayeredDraw.Layer {
     private static final float SEA_BADGE = 5;
 
     /**
-     * The path lines end, and the tracked target off the map is held, this far inside the map's edge (GUI units; user
-     * request 26.10.2026: the line ran up to the frame, the target sat on the inner circle, 10 units in; 8 tried first, 4
-     * chosen), and the "N", E, S and W with them.
+     * The path lines end, and the tracked target off the map is held, this far inside the map's edge (GUI units: the
+     * line ran up to the frame, the target sat on the inner circle, 10 units in; 8 tried first, 4 chosen), and the "N",
+     * E, S and W with them.
      */
     private static final float TARGET_EDGE = 4;
 
@@ -689,7 +689,7 @@ public final class MinimapLayer implements LayeredDraw.Layer {
     // The biome is looked up again when the player enters another block or another world or dimension, while the chunk
     // under the player was not loaded yet at the last look-up (after a teleport an empty chunk answers plains until the
     // real one arrives), and once a second in any case: right after joining a world the first look-up can still read
-    // plains from a chunk that counts as loaded, and a player standing still would keep it (seen 21.10.2026).
+    // plains from a chunk that counts as loaded, and a player standing still would keep it.
     private final BlockPos.MutableBlockPos biomePos = new BlockPos.MutableBlockPos(Integer.MIN_VALUE, 0, 0);
     private Holder<Biome> biomeHolder;
     private Component biome;
@@ -777,8 +777,8 @@ public final class MinimapLayer implements LayeredDraw.Layer {
 
     /**
      * Height of a pill with {@code lines} text lines (0 for none). With the pills see-through (opacity 0) a row is only
-     * as high as its text, so the line spacing is between the texts and 0 sets them line under line (user report
-     * 31.10.2026: the invisible pill around each line kept them apart).
+     * as high as its text, so the line spacing is between the texts and 0 sets them line under line (the invisible pill
+     * around each line kept them apart).
      */
     private int pillHeight(Component[] lines) {
         return lines == null ? 0 : rowHeight() + (lines.length - 1) * DrawText.LINE;

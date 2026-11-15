@@ -46,15 +46,15 @@ import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.material.MapColor;
 
 /**
- * Writes the surface of the Overworld mapped by Xaero's World Map into this mod's map of it (user request 03.11.2026,
- * docs/XAERO_MAP_IMPORT.md): every region of Xaero's folders is read ({@link XaeroMapRegion}), each of its chunks becomes
- * a {@link ChunkScanner.Snapshot} in this mod's colours (block textures, the biome tints of the world's registry, water,
- * lava, block light) and is shaded by {@link ChunkShader} among its neighbours, as a chunk the scanner read. Chunks
- * already on this mod's map are left as they are (the user's choice: its own map comes first), and of several Xaero
- * folders the first one with a chunk gives it. Runs on its own thread while {@link MapDataManager} has the map closed
- * ({@link MapDataManager#pauseForImport}); reads the registries only, so it works from any dimension. Only the Overworld's
- * surface (user decision 04.11.2026): its caves, the Nether (Xaero keeps it in cave layers only, with a third of the
- * columns as rock it never looked under) and the other dimensions this mod maps as the player goes.
+ * Writes the surface of the Overworld mapped by Xaero's World Map into this mod's map of it: every region of Xaero's
+ * folders is read ({@link XaeroMapRegion}), each of its chunks becomes a {@link ChunkScanner.Snapshot} in this mod's
+ * colours (block textures, the biome tints of the world's registry, water, lava, block light) and is shaded by {@link
+ * ChunkShader} among its neighbours, as a chunk the scanner read. Chunks already on this mod's map are left as they are
+ * (its own map comes first), and of several Xaero folders the first one with a chunk gives it. Runs on its own thread
+ * while {@link MapDataManager} has the map closed ({@link MapDataManager#pauseForImport}); reads the registries only,
+ * so it works from any dimension. Only the Overworld's surface: its caves, the Nether (Xaero keeps it in cave layers
+ * only, with a third of the columns as rock it never looked under) and the other dimensions this mod maps as the player
+ * goes.
  */
 public final class XaeroImport {
     private static final Pattern REGION = Pattern.compile("(-?\\d+)_(-?\\d+)\\.zip");
@@ -141,7 +141,7 @@ public final class XaeroImport {
         });
         long start = System.nanoTime();
         began = start;
-        // A faster PNG level and one row filter during the import were tried (03.11.2026): 6% less time on the whole
+        // A faster PNG level and one row filter during the import were tried: 6% less time on the whole
         // map, 9% larger files, the game's PNG writer changed meanwhile; left out.
         try {
             List<Future<?>> jobs = new ArrayList<>();
@@ -455,7 +455,7 @@ public final class XaeroImport {
 
     /**
      * The block state Xaero names, with the properties this game knows; stone for a block of a mod not in this game
-     * (an unknown block drawn as air came out black, 04.11.2026), so its place still shows as ground.
+     * (an unknown block drawn as air came out black), so its place still shows as ground.
      */
     static BlockState state(XaeroMapRegion.State s) {
         ResourceLocation id = ResourceLocation.tryParse(s.name());

@@ -31,7 +31,7 @@ import java.util.List;
  *   <li>existing pin (opened by clicking it): the same editor plus "Track", delete in the total-pins bar;</li>
  *   <li>read-only view (automatic points): coordinates and "Track" only.</li>
  * </ul>
- * The type grid holds the custom types alone, without a heading (since 0.8.0, user decision 31.10.2026: the
+ * The type grid holds the custom types alone, without a heading (since 0.8.0: the
  * interactive types and their section went, so "Custom" over the only section said nothing).
  */
 public final class PinPanel extends SidePanel {
@@ -220,7 +220,7 @@ public final class PinPanel extends SidePanel {
         float cy = coordsY();
         Ui.chip(g, bx, cy, bw, Grid.CHIP_H, readOnly ? Theme.PANEL_LIGHT_CHIP : Theme.PANEL_LIGHT_CHIP_EDIT);
         Draw.icon(g, Icon.LOCATE, bx + Grid.CHIP_H / 2f, cy + Grid.CHIP_H / 2f, Grid.ICON, Theme.CHIP_ICON);
-        // The coordinates alone: the dimension is always the one on the map (user request 31.10.2026, shown until then).
+        // The coordinates alone: the dimension is always the one on the map.
         String coords = DrawText.fit(Component.translatable("teyvatcartographia.pin.coords_short", px, pz).getString(), maxText);
         DrawText.text(g, coords,bx + Grid.CHIP_H, DrawText.textY(cy, Grid.CHIP_H), Theme.TEXT_DARK, false);
 

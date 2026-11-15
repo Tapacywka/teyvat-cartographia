@@ -57,7 +57,7 @@ public final class CaveScanner {
     }
 
     /**
-     * The heights of a band as its tooltip names them, away from the surface (user request 25.10.2026): a band over the
+     * The heights of a band as its tooltip names them, away from the surface: a band over the
      * surface in the layer field from its bottom up ("64 to 79"), one under it from its top down ("63 to 48").
      */
     public static int[] heights(int band, int seaLevel) {

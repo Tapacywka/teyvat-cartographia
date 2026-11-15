@@ -3,14 +3,14 @@ package net.tapacywka.teyvatcartographia.map.data;
 import java.util.Arrays;
 
 /**
- * The rules of the far land (user decisions 07.11.2026), apart from the game so they can be tested: the land beyond what
+ * The rules of the far land, apart from the game so they can be tested: the land beyond what
  * was explored, worked out from the world's generator, as a faint veil over the Fog of War with a brighter line along the
- * coast (the look chosen of four mockups on 04.11.2026), the water left as the fog.
+ * coast, the water left as the fog.
  * <p>
- * One silhouette at every zoom (user decision 08.11.2026: the land was drawn anew at each zoom, sharper the nearer, and
+ * One silhouette at every zoom (the land was drawn anew at each zoom, sharper the nearer, and
  * looked strange): the generator is asked on one grid, every {@link #FINE} blocks, whatever the zoom, and each level only
  * draws those answers in pixels of its size ({@link #STEPS}), blended between them before the line between land and sea
- * is drawn (a point for each pixel came out in jagged steps, full of specks, 07.11.2026). Zoomed nearer than the finest
+ * is drawn (a point for each pixel came out in jagged steps, full of specks). Zoomed nearer than the finest
  * level, its picture is drawn larger. What it costs follows the screen, not the world (the map to the world border is 14
  * trillion chunks), and only the coasts cost much: the answers every {@link #SQUARE} blocks come first, and a square whose
  * four corners stand clear of the line ({@link #SURE_MARGIN}) is all land or all water at once ({@link #sure}).
@@ -47,7 +47,7 @@ public final class FarLandRules {
 
     /**
      * How far all four corners of a {@link #SQUARE} must stand from the line for it to be taken as sure. Measured by the
-     * trial (08.11.2026, four windows of 2048 blocks): 60% of the questions, 0.06% of the pixels unlike every place asked
+     * trial (four windows of 2048 blocks): 60% of the questions, 0.06% of the pixels unlike every place asked
      * (ponds in the land, mostly); 0.15 kept 70% for 0.03%, 0.07 52% for 0.13%.
      */
     static final float SURE_MARGIN = 0.1f;
@@ -106,7 +106,7 @@ public final class FarLandRules {
     /**
      * One answer with its eight neighbours {@link #FINE} blocks around: water with at most one of them water is a pond or
      * a cave met by chance. Blown up to the spacing it would be a black speck, and thousands of them covered the land at
-     * the farthest zoom (seen in game 07.11.2026), so it counts as the land around it. Islands stay.
+     * the farthest zoom, so it counts as the land around it. Islands stay.
      */
     static float settled(float value, float[] around) {
         if (value > 0) return value;

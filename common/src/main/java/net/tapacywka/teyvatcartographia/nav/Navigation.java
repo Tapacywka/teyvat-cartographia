@@ -131,7 +131,7 @@ public final class Navigation {
     }
 
     /**
-     * Whether the path goes by boat across deep water of any width: the setting says so (user decision 26.10.2026), or
+     * Whether the path goes by boat across deep water of any width: the setting says so, or
      * the player sits in a boat.
      */
     public static boolean byBoat(LocalPlayer player) {

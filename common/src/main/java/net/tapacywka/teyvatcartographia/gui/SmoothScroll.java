@@ -1,7 +1,7 @@
 package net.tapacywka.teyvatcartographia.gui;
 
 /**
- * How far a list is scrolled, in GUI units, without steps (user request 25.10.2026: the lists stopped at row tops and
+ * How far a list is scrolled, in GUI units, without steps (the lists stopped at row tops and
  * the wheel moved one row at a time): the wheel and the scroll bar move a target, the shown position eases to it like
  * the map's zoom. Used by the settings list, the plant list, the pin list and the pick list on the map.
  */

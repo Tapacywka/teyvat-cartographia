@@ -65,7 +65,7 @@ class MobFacesTest {
         assertNotNull(MobFaces.of("minecraft:zombie"));
     }
 
-    /** The user's look of 13.11.2026: the snow golem wears its pumpkin (a block, never its renderer's texture). */
+    /** The snow golem wears its pumpkin (a block, never its renderer's texture). */
     @Test
     void theSnowGolemWearsItsPumpkin() {
         MobFaces.Face golem = MobFaces.of("minecraft:snow_golem");
@@ -78,7 +78,7 @@ class MobFacesTest {
         assertEquals(9, MobFaces.of("minecraft:rabbit").h());
     }
 
-    /** The wolf's nose 1.5 pixels in (user report 13.11.2026), on whole screen pixels in a head of the one size. */
+    /** The wolf's nose 1.5 pixels in, on whole screen pixels in a head of the one size. */
     @Test
     void theWolfsNoseLiesInTheMiddle() {
         MobFaces.Face wolf = MobFaces.of("minecraft:wolf");
@@ -91,7 +91,7 @@ class MobFacesTest {
         assertFalse(MobFaces.of("minecraft:cow").halves());
     }
 
-    /** One size for every head (user choice 13.11.2026, variant B): the longer side as an 8-pixel face's on whole pixels. */
+    /** One size for every head: the longer side as an 8-pixel face's on whole pixels. */
     @Test
     void everyHeadIsAsLarge() {
         assertEquals(24, MobFaces.side(8, 3));
@@ -134,7 +134,7 @@ class MobFacesTest {
         assertEquals(4, last);
     }
 
-    /** Vanilla Backport (user request 13.11.2026): its mobs, the faces of its warm and cold models, the golem's eyes. */
+    /** Vanilla Backport: its mobs, the faces of its warm and cold models, the golem's eyes. */
     @Test
     void vanillaBackportsMobsHaveFaces() {
         for (String id : new String[]{"creaking", "copper_golem", "happy_ghast", "parched", "cow/cold", "cow/warm", "pig/cold", "chicken/cold"}) {
@@ -155,7 +155,7 @@ class MobFacesTest {
         assertEquals(64, MobFaces.of("minecraft:pig/cold").texH()[0]);
     }
 
-    /** Tiny Takeover Backport (user request 13.11.2026): a baby face for every adult face of a mob it gives a baby model. */
+    /** Tiny Takeover Backport: a baby face for every adult face of a mob it gives a baby model. */
     @Test
     void tinyTakeoversBabiesHaveFaces() {
         String[] babies = {"cow", "mooshroom", "pig", "chicken", "sheep", "wolf", "cat", "ocelot", "fox", "panda", "polar_bear",

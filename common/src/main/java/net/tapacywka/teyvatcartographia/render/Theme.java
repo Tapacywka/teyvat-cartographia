@@ -174,13 +174,13 @@ public final class Theme {
     public static int GRID_LINE_MINOR = 0x18FFFFFF;
     // (The path over explored land is drawn in the golden colour of the marker, worldMarkerPulse.)
     public static int ROUTE_SHADOW = 0x60000000;
-    /** The path where it crosses unexplored land (the fog): grey (user decision 26.10.2026; it was near white). */
+    /** The path where it crosses unexplored land (the fog): grey (it was near white). */
     public static int ROUTE_FOG = 0xE6C8CED6;
     /** The path over deep water: the colour of the sea, and the badge under the sea icon where a crossing begins. */
     public static int ROUTE_SEA = 0xFF3FD0EA;
     public static int ROUTE_SEA_BADGE = 0xE02C323C;
     /**
-     * The path by air (route By air, user decision 27.10.2026): near white like the sky, as by land is golden and over
+     * The path by air (route By air): near white like the sky, as by land is golden and over
      * water the colour of the sea; dark grey through the fog.
      */
     public static int ROUTE_AIR = 0xFFEEF2F7;
@@ -192,7 +192,7 @@ public final class Theme {
     public static int WORLD_BORDER_LINE = 0xE6E86054;
     public static int WORLD_BORDER_BEYOND = 0x85141C24;
     /**
-     * The radar on both maps (Radar, user decisions 12.11.2026, colours of the mockup): hostile red, passive white, the
+     * The radar on both maps ({@code radar/Radar}): hostile red, passive white, the
      * player's own pets turquoise, the rest (boats, minecarts, items) lavender, other players orange unless their team
      * has a colour; the dark rim of every dot and arrow, and the arrow of another height.
      */
@@ -245,9 +245,8 @@ public final class Theme {
     public static int WORLD_MARKER_LEVEL = 0xFFFFFFFF;
     /**
      * The beam of light over the marker (added to the scene): the soft glow, and its bright core. One golden colour
-     * for every kind of pin, the colour of Genshin Impact's path stars (user decision 26.10.2026; until then custom
-     * orange, interactive mint, system violet). Opaque, the glow colour is also the pulse key's diamond, the glyph's
-     * flash, the path's stars and line and the edge pointers (see {@link #worldMarkerPulse}).
+     * for every kind of pin, the colour of Genshin Impact's path stars. Opaque, the glow colour is also the pulse key's
+     * diamond, the glyph's flash, the path's stars and line and the edge pointers (see {@link #worldMarkerPulse}).
      */
     public static int WORLD_MARKER_BEAM = 0x99FFEB4F;
     public static int WORLD_MARKER_BEAM_CORE = 0xA6FFF3B0;

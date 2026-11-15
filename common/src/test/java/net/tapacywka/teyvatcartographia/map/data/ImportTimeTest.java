@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** About how long the import of Xaero's map takes: the model, the speed seen, the time as the window says it. */
 class ImportTimeTest {
-    /** The whole map of a player (03.11.2026): 1179 regions, 186 MB. */
+    /** The whole map of a player: 1179 regions, 186 MB. */
     private static final int REGIONS = 1179;
     private static final long BYTES = 186_029_399;
 

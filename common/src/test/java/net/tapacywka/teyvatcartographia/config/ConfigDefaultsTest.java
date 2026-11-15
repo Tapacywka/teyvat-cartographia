@@ -46,9 +46,9 @@ class ConfigDefaultsTest {
         assertEquals(0, MapConfig.MINIMAP_PADDING.getDefault());
         assertEquals(15, MapConfig.MINIMAP_FADE_WIDTH.getDefault());
         assertEquals(100, MapConfig.MINIMAP_FADE_STRENGTH.getDefault());
-        assertEquals(0, MapConfig.MINIMAP_INFO_GAP.getDefault(), "the lines right under the minimap (user decision 24.10.2026)");
+        assertEquals(0, MapConfig.MINIMAP_INFO_GAP.getDefault(), "the lines right under the minimap");
         assertEquals(0, MapConfig.MINIMAP_TEXT_SIZE.getDefault(), "Auto");
-        assertEquals(0, MapConfig.MINIMAP_PILL_OPACITY.getDefault(), "text only (user decision 24.10.2026)");
+        assertEquals(0, MapConfig.MINIMAP_PILL_OPACITY.getDefault(), "text only");
     }
 
     @Test
@@ -74,7 +74,7 @@ class ConfigDefaultsTest {
     @Test
     void colours() {
         assertTrue(MapConfig.MAP_PLANTS.getDefault());
-        assertTrue(MapConfig.PLANTS_HIDDEN.getDefault().isEmpty(), "every plant on at first (user decision 24.10.2026, the list holds those switched off)");
+        assertTrue(MapConfig.PLANTS_HIDDEN.getDefault().isEmpty(), "every plant on at first (the list holds those switched off)");
         assertEquals(100, MapConfig.WATER_DEPTH.getDefault());
         assertEquals(0, MapConfig.SHALLOW_WATER.getDefault(), "clear shallow water off");
     }
@@ -94,7 +94,7 @@ class ConfigDefaultsTest {
 
     @Test
     void rangesOfTheMinimapSliders() {
-        // Since 24.10.2026: offsets 0 to 64, the gap of the lines 0 to 8, the text size Auto and 1 to 4.
+        // Offsets 0 to 64, the gap of the lines 0 to 8, the text size Auto and 1 to 4.
         assertEquals(64, MapConfig.MINIMAP_OFFSET_X.max());
         assertEquals(64, MapConfig.MINIMAP_OFFSET_Y.max());
         assertEquals(8, MapConfig.MINIMAP_INFO_GAP.max());

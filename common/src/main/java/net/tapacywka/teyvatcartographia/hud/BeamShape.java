@@ -4,10 +4,9 @@ package net.tapacywka.teyvatcartographia.hud;
  * The shape of the beam of light over the tracked target ({@link WorldMarkerLayer}): the heights of its rows above the
  * marker and its brightness at each. Faint at the marker, full a short rise above it, full for a while, then fading out
  * smoothly over several rows to nothing at its top, so it never ends in a cut. The beam is {@link #HEIGHT} blocks tall,
- * farther away as tall as the distance, so it looks the same on screen at any distance (user choice 27.10.2026 over a
- * tenth of the distance); the rise grows with the distance but stays in its lower part (until 27.10.2026 the top stayed
- * 320 blocks up, and beyond about 1900 blocks the fade began above the top and the beam ended in a cut; reported with
- * this fix by MelonCode, PR #2).
+ * farther away as tall as the distance, so it looks the same on screen at any distance; the rise grows with the
+ * distance but stays in its lower part (with a fixed top, beyond about 1900 blocks the fade began above the top and the
+ * beam ended in a cut; this shape by MelonCode, PR #2).
  */
 final class BeamShape {
     private BeamShape() {}

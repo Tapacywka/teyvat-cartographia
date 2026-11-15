@@ -34,7 +34,7 @@ public final class MapLayerRenderer {
     /**
      * Half a texel of a region or LOD texture (both 256 wide). With smoothing the texture coordinates stay that far
      * inside the edges: sampling at the very edge also took the opposite side where the clamp to the edge is not
-     * honoured, as under VulkanMod (thin lines along every region border, tester report 26.10.2026). The picture
+     * honoured, as under VulkanMod (thin lines along every region border). The picture
      * shrinks by one texel in 256, at most half a screen pixel where smoothing is on.
      */
     private static final float EDGE = 0.5f / MapTile.SIZE;
@@ -42,7 +42,7 @@ public final class MapLayerRenderer {
     /**
      * Without smoothing a sliver of a texel is enough: at the very edge (a coordinate of exactly 1) VulkanMod-Reforged
      * took the opposite edge of the region for a row of pixels wherever a region border fell between pixels, a dark
-     * line across the map at zoom 1 (tester report 02.11.2026, a flight to a far pin; the suite's category flight).
+     * line across the map at zoom 1 (a flight to a far pin; the suite's category flight).
      */
     private static final float NEAR_EDGE = 1f / 64 / MapTile.SIZE;
 
@@ -424,7 +424,7 @@ public final class MapLayerRenderer {
      */
     public static void drawBiomeLabels(GuiGraphics g, TileStore store, MapView view, float x0, float y0, float x1, float y1,
                                        List<float[]> avoid) {
-        // Shown from 1/8 up (user request 25.10.2026, they were shown from 1/4 to 4): at 1/16 and 1/32 they crowd.
+        // Shown from 1/8 up (they were shown from 1/4 to 4): at 1/16 and 1/32 they crowd.
         if (store == null || view.scale < MapView.DETAIL_FROM - 1e-6) return;
         int count = 0;
         float minDist = (float) Math.max(90, MapTile.SIZE * view.scale * 0.9);

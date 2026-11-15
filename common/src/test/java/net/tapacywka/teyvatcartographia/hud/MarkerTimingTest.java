@@ -25,7 +25,7 @@ class MarkerTimingTest {
         assertEquals(0f, MarkerTiming.visibility(10 * 60_000));
     }
 
-    /** The setting's times (user request 12.11.2026): each one holds that long, then fades; "Always" never fades. */
+    /** The setting's times: each one holds that long, then fades; "Always" never fades. */
     @Test
     void theShowTimeFollowsTheSetting() {
         for (var s : net.tapacywka.teyvatcartographia.config.MapConfig.ShowFor.values()) {

@@ -52,7 +52,7 @@ public final class ModCompat {
     /**
      * VulkanMod draws the game with Vulkan: raw OpenGL frame copies come out black or empty there, so the menu blur
      * copies the frame through the game's own post-processing under it ({@code render/Backdrop}; Project Amber's Vulkan
-     * build, 26.10.2026).
+     * build).
      */
     public static boolean vulkan() {
         return loaded("vulkanmod");
@@ -61,7 +61,7 @@ public final class ModCompat {
     /**
      * The original VulkanMod (Fabric), not VulkanMod-Reforged (NeoForge, the same mod id, also seen by this mod's Fabric
      * build through Connector): its textures drawn into keep the top row first, where OpenGL and Reforged keep the bottom
-     * row first, so the mod's own layers came out upside down there (30.10.2026, {@code render/CachedLayer#v}).
+     * row first, so the mod's own layers came out upside down there ({@code render/CachedLayer#v}).
      */
     public static boolean vulkanTopFirst() {
         return vulkan() && !neoForge();

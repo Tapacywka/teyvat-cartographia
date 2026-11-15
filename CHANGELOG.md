@@ -10,6 +10,10 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 
 ## [Unreleased]
 
+### Fixed
+- A map region the game could not read for want of memory is no longer set aside as damaged: its files stay as
+  they are and the region loads when the world is opened again.
+
 ## [1.4.1] - 2026-11-14
 
 ### Changed

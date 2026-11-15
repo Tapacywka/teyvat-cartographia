@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** The path line drawn in from the player over 3 s after a new search, the old one wiped the same way (26.10.2026). */
+/** The path line drawn in from the player over 3 s after a new search, the old one wiped the same way. */
 class LineRevealTest {
     private static final float[] OLD_XZ = {0, 0, 50, 0, 100, 0}, OLD_ALONG = {0, 50, 100};
     private static final float[] NEW_XZ = {0, 0, 0, 30, 0, 60, 0, 90}, NEW_ALONG = {0, 30, 60, 90};

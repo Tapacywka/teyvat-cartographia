@@ -30,7 +30,7 @@ dependencies {
     // The settings button in the mod list (Mod Menu on Fabric, Connector Extras' bridge on NeoForge).
     modCompileOnly "com.terraformersmc:modmenu:${modmenu_version}"
     // The settings screen and file (Actually Amazing Config Screen): a mod of its own the player installs beside this one
-    // (user decision 14.11.2026; inside the JAR from 0.9.0 to 1.3.2), required in fabric.mod.json.
+    // (inside the JAR from 0.9.0 to 1.3.2), required in fabric.mod.json.
     modImplementation "net.tapacywka.aacs:aacs-fabric:${aacs_version}+mc${minecraft_version}-fabric"
 }
 
@@ -55,12 +55,12 @@ tasks.named('remapJar') {
 
 tasks.named('compileJava', JavaCompile) {
     // Source file names and line numbers (crash reports still point at the line), no tables of local variable names
-    // but in the mixins (below): about 60 KB less (03.11.2026).
+    // but in the mixins (below): about 60 KB less.
     options.debugOptions.debugLevel = 'source,lines'
 }
 
 // Sinytra Connector's mixin adapter reads the local variable tables of a mixin's methods and stopped the game without
-// them (26.10.2026): the mixins compiled once more with them (no annotation processing, the refmap is compileJava's),
+// them: the mixins compiled once more with them (no annotation processing, the refmap is compileJava's),
 // and these classes go into the JAR instead (also the test JAR of the Connector runs, devtest-fabric.gradle).
 def mixinSources = 'net/tapacywka/teyvatcartographia/fabric/mixin/'
 def mixinsWithVars = tasks.register('compileMixinsWithVars', JavaCompile) {

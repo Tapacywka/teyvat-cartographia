@@ -21,8 +21,7 @@ import net.tapacywka.teyvatcartographia.map.data.MapDataManager;
  * By boat (setting {@link net.tapacywka.teyvatcartographia.config.MapConfig#PATH_ROUTE} WATER, or the player sitting in a
  * boat, {@link Navigation#byBoat}) deep water of any width is crossed, a little cheaper than walking. Shallow water costs
  * as much as land,
- * deep water swum on foot up to {@code NARROW} blocks half again as much ({@link #SWIM}; user decision 26.10.2026; until then
- * a separate grey boat path was drawn beside this one).
+ * deep water swum on foot up to {@code NARROW} blocks half again as much ({@link #SWIM}).
  * <p>
  * Runs on the main thread from the client tick, and only while the path is shown ({@link Navigation#pathWanted}). The
  * path is searched once per {@link Navigation#pathRequest} (a new target, the pulse key, getting into or out of a boat,
@@ -52,7 +51,7 @@ public final class PathFinder {
     static final float FORCED_SWIM = 8;
     /**
      * On foot, a block of narrow deep water costs this share of a block walked on top: half again as much as land, so the
-     * path swims straight across a river but does not cut the corners of a lake (user choice 26.10.2026; shallow water
+     * path swims straight across a river but does not cut the corners of a lake (shallow water
      * costs as much as land).
      */
     static final float SWIM = 0.5f;
@@ -316,7 +315,7 @@ public final class PathFinder {
         while (true) {
             if (open.isEmpty()) {
                 // The goal cannot be walked to: searched once more, swimming as far as it has to but as little as it
-                // can, so the path still leads to the pin instead of ending on a shore (user request 25.10.2026).
+                // can, so the path still leads to the pin instead of ending on a shore.
                 if (byBoat || forced) return true;
                 restart();
             }

@@ -41,7 +41,7 @@ public final class SettingsPanel extends SidePanel {
     }
 
     /**
-     * A kind of pins on the world map: the box World map of its row in All settings (user decision 13.11.2026: every
+     * A kind of pins on the world map: the box World map of its row in All settings (every
      * switch here is that map's part of a setting there; the tooltip is the kind's own).
      */
     private static Row pins(String key, MapConfig.PinKind kind) {
@@ -87,14 +87,13 @@ public final class SettingsPanel extends SidePanel {
     private final List<Row> rows = rows();
 
     /**
-     * The interactive pins (the stones of Waystones) have their own section, named after the mod, only with Waystones (user
-     * request 03.11.2026); the rest of their settings are in Compatibility > Waystones of the full settings screen. No
-     * setting of Settings > Experimental (user decision 08.11.2026): one comes here only once its feature is out in full.
+     * The interactive pins (the stones of Waystones) have their own section, named after the mod, only with Waystones;
+     * the rest of their settings are in Compatibility > Waystones of the full settings screen. No setting of Settings >
+     * Experimental: one comes here only once its feature is out in full.
      */
     private static List<Row> rows() {
-        // In the order of All settings (user rule 14.11.2026): the rows of its tab Map first, then Radar, then Pins, each
-        // tab's rows in its own order. Cave map, View cone and Radar are their World map box there (user request 13 and
-        // 14.11.2026).
+        // In the order of All settings: the rows of its tab Map first, then Radar, then Pins, each
+        // tab's rows in its own order. Cave map, View cone and Radar are their World map box there.
         List<Row> out = new ArrayList<>(List.of(section("teyvatcartographia.settings.section.display"),
                 plants(), option("teyvatcartographia.settings.caves", "caves", MapConfig.CAVES_ENABLED),
                 option("teyvatcartographia.settings.player_cone", "player_cone", MapConfig.PLAYER_CONE),
@@ -135,7 +134,7 @@ public final class SettingsPanel extends SidePanel {
 
     /**
      * How far the rows are scrolled, without steps: like the pin list, the rows scroll above the All settings button
-     * when they do not fit (GUI 4 at 1080p with Waystones, user request 03.11.2026).
+     * when they do not fit (GUI 4 at 1080p with Waystones).
      */
     private final SmoothScroll scroller = new SmoothScroll();
     private final ScrollArrows arrows = new ScrollArrows();

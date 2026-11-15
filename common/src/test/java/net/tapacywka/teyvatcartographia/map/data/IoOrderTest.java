@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Reads of regions apart from writes ({@link IoOrder}, 09.11.2026): a region the map asks for no longer waits behind
+ * Reads of regions apart from writes ({@link IoOrder}): a region the map asks for no longer waits behind
  * every save, but one whose own save is queued is still read after it (a read before its save lost what was new).
  */
 class IoOrderTest {

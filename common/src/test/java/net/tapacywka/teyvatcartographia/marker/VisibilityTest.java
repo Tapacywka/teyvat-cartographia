@@ -21,7 +21,7 @@ class VisibilityTest {
         assertEquals(MapConfig.PinKind.SYSTEM, MarkerVisibility.kind(spawn));
     }
 
-    /** At every zoom (1/16 and 1/32 too since 27.10.2026) by the settings of the kind and the place. */
+    /** At every zoom (1/16 and 1/32 too) by the settings of the kind and the place. */
     @Test
     void theSettingsOfTheKindAndThePlace() {
         assertTrue(MarkerVisibility.shown(false, true, true));

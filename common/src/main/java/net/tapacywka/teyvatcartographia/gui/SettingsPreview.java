@@ -71,8 +71,8 @@ final class SettingsPreview {
     }
 
     /**
-     * The types of the sample ring: the stones of Waystones only for their own rows (in Compatibility > Waystones since
-     * 31.10.2026), so the Pins tab shows its own kinds alone, with the mod or without it.
+     * The types of the sample ring: the stones of Waystones only for their own rows (in Compatibility > Waystones), so
+     * the Pins tab shows its own kinds alone, with the mod or without it.
      */
     private static MarkerType[] sampleTypes(boolean stones) {
         return Arrays.stream(MarkerType.values()).filter(t -> stones || t.category != MarkerType.Category.INTERACTION).toArray(MarkerType[]::new);
@@ -86,14 +86,13 @@ final class SettingsPreview {
      * and a path to one of each kind, faint where the world map does not show them.
      */
     /**
-     * The route setting (user decision 26.10.2026): two pictures of a lake between the player and a tracked pin, the
+     * The route setting: two pictures of a lake between the player and a tracked pin, the
      * path walking round it ("By land") and going straight across it in the colour of the sea with the sea icon where
-     * the crossing begins ("By water"), and a third (user request 27.10.2026) with a plain straight line over it
+     * the crossing begins ("By water"), and a third with a plain straight line over it
      * ("By air"); the choices not taken darkened, each with its name under it.
      */
     static void route(GuiGraphics g, float x, float y, float w, float h) {
-        // One under another across the whole width, filling the area like the terrain detail strips (user request
-        // 31.10.2026; side by side until then, small in the middle of the card).
+        // One under another across the whole width, filling the area like the terrain detail strips.
         int frames = MapConfig.Route.values().length;
         float label = Grid.GAP + DrawText.LINE, fw = w, fh = (h - frames * label - (frames - 1) * Grid.GAP) / frames;
         MapConfig.Route chosen = MapConfig.PATH_ROUTE.get();
@@ -200,7 +199,7 @@ final class SettingsPreview {
             float fx = at[i][0], fy = at[i][1], fw2 = at[i][2], fh2 = at[i][3];
             g.enableScissor((int) fx, (int) fy, (int) (fx + fw2), (int) (fy + fh2));
             if (i < 2) {
-                // Both maps drawn alike, as the world map (user decision 24.10.2026).
+                // Both maps drawn alike, as the world map.
                 mapArea(g, fx, fy, fw2, fh2, map, zoom);
                 samplePins(g, fx + fw2 / 2f, fy + fh2 / 2f, Math.min(fw2, fh2), focus, path);
             } else {
@@ -208,7 +207,7 @@ final class SettingsPreview {
             }
             if (!on[i]) Draw.rect(g, fx, fy, fx + fw2, fy + fh2, OFF_DIM);
             g.disableScissor();
-            // The picture of the box pointed at in the row lit (user decision 13.11.2026).
+            // The picture of the box pointed at in the row lit.
             boolean pointed = AacsScreen.pointedCheck() == i;
             Draw.frame(g, fx, fy, fw2, fh2, pointed ? 2 : 1, pointed ? Theme.GOLD : Theme.PANEL_LINE);
             Component caption = Component.translatable(keys[i]);
@@ -278,8 +277,7 @@ final class SettingsPreview {
             MarkerType t = types[i];
             double a = angle(i, types.length);
             float alpha = only != null || MapConfig.pins(kind(t)).onMap() ? 1f : 0.3f;
-            // With a kind: every pin of the ring, its own white and the other kinds grey like stones not activated yet
-            // (user request 31.10.2026; until then the other kinds were left out).
+            // With a kind: every pin of the ring, its own white and the other kinds grey like stones not activated yet.
             boolean other = only != null && kind(t) != only;
             MarkerRenderer.draw(g, t, Draw.snap(cx + (float) Math.cos(a) * r), Draw.snap(cy + (float) Math.sin(a) * r), pin, false, false, alpha, 0, other);
         }
@@ -315,7 +313,7 @@ final class SettingsPreview {
         boolean stars = mode == WORLD_STARS;
         float cx = Draw.snap(x + w * (stars ? 0.6f : 0.5f)), foot = Draw.snap(y + h * 0.62f);
         if (stars) {
-            // The path's sparkles from the near ground to the pin, as in the world (since 26.10.2026): large four-pointed
+            // The path's sparkles from the near ground to the pin, as in the world: large four-pointed
             // sparkles among small motes, golden with a light core, smaller and closer together with the distance.
             float sx = x + w * 0.3f, sy = y + h * 0.96f;
             int gold = Theme.worldMarkerPulse(), light = Theme.WORLD_MARKER_BEAM_CORE | 0xFF000000;
@@ -393,10 +391,10 @@ final class SettingsPreview {
     private static final List<Integer> SAMPLE_BANDS = List.of(-1, -2, -3, -4);
 
     /**
-     * Cave map, a picture only (user request 31.10.2026; until then its layer field could be clicked). On: the first
+     * Cave map, a picture only (its layer field takes no click). On: the first
      * cave layer under the surface mapped here, with the layer field at the right edge as the world map shows it open
      * (the large surface button and the cave layers around it, the shown one lit); with no cave mapped yet the map
-     * around the player under sample buttons. Off: the map around the player alone. No line under it (user request 06.11.2026).
+     * around the player under sample buttons. Off: the map around the player alone. No line under it.
      */
     static void caves(GuiGraphics g, float x, float y, float w, float h, LayerArea map) {
         float mw = w, mh = h;
@@ -489,7 +487,7 @@ final class SettingsPreview {
             float fy = Draw.snap(y + i * (sh + label + Grid.GAP));
             FogTexture.draw(g, fx, fy, fx + sw, fy + sh, 0, 0, Theme.WHITE);
             if (DETAIL_TEX[i] != null && detailShown != null) Draw.texturedQuad(g, DETAIL_TEX[i].getId(), fx, fy, fx + sw, fy + sh, u0, v0, u1, v1, 0xFFFFFFFF);
-            // The choices not taken darkened, as the route's pictures (user request 31.10.2026; a gold frame until then).
+            // The choices not taken darkened, as the route's pictures.
             if (i != chosen) Draw.rect(g, fx, fy, fx + sw, fy + sh, OFF_DIM);
             Component c = Component.translatable(DETAIL_KEYS[i]);
             DrawText.room(c, sw);
@@ -551,7 +549,7 @@ final class SettingsPreview {
     /**
      * Compatibility: the sample of the setting {@code key} alone, over the whole area: a piece of the dimension's fog of war
      * (the theme's fog while it is off), a field of ichor or of ichor snow as the map colours them (shimmering or
-     * plain); Xaero's rows have no picture, only their description (user request 04.11.2026).
+     * plain); Xaero's rows have no picture, only their description.
      */
     static void compatSample(GuiGraphics g, float x, float y, float w, float h, String key, MapArea map) {
         x = Draw.snap(x);

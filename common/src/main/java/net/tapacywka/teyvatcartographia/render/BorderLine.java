@@ -11,7 +11,7 @@ import net.tapacywka.teyvatcartographia.map.MapView;
 import net.tapacywka.teyvatcartographia.map.data.MapOutline;
 
 /**
- * The world border on the maps (user decisions 07.11.2026, variant H of the mockups): a rough red line drawn over the
+ * The world border on the maps: a rough red line drawn over the
  * explored land and the Fog of War alike, from corner to corner of the border, and everything beyond it darker. Drawn on
  * the map's picture, not in its textures, so the line keeps its width at every zoom and follows a moving border. Only the
  * dimension the player is in: the game's border of another one is not known here. The view must have rotation 0.

@@ -12,12 +12,12 @@ import java.lang.reflect.Method;
 import java.util.IdentityHashMap;
 
 /**
- * Tiny Takeover Backport (evandev, user request 13.11.2026): the babies of later games and the new look of grown
+ * Tiny Takeover Backport (evandev): the babies of later games and the new look of grown
  * rabbits, with models and textures of their own. It swaps the texture only while drawing the mob, so the game's renderer
  * still names the usual one; the radar asks the mod's own registry for the texture it draws instead
  * ({@code ModBabyTextureRegistry.getBabyTexture}, which also follows Vanilla Backport's warm and cold variants and the
  * mod's settings) and draws the face of that model ({@code minecraft:cow/baby}, {@code minecraft:rabbit/adult} in the
- * table). Where both mods have a say (a baby of a cold cow) this one comes first (user decision 13.11.2026). A mob whose
+ * table). Where both mods have a say (a baby of a cold cow) this one comes first. A mob whose
  * kind has no such face, or that the mod draws as before, keeps its usual face and texture. Read by reflection (no build
  * dependency); anything unexpected turns it off for the session. Settings > Compatibility > Backports can switch it off.
  */

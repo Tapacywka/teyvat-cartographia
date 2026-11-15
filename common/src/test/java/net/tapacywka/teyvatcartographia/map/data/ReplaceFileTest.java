@@ -13,7 +13,7 @@ import java.nio.file.StandardCopyOption;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * A region's file put in place while something reads the old one ({@link MapStorage#replace}, 09.11.2026): a move that
+ * A region's file put in place while something reads the old one ({@link MapStorage#replace}): a move that
  * fails for a moment is tried again, one that never works is reported.
  */
 class ReplaceFileTest {

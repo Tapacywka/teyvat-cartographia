@@ -32,10 +32,10 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * Sable's sub-levels on the radar (user decision 12.11.2026, docs/RADAR_SPEC.md; Sable by ryanhcode, 1.21.1 only):
+ * Sable's sub-levels on the radar (Sable by ryanhcode, 1.21.1 only):
  * the moving ships and contraptions of its physics, each drawn as the silhouette of its own blocks seen from above,
- * turned and moved by its pose (variant C), or as a ship icon with a golden arrow of its course while the silhouette
- * is not read yet or too small to tell (A). Read by reflection, no build dependency (as {@code compat/WaystonesBridge}):
+ * turned and moved by its pose, or as a ship icon with a golden arrow of its course while the silhouette
+ * is not read yet or too small to tell. Read by reflection, no build dependency (as {@code compat/WaystonesBridge}):
  * the sub-levels of the client's level ({@code SubLevelContainer.getContainer(level).getAllSubLevels()}), their name,
  * pose and the chunks of their plot, where their blocks lie far out in the world. Small sub-levels without a name
  * (falling trees, debris) are left out ({@link RadarRules#shipShown}).
@@ -377,7 +377,7 @@ public final class SableRadar {
         quads[o + 1] = view.screenY(wx, wz) + off;
     }
 
-    /** Variant A: a dark disc with the ship icon, a golden arrow of its course while it moves. */
+    /** The icon: a dark disc with the ship icon, a golden arrow of its course while it moves. */
     private static void icon(GuiGraphics g, MapView view, Ship s, float x, float y, boolean minimap, float alpha) {
         float rad = minimap ? 6 : 9;
         Draw.circle(g, x, y, rad + 0.8f, Theme.withAlpha(Theme.RADAR_OUTLINE, alpha));

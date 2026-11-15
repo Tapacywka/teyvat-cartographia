@@ -4,19 +4,18 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Where the face of each mob of the game lies in its textures (user decision 13.11.2026: mobs as heads like players,
+ * Where the face of each mob of the game lies in its textures (mobs as heads like players,
  * from the game's own textures, no pictures of the mod's): a table of numbers only, so resource packs change the faces
  * with the mobs. A face is drawn from parts, each seven numbers: which of the face's textures, its place there (u, v,
  * width, height) in pixels of the texture and where it lies on the face (dx, dy) in halves of them (a wolf's nose lies 1.5
- * pixels in, as the game draws it: user report 13.11.2026); the first part is the front of the
+ * pixels in, as the game draws it); the first part is the front of the
  * head, the rest lie over it (a nose, a snout, a hat layer, a rabbit's ears, an overlay like the bogged's moss or the
  * enderman's eyes). The front of a head box made by {@code texOffs(u, v).addBox(.., w, h, d)} is at (u + d, v + d), w by h.
  * <p>
  * The first texture is the one the mob's renderer gives (its variant: a wolf, a cat, a fox of snow) unless the face is
  * {@code fixed} (the snow golem's pumpkin, a block), the table's for a mob the client does not see; variants share their
  * layout. Mobs not in the table (other mods, those without a face like a slime or a squid) stay dots. Checked against
- * the textures of 1.21.1 with a contact sheet of every face (13.11.2026; the bogged, enderman, snow golem and rabbit
- * redone after the user's look at them).
+ * the textures of 1.21.1 with a contact sheet of every face.
  */
 public final class MobFaces {
     private MobFaces() {}
@@ -193,7 +192,7 @@ public final class MobFaces {
         face("allay", "allay/allay", 32, 32, front(5, 5, 5, 5));
         face("vex", "illager/vex", 32, 32, front(5, 5, 5, 5));
 
-        // Vanilla Backport (user request 13.11.2026): the mobs of later games it adds under the game's names, from its
+        // Vanilla Backport: the mobs of later games it adds under the game's names, from its
         // models. The creaking's head with the crown of bark above it (its eyes are in the texture; the glowing layer only
         // repeats them).
         backport("creaking", "creaking/creaking", 64, 64, part(0, 6, 6, 6, 10, 0, 3), part(0, 34, 37, 6, 3, 0, 0));
@@ -214,7 +213,7 @@ public final class MobFaces {
         backport("chicken/cold", "chicken/cold_chicken", 64, 32, part(0, 3, 3, 4, 6, 1, 1), part(0, 48, 4, 6, 3, 0, 0),
                 part(0, 16, 2, 4, 2, 1, 3), part(0, 16, 6, 2, 2, 2, 5));
 
-        // Tiny Takeover Backport (user request 13.11.2026): the babies of later games, from its models; the table's
+        // Tiny Takeover Backport: the babies of later games, from its models; the table's
         // texture is the usual variant's baby, the drawn one Tiny Takeover's for the mob (compat/TinyTakeover). Ears and
         // horns beside or above the head, behind it where they meet; piglins' ears hang turned and are left out.
         int[][] cow = {part(0, 5, 23, 6, 6, 1, 1), part(0, 5, 30, 1, 2, 0, 0), part(0, 9, 30, 1, 2, 7, 0), part(0, 13, 30, 4, 3, 2, 4)};
@@ -272,7 +271,7 @@ public final class MobFaces {
     }
 
     /**
-     * Screen pixels of every face's longer side (user choice 13.11.2026, variant B: one size for every head, like the
+     * Screen pixels of every face's longer side (one size for every head, like the
      * pins): what a face of 8 pixels gets on whole screen pixels a pixel, so the usual heads (a player's, a zombie's)
      * stay exact and the others (a chicken's 6, a ghast's 16) are drawn as large, their pixels at most one screen pixel
      * apart in width.
@@ -296,7 +295,7 @@ public final class MobFaces {
      * How far each part's texture is moved, in pixels of the texture, when {@code texels} of them span {@code pixels}
      * screen pixels: never a pixel's middle on the line between two pixels of the texture, even one {@link #FINEST}
      * times finer. Sampled right on such a line the two triangles of a part took a pixel each on their side of it,
-     * which left steps in the allay's eyes (user report 13.11.2026).
+     * which left steps in the allay's eyes.
      */
     public static float lead(int pixels) {
         return 1f / (4 * pixels * FINEST);

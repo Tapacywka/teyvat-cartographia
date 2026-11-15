@@ -8,7 +8,7 @@ import java.util.Random;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * The far path smooths its path in slices ({@link PathSmoother.Job}, profile 09.11.2026: in one tick it took up to 3.7
+ * The far path smooths its path in slices ({@link PathSmoother.Job}: in one tick it took up to 3.7
  * ms): stopped after every span, it gives the same curve to the bit as at once.
  */
 class PathSmootherJobTest {

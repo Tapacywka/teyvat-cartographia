@@ -74,7 +74,7 @@ class FaceOutlineTest {
         assertEquals(1, f[row + 5]);
     }
 
-    /** A rabbit's ears (user report 13.11.2026): a gap of two pixels stays the map, nothing bridges it at its top. */
+    /** A rabbit's ears: a gap of two pixels stays the map, nothing bridges it at its top. */
     @Test
     void aNarrowGapStaysTheMap() {
         int w = 6, h = 5, pad = 2, gw = w + 2 * pad;

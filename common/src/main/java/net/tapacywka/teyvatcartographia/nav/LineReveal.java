@@ -1,7 +1,7 @@
 package net.tapacywka.teyvatcartographia.nav;
 
 /**
- * The drawing-in of a path line (user request 26.10.2026): after a new tracking or a new search (the pulse key, getting
+ * The drawing-in of a path line: after a new tracking or a new search (the pulse key, getting
  * into a boat), the new line grows from its start (the player) to its end over {@link #DURATION_MS}, while the line
  * shown before it is wiped off the same way, from its start to its end, at the same time. Kept per line
  * ({@link Route}): {@link #update} is fed the line as collected; the drawing asks how far along it
@@ -9,7 +9,7 @@ package net.tapacywka.teyvatcartographia.nav;
  * allocated per frame: the old line is copied once per request into arrays that only grow.
  */
 final class LineReveal {
-    /** Every line is drawn in over this long, whatever its length (user choice 26.10.2026). */
+    /** Every line is drawn in over this long, whatever its length. */
     static final long DURATION_MS = 3000;
 
     private int request = Integer.MIN_VALUE, version = Integer.MIN_VALUE, oldVersion;

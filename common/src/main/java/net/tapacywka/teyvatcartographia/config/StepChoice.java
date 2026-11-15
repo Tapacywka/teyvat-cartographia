@@ -3,7 +3,7 @@ package net.tapacywka.teyvatcartographia.config;
 /**
  * An on/off setting with its kinds as one choice with arrows (the settings screen): option 0 is off, the later ones
  * name what it shows. The settings behind it stay the separate values they were, so older settings files keep
- * working. Only the clock since 13.11.2026: the pins and their paths, steps until then, are boxes ({@link PinParts}).
+ * working. Used by the clock; the pins and their paths are check boxes ({@link PinParts}).
  */
 public final class StepChoice {
     private StepChoice() {}

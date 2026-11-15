@@ -21,8 +21,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * The English and Russian texts: the same keys, the same placeholders, all three plural forms, no long or short dash
- * (the user's rule), and every key the code names is there.
+ * The English and Russian texts: the same keys, the same placeholders, all three plural forms, no long or short dash,
+ * and every key the code names is there.
  */
 class LangTest {
     private static final Path LANG = Path.of(System.getProperty("teyvatcartographia.projectDir", ".")).resolve("src/main/resources/assets/teyvatcartographia/lang");

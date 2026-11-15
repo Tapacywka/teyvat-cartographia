@@ -75,7 +75,7 @@ public final class TeyvatConfigScreen {
     /** The beam (part 3 of a kind's pins) counts only with the marker (part 2): its box is dim without it. */
     public static final int BEAM = 3, MARKER = 2;
 
-    /** A row of boxes, one for each map, over two switches (cave map, view cone; user decision 13.11.2026). */
+    /** A row of boxes, one for each map, over two switches (cave map, view cone). */
     private static void mapsRow(AacsScreen.Tab t, String key, BoolValue map, BoolValue minimap) {
         t.checks(key, K + "step.everywhere", K + "step.off", K + "step.some", List.of(
                 new AacsScreen.Check(FRAME + "map", map::get, map::set),
@@ -83,7 +83,7 @@ public final class TeyvatConfigScreen {
     }
 
     /**
-     * Where a kind of pins shows (user decision 13.11.2026, a box each instead of the steps): the world map, the
+     * Where a kind of pins shows (a box each instead of the steps): the world map, the
      * minimap, the marker over a tracked one in the world, its beam (only with the marker).
      */
     public static void pinRow(AacsScreen.Tab t, MapConfig.PinKind kind) {
@@ -107,7 +107,7 @@ public final class TeyvatConfigScreen {
     }
 
 
-    /** Where a kind of the radar shows, a box for each map (user request 14.11.2026, the steps before). */
+    /** Where a kind of the radar shows, a box for each map (the steps before). */
     public static void radarRow(AacsScreen.Tab t, String key, EnumValue<RadarRules.Show> value) {
         t.checks(K + key, K + "step.everywhere", K + "step.off", K + "step.some", List.of(
                 new AacsScreen.Check(FRAME + "map", () -> value.get().on(false),
@@ -138,14 +138,14 @@ public final class TeyvatConfigScreen {
             t.choice(K + "theme", MapConfig.THEME, ThemeLoader::available, ThemeLoader::displayName, c -> c.activeWhen(() -> ThemeLoader.available().size() > 1))
                     .then(ThemeLoader::applyNow).noPreview();
             t.choice(K + "interface_style", MapConfig.INTERFACE_STYLE, c -> {}).then(Theme.Style::update).noPreview();
-            // The plants first, then the rows of boxes (user request 14.11.2026; the caves first since 09.11.2026 before).
+            // The plants first, then the rows of boxes.
             t.section(K + "section.map_content");
             t.toggleList(K + "plants", MapConfig.MAP_PLANTS, MapConfig.PLANTS_HIDDEN, TeyvatConfigScreen::plants, remap).then(remap);
             mapsRow(t, K + "caves", MapConfig.CAVES_ENABLED, MapConfig.CAVES_MINIMAP);
             mapsRow(t, K + "player_cone", MapConfig.PLAYER_CONE, MapConfig.PLAYER_CONE_MINIMAP);
             // How the map is coloured: relief, water.
             t.section(K + "section.colours");
-            // A choice with arrows, not a slider (user request 24.10.2026: three steps made it the one short slider).
+            // A choice with arrows, not a slider (three steps made it the one short slider).
             t.choice(K + "detail", MapConfig.DETAIL, c -> {}).then(remap);
             t.slider(K + "water_depth", MapConfig.WATER_DEPTH, s -> s.unit("%")).then(remap);
             t.slider(K + "shallow_water", MapConfig.SHALLOW_WATER, s -> s.unit("%")).then(remap);
@@ -167,24 +167,24 @@ public final class TeyvatConfigScreen {
                 var w = Minecraft.getInstance().getWindow();
                 return MinimapLayer.maxRadius(w.getGuiScaledWidth(), w.getGuiScaledHeight());
             }));
-            // The corners clockwise from the top left, as the arrows go round the screen (user request 31.10.2026).
+            // The corners clockwise from the top left, as the arrows go round the screen.
             t.choice(K + "minimap_corner", MapConfig.MINIMAP_CORNER, c -> c.only(List.of(MapConfig.Corner.TOP_LEFT,
                     MapConfig.Corner.TOP_RIGHT, MapConfig.Corner.BOTTOM_RIGHT, MapConfig.Corner.BOTTOM_LEFT)));
             t.slider(K + "minimap_offset_x", MapConfig.MINIMAP_OFFSET_X, s -> {});
             t.slider(K + "minimap_offset_y", MapConfig.MINIMAP_OFFSET_Y, s -> {});
             t.section(K + "section.minimap_look");
-            // The shape is part of the look (user decision 09.11.2026; in Display since 23.10.2026).
+            // The shape is part of the look.
             t.choice(K + "minimap_shape", MapConfig.MINIMAP_SHAPE, c -> {}).then(Theme.Style::update);
-            // In percent, as the other opacities (user decision 09.11.2026; it read "0.85").
+            // In percent, as the other opacities (it read "0.85").
             t.slider(K + "minimap_opacity", MapConfig.MINIMAP_OPACITY, s -> s.label(d -> Math.round(d * 100) + "%"));
             t.slider(K + "minimap_padding", MapConfig.MINIMAP_PADDING, s -> {});
             t.slider(K + "minimap_fade_width", MapConfig.MINIMAP_FADE_WIDTH, s -> s.unit("%"));
             t.slider(K + "minimap_fade_strength", MapConfig.MINIMAP_FADE_STRENGTH, s -> s.unit("%"));
-            // What the lines under it show first, then how they look (user decision 27.10.2026).
+            // What the lines under it show first, then how they look.
             t.section(K + "subsection.minimap_info");
             t.toggle(K + "minimap_coords", MapConfig.MINIMAP_SHOW_COORDS);
             t.toggle(K + "minimap_biome", MapConfig.MINIMAP_SHOW_BIOME);
-            // The clock as one choice with arrows: off, game time, real time, both (user decision 09.11.2026: kinds of
+            // The clock as one choice with arrows: off, game time, real time, both (kinds of
             // time, not steps of one thing, so no slider).
             t.choice(K + "minimap_time", CLOCK_OPTIONS,
                     () -> StepChoice.clock(MapConfig.MINIMAP_SHOW_TIME.get(), MapConfig.MINIMAP_TIME_SOURCE.get()),
@@ -200,7 +200,7 @@ public final class TeyvatConfigScreen {
             t.slider(K + "minimap_pill_opacity", MapConfig.MINIMAP_PILL_OPACITY, s -> s.unit("%"));
             t.slider(K + "minimap_info_gap", MapConfig.MINIMAP_INFO_GAP, s -> {});
         });
-        // Radar (user decisions 12.11.2026; a tab of its own right after the minimap, user request the same day): the rows
+        // Radar (a tab of its own right after the minimap): the rows
         // for every kind first, then where each kind shows. Its pictures are the minimap's (the minimap alone, large).
         b.tab(K + "tab.radar", t -> {
             t.defaultPreview(new Pictures(K + "tab.minimap"));
@@ -209,7 +209,7 @@ public final class TeyvatConfigScreen {
             t.slider(K + "radar_range", MapConfig.RADAR_RANGE, s -> {});
             t.toggle(K + "radar_height", MapConfig.RADAR_HEIGHT);
             t.toggle(K + "radar_server_mobs", MapConfig.RADAR_SERVER_MOBS);
-            // How players and mobs look (user decisions 13.11.2026: arrows or their skins' heads, dots or their faces;
+            // How players and mobs look (arrows or their skins' heads, dots or their faces;
             // both here in Display, each inactive while what it is for is all switched off).
             t.choice(K + "radar_player_look", MapConfig.RADAR_PLAYER_LOOK,
                     c -> c.activeWhen(() -> MapConfig.get(MapConfig.RADAR_PLAYERS) != RadarRules.Show.OFF));
@@ -217,7 +217,7 @@ public final class TeyvatConfigScreen {
                     || MapConfig.get(MapConfig.RADAR_PASSIVE) != RadarRules.Show.OFF || MapConfig.get(MapConfig.RADAR_VILLAGERS) != RadarRules.Show.OFF
                     || MapConfig.get(MapConfig.RADAR_PETS) != RadarRules.Show.OFF));
             t.section(K + "subsection.radar_kinds");
-            // Villagers right after the players (user request 13.11.2026).
+            // Villagers right after the players.
             radarRow(t, "radar_players", MapConfig.RADAR_PLAYERS);
             radarRow(t, "radar_villagers", MapConfig.RADAR_VILLAGERS);
             radarRow(t, "radar_hostile", MapConfig.RADAR_HOSTILE);
@@ -227,18 +227,18 @@ public final class TeyvatConfigScreen {
         });
         // Pins: each kind as one choice (off, the map, both maps, in the world with the marker, everywhere with the beam);
         // then the path to a tracked pin of each kind (off, the map, both maps, everywhere with the stars). The
-        // interactive pins are the stones of Waystones: their two rows are in Compatibility > Waystones (user decision
-        // 31.10.2026), so this tab is the same with the mod or without it.
+        // interactive pins are the stones of Waystones: their two rows are in Compatibility > Waystones, so this tab is
+        // the same with the mod or without it.
         b.tab(K + "tab.pins", t -> {
             t.defaultPreview(new Pictures(K + "tab.pins"));
             List<MapConfig.PinKind> kinds = List.of(MapConfig.PinKind.CUSTOM, MapConfig.PinKind.SYSTEM);
             t.section(K + "subsection.pins_display");
             for (MapConfig.PinKind kind : kinds) pinRow(t, kind);
             t.section(K + "subsection.pins_path");
-            // How the path goes: on land round deep water, or by boat across it (user decision 26.10.2026); a new search.
-            // First, as it holds for every kind below (user decision 09.11.2026).
+            // How the path goes: on land round deep water, or by boat across it; a new search.
+            // First, as it holds for every kind below.
             t.choice(K + "path_route", MapConfig.PATH_ROUTE, c -> {}).then(Navigation::requestPath);
-            // How long the marker and the stars show after tracking or V (user request 12.11.2026): a slider in steps,
+            // How long the marker and the stars show after tracking or V: a slider in steps,
             // the last one never fades.
             t.steps(K + "marker_show_for", SHOW_STEPS, () -> MapConfig.MARKER_SHOW_FOR.get().ordinal(),
                     s -> MapConfig.MARKER_SHOW_FOR.set(MapConfig.ShowFor.values()[s]));
@@ -251,27 +251,27 @@ public final class TeyvatConfigScreen {
             t.slider(K + "scan_radius", MapConfig.SCAN_RADIUS, s -> {});
             t.slider(K + "chunks_per_tick", MapConfig.CHUNKS_PER_TICK, s -> {});
             t.slider(K + "max_tiles", MapConfig.MAX_CACHED_TILES, s -> {});
-            // A slider in steps, as the other rows here (user decision 09.11.2026): the steps go up in cost, not a choice of kinds.
+            // A slider in steps, as the other rows here: the steps go up in cost, not a choice of kinds.
             t.steps(K + "minimap_rate", RATE_STEPS, () -> MapConfig.MINIMAP_UPDATE_RATE.get().ordinal(),
                     s -> MapConfig.MINIMAP_UPDATE_RATE.set(MapConfig.UpdateRate.values()[s]));
         });
-        // Compatibility: Minecraft first (the fogs of its own dimensions, always there, user decision 24.10.2026), then a
+        // Compatibility: Minecraft first (the fogs of its own dimensions, always there), then a
         // sub-section per mod in the game, by name: the mod's own ones (compatPart) and those other mods add, open to
-        // them as "compatibility" (user decision 02.11.2026); everything made for one mod is there, its fog of war too.
+        // them as "compatibility"; everything made for one mod is there, its fog of war too.
         b.tab(K + "tab.compat", t -> {
             t.openTo(COMPATIBILITY).defaultPreview(COMPAT_PICTURES);
             t.subSection(K + "subsection.compat_minecraft")
                     .toggle(K + "compat.nether_fog", MapConfig.NETHER_FOG).then(Theme.Style::update)
                     .toggle(K + "compat.end_fog", MapConfig.END_FOG).then(Theme.Style::update);
         });
-        // Experimental (user request 08.11.2026): what is not checked to the end yet, or wants more work, a faster or
-        // another way; the far land, the map edges and the world border first. None of them is in the map's quick settings
-        // (user decision 08.11.2026): a setting goes there only once its feature is out in full.
+        // Experimental: what is not checked to the end yet, or wants more work, a faster or
+        // another way; the far land, the map edges and the world border first. None of them is in the map's quick
+        // settings: a setting goes there only once its feature is out in full.
         b.tab(K + "tab.experimental", t -> {
             t.defaultPreview(new Pictures(K + "tab.experimental"));
             t.section(K + "section.map_content");
             t.toggle(K + "far_land", MapConfig.FAR_LAND);
-            // One slider (user request 08.11.2026): off, on and still, breathing, breathing with waves.
+            // One slider: off, on and still, breathing, breathing with waves.
             t.steps(K + "map_outline", EDGE_STEPS,
                     () -> MapConfig.MAP_OUTLINE.get() ? MapConfig.MAP_OUTLINE_MOTION.get().ordinal() + 1 : 0,
                     s -> {
@@ -309,7 +309,7 @@ public final class TeyvatConfigScreen {
     }
 
     /**
-     * The plant's colour on the map (user request 30.10.2026: instead of its item): its texture colour, grass and foliage
+     * The plant's colour on the map (instead of its item): its texture colour, grass and foliage
      * tinted with the game's default tints, as no biome is at hand (also in the title screen). The list's texts are the
      * mod's own (the library reads them by the row's key): teyvatcartographia.config.plants.find,
      * teyvatcartographia.config.plants.count, teyvatcartographia.config.plants.none.
@@ -388,7 +388,7 @@ public final class TeyvatConfigScreen {
             this.tab = tab;
         }
 
-        /** No "name: value" line under the picture (user request 06.11.2026); the frames of the pins, caves and detail keep their own captions. */
+        /** No "name: value" line under the picture; the frames of the pins, caves and detail keep their own captions. */
         @Override
         public boolean caption(String rk) {
             return false;
@@ -500,7 +500,7 @@ public final class TeyvatConfigScreen {
 
         /**
          * The minimap with the lines under it as the HUD shows it, at its real size (smaller only without room for it),
-         * centred in the area on both axes, on the pixel grid; no picture of the screen (user decision 24.10.2026).
+         * centred in the area on both axes, on the pixel grid; no picture of the screen.
          */
         private static void minimapPicture(GuiGraphics g, float x, float y, float w, float h) {
             int[] b = MinimapLayer.preparedBounds();

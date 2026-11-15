@@ -11,7 +11,7 @@ import java.util.zip.GZIPOutputStream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/** An old map is deleted once when its folder is opened (user decision 24.10.2026), a current one is kept. */
+/** An old map is deleted once when its folder is opened, a current one is kept. */
 class MapFormatTest {
     private static void region(Path dir, String name, int version) throws IOException {
         Files.writeString(dir.resolve(name + ".png"), "pixels");

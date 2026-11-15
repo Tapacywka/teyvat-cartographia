@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * The baked outline laid over a pixel ({@link EdgeMask#laid}), one rule for the shared copy of every upload and the
- * copy a region keeps since 09.11.2026 (laid again only where a chunk changed).
+ * copy a region keeps (laid again only where a chunk changed).
  */
 class EdgeLaidTest {
     private static final int STROKE = 0x3FD3C4, GLOW = 0x7FE8DD;

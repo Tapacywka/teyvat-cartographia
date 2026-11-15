@@ -116,7 +116,7 @@ public final class TileStore {
     /**
      * IO thread: reads the folder behind every write queued before it (one IO thread). Read on the main thread it missed
      * the regions the store closed just before was still saving, and a region it did not know was started anew and then
-     * overwrote the saved one (audit 06.11.2026); it also held up the frame on entering a dimension or a cave layer.
+     * overwrote the saved one; it also held up the frame on entering a dimension or a cave layer.
      */
     private void open() {
         if (closed) return;
@@ -283,18 +283,33 @@ public final class TileStore {
         int tx = MapView.tileKeyX(key), tz = MapView.tileKeyZ(key);
         order.read(key, () -> {
             if (closed) return;
-            MapTile t = null;
-            try {
-                t = MapStorage.load(dir, tx, tz);
-            } catch (Throwable e) {
-                TeyvatCartographia.LOGGER.warn("Failed to load map region {},{} in {}", tx, tz, dir, e);
-                // The region starts anew and is saved over these files: what could not be read is kept beside them.
-                MapStorage.setAside(dir, tx, tz);
-            }
+            MapTile t = readOrSetAside(dir, tx, tz, MapStorage::load);
             loaded.add(new Loaded(key, t));
             // Nobody drains a closed store: a region left here would keep its native image for good.
             if (closed) discardLoaded();
         });
+    }
+
+    /** How a region is read from its files ({@link MapStorage#load}; another in the tests). */
+    @FunctionalInterface
+    interface RegionReader {
+        MapTile read(Path dir, int tx, int tz) throws IOException;
+    }
+
+    /**
+     * IO thread: the region read from its files, {@code null} when there are none or they cannot be read. Files that
+     * cannot be read are set aside ({@link MapStorage#setAside}), as the region starts anew and is saved over them. Only
+     * an exception says so: an error of the game itself (out of memory) is not the files' fault, goes on up and leaves
+     * them where they are.
+     */
+    static MapTile readOrSetAside(Path dir, int tx, int tz, RegionReader reader) {
+        try {
+            return reader.read(dir, tx, tz);
+        } catch (Exception e) {
+            TeyvatCartographia.LOGGER.warn("Failed to load map region {},{} in {}", tx, tz, dir, e);
+            MapStorage.setAside(dir, tx, tz);
+            return null;
+        }
     }
 
     /** IO thread: frees the regions loaded for a store closed meanwhile (never on the GPU yet: only their image). */
@@ -366,7 +381,7 @@ public final class TileStore {
         order.write(t.key, () -> {
             try {
                 MapStorage.save(dir, snap);
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 TeyvatCartographia.LOGGER.error("Failed to save map region {},{}", snap.tx(), snap.tz(), e);
             }
         });
@@ -381,7 +396,7 @@ public final class TileStore {
 
     /**
      * Regions waiting for the timer's save, a few a tick ({@link #saveSome}): saved all at once, their copies took 3 to 4
-     * ms of one tick for 36 regions (profile 09.11.2026).
+     * ms of one tick for 36 regions.
      */
     private final LongArrayFIFOQueue saveQueue = new LongArrayFIFOQueue();
     private final LongOpenHashSet saveQueued = new LongOpenHashSet();

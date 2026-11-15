@@ -3,7 +3,7 @@ package net.tapacywka.teyvatcartographia.map.data;
 import java.util.Arrays;
 
 /**
- * The outline of the explored map (user decisions 07.11.2026, variant D of the mockups in {@code build-logs/softedge-mock}):
+ * The outline of the explored map:
  * instead of the chunks' stairs the map ends sharply on a round, rough line with a thin turquoise stroke and a glow into
  * the Fog of War. Pure: chunks in, a {@link Picture} out, any thread.
  * <p>
@@ -260,7 +260,7 @@ public final class MapOutline {
      * Around the picture's pixels the field has a border of one pixel, worked out from the chunks next to it as the next
      * picture has them, so the GPU's sampling between pixels runs on across the picture's edge as inside it. Without it
      * each picture held its last pixel to its edge and the line, the glow and the waves broke off in a step at every
-     * region's border (tester report 08.11.2026; the baked outline of 1.2.0, a pixel a block, had no such step).
+     * region's border (the baked outline of 1.2.0, a pixel a block, had no such step).
      *
      * @param grid the chunks of the picture and the {@link #FIELD_RING} around it, side {@code chunks + 2 * FIELD_RING}
      * @return null where all the picture has stays as it is, as {@link #picture}; else {@code chunks * pixels + 2} pixels a side
@@ -424,9 +424,8 @@ public final class MapOutline {
     // ------------------------------------------------------------------ breathing
 
     /**
-     * How far the edge breathes on the world map, in blocks (user decision 08.11.2026, variant A of the mockup in
-     * {@code build-logs/edge-anim-mock}: as in Genshin's map, the edge swells out and draws back, as water spreading and
-     * gathering). It stays within the guard: outward the guard's line stops it.
+     * How far the edge breathes on the world map, in blocks (as in Genshin's map, the edge swells out and draws back,
+     * as water spreading and gathering). It stays within the guard: outward the guard's line stops it.
      */
     public static final float BREATH = 6;
     /** From this distance from the smooth outline on the breathing calms, and past the second it is still: the middle of the land never dims. */
@@ -435,7 +434,7 @@ public final class MapOutline {
     public static final int PERIOD = 1 << 18;
 
     /**
-     * The surf (variant C of the mockup, user request 08.11.2026; Map edges at "Animated + waves", the breathing alone
+     * The surf (Map edges at "Animated + waves", the breathing alone
      * kept as "Animated"): thin waves this far apart run out from the edge into the fog at {@link #RIPPLE_SPEED} blocks a
      * second, this wide, fading over this distance, this strong at the line; the glow swells and ebbs meanwhile.
      */
