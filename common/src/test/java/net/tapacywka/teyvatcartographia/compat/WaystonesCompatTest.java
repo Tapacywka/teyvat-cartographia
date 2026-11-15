@@ -26,6 +26,25 @@ class WaystonesCompatTest {
         return new WaystonesCompat.Stone(Level.OVERWORLD, new BlockPos(x, 70, z), kind, false, UUID.randomUUID(), name);
     }
 
+    /** A damaged stone of {@code waystones.json} is left out alone; the others still load. */
+    @Test
+    void aDamagedSeenStoneIsLeftOutAlone() {
+        String json = """
+                {"seen": [
+                  {"dimension": "minecraft:overworld", "kind": "WAYSTONE", "x": 10, "y": 64, "z": -3, "dungeon": true},
+                  {"dimension": "minecraft:overworld", "kind": "ROCK", "x": 1, "y": 64, "z": 1},
+                  {"dimension": "minecraft:the_nether", "kind": "WARP_PLATE", "x": 5, "z": 5},
+                  {"dimension": "minecraft:the_nether", "kind": "SHARESTONE", "x": -8, "y": 40, "z": 2}
+                ]}
+                """;
+        List<WaystonesCompat.Stone> stones = WaystonesCompat.readSeen(json);
+        assertEquals(2, stones.size());
+        assertEquals(new BlockPos(10, 64, -3), stones.get(0).pos());
+        assertTrue(stones.get(0).dungeon());
+        assertEquals(Level.NETHER, stones.get(1).dimension());
+        assertEquals(WaystonesCompat.Kind.SHARESTONE, stones.get(1).kind());
+    }
+
     private static List<Marker> markers(Map<Long, WaystonesCompat.Stone> seen, List<WaystonesCompat.Stone> active) {
         return WaystonesCompat.markers(Level.OVERWORLD, seen, active, s -> s.name() == null ? "unnamed" : s.name());
     }

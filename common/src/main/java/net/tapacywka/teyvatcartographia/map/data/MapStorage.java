@@ -101,7 +101,9 @@ public final class MapStorage {
     static MapTile load(Path dir, int tx, int tz) throws IOException {
         String base = "r." + tx + "." + tz;
         Path png = dir.resolve(base + ".png"), dat = dir.resolve(base + ".dat");
-        if (!Files.exists(png) || !isCurrentVersion(dat)) return null; // missing or outdated: rebuilt from the world
+        // Missing or of an older format: rebuilt from the world. A metadata file that cannot be read at all throws, so
+        // the region is set aside rather than written over.
+        if (!Files.exists(png) || !Files.exists(dat) || datVersion(dat) != VERSION) return null;
         NativeImage image;
         try (InputStream in = Files.newInputStream(png)) {
             image = Game.readImage(in);
@@ -214,20 +216,28 @@ public final class MapStorage {
 
     /**
      * The chunk counts of the regions on disk, as {@code index.txt} keeps them (a line {@code <tx> <tz> <chunks>} per
-     * region, by {@link MapView#tileKey}); empty without the file or when it cannot be read.
+     * region, by {@link MapView#tileKey}); empty without the file or when it cannot be read. A line that is not one is
+     * left out alone: a region without a count is read from its own files when needed.
      */
     static Map<Long, Integer> readIndex(Path dir) {
         Map<Long, Integer> out = new HashMap<>();
         Path index = dir.resolve("index.txt");
         if (!Files.exists(index)) return out;
+        int bad = 0;
         try (BufferedReader r = Files.newBufferedReader(index, StandardCharsets.UTF_8)) {
             for (String line; (line = r.readLine()) != null; ) {
                 String[] p = line.trim().split(" ");
-                if (p.length == 3) out.put(MapView.tileKey(Integer.parseInt(p[0]), Integer.parseInt(p[1])), Integer.parseInt(p[2]));
+                try {
+                    if (p.length == 3) out.put(MapView.tileKey(Integer.parseInt(p[0]), Integer.parseInt(p[1])), Integer.parseInt(p[2]));
+                    else if (!line.isBlank()) bad++;
+                } catch (NumberFormatException e) {
+                    bad++;
+                }
             }
-        } catch (IOException | NumberFormatException e) {
+        } catch (IOException e) {
             TeyvatCartographia.LOGGER.warn("Could not read map index {}", index, e);
         }
+        if (bad > 0) TeyvatCartographia.LOGGER.warn("Left out {} damaged lines of the map index {}", bad, index);
         return out;
     }
 
@@ -425,7 +435,7 @@ public final class MapStorage {
                 try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir, "r.*.png")) {
                     for (Path p : stream) {
                         Matcher m = TILE_FILE.matcher(p.getFileName().toString());
-                        if (m.matches() && !isCurrentVersion(dir.resolve("r." + m.group(1) + "." + m.group(2) + ".dat"))) old.add(p);
+                        if (m.matches() && isOlder(dir.resolve("r." + m.group(1) + "." + m.group(2) + ".dat"))) old.add(p);
                     }
                 }
                 for (Path png : old) {
@@ -450,10 +460,25 @@ public final class MapStorage {
         }
         return dropped;
     }
-    private static boolean isCurrentVersion(Path dat) {
-        if (!Files.exists(dat)) return false;
+    /**
+     * The format of a region's metadata file. Throws when the file cannot be read as one (cut short, not compressed,
+     * another kind of file): that is damage, not an older format.
+     */
+    static int datVersion(Path dat) throws IOException {
         try (DataInputStream in = new DataInputStream(new BufferedInputStream(new GZIPInputStream(Files.newInputStream(dat))))) {
-            return in.readInt() == MAGIC && in.readInt() == VERSION;
+            if (in.readInt() != MAGIC) throw new IOException("Not a map region's metadata: " + dat);
+            return in.readInt();
+        }
+    }
+
+    /**
+     * Whether a region is of an older format, to be deleted: its metadata missing or readable with another version. A
+     * damaged one is not: it stays, and is set aside when the region is first read ({@link TileStore#readOrSetAside}).
+     */
+    private static boolean isOlder(Path dat) {
+        if (!Files.exists(dat)) return true;
+        try {
+            return datVersion(dat) != VERSION;
         } catch (IOException e) {
             return false;
         }

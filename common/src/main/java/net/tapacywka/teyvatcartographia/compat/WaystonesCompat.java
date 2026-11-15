@@ -315,19 +315,36 @@ public final class WaystonesCompat {
     private static void load() {
         if (file == null || !Files.isRegularFile(file)) return;
         try {
-            JsonArray arr = JsonParser.parseString(Files.readString(file, StandardCharsets.UTF_8)).getAsJsonObject().getAsJsonArray("seen");
-            for (var e : arr) {
+            for (Stone s : readSeen(Files.readString(file, StandardCharsets.UTF_8))) {
+                SEEN.computeIfAbsent(s.dimension(), d -> new HashMap<>()).put(s.key(), s);
+            }
+        } catch (IOException | RuntimeException ex) {
+            TeyvatCartographia.LOGGER.warn("Could not read the waystones seen from {}", file, ex);
+        }
+    }
+
+    /**
+     * The stones of a {@code waystones.json}. A damaged entry is left out alone, so the others are not lost when the
+     * file is written again; a file that is not one at all throws.
+     */
+    static List<Stone> readSeen(String json) {
+        JsonArray arr = JsonParser.parseString(json).getAsJsonObject().getAsJsonArray("seen");
+        List<Stone> out = new ArrayList<>();
+        int bad = 0;
+        for (var e : arr) {
+            try {
                 JsonObject o = e.getAsJsonObject();
                 ResourceKey<Level> dim = ResourceKey.create(Registries.DIMENSION,
                         Identifier.parse(o.get("dimension").getAsString()));
                 Kind kind = Kind.valueOf(o.get("kind").getAsString());
                 BlockPos pos = new BlockPos(o.get("x").getAsInt(), o.get("y").getAsInt(), o.get("z").getAsInt());
-                Stone s = new Stone(dim, pos, kind, o.has("dungeon") && o.get("dungeon").getAsBoolean(), null, null);
-                SEEN.computeIfAbsent(dim, d -> new HashMap<>()).put(s.key(), s);
+                out.add(new Stone(dim, pos, kind, o.has("dungeon") && o.get("dungeon").getAsBoolean(), null, null));
+            } catch (RuntimeException ex) {
+                bad++;
             }
-        } catch (IOException | RuntimeException ex) {
-            TeyvatCartographia.LOGGER.warn("Could not read the waystones seen from {}", file, ex);
         }
+        if (bad > 0) TeyvatCartographia.LOGGER.warn("Left out {} damaged waystones of the ones seen", bad);
+        return out;
     }
 
     private static void save() {
