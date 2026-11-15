@@ -13,6 +13,10 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 ### Fixed
 - A map region the game could not read for want of memory is no longer set aside as damaged: its files stay as
   they are and the region loads when the world is opened again.
+- A map region whose data file cannot be read at all is kept beside the map as damaged (`.broken`) instead of being
+  mapped anew over its old picture, and is no longer deleted as an old format when the map's folder is checked.
+- One damaged line of a map's index, or one damaged stone in the file of the waystones seen, no longer loses the
+  others with it.
 
 ## [1.4.1] - 2026-11-14
 
