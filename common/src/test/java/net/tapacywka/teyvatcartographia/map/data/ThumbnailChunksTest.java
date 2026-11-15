@@ -8,7 +8,7 @@ import java.util.Random;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * A LOD cell redrawn for its changed chunks only ({@link MapStorage#thumbnailChunks}, profile 09.11.2026) is the same as
+ * A LOD cell redrawn for its changed chunks only ({@link MapStorage#thumbnailChunks}) is the same as
  * the region's whole thumbnail made again, here by a plain average of each 4 x 4 block written apart from the mod's.
  */
 class ThumbnailChunksTest {

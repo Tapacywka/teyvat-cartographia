@@ -6,8 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * Which sides of a chunk a changed column lies on ({@link MapTile#edgeBits}): the neighbours there are mapped again, as
- * they were shaded with the old edge. Land levelled across chunk borders left a dark line along half of them
- * (24.10.2026). The bits follow {@code MapDataManager.DIRS}: north, south, west, east.
+ * they were shaded with the old edge. Land levelled across chunk borders left a dark line along half of them.
+ * The bits follow {@code MapDataManager.DIRS}: north, south, west, east.
  */
 class ChunkEdgeTest {
     @Test
@@ -33,7 +33,7 @@ class ChunkEdgeTest {
     }
 
     /**
-     * A chunk shaded beside an unmapped neighbour that was mapped meanwhile is shaded again (24.10.2026: two chunks on
+     * A chunk shaded beside an unmapped neighbour that was mapped meanwhile is shaded again (two chunks on
      * the workers at once left a dark line along the loading front); a neighbour that was already there, or still is
      * not, asks for nothing.
      */

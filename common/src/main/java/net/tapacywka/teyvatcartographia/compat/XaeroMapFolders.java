@@ -13,8 +13,8 @@ import java.util.stream.Stream;
 import java.nio.file.attribute.BasicFileAttributes;
 
 /**
- * The folders of Xaero's World Map that hold the Overworld's explored map, for the import (docs/XAERO_MAP_IMPORT.md; the
- * Overworld only, user decision 04.11.2026): {@code <gameDir>/xaero/world-map/<world>/null/} ({@code XaeroWorldMap/} in
+ * The folders of Xaero's World Map that hold the Overworld's explored map, for the import (the
+ * Overworld only): {@code <gameDir>/xaero/world-map/<world>/null/} ({@code XaeroWorldMap/} in
  * older versions); on a server the regions sit in a map folder under it, {@code mw$<id>}, named in the dimension's
  * {@code dimension_config.txt} ({@code MWName:mw$<id>:Map 1}). The current world's folders come first.
  */

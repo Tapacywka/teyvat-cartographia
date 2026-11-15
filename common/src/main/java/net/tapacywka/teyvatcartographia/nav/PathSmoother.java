@@ -7,7 +7,7 @@ package net.tapacywka.teyvatcartographia.nav;
  * path, up to every cell, so the curve keeps clear of it. No allocation: the caller owns the arrays.
  *
  * <p>A {@link Job} does the same work in parts up to a deadline and goes on in the next call: the far path smoothed its
- * path in one tick, up to 3.7 ms (profile 09.11.2026), as it runs once a request and its code is still cold then.
+ * path in one tick, up to 3.7 ms, as it runs once a request and its code is still cold then.
  */
 final class PathSmoother {
     private PathSmoother() {}

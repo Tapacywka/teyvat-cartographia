@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /**
  * Where the far path goes on after the near path ({@link Route#join}). A target on an island within the near path's
  * reach: the near path ends on the shore nearest to it, and the far path joined at a point near the player drew a
- * straight line back across the lake and the way round it once more (24.10.2026).
+ * straight line back across the lake and the way round it once more.
  */
 class RouteJoinTest {
     /** A far path through the given corners, a point every 4 blocks (as FarPath spaces them). */

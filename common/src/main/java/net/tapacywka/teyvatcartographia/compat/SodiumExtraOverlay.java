@@ -11,7 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * Sodium Extra's FPS overlay (user request 31.10.2026): with "Show FPS" or "Show Coordinates" on, it writes its lines
+ * Sodium Extra's FPS overlay: with "Show FPS" or "Show Coordinates" on, it writes its lines
  * in a corner of the screen; a minimap in the same corner moves clear of them (down from a top corner, up from a bottom
  * one). Its settings are read from its own file, {@code config/sodium-extra-options.json}, again when the file changes
  * (looked at once a second): no build dependency.

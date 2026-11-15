@@ -23,7 +23,7 @@ class UndergroundTest {
 
     @Test
     void onlyNaturalBlocksInARowMakeACaveRoof() {
-        assertEquals(0, run("...W...W...W....W"), "a house of four floors with its roof (user report 25.10.2026)");
+        assertEquals(0, run("...W...W...W....W"), "a house of four floors with its roof");
         assertNull(Underground.band(run("..WWWW..W"), 70), "a thick roof of planks and barrels");
         assertNull(Underground.band(run("NNN.W.NNN"), 70), "dirt on a roof: 3, then 3");
         assertEquals(4, Underground.band(run("NNNN"), 70), "four blocks of stone");

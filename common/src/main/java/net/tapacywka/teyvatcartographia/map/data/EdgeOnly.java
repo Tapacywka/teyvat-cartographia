@@ -8,7 +8,7 @@ import net.tapacywka.teyvatcartographia.render.Tex;
 
 /**
  * A region where nothing is explored, in a concave corner of explored land: the smooth outline of the land around cuts
- * across its corner, so the line and the glow of the regions beside it go on into it (user request 09.11.2026: drawn only
+ * across its corner, so the line and the glow of the regions beside it go on into it (drawn only
  * as far as the regions beside it, they broke off straight along its borders). It has no map, only that outline over a
  * clear picture, drawn like a region; never saved, not counted among the regions. Beside a straight edge (the most of
  * them) the outline does not come in, and there is none ({@link MapOutline#oneSide}, {@link MapOutline.Field#reaches}).

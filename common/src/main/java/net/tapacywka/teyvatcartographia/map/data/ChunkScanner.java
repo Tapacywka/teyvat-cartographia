@@ -60,7 +60,7 @@ public final class ChunkScanner {
      * The chunk at (cx, cz) and the eight around it as the level holds them now, null where not loaded, at
      * {@code [(dz + 1) * 3 + dx + 1]}. Taken on the main thread when a chunk is queued and handed to the worker: read
      * through the level on the worker, a neighbour unloaded in between answered with the default biome (dark water
-     * lines along chunk borders behind a moving player, 24.10.2026); a chunk object keeps its data once taken.
+     * lines along chunk borders behind a moving player); a chunk object keeps its data once taken.
      */
     public static LevelChunk[] around(ClientLevel level, int cx, int cz) {
         LevelChunk[] out = new LevelChunk[9];
@@ -113,8 +113,8 @@ public final class ChunkScanner {
                     state = chunk.getBlockState(pos);
                     mc = state.getMapColor(level, pos);
                     // A solid plant the list leaves out (a cactus, chorus) is looked through to the ground under it; not
-                    // one holding water (seagrass, kelp): its column stays water, as with the plants on (user report
-                    // 31.10.2026: with the plants off, sea grass showed the sea floor's sand as dots in the water).
+                    // one holding water (seagrass, kelp): its column stays water, as with the plants on (with the
+                    // plants off, sea grass showed the sea floor's sand as dots in the water).
                     if (!ceiling && state.getFluidState().isEmpty() && Plants.hidden(state.getBlock(), plantSet)) continue;
                     if (mc != MapColor.NONE || !state.getFluidState().isEmpty()) break;
                 }
@@ -134,8 +134,8 @@ public final class ChunkScanner {
                     for (int py = chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x, z); py > y; py--) {
                         BlockState s = chunk.getBlockState(pos.set(wx, py, wz));
                         // A colour of its texture is enough: many mod plants (Regions Unexplored's flowers, shrubs, branches,
-                        // leaf litter; The Sift's sculkflower) leave the vanilla map colour unset, and were left off the map
-                        // (24.10.2026, runPlantsMapCompatTest).
+                        // leaf litter; The Sift's sculkflower) leave the vanilla map colour unset, and were left off
+                        // the map.
                         if (plantSet.contains(s.getBlock()) && (s.getMapColor(level, pos) != MapColor.NONE || TextureColors.get(s) != null)) {
                             shown = s;
                             shownY = py;
@@ -279,7 +279,7 @@ public final class ChunkScanner {
          * The biome colours blended over the game's Biome Blend radius, as {@code level.getBlockTint} does, but only over
          * the chunks of {@code around} ({@link ChunkScanner#around}, taken on the main thread): read through the level,
          * the game's blend and then a neighbour unloaded while the worker read it gave the default biome (other water),
-         * a darker band along that chunk border (fixed 24.10.2026). Biomes per quart, as stored (no vanilla jitter).
+         * a darker band along that chunk border. Biomes per quart, as stored (no vanilla jitter).
          */
         static TintGrid of(LevelChunk[] around, int cx, int cz, ColorResolver resolver) {
             int radius = Minecraft.getInstance().options.biomeBlendRadius().get();
@@ -369,7 +369,7 @@ public final class ChunkScanner {
 
     /**
      * A block's texture colour with the tint it needs (biome grass or foliage at the column, or its handler at pos;
-     * always, since the setting to turn that off was removed on 24.10.2026: off, modded grass and leaves clashed with the biome).
+     * always: without it modded grass and leaves clashed with the biome).
      */
     private static int tinted(ClientLevel level, BlockState state, BlockPos pos, TextureColors.Entry tex, TintGrid grass, TintGrid foliage,
                               int x, int y, int z) {

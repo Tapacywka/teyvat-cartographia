@@ -8,7 +8,7 @@ import net.tapacywka.teyvatcartographia.map.data.TileStore;
 
 /**
  * The path as a straight line from the player to the target, whatever lies between (setting
- * {@link MapConfig#PATH_ROUTE} AIR, user request 27.10.2026: for flying with elytra or aircraft). Laid once per
+ * {@link MapConfig#PATH_ROUTE} AIR: for flying with elytra or aircraft). Laid once per
  * {@link Navigation#pathRequest} from where the player stands then, like the searched paths, with a point every few
  * blocks so the walked part is cut off and the stars follow it as on any line; the points in unexplored land are marked
  * as fog. No search runs meanwhile ({@link PathFinder}, {@link FarPath}).

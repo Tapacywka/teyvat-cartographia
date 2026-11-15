@@ -57,7 +57,8 @@ public final class Dialogs {
                 long window = Minecraft.getInstance().getWindow().handle();
                 if (save) SDLDialog.SDL_ShowSaveFileDialog(callback, 0L, window, filters, location);
                 else SDLDialog.SDL_ShowOpenFileDialog(callback, 0L, window, filters, location, false);
-            } catch (Throwable e) {
+            } catch (Exception | LinkageError e) {
+                // LinkageError: the dialogs' native library missing.
                 TeyvatCartographia.LOGGER.error("File dialog failed", e);
                 free();
                 chosen.accept(null);

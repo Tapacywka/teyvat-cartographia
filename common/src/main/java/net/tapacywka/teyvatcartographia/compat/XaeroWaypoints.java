@@ -37,7 +37,7 @@ import net.tapacywka.teyvatcartographia.version.Game;
 public final class XaeroWaypoints {
     private XaeroWaypoints() {}
 
-    /** The sub-section of Compatibility for Xaero's mods ("Xaero's Map", shown only with them): the imports; the card shows only the descriptions (user request 04.11.2026). */
+    /** The sub-section of Compatibility for Xaero's mods ("Xaero's Map", shown only with them): the imports; the card shows only the descriptions. */
     public static void settings() {
         String k = "teyvatcartographia.config.";
         TeyvatConfigScreen.compatPart("compat_xaero", ModCompat::xaero, t -> t

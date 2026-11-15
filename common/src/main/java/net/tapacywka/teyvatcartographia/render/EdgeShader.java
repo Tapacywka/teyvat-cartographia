@@ -14,11 +14,11 @@ import net.tapacywka.teyvatcartographia.map.data.MapOutline;
 import net.tapacywka.teyvatcartographia.version.Gpu;
 
 /**
- * The mod's own shader for the map's pictures with their outline ({@code shaders/core/map_edge}, user decision
- * 08.11.2026): the line, its stroke and glow worked out per screen pixel from what does not move
- * ({@link MapOutline#field}), so on the world map the edge breathes ({@link MapOutline#breath}) and is smooth at every
- * zoom. With Map edges not animated, and under VulkanMod (which builds its pipelines in its own way), the outline is
- * baked into the pictures as in 1.2.0, a pixel a block ({@link #inUse}).
+ * The mod's own shader for the map's pictures with their outline ({@code shaders/core/map_edge}): the line, its stroke
+ * and glow worked out per screen pixel from what does not move ({@link MapOutline#field}), so on the world map the edge
+ * breathes ({@link MapOutline#breath}) and is smooth at every zoom. With Map edges not animated, and under VulkanMod
+ * (which builds its pipelines in its own way), the outline is baked into the pictures as in 1.2.0, a pixel a block
+ * ({@link #inUse}).
  * <p>
  * Since 26.1 a pipeline of its own ({@link #PIPELINE}): the game's GUI elements take no values of their own, so the
  * values of each picture go with its element ({@link #values}, {@link Draw#edgeQuad}) and the mod's layer
@@ -59,8 +59,8 @@ public final class EdgeShader {
 
     /**
      * Whether the outline is drawn by this shader now: it is wanted and Map edges moves the edge (animated, or with
-     * waves). Not animated, the outline is baked into the pictures as in 1.2.0, a pixel a block (user request
-     * 08.11.2026); the stores make every outline again when this changes.
+     * waves). Not animated, the outline is baked into the pictures as in 1.2.0, a pixel a block; the stores make every
+     * outline again when this changes.
      */
     public static boolean inUse() {
         return wanted() && MapConfig.get(MapConfig.MAP_OUTLINE_MOTION) != MapConfig.EdgeMotion.STILL;

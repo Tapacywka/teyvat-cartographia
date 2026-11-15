@@ -23,7 +23,7 @@ import java.io.UncheckedIOException;
 
 /**
  * A store reads its folder on the IO thread, behind the writes queued before it: read at once, it missed a region the
- * store closed just before was still saving, started that region anew and overwrote it (audit 06.11.2026).
+ * store closed just before was still saving, started that region anew and overwrote it.
  */
 class TileStoreTest {
     private static final ResourceKey<Level> DIMENSION = ResourceKey.create(Registries.DIMENSION, Identifier.withDefaultNamespace("overworld"));
@@ -116,5 +116,28 @@ class TileStoreTest {
         Path dir = root.resolve("new").resolve("minecraft_overworld");
         MapStorage.writeDimension(dir, DIMENSION);
         assertEquals("minecraft:overworld", Files.readString(dir.resolve("dimension.txt")));
+    }
+
+    /** Files that cannot be read are set aside, so the region mapped anew does not write over them. */
+    @Test
+    void anUnreadableRegionIsSetAside(@TempDir Path root) throws IOException {
+        Path dir = root.resolve("map");
+        writeRegion(dir, 2, -3, 1);
+        assertNull(TileStore.readOrSetAside(dir, 2, -3, (d, x, z) -> { throw new IOException("damaged"); }));
+        assertFalse(Files.exists(dir.resolve("r.2.-3.png")));
+        assertTrue(Files.exists(dir.resolve("r.2.-3.png.broken")));
+        assertTrue(Files.exists(dir.resolve("r.2.-3.dat.broken")));
+    }
+
+    /** An error of the game itself (out of memory) is not the files' fault: it goes on up and the files stay. */
+    @Test
+    void anErrorOfTheGameLeavesTheFilesAlone(@TempDir Path root) throws IOException {
+        Path dir = root.resolve("map");
+        writeRegion(dir, 0, 0, 1);
+        assertThrows(OutOfMemoryError.class,
+                () -> TileStore.readOrSetAside(dir, 0, 0, (d, x, z) -> { throw new OutOfMemoryError("test"); }));
+        assertTrue(Files.exists(dir.resolve("r.0.0.png")));
+        assertTrue(Files.exists(dir.resolve("r.0.0.dat")));
+        assertFalse(Files.exists(dir.resolve("r.0.0.png.broken")));
     }
 }

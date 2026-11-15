@@ -69,7 +69,7 @@ public final class WorldMarkerLayer {
     /** Closer than {@code FADE_FAR} blocks the marker fades out; it is gone at the target itself. */
     private static final double FADE_FAR = 10;
     /**
-     * A beam of light rises from the target at any distance (until 25.10.2026 within 225 blocks), like the golden shaft
+     * A beam of light rises from the target at any distance, like the golden shaft
      * of light over a Genshin Impact waypoint (ingame_waypoint_beam_01): a soft wide glow with a narrow bright core,
      * faint at the marker, full a little above it and fading out smoothly to its top ({@link BeamShape}). It always faces
      * the camera and keeps about the same width on screen at any distance; terrain hides it. Where any part of it, its
@@ -108,8 +108,8 @@ public final class WorldMarkerLayer {
     private static long pulseStart = Long.MIN_VALUE;
     /**
      * Fade of the beam at the screen's edge on the last HUD frame, 0..1: dimmed near the limiter ellipse, then gone a
-     * second after the glyph went onto it (the beam stays at the target's place meanwhile; until 25.10.2026 it was not
-     * drawn at all once the glyph left the view, so no fade was ever seen). The beam is drawn in the world before the
+     * second after the glyph went onto it (the beam stays at the target's place meanwhile, so the fade
+     * shows; skipping the beam once the glyph left the view hid it). The beam is drawn in the world before the
      * HUD, so it follows the previous frame.
      */
     private static float edgeFade;
@@ -265,12 +265,12 @@ public final class WorldMarkerLayer {
         // see renderBeam)
         float pulseSeconds = (Util.getMillis() - pulseStart) / 1000f;
         boolean pulsing = pulseStart != Long.MIN_VALUE && pulseSeconds >= 0 && pulseSeconds < MarkerRenderer.WORLD_PULSE_LIFE;
-        // Golden, like the beam (one colour for every kind since 26.10.2026).
+        // Golden, like the beam (one colour for every kind).
         int pulseColor = Theme.worldMarkerPulse();
         if (pulsing) MarkerRenderer.worldPulse(g, sx, sy, SIZE, pulseSeconds, SIZE * MarkerRenderer.WORLD_PULSE_START, pulseColor, alpha);
 
         // 2. Halo, glyph, the above / below arrow and the distance: in view only (on the limiter the edge pointer is the
-        // only arrow); the level arrow at any distance (it stopped at 225 blocks until 25.10.2026). The same number as on the minimap and
+        // only arrow); the level arrow at any distance. The same number as on the minimap and
         // the world map (Navigation.distance), not the interpolated one.
         double shownDist = Navigation.distance(player);
         int level = inView ? Navigation.level(player) : 0;
@@ -384,7 +384,7 @@ public final class WorldMarkerLayer {
      * The path stars, then the beam, after the whole level. In Fabulous graphics the water, the particles, the clouds
      * and the weather are laid together by depth at the end: stars drawn after the particles and the beam drawn after
      * the weather (neither writing depth) went under the water there, taking its colour, and the beam stopped above the
-     * ground and was cut by the clouds (tester reports 26.10.2026). Since 26.1 the light is drawn by
+     * ground and was cut by the clouds. Since 26.1 the light is drawn by
      * a render pass of its own with the level's view ({@link WorldGlow#begin}), whatever the model-view stack holds.
      */
     private static void renderInWorld(Matrix4fc levelView, Matrix4fc projection, Camera camera, DeltaTracker delta) {

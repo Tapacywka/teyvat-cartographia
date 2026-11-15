@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * The stars of the path are built only within the view ({@link PathStars#inView}, profile 09.11.2026): a camera looking
+ * The stars of the path are built only within the view ({@link PathStars#inView}): a camera looking
  * north (-z), left -x, up +y, a frustum of 16:9 at a vertical field of view of 70 degrees.
  */
 class StarViewTest {

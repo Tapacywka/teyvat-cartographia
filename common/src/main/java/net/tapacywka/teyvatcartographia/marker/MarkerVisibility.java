@@ -40,8 +40,8 @@ public final class MarkerVisibility {
 
     /**
      * Whether pin {@code m} is drawn on the minimap or the world map, at any zoom: the tracked target always, the others
-     * by the settings of their kind, separately for the map and the minimap. (Until 27.10.2026 only the tracked target
-     * at 1/16 and 1/32: a pin made there vanished at once and new players made it again, user decision to show them.)
+     * by the settings of their kind, separately for the map and the minimap (at 1/16 and 1/32 too: a pin made there
+     * that vanished at once was made again).
      */
     public static boolean shown(Marker m, boolean minimap) {
         if (Navigation.isTracking(m)) return true;

@@ -11,7 +11,7 @@ import net.minecraft.network.chat.Component;
 import java.util.List;
 
 /**
- * The world map's context menu (a right click, user request 24.10.2026): a short column of actions beside the
+ * The world map's context menu (a right click): a short column of actions beside the
  * pointer, drawn exactly like the rows of the pin pick list ({@link MarkerPickList}): dark bands fading out to the
  * right with an icon, the row under
  * the pointer outlined and pointed at. On empty ground "New pin" and, for operators, "Teleport"; on a pin "Edit"

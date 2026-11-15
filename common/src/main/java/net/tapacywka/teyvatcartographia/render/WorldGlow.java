@@ -75,7 +75,7 @@ public final class WorldGlow {
 
     /**
      * Draws the batch, added to the scene or ({@code additive} false) laid over it with normal blending: a colour that
-     * tints a bright sky instead of only brightening it (the beam's gold turned white on a blue sky, 26.10.2026).
+     * tints a bright sky instead of only brightening it (the beam's gold turned white on a blue sky).
      */
     public static void draw(BufferBuilder b, boolean additive) {
         MeshData mesh = b.build();

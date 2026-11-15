@@ -194,7 +194,7 @@ class PathSearchTest {
     @Test
     void anIslandGoalIsSwumToFromTheNearestShore() {
         // The goal on an island in a lake too wide to swim by choice: with no other way, the path walks to the shore
-        // nearest the island and swims from there (25 blocks), no hang (user request 25.10.2026).
+        // nearest the island and swims from there (25 blocks), no hang.
         Ground g = new Ground().deepWater(30, -40, 100, 40).rect(55, -5, 65, 5, 64, Terrain.DRY);
         assertTimeoutPreemptively(Duration.ofSeconds(5), () -> search(g, 0.5, 0.5, false, 60.5, 0.5));
         assertTrue(PathFinder.reachedGoal(), "on to the island");
@@ -223,7 +223,7 @@ class PathSearchTest {
     @Test
     void shallowWaterCostsAsMuchAsLand() {
         // A strip of shallow water 20 blocks wide with dry land 6 blocks aside: wading straight through is no dearer than
-        // walking (user decision 26.10.2026), so the path does not bend to the dry land.
+        // walking, so the path does not bend to the dry land.
         Ground g = new Ground().shallowWater(20, -300, 40, 300).rect(20, 5, 40, 7, 64, Terrain.DRY);
         search(g, 0.5, 0.5, false, 60.5, 0.5);
         assertTrue(PathFinder.reachedGoal());

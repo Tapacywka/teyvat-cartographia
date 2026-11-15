@@ -25,11 +25,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The import of the explored Overworld of Xaero's World Map into this mod's map of it, from any dimension (user request
- * 03.11.2026, opened from Settings > Compatibility > Xaero's Minimap; docs/XAERO_MAP_IMPORT.md): Xaero's folders of the
- * Overworld with a switch each (the current world's on), about how long the import of those chosen takes, Import, a bar
- * and the time left while it runs (user request 08.11.2026, {@link ImportTime}), then what it wrote. The map is closed
- * meanwhile ({@link MapDataManager#pauseForImport}) and opens again with the imported land.
+ * The import of the explored Overworld of Xaero's World Map into this mod's map of it, from any dimension (opened from
+ * Settings > Compatibility > Xaero's Minimap): Xaero's folders of the Overworld with a switch each (the current world's
+ * on), about how long the import of those chosen takes, Import, a bar and the time left while it runs ({@link
+ * ImportTime}), then what it wrote. The map is closed meanwhile ({@link MapDataManager#pauseForImport}) and opens again
+ * with the imported land.
  */
 public final class XaeroImportScreen extends Screen {
     private static final int W = 300;
@@ -107,7 +107,7 @@ public final class XaeroImportScreen extends Screen {
         float ny = ly + rows() * ROW + 2;
         if (running == null) {
             DrawText.text(g, DrawText.fit(Component.translatable(K + "keeps").getString(), (int) bw), bx, ny, Theme.TEXT_MUTED, false);
-            // About how long it takes, for the folders chosen (user request 08.11.2026).
+            // About how long it takes, for the folders chosen.
             double seconds = estimate();
             if (seconds > 0) {
                 Component line = Component.translatable(K + "estimate", time(seconds));

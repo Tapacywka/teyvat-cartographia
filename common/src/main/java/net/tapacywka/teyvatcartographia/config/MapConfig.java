@@ -74,8 +74,8 @@ public final class MapConfig {
     public static final EnumValue<TimeFormat> MINIMAP_TIME_FORMAT;
     public static final BoolValue MINIMAP_SHOW_DAY;
 
-    // Radar (user decisions 12.11.2026, docs/RADAR_SPEC.md): shared rows first, then where each kind shows.
-    /** The radar on the world map; {@link #RADAR_MINIMAP} on the minimap (user decision 14.11.2026, one switch before). */
+    // Radar: shared rows first, then where each kind shows.
+    /** The radar on the world map; {@link #RADAR_MINIMAP} on the minimap. */
     public static final BoolValue RADAR_ENABLED;
     public static final BoolValue RADAR_MINIMAP;
     public static final IntValue RADAR_RANGE;
@@ -170,30 +170,29 @@ public final class MapConfig {
     public static final IntValue SCAN_RADIUS;
     public static final IntValue MAX_CACHED_TILES;
     public static final EnumValue<Detail> DETAIL;
-    /** Cave layers on the world map (its layer field); {@link #CAVES_MINIMAP} on the minimap (user decision 13.11.2026). */
+    /** Cave layers on the world map (its layer field); {@link #CAVES_MINIMAP} on the minimap. */
     public static final BoolValue CAVES_ENABLED;
     public static final BoolValue CAVES_MINIMAP;
     public static final BoolValue MAP_PLANTS;
     /** The view cone and the glow under the player's arrow on the world map; {@link #PLAYER_CONE_MINIMAP} on the minimap. */
     public static final BoolValue PLAYER_CONE;
     public static final BoolValue PLAYER_CONE_MINIMAP;
-    /** The land beyond what was explored, worked out from the world's generator (FarLand, 07.11.2026): single player, off by default. */
+    /** The land beyond what was explored, worked out from the world's generator (FarLand): single player, off by default. */
     public static final BoolValue FAR_LAND;
     /**
      * The edges of the map ("Map edges" / «Края карты», off by default): the explored map ends on a round rough line with a
-     * turquoise stroke (MapOutline, 07.11.2026, on the copy for the GPU only). One setting with the world border from 07 to
-     * 08.11.2026, then two again (user decision).
+     * turquoise stroke ({@link net.tapacywka.teyvatcartographia.map.data.MapOutline}, on the copy for the GPU only).
      */
     public static final BoolValue MAP_OUTLINE;
     /**
-     * How the map edges move on the world map (user request 08.11.2026, the variants A and C of the mockup kept both):
+     * How the map edges move on the world map:
      * still, breathing (swelling out and drawing back like water), or breathing with waves running into the fog. One
      * slider with {@link #MAP_OUTLINE} in the settings; the minimap keeps the edge still.
      */
     public enum EdgeMotion { STILL, BREATHING, SURF }
 
     public static final EnumValue<EdgeMotion> MAP_OUTLINE_MOTION;
-    /** The world border ("World border" / «Барьер мира», off by default) as a red line on both maps, everything beyond it darker (BorderLine, 07.11.2026). */
+    /** The world border ("World border" / «Барьер мира», off by default) as a red line on both maps, everything beyond it darker (BorderLine). */
     public static final BoolValue WORLD_BORDER;
     public static final ListValue PLANTS_HIDDEN;
     public static final IntValue WATER_DEPTH;
@@ -215,16 +214,16 @@ public final class MapConfig {
     public enum Detail { LOW, MEDIUM, HIGH }
 
     /**
-     * How the path to a tracked pin goes (user decision 26.10.2026): on foot round deep water, or by boat across it; or
-     * straight to it whatever lies between (user request 27.10.2026, for flying), {@link net.tapacywka.teyvatcartographia.nav.DirectPath}.
+     * How the path to a tracked pin goes: on foot round deep water, or by boat across it; or
+     * straight to it whatever lies between (for flying), {@link net.tapacywka.teyvatcartographia.nav.DirectPath}.
      */
     public enum Route { LAND, WATER, AIR }
 
     public static final EnumValue<Route> PATH_ROUTE;
 
     /**
-     * How long the marker, beam and stars of the tracked pin show after tracking starts or the pulse key (user request
-     * 12.11.2026, a tester's idea; 60 s before): {@code ms} 0 never fades.
+     * How long the marker, beam and stars of the tracked pin show after tracking starts or the pulse key: {@code ms} 0
+     * never fades.
      */
     public enum ShowFor {
         S30(30_000), S60(60_000), M2(120_000), M5(300_000), ALWAYS(0);
@@ -280,7 +279,7 @@ public final class MapConfig {
         b.push("radar");
         RADAR_ENABLED = b.bool("enabled", true);
         RADAR_MINIMAP = b.bool("enabledMinimap", true);
-        // In chunks like the mapping radius (user request 12.11.2026; until then blocks under "range").
+        // In chunks like the mapping radius (older settings files kept blocks under "range", which is ignored).
         RADAR_RANGE = b.integer("rangeChunks", 8, 2, 16);
         RADAR_HEIGHT = b.bool("heightArrows", true);
         RADAR_SERVER_MOBS = b.bool("serverMobs", false);
@@ -322,8 +321,8 @@ public final class MapConfig {
         MAP_OUTLINE = b.bool("mapOutline", false);
         MAP_OUTLINE_MOTION = b.choice("mapOutlineMotion", EdgeMotion.BREATHING);
         WORLD_BORDER = b.bool("worldBorder", false);
-        // The plants switched off (user decision 24.10.2026: every plant on by default, also those of mods added later);
-        // until then the list held the ones switched on (plantsShown, cactus, dead bush and chorus by default).
+        // The plants switched off (every plant on by default, also those of mods added later); older versions kept the
+        // ones switched on instead (plantsShown).
         PLANTS_HIDDEN = b.list("plantsHidden", List.of(), id -> true);
         WATER_DEPTH = b.integer("waterDepthShading", 100, 0, 100);
         SHALLOW_WATER = b.integer("shallowWater", 0, 0, 100);

@@ -4,22 +4,21 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Where the face of each mob of the game lies in its textures (user decision 13.11.2026: mobs as heads like players,
+ * Where the face of each mob of the game lies in its textures (mobs as heads like players,
  * from the game's own textures, no pictures of the mod's): a table of numbers only, so resource packs change the faces
  * with the mobs. A face is drawn from parts, each seven numbers: which of the face's textures, its place there (u, v,
  * width, height) in pixels of the texture and where it lies on the face (dx, dy) in halves of them (a wolf's nose lies 1.5
- * pixels in, as the game draws it: user report 13.11.2026); the first part is the front of the
+ * pixels in, as the game draws it); the first part is the front of the
  * head, the rest lie over it (a nose, a snout, a hat layer, a rabbit's ears, an overlay like the bogged's moss or the
  * enderman's eyes). The front of a head box made by {@code texOffs(u, v).addBox(.., w, h, d)} is at (u + d, v + d), w by h.
  * <p>
  * The first texture is the one the mob's renderer gives (its variant: a wolf, a cat, a fox of snow) unless the face is
  * {@code fixed} (the snow golem's pumpkin, a block), the table's for a mob the client does not see; variants share their
  * layout. Mobs not in the table (other mods, those without a face like a slime or a squid) stay dots. Checked against
- * the textures of 1.21.1 with a contact sheet of every face (13.11.2026; the bogged, enderman, snow golem and rabbit
- * redone after the user's look at them). On 26.x (13.11.2026) the textures' new names and the game's own new models: the
- * cows' muzzle, the warm and cold farm animals by their model ({@code minecraft:cow/cold}), the babies of the Tiny
- * Takeover ({@code minecraft:cow/baby}), the grown rabbit; the faces as Vanilla Backport and Tiny Takeover Backport have
- * them on 1.21.1, which copy these models.
+ * the textures of 1.21.1 with a contact sheet of every face. On 26.x the textures' new names and the game's own new
+ * models: the cows' muzzle, the warm and cold farm animals by their model ({@code minecraft:cow/cold}), the babies of
+ * the Tiny Takeover ({@code minecraft:cow/baby}), the grown rabbit; the faces as Vanilla Backport and Tiny Takeover
+ * Backport have them on 1.21.1, which copy these models.
  */
 public final class MobFaces {
     private MobFaces() {}
@@ -249,7 +248,7 @@ public final class MobFaces {
     }
 
     /**
-     * Screen pixels of every face's longer side (user choice 13.11.2026, variant B: one size for every head, like the
+     * Screen pixels of every face's longer side (one size for every head, like the
      * pins): what a face of 8 pixels gets on whole screen pixels a pixel, so the usual heads (a player's, a zombie's)
      * stay exact and the others (a chicken's 6, a ghast's 16) are drawn as large, their pixels at most one screen pixel
      * apart in width.
@@ -273,7 +272,7 @@ public final class MobFaces {
      * How far each part's texture is moved, in pixels of the texture, when {@code texels} of them span {@code pixels}
      * screen pixels: never a pixel's middle on the line between two pixels of the texture, even one {@link #FINEST}
      * times finer. Sampled right on such a line the two triangles of a part took a pixel each on their side of it,
-     * which left steps in the allay's eyes (user report 13.11.2026).
+     * which left steps in the allay's eyes.
      */
     public static float lead(int pixels) {
         return 1f / (4 * pixels * FINEST);

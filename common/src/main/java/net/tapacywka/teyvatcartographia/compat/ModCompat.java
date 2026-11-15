@@ -57,7 +57,7 @@ public final class ModCompat {
     /**
      * Whether the textures drawn into keep the top row first, where the game's own (OpenGL) keep the bottom row first,
      * so the mod's layers are drawn into upside down there ({@code render/CachedLayer}): under VulkanMod before 0.6.9
-     * (0.6.8 for 26.1.2 so; 0.6.9-dev.5 for 26.2 keeps them as OpenGL does, tester report 30.10.2026).
+     * (0.6.8 for 26.1.2 so; 0.6.9-dev.5 for 26.2 keeps them as OpenGL does).
      */
     public static boolean vulkanTopFirst() {
         return vulkan() && Platform.get() != null && topFirst(Platform.get().modVersion("vulkanmod"));

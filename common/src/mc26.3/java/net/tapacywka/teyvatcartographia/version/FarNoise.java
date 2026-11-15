@@ -12,7 +12,7 @@ import net.minecraft.world.level.levelgen.densityfunction.SamplerContext;
 /**
  * The far land's questions to the generator on 26.3, whose densities are compiled to samplers, all open to everyone.
  * Each thread asks through an {@link Asker} with a context of its own whose caches are on: the parts of the densities the
- * game keeps per column are then worked out once for the questions of a place (08.11.2026, as the per-column copies on
+ * game keeps per column are then worked out once for the questions of a place (as the per-column copies on
  * 1.21.1 do).
  */
 public final class FarNoise {
@@ -43,7 +43,7 @@ public final class FarNoise {
     }
 
     /**
-     * One thread's questions, through a context of its own with the game's caches on (08.11.2026: a screen at 1/32 in
+     * One thread's questions, through a context of its own with the game's caches on (a screen at 1/32 in
      * 25.6 s; asking volumes of places 8 or 32 blocks apart at once instead took six times as long).
      */
     public final class Asker {

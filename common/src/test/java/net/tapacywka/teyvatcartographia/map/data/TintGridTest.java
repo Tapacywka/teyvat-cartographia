@@ -60,7 +60,7 @@ class TintGridTest {
     }
 
     /**
-     * The blend over the game's Biome Blend radius takes only loaded chunks (24.10.2026): an unloaded neighbour (the game
+     * The blend over the game's Biome Blend radius takes only loaded chunks: an unloaded neighbour (the game
      * answers with its default biome) left a darker band of water along that border, kept even when mapped again.
      */
     @Test

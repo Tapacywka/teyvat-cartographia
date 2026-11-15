@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 
 /** Which blocks are plants the map colours (Settings > Map > Plants). */
 class PlantListTest {
-    /** Leaves are never plants, also those the game tags as flowers (cherry, flowering azalea; 24.10.2026). */
+    /** Leaves are never plants, also those the game tags as flowers (cherry, flowering azalea). */
     @Test
     void leavesAreNotPlants() {
         org.junit.jupiter.api.Assertions.assertFalse(Plants.plant(true, false, true), "cherry leaves: in the flower tag");

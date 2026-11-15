@@ -2,7 +2,7 @@ package net.tapacywka.teyvatcartographia.gui;
 
 /**
  * How far one part of the world map has slid in, from 0 (out of sight) to 1 (in place): side panels, button groups,
- * menus, the map itself (user request 06.11.2026: everything on the map slides out as it slid in, in 0.15 s).
+ * menus, the map itself (everything on the map slides out as it slid in, in 0.15 s).
  * <p>
  * The position is a function of one number that only moves towards the end asked for, the same way in both directions:
  * turning back half way changes nothing but the direction, so nothing jumps. Going out runs the way in backwards.

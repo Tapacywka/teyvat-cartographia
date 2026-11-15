@@ -14,7 +14,7 @@ class MapViewTest {
         assertEquals(32.0, s[s.length - 1]);
         for (int i = 1; i < s.length; i++) {
             assertTrue(s[i] > s[i - 1], "step " + i + " is larger than the one before");
-            assertEquals(2 * s[i - 1], s[i], 1e-12, "step " + i + " doubles the one before (no 1/3 or 3 since 25.10.2026)");
+            assertEquals(2 * s[i - 1], s[i], 1e-12, "step " + i + " doubles the one before (no 1/3 or 3)");
         }
         assertEquals(1.0, s[MapView.ZOOM_DEFAULT]);
     }

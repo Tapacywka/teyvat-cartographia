@@ -38,8 +38,8 @@ final class PathStars {
     private PathStars() {}
 
     /**
-     * Sparkles show within this distance of the camera and fade over the last EDGE_FADE blocks (32, as vanilla particles,
-     * until 26.10.2026: Genshin Impact shows its path stars much farther; twice the sparkles keep the same density).
+     * Sparkles show within this distance of the camera and fade over the last EDGE_FADE blocks (twice vanilla
+     * particles' 32, as Genshin Impact shows its path stars much farther; twice the sparkles keep the same density).
      */
     private static final float RADIUS = 64, EDGE_FADE = 10;
     /** The part of the line ahead of the player they live on (blocks along it), and the fades after the player and before the target. */
@@ -56,8 +56,8 @@ final class PathStars {
     /** Scatter to the side and above the ground, and the drift over a life (blocks, blocks a second). */
     private static final float SPREAD = 0.35f, LIFT = 0.25f, LIFT_RANGE = 0.3f, DRIFT_FORWARD = 0.4f, DRIFT_UP = 0.1f, DRIFT_SIDE = 0.05f;
     /**
-     * Like Genshin Impact's path stars (references {@code ingame_path_stars_01} to {@code 04}, variant B of the mockup,
-     * user choice 26.10.2026): this share of them are large four-pointed sparkles, the rest small motes.
+     * Like Genshin Impact's path stars (references {@code ingame_path_stars_01} to {@code 04}): this share of them are
+     * large four-pointed sparkles, the rest small motes.
      */
     private static final float SPARKLE_SHARE = 0.35f;
     /**
@@ -75,8 +75,8 @@ final class PathStars {
     /**
      * Whether a sparkle at (x, y, z) from the camera can show: within {@code reach} of the view, a frustum around the look
      * direction (f) with slopes {@code sx}, {@code sy} (half its width and height a block ahead) along the camera's left
-     * (l) and up (u). Those out of it are not built: building every sparkle cost 0.01 to 0.06 ms a frame (profile
-     * 09.11.2026), and looking aside or back most of them lie out of the view.
+     * (l) and up (u). Those out of it are not built: building every sparkle cost 0.01 to 0.06 ms a frame, and looking
+     * aside or back most of them lie out of the view.
      */
     static boolean inView(float x, float y, float z, float fx, float fy, float fz, float lx, float ly, float lz, float ux, float uy, float uz,
                           float sx, float sy, float reach) {

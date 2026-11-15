@@ -22,7 +22,7 @@ import java.util.function.Supplier;
 /**
  * The far land's questions to the generator on 26.1.2 and 26.2 ({@code version_sources}): the densities as on 1.21.1,
  * and {@code preliminarySurfaceLevel} in place of the density before caves. Each thread asks through an {@link Asker}
- * with its own copies of the densities, whose parts that depend on x and z alone keep their last answer (08.11.2026).
+ * with its own copies of the densities, whose parts that depend on x and z alone keep their last answer.
  */
 public final class FarNoise {
     /** One block of height of the first guess at the surface, as a value of the density's size. */
@@ -32,8 +32,8 @@ public final class FarNoise {
     private final int sea, below, above, higher;
     private final double blend;
     /**
-     * The world's densities were compiled by a mod into classes of its own, which take no parts of others (C2ME on 1.21.1,
-     * Project Amber 08.11.2026): the threads copy the functions they were made from.
+     * The world's densities were compiled by a mod into classes of its own, which take no parts of others (C2ME on 1.21.1):
+     * the threads copy the functions they were made from.
      */
     private volatile boolean compiled;
     /** How the densities are asked, said once: 0 not yet, 1 copied, 2 as they are. */
@@ -73,7 +73,7 @@ public final class FarNoise {
             Columns columns = new Columns();
             DensityFunction d = copy(FarNoise.this.density, columns), s = d == null ? null : copy(FarNoise.this.surface, columns);
             if (d == null || s == null) {
-                // Slower, as before 08.11.2026, but the same answers.
+                // Slower, but the same answers.
                 d = FarNoise.this.density;
                 s = FarNoise.this.surface;
                 if (told != 2) TeyvatCartographia.LOGGER.info("The far land asks the world's densities as they are, a part per column anew");

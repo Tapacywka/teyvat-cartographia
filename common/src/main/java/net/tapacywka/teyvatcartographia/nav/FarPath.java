@@ -166,8 +166,8 @@ public final class FarPath {
         }
         if ((searching || building) && active != store) searching = building = false; // the dimension changed under it
         if (building) {
-            // The found path is smoothed in slices like the search (in one tick it took up to 3.7 ms, profile
-            // 09.11.2026), then laid out in points from the next tick, in slices too.
+            // The found path is smoothed in slices like the search (in one tick it took up to 3.7 ms), then laid out in
+            // points from the next tick, in slices too.
             long t0 = System.nanoTime();
             boolean ready = false;
             if (smoothed) {
@@ -443,8 +443,8 @@ public final class FarPath {
     private boolean smoothed;
 
     /**
-     * The path being laid out ({@link #layOut}), in slices like the search (in one tick it took up to 1.4 ms, profile
-     * 09.11.2026), into arrays of its own: the maps keep the path before until this one is whole.
+     * The path being laid out ({@link #layOut}), in slices like the search (in one tick it took up to 1.4 ms), into
+     * arrays of its own: the maps keep the path before until this one is whole.
      */
     private float[] nextPoints = new float[2 * 512];
     private boolean[] nextFog = new boolean[512], nextWater = new boolean[512];

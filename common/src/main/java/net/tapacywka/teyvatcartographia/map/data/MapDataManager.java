@@ -79,7 +79,7 @@ public final class MapDataManager {
         t.setDaemon(true);
         return t;
     });
-    /** Reads regions for the maps while {@link #io} writes ({@link IoOrder}): reads waited behind every save until 09.11.2026. */
+    /** Reads regions for the maps while {@link #io} writes ({@link IoOrder}), so reads never wait behind every save. */
     private final ExecutorService reads = Executors.newSingleThreadExecutor(r -> {
         Thread t = new Thread(r, "TeyvatCartographia-IO-Read");
         t.setDaemon(true);
@@ -146,7 +146,7 @@ public final class MapDataManager {
         return cavesHere() && (MapConfig.get(MapConfig.CAVES_ENABLED) || MapConfig.get(MapConfig.CAVES_MINIMAP));
     }
 
-    /** Cave layers on the world map (user decision 13.11.2026: each map its own switch). */
+    /** Cave layers on the world map (each map its own switch). */
     public boolean cavesOnMap() {
         return cavesHere() && MapConfig.get(MapConfig.CAVES_ENABLED);
     }
@@ -167,10 +167,10 @@ public final class MapDataManager {
     private final Underground.Roof entityRoof = new Underground.Roof();
 
     /**
-     * Whether an entity at ({@code x}, {@code y}, {@code z}) is underground (the radar's layers, user decision
-     * 13.11.2026), as the player is: a run of natural blocks over its head, looked for up to the mapped ground there.
-     * At or over the mapped ground it is not; where the client has no blocks (a mob the game's server told of), more
-     * than {@link Underground#ROOF} blocks under the mapped ground is. Main thread.
+     * Whether an entity at ({@code x}, {@code y}, {@code z}) is underground (the radar's layers), as the player is: a
+     * run of natural blocks over its head, looked for up to the mapped ground there. At or over the mapped ground it is
+     * not; where the client has no blocks (a mob the game's server told of), more than {@link Underground#ROOF} blocks
+     * under the mapped ground is. Main thread.
      */
     public boolean underground(net.minecraft.world.level.Level level, double x, double y, double z) {
         int bx = net.minecraft.util.Mth.floor(x), bz = net.minecraft.util.Mth.floor(z), by = net.minecraft.util.Mth.floor(y);
@@ -577,7 +577,8 @@ public final class MapDataManager {
                         results.add(new CaveShaded(gen, CaveScanner.scan(lvl, chunk, band, px, pz, CAVE_RADIUS), band));
                     } catch (RuntimeException e) {
                         TeyvatCartographia.LOGGER.debug("Cave chunk {},{} could not be sampled", chunk.getPos().x(), chunk.getPos().z(), e);
-                    } catch (Throwable e) {
+                    } catch (LinkageError e) {
+                        // A mod's block whose classes are missing.
                         TeyvatCartographia.LOGGER.error("Cave mapping failed for chunk {},{}", chunk.getPos().x(), chunk.getPos().z(), e);
                     } finally {
                         inFlight.decrementAndGet();
@@ -683,7 +684,8 @@ public final class MapDataManager {
                     // The chunk changed under the reader (or was unloaded): map it again on a later sweep.
                     TeyvatCartographia.LOGGER.debug("Chunk {},{} could not be sampled", cx, cz, e);
                     results.add(new Unreadable(gen, k));
-                } catch (Throwable e) {
+                } catch (LinkageError e) {
+                    // A mod's block whose classes are missing.
                     TeyvatCartographia.LOGGER.error("Map shading failed for chunk {},{}", cx, cz, e);
                 } finally {
                     inFlight.decrementAndGet();
@@ -780,8 +782,8 @@ public final class MapDataManager {
             mappedNow++;
             // Shaded while a neighbour was not on the map, and that neighbour was applied meanwhile (both were on the
             // workers at once): it could not redo this chunk then, as this one was not on the map yet. Left so, the
-            // chunk kept the edge it had beside an unloaded neighbour, a dark line along the loading front (fixed
-            // 24.10.2026), so it is redone itself.
+            // chunk kept the edge it had beside an unloaded neighbour, a dark line along the loading front, so it is
+            // redone itself.
             int around = 0;
             for (int i = 0; i < DIRS.length; i++) if (active.hasChunk(r.cx() + DIRS[i][0], r.cz() + DIRS[i][1])) around |= OWN_BITS[i];
             if (MapTile.needsRedo(around, r.neighbourMask()) && level.getChunkSource().getChunk(r.cx(), r.cz(), ChunkStatus.FULL, false) != null) {

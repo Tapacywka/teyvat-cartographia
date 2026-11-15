@@ -125,7 +125,7 @@ public final class BiomeIndex {
                     changed = true;
                     writeCache();
                 }
-            } catch (Throwable e) {
+            } catch (Exception e) {
                 TeyvatCartographia.LOGGER.warn("Could not index the biomes of the map in {}", dir, e);
             } finally {
                 // A new snapshot only when something changed: a search compares them by identity.

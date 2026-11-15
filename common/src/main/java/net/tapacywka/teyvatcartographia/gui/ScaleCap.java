@@ -1,7 +1,7 @@
 package net.tapacywka.teyvatcartographia.gui;
 
 /**
- * The world map is never larger than GUI 3 at 1080p, like the settings screen (user decisions 31.10.2026 and 06.11.2026):
+ * The world map is never larger than GUI 3 at 1080p, like the settings screen:
  * its GUI scale is at most the window's height over 360, whole.
  */
 final class ScaleCap {

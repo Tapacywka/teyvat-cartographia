@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** The minimap cuts the path line exactly at its edge (user report 25.10.2026: it ended far inside the frame). */
+/** The minimap cuts the path line exactly at its edge (it ended far inside the frame). */
 class EdgeClipTest {
     @Test
     void aLineLeavingTheRoundMapEndsOnItsEdge() {

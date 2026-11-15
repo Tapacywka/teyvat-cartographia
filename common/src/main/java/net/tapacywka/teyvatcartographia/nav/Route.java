@@ -23,7 +23,7 @@ public final class Route {
     private static float[] ys = new float[512];
     private static float[] along = new float[512];
     private static boolean[] fog = new boolean[512];
-    /** Which points lie on deep water (drawn in the colour of the sea, user decision 26.10.2026). */
+    /** Which points lie on deep water (drawn in the colour of the sea). */
     private static boolean[] water = new boolean[512];
     private static int count, kNear = -1, kFar = -1, kDirect = -1;
 
@@ -181,7 +181,7 @@ public final class Route {
 
     /**
      * Whether a crossing begins at point {@code i}: on deep water after land (or at the start), the water going on for more
-     * than {@link PathFinder#NARROW} blocks (the sea icon goes there, in both route modes, user decision 26.10.2026).
+     * than {@link PathFinder#NARROW} blocks (the sea icon goes there, in both route modes).
      */
     public static boolean crossingAt(int i) {
         if (!water[i] || i > 0 && water[i - 1]) return false;
@@ -191,7 +191,7 @@ public final class Route {
         return false;
     }
 
-    /** The drawing-in of a new line and the wiping of the one shown before it (user request 26.10.2026). */
+    /** The drawing-in of a new line and the wiping of the one shown before it. */
     private static final LineReveal REVEAL = new LineReveal();
 
     /** How far along the line (blocks) it is shown: it is drawn in from the player after a new search; else all of it. */

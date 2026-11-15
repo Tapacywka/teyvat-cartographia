@@ -209,7 +209,7 @@ final class EdgeMask {
 
     /**
      * A region's picture with its baked outline, kept between uploads ({@link #overKept}): laid over all of its 65 536
-     * pixels before every upload it took 0.27 ms, four times the upload itself (profile 09.11.2026).
+     * pixels before every upload it took 0.27 ms, four times the upload itself.
      */
     private NativeImage kept;
     /** The chunks of the picture changed since the kept copy was laid, a bit each; all of it again when set. */

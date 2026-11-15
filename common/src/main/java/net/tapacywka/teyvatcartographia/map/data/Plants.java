@@ -55,7 +55,7 @@ public final class Plants {
 
     /**
      * Leaves are never plants: the game puts cherry and flowering azalea leaves in its flower tag, and as plants they
-     * were off by default, so the map looked through the crowns of a cherry grove to the ground (fixed 24.10.2026).
+     * were off by default, so the map looked through the crowns of a cherry grove to the ground.
      */
     static boolean plant(boolean leaves, boolean plantClass, boolean plantTag) {
         return !leaves && (plantClass || plantTag);

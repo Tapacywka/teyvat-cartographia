@@ -317,7 +317,7 @@ public final class MapStorage {
     /**
      * The thumbnail pixels of the chunks set in {@code chunks} (a bit per chunk of the region, {@code lcz * CHUNKS +
      * lcx}): a changed chunk costs 256 reads of the picture instead of the region's 65 536 (the whole thumbnail of every
-     * changed region took 2% of the game's thread, profile 09.11.2026). The pixels go through two buffers, a call each
+     * changed region took 2% of the game's thread). The pixels go through two buffers, a call each
      * per chunk, not per pixel (that made the whole cell three times slower). Returns the chunks done.
      */
     static int thumbnailChunks(long[] chunks, ChunkPixels pixels, int[] chunk, int[] thumb) {
@@ -411,7 +411,7 @@ public final class MapStorage {
 
     /**
      * Deletes the regions of an earlier format from a map folder, with their thumbnails, the folder's index and its
-     * biome cache, once (then {@code format.txt} says the folder is current). User decision 24.10.2026: a map drawn in
+     * biome cache, once (then {@code format.txt} says the folder is current): a map drawn in
      * the colours of an older version left chunk-shaped patches beside the newly mapped land, so an old map is mapped
      * again from scratch instead. Returns how many regions were deleted.
      */

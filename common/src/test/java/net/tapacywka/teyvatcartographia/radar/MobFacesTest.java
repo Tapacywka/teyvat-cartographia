@@ -68,7 +68,7 @@ class MobFacesTest {
         assertNotNull(MobFaces.of("minecraft:zombie"));
     }
 
-    /** The user's look of 13.11.2026: the snow golem wears its pumpkin (a block, never its renderer's texture). */
+    /** The snow golem wears its pumpkin (a block, never its renderer's texture). */
     @Test
     void theSnowGolemWearsItsPumpkin() {
         MobFaces.Face golem = MobFaces.of("minecraft:snow_golem");
@@ -81,7 +81,7 @@ class MobFacesTest {
         assertEquals(10, MobFaces.of("minecraft:rabbit").h());
     }
 
-    /** The wolf's nose 1.5 pixels in (user report 13.11.2026), on whole screen pixels in a head of the one size. */
+    /** The wolf's nose 1.5 pixels in, on whole screen pixels in a head of the one size. */
     @Test
     void theWolfsNoseLiesInTheMiddle() {
         MobFaces.Face wolf = MobFaces.of("minecraft:wolf");
@@ -94,7 +94,7 @@ class MobFacesTest {
         assertFalse(MobFaces.of("minecraft:cow").halves());
     }
 
-    /** One size for every head (user choice 13.11.2026, variant B): the longer side as an 8-pixel face's on whole pixels. */
+    /** One size for every head: the longer side as an 8-pixel face's on whole pixels. */
     @Test
     void everyHeadIsAsLarge() {
         assertEquals(24, MobFaces.side(8, 3));

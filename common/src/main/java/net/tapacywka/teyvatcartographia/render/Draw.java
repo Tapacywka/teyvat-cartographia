@@ -282,7 +282,7 @@ public final class Draw {
      * The loop in PX/PY without a point a rounding error from the one before it (also the last against the first);
      * returns the new count. In a capsule (the radius half its width) a corner starts where the last one ended, and
      * the two points a rounding error apart left a sliver that both fan triangles covered: a lighter line down the
-     * middle of a translucent capsule (the rounded scroll bars, user report 03.11.2026). Not for the outlines, which
+     * middle of a translucent capsule (the rounded scroll bars). Not for the outlines, which
      * pair the points of two loops by their index.
      */
     private static int distinct(int n) {
@@ -581,8 +581,8 @@ public final class Draw {
     }
 
     /**
-     * As above, and in {@code seaArgb} between two points marked in {@code water} (deep water: the colour of the sea,
-     * user decision 26.10.2026); the fog colour goes first ({@code water} null: none).
+     * As above, and in {@code seaArgb} between two points marked in {@code water} (deep water: the colour of the sea);
+     * the fog colour goes first ({@code water} null: none).
      */
     public static void route(GuiGraphicsExtractor g, float[] xy, boolean[] fog, boolean[] water, int n, float width, int argb, int fogArgb,
                              int seaArgb, float phase) {

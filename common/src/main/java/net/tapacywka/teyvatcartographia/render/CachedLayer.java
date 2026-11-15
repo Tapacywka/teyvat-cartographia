@@ -76,7 +76,7 @@ public final class CachedLayer {
         CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
         // Cleared by the first render pass (its clear colour), not clearColorTexture: VulkanMod clears a texture through
         // one framebuffer it shares for all of them, and the AMD driver crashed there on the minimap's first redraw after
-        // a screen closed (30.10.2026). Passes are the path every draw of the layer takes anyway.
+        // a screen closed. Passes are the path every draw of the layer takes anyway.
         clearPending = true;
         Window window = Minecraft.getInstance().getWindow();
         float guiW = (float) (window.getWidth() / window.getGuiScale()), guiH = (float) (window.getHeight() / window.getGuiScale());
@@ -154,7 +154,7 @@ public final class CachedLayer {
     /**
      * A texture coordinate v of a layer as OpenGL reads it (0 at the bottom row), for the texture as the renderer keeps
      * it: VulkanMod before 0.6.9 keeps the top row first (it shows the game's own such layers unflipped; under it the
-     * settings rows came out upside down, 30.10.2026). Flipping the projection while drawing in instead lost the text
+     * settings rows came out upside down). Flipping the projection while drawing in instead lost the text
      * (its quads turned face down and culled).
      */
     public static float v(float v) {

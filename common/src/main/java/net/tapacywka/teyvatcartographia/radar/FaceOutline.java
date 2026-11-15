@@ -3,7 +3,7 @@ package net.tapacywka.teyvatcartographia.radar;
 import java.util.Arrays;
 
 /**
- * The frame and the dark rim of a head on the radar along the shape of its seen pixels (user reports 13.11.2026: a ring
+ * The frame and the dark rim of a head on the radar along the shape of its seen pixels (a ring
  * around the whole face drew a frame where the texture has nothing, under an enderman's face and between a rabbit's
  * ears). Pure: from the head's pixels on the screen (which are seen), the frame {@code line} pixels around them and the
  * rim {@code rim} pixels around the frame, as rectangles of screen pixels relative to the head's corner (some negative),

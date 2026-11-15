@@ -12,7 +12,7 @@ import java.util.Objects;
  * Whether the player is underground, and in which cave band ({@link MapDataManager}): at least {@code ROOF} natural
  * blocks in a row somewhere above the head (stone, dirt, sand, gravel, ores, terracotta and the like, also those of
  * mods by their tags), so a forest, a house of several floors with shelves and barrels, or a stone roof does not
- * count (user report 25.10.2026: any 4 solid blocks up to 128 above did, floors and roof of a house included). A new
+ * count (any 4 solid blocks up to 128 above did, floors and roof of a house included). A new
  * state (or band) holds only once it stayed the same for {@code TICKS} ticks, so the minimap does not flicker at a
  * cave mouth.
  */

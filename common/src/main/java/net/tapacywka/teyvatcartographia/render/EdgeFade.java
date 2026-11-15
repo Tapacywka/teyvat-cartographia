@@ -8,14 +8,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * A scrolling list that dissolves at its top and bottom edges (user request 25.10.2026): its rows are drawn into a
+ * A scrolling list that dissolves at its top and bottom edges: its rows are drawn into a
  * layer of their own ({@link #capture} switches to it, the layer cleared to transparent), and {@link #draw} lays that
  * layer onto the screen, whole in the middle and fading out towards the edges, so the rows dissolve into whatever
  * lies under them. The layer holds premultiplied colours (drawn over transparent with the usual blending), so it is
  * laid with premultiplied blending, every channel of a band scaled together: both edges in one draw, a few bands each
  * following a smoothstep.
  * <p>
- * Until 26.10.2026 the screen under the rows was copied and laid back over them instead; under VulkanMod that copy
+ * Copying the screen under the rows and laying it back over them does not work under VulkanMod: that copy
  * came out black (the alpha-only clear wiped its colours) or empty, so the rows were cut at the edges there. Drawing
  * the rows apart needs no copy of the screen and looks the same with both renderers.
  */
