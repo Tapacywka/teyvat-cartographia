@@ -17,6 +17,7 @@
 !/LICENSE
 !/README.md
 !/CHANGELOG.md
+!/ARCHITECTURE.md
 !/.github/
 
 # In-game development tests: local only (devtest-*.gradle and the devtest packages).
