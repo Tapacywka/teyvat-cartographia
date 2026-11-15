@@ -1,13 +1,21 @@
 name: Test
 
 on:
-  # Only for a release (user rule 03.11.2026): the version tags, main's v<version> and mc26's v<version>+mc26, or by hand.
+  # A release (the version tags, main's v<version> and mc26's v<version>+mc26), a pull request into mc26, or by hand.
+  # Ordinary pushes run nothing.
   push:
     tags: [v*]
+  pull_request:
+    branches: [mc26]
   workflow_dispatch:
 
 permissions:
   contents: read
+
+# A newer push to the same pull request stops the run before it.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -18,30 +26,32 @@ jobs:
       matrix:
         game: ['26.1.2', '26.2', '26.3']
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: 25
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v5
 
       # Actually Amazing Config Screen (the settings screen, a required mod of its own), at the version gradle.properties
       # names (its mc26 branch, tag v<version>+mc26, built for this job's game), into the local Maven repository the build
-      # reads it from.
+      # reads it from. A version not tagged yet (a dev version in a pull request) is built from AACS's branch mc26 under that
+      # version.
       - name: Actually Amazing Config Screen
         run: |
           v=$(grep '^aacs_version=' gradle.properties | cut -d= -f2 | tr -d '\r')
-          git clone --depth 1 --branch "v$v+mc26" https://github.com/Tapacywka/actually-amazing-config-screen.git ../aacs
-          cd ../aacs && chmod +x gradlew && ./gradlew publishToMavenLocal --no-daemon -Pmc=${{ matrix.game }}
+          repo=https://github.com/Tapacywka/actually-amazing-config-screen.git
+          git clone --depth 1 --branch "v$v+mc26" "$repo" ../aacs || git clone --depth 1 --branch mc26 "$repo" ../aacs
+          cd ../aacs && chmod +x gradlew && ./gradlew publishToMavenLocal --no-daemon -Pmc=${{ matrix.game }} -Pmod_version="$v"
 
       - name: Run the unit tests
         run: ./gradlew test --no-daemon -Pmc=${{ matrix.game }}
 
       - name: Test report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: test-report-${{ matrix.game }}
           path: common/build/reports/tests/test/
