@@ -2,11 +2,11 @@ name: Publish
 
 # Puts the JARs of a GitHub release on Modrinth and CurseForge: every game the release has files for, the oldest first
 # (1.21.1, then 26.1.2, 26.2, 26.3), the Fabric files of every game first, with Fabric API (required) and Mod Menu
-# (optional), then the NeoForge files in the same order (user rule 30.10.2026). The game and the loader come from the
+# (optional), then the NeoForge files in the same order. The game and the loader come from the
 # file name (teyvatcartographia-v0.6.0+mc1.21.1-fabric.jar);
 # each upload is named by its version number (0.6.0+mc1.21.1-fabric), client side, with the Java its game needs and
 # the whole CHANGELOG.md as the changelog.
-# Since 0.6.0 one release holds the files of both games (user decision 30.10.2026: one version number for all).
+# Since 0.6.0 one release holds the files of both games (one version number for all).
 # Runs when a release is published; by hand for a release made before (tag), as a dry run by default: the tokens and
 # the IDs are checked and what would be uploaded is shown, nothing is uploaded.
 # Secrets: MODRINTH_TOKEN (a personal access token with Create versions), CURSEFORGE_TOKEN (an upload API token).

@@ -1,7 +1,7 @@
 name: Modrinth description
 
 # Sets the Modrinth project's description to .github/readme/README_Modrinth.md (written from README.md by the local
-# readme script, then copied here). Runs when a release is published (user rule 03.11.2026), or by hand; a dry run only shows the text.
+# readme script, then copied here). Runs when a release is published, or by hand; a dry run only shows the text.
 # Secret: MODRINTH_TOKEN (a personal access token with Write projects).
 
 on:
@@ -25,7 +25,7 @@ jobs:
   description:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Modrinth
         env:
           TOKEN: ${{ secrets.MODRINTH_TOKEN }}

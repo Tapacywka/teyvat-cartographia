@@ -1,6 +1,6 @@
 name: Cleanup for 1.0.0
 
-# Leaves only version 1.0.0 to download (decision of 03.11.2026): the JARs come off every older GitHub release (tags
+# Leaves only version 1.0.0 to download : the JARs come off every older GitHub release (tags
 # and source code stay), every Actions run but those of the 1.0.0 tags and of this workflow goes, and every Modrinth
 # version but 1.0.0 is deleted. CurseForge has no API to delete files: there by hand. Run by hand only; a dry run (the
 # default) only lists what it would remove. Modrinth needs MODRINTH_TOKEN with "Delete versions".

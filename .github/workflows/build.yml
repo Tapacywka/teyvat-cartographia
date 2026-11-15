@@ -1,47 +1,57 @@
 name: Build
 
 on:
-  # Only for a release (user rule 03.11.2026): the version tags, main's v<version> and mc26's v<version>+mc26, or by hand.
+  # A release (the version tags, main's v<version> and mc26's v<version>+mc26), a pull request into main (its JARs to
+  # try in game), or by hand. Ordinary pushes run nothing.
   push:
     tags: [v*]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
 
+# A newer push to the same pull request stops the run before it.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: 21
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v5
 
       # Actually Amazing Config Screen (the settings screen, a required mod of its own), at the version gradle.properties
-      # names, into the local Maven repository the build reads it from.
+      # names, into the local Maven repository the build reads it from. A version not tagged yet (a dev version in a pull
+      # request) is built from AACS's default branch under that version.
       - name: Actually Amazing Config Screen
         run: |
           v=$(grep '^aacs_version=' gradle.properties | cut -d= -f2 | tr -d '\r')
-          git clone --depth 1 --branch "v$v" https://github.com/Tapacywka/actually-amazing-config-screen.git ../aacs
-          cd ../aacs && chmod +x gradlew && ./gradlew publishToMavenLocal --no-daemon
+          repo=https://github.com/Tapacywka/actually-amazing-config-screen.git
+          git clone --depth 1 --branch "v$v" "$repo" ../aacs || git clone --depth 1 "$repo" ../aacs
+          cd ../aacs && chmod +x gradlew && ./gradlew publishToMavenLocal --no-daemon -Pmod_version="$v"
 
       # The JARs only (Fabric and NeoForge); the unit tests run in test.yml.
       - name: Build the mod
         run: ./gradlew assemble --no-daemon
 
       - name: Fabric JAR
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: teyvatcartographia-fabric-jar
           path: fabric/build/libs/teyvatcartographia-v*.jar
 
       - name: NeoForge JAR
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: teyvatcartographia-neoforge-jar
           path: neoforge/build/libs/teyvatcartographia-v*.jar
