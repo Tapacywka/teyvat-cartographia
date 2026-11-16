@@ -22,5 +22,16 @@ class XaeroMapFoldersTest {
         assertEquals("Map 1", XaeroMapFolders.mapName(config, "mw$123456789"));
         assertEquals("default", XaeroMapFolders.mapName(config, "mw$default"));
         assertEquals("12345", XaeroMapFolders.mapName(List.of(), "mw$12345"));
+        assertEquals("Converted World Save", XaeroMapFolders.mapName(List.of("MWName:cm$converted:gui.xaero_converted_world_save"), "cm$converted"));
+    }
+
+    @Test
+    void aServersMapsAndASinglePlayerWorldsConvertedMapAreRead() {
+        // In single player Xaero's World Map reads the world's own save; only its full resave writes regions.
+        org.junit.jupiter.api.Assertions.assertTrue(XaeroMapFolders.mapFolder("mw$default"));
+        org.junit.jupiter.api.Assertions.assertTrue(XaeroMapFolders.mapFolder("mw$123456789"));
+        org.junit.jupiter.api.Assertions.assertTrue(XaeroMapFolders.mapFolder("cm$converted"));
+        org.junit.jupiter.api.Assertions.assertFalse(XaeroMapFolders.mapFolder("cache_1"));
+        org.junit.jupiter.api.Assertions.assertFalse(XaeroMapFolders.mapFolder("caves"));
     }
 }

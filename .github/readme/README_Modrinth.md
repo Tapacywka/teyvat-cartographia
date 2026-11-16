@@ -111,9 +111,6 @@ Blocks of any mod are drawn in the colours of their textures, so most mods just 
 | [Mod Menu](https://modrinth.com/mod/modmenu) | The settings button in its list | ✅ | ✅ | ✅ | ✅ |
 | [Sinytra Connector](https://modrinth.com/mod/connector) | The Fabric file on NeoForge | ✅ | ✅ | ✅ | ➖ |
 
-✅ supported<br>
-➖ the mod is not out for this version
-
 <h3>Waystones</h3>
 
 Every waystone, sharestone and warp plate you have seen is a point on both maps that you can track; the ones you have not activated yet are grey.
@@ -124,10 +121,11 @@ Every waystone, sharestone and warp plate you have seen is a point on both maps 
 
 <h3>Xaero's Minimap and Xaero's World Map</h3>
 
-Moving from Xaero's mods? Import their waypoints as pins from the pin list, and their explored map as yours in Settings > Compatibility.
+Moving from Xaero's mods? Import their waypoints as pins from the pin list, and their explored map as yours in Settings > Compatibility (in single player, after the full resave in Xaero's map menu).
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/xaero-import.jpg" alt="Xaero's waypoints imported as pins, listed in the pin list" width="80%">
+  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/xaero-import.jpg" alt="The import of the explored map from Xaero's World Map, done" width="49%">
+  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/xaero-map.jpg" alt="The world map after the import: the land Xaero's World Map had explored now on it" width="49%">
 </p>
 
 <h3>Create</h3>
