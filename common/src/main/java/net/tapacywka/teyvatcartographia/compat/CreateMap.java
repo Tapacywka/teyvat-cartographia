@@ -42,6 +42,8 @@ public final class CreateMap {
     private static int runN;
     private static float runStart;
     private static final List<CreateBridge.Carriage> near = new ArrayList<>();
+    /** A train's points between two updates and its couplings, reused from frame to frame. */
+    private static float[] lerped = new float[64], links = new float[64];
     private static boolean asked;
 
     public static boolean loaded() {
@@ -279,6 +281,22 @@ public final class CreateMap {
             int look = Theme.withAlpha(lookColour(t.look), alpha);
             if (carriages) {
                 int q = 0;
+                // The couplings first, under the carriages: a thin dark-edged link from each carriage to the next, so a
+                // train with gaps between its carriages reads as one.
+                int k = t.carriages * 4;
+                if (lerped.length < k) {
+                    lerped = new float[k * 2];
+                    links = new float[k * 2];
+                }
+                for (int i = 0; i < k; i++) lerped[i] = lerp(a, b, i, f);
+                int nl = CreateRules.couplings(lerped, t.carriages, links);
+                float link = Math.max(0.5f, half * 0.3f);
+                for (int c = 0; c < nl && q + 2 <= MAX_QUADS; c++) {
+                    float lx0 = view.screenX(links[4 * c], links[4 * c + 1]), ly0 = view.screenY(links[4 * c], links[4 * c + 1]);
+                    float lx1 = view.screenX(links[4 * c + 2], links[4 * c + 3]), ly1 = view.screenY(links[4 * c + 2], links[4 * c + 3]);
+                    q = carriage(lx0, ly0, lx1, ly1, link + 0.6f, 0, Theme.withAlpha(Theme.CREATE_TRACK_EDGE, alpha), q);
+                    q = carriage(lx0, ly0, lx1, ly1, link, 0, Theme.withAlpha(Theme.CREATE_CARRIAGE, alpha), q);
+                }
                 for (int c = 0; c < t.carriages && q + 2 <= MAX_QUADS; c++) {
                     float lx = lerp(a, b, 4 * c, f), lz = lerp(a, b, 4 * c + 1, f), tx = lerp(a, b, 4 * c + 2, f), tz = lerp(a, b, 4 * c + 3, f);
                     float sx0 = view.screenX(lx, lz), sy0 = view.screenY(lx, lz), sx1 = view.screenX(tx, tz), sy1 = view.screenY(tx, tz);

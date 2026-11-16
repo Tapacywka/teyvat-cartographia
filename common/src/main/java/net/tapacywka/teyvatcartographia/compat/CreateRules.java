@@ -267,6 +267,23 @@ public final class CreateRules {
     }
 
     /**
+     * The couplings of a train: from the trailing end of each carriage to the leading end of the next, x and z of both
+     * ends in turn, {@code carriages - 1} of them. {@code positions} holds per carriage its leading and its trailing
+     * point (x, z, x, z), the front carriage first, as Create's train map sends them. Written into {@code out} (no
+     * allocation, it runs every frame), as many as fit; returns how many.
+     */
+    public static int couplings(float[] positions, int carriages, float[] out) {
+        int n = Math.max(0, Math.min(Math.min(carriages, positions.length / 4) - 1, out.length / 4));
+        for (int c = 0; c < n; c++) {
+            out[4 * c] = positions[4 * c + 2];
+            out[4 * c + 1] = positions[4 * c + 3];
+            out[4 * c + 2] = positions[4 * c + 4];
+            out[4 * c + 3] = positions[4 * c + 5];
+        }
+        return n;
+    }
+
+    /**
      * The distance at which a point lies from a line from (ax, ay) to (bx, by), all in GUI units: what the pointer has to
      * be within to point at a train.
      */

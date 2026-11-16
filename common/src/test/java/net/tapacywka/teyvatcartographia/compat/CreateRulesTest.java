@@ -156,6 +156,19 @@ class CreateRulesTest {
     }
 
     @Test
+    void couplingsJoinEachCarriageToTheNext() {
+        // three carriages running east along x: 0 to -6, -8 to -14, -16 to -22
+        float[] positions = {0, 5, -6, 5, -8, 5, -14, 5, -16, 5, -22, 5};
+        float[] out = new float[16];
+        assertEquals(2, CreateRules.couplings(positions, 3, out));
+        assertArrayEquals(new float[]{-6, 5, -8, 5, -14, 5, -16, 5}, java.util.Arrays.copyOf(out, 8), 1e-6f);
+        assertEquals(0, CreateRules.couplings(new float[]{0, 0, 4, 0}, 1, out), "one carriage: none");
+        assertEquals(1, CreateRules.couplings(positions, 2, out), "only the carriages asked for");
+        assertEquals(0, CreateRules.couplings(new float[0], 3, out), "no positions yet: none");
+        assertEquals(1, CreateRules.couplings(positions, 3, new float[4]), "no more than fit");
+    }
+
+    @Test
     void thePointerIsMeasuredToTheCarriageNotItsEnds() {
         assertEquals(3f, CreateRules.distanceToSegment(5, 3, 0, 0, 10, 0), 1e-5);
         assertEquals(5f, CreateRules.distanceToSegment(-3, 4, 0, 0, 10, 0), 1e-5, "beyond an end: to that end");

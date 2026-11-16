@@ -21,32 +21,48 @@
   <a href="https://github.com/Tapacywka/teyvat-cartographia/releases"><img src="https://raw.githubusercontent.com/intergrav/devins-badges/v3/assets/cozy/available/github_vector.svg" alt="Available on GitHub" height="48"></a>
 </p>
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/hero-world-map.jpg" alt="The world map: an explored island with map edges and the world border, far land under the Fog of War" width="100%">
-</p>
-
 <h2 id="features">✨ Features</h2>
 
-- **World map** (**M**): the land you explored, in the colours of its blocks, with shading and water depth. Pan, zoom from 1/32 to 32, search pins and biomes with **Ctrl+F**.
-- **Minimap**: square or round, north up or turning with you, with coordinates, biome and a clock.
-- **Pins**: seven types, up to 300 per world. Right-click the map to place one, or press **B** where you stand.
-- **Tracking**: a golden beam of light over the pin, sparkles on the ground and a line on both maps that walks you there, around water and mountains. Or by boat, or straight through the air for elytra.
-- **Caves**: underground, the map switches to the layer you are in.
-- **Radar**: other players as arrows or their skins' heads, mobs as dots or their faces, on the minimap and the world map, by the cave layer you look at. On servers only players, unless you allow mobs.
-- **Every dimension** gets its own map, The Nether and The End their own fog.
-- **Settings** with a live preview of whatever you point at; pick where each kind of pin and path shows, box by box. English and Russian.
-- **Experimental**, off by default: Far land (the outline of unexplored land from the world's generator), soft animated map edges, the world border on the map.
+<table>
+<tr>
+<td width="55%"><img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/world-map.jpg" alt="The world map: forested islands and bays you explored, the Fog of War around them"></td>
+<td><h3>🗺️ World map</h3>Press <b>M</b> for the land you explored, in the colours of its blocks, with shading and water depth. Pan, zoom from 1/32 to 32, search pins and biomes with <b>Ctrl+F</b>.</td>
+</tr>
+<tr>
+<td width="55%"><img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/minimap.jpg" alt="The minimap in the corner over a jungle, with coordinates, biome and the time under it"></td>
+<td><h3>🧭 Minimap</h3>Square or round, north up or turning with you, with coordinates, biome and a clock.</td>
+</tr>
+<tr>
+<td width="55%"><img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/pin-search.jpg" alt="Searching pins and biomes by name in the pin list"></td>
+<td><h3>📍 Pins</h3>Seven types, up to 300 per world. Right-click the map to place one, or press <b>B</b> where you stand. Find any of them by name in the pin list.</td>
+</tr>
+<tr>
+<td width="55%"><img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/beam-sparkles.jpg" alt="The beam of light over a tracked pin and the path sparkles"></td>
+<td><h3>✨ Tracking</h3>A golden beam of light over the pin, sparkles on the ground and a line on both maps that walks you there, around water and mountains. Or by boat, or straight through the air for elytra.</td>
+</tr>
+<tr>
+<td width="55%"><img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/caves.jpg" alt="The world map on a cave layer: the cave around the player, the rest under the Fog of War"></td>
+<td><h3>⛏️ Caves</h3>Underground, the map switches to the layer you are in and maps the cave around you. Pins on other layers stay, fainter, with an arrow up or down.</td>
+</tr>
+<tr>
+<td width="55%"><img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/radar.jpg" alt="Mobs around the player on the world map as their faces"></td>
+<td><h3>📡 Radar</h3>Other players as arrows or their skins' heads, mobs as dots or their faces, on the minimap and the world map, by the cave layer you look at. On servers only players, unless you allow mobs.</td>
+</tr>
+<tr>
+<td width="55%"><img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/nether.jpg" alt="The map of The Nether: crimson forest, lava lakes and basalt under its own fog"></td>
+<td><h3>🌋 Every dimension</h3>Each dimension gets its own map, The Nether and The End their own Fog of War.</td>
+</tr>
+<tr>
+<td width="55%"><img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/settings-checkboxes.jpg" alt="Settings: a box for each place a kind of pin or path shows, with a live preview"></td>
+<td><h3>⚙️ Settings</h3>A live preview of whatever you point at; pick where each kind of pin and path shows, box by box. English and Russian.</td>
+</tr>
+<tr>
+<td width="55%"><img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/hero-world-map.jpg" alt="The world map with map edges and the world border, far land under the Fog of War"></td>
+<td><h3>🧪 Experimental</h3>Off by default: Far land (the outline of unexplored land from the world's generator), soft animated map edges, the world border on the map.</td>
+</tr>
+</table>
 
-<p align="center">
-  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/world-map-water-path.jpg" alt="The path to a tracked pin across an island, going on over water, with the radar's mobs" width="49%">
-  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/world-map-radar.jpg" alt="The path around bays and rivers to a tracked pin, pins and mobs on the world map" width="49%">
-  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/pin-search.jpg" alt="Searching pins and biomes by name in the pin list" width="49%">
-  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/pin-pick-list.jpg" alt="A list to pick from where several pins lie on one spot" width="49%">
-  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/settings-checkboxes.jpg" alt="Settings: a box for each place a kind of pin or path shows, with a live preview" width="49%">
-  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/settings-compat.jpg" alt="Settings: a section for each supported mod in the game" width="49%">
-  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/aether-map.jpg" alt="The map of the Aether over its sea of clouds" width="49%">
-  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/beam-sparkles.jpg" alt="The beam of light over a tracked pin and the path sparkles" width="49%">
-</p>
+The mod costs at most a few percent of your frame rate: the minimap is redrawn only when it changes, and the map is made on background threads.
 
 <h2 id="installation">📥 Installation</h2>
 
@@ -89,15 +105,65 @@ Blocks of any mod are drawn in the colours of their textures, so most mods just 
 | [Tiny Takeover Backport](https://github.com/evanbones/Tiny-Takeover-Backport) | Its mobs' faces on the radar | ✅ | ➖ | ➖ | ➖ |
 | [The Aether](https://github.com/The-Aether-Team/The-Aether) | Its own Fog of War over a sea of clouds | ✅ | ➖ | ➖ | ➖ |
 | [Mielon's The Sift](https://modrinth.com/mod/mielons-the-sift) | Its own Fog of War, the shimmer of ichor | ✅ | ➖ | ➖ | ➖ |
-| [VulkanMod](https://github.com/xCollateral/VulkanMod) (Fabric) | Maps and markers drawn right under Vulkan | ✅ | ✅ | ✅ | 🧪 |
+| [VulkanMod](https://github.com/xCollateral/VulkanMod) (Fabric) | Maps and markers drawn right under Vulkan | ✅ | ✅ | ✅ | ➖ |
 | [VulkanMod-Reforged](https://github.com/TrulyRin/VulkanMod-Reforged) (NeoForge) | Maps and markers drawn right under Vulkan | ✅ | ➖ | ➖ | ➖ |
 | [Sodium](https://github.com/CaffeineMC/sodium), [Iris](https://github.com/IrisShaders/Iris), [Sodium Extra](https://github.com/FlashyReese/sodium-extra-fabric) | Work together, shaders included | ✅ | ✅ | ✅ | ✅ |
 | [Mod Menu](https://github.com/TerraformersMC/ModMenu) | The settings button in its list | ✅ | ✅ | ✅ | ✅ |
 | [Sinytra Connector](https://github.com/Sinytra/Connector) | The Fabric file on NeoForge | ✅ | ✅ | ✅ | ➖ |
 
-✅ supported &nbsp; 🧪 the mod is in beta for this version &nbsp; ➖ the mod is not out for this version
+✅ supported<br>
+➖ the mod is not out for this version
 
-The mod costs at most a few percent of your frame rate: the minimap is redrawn only when it changes, and the map is made on background threads.
+<h3>Waystones</h3>
+
+Every waystone, sharestone and warp plate you have seen is a point on both maps that you can track; the ones you have not activated yet are grey.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/waystones.jpg" alt="A waystone, a sharestone and a warp plate as points on the world map" width="80%">
+</p>
+
+<h3>Xaero's Minimap and Xaero's World Map</h3>
+
+Moving from Xaero's mods? Import their waypoints as pins from the pin list, and their explored map as yours in Settings > Compatibility.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/xaero-import.jpg" alt="Xaero's waypoints imported as pins, listed in the pin list" width="80%">
+</p>
+
+<h3>Create</h3>
+
+Tracks as rails with sleepers, stations with their names, signals, and every train on the world map with its carriages, coloured by what it is doing; the carriages near you on the minimap.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/create.jpg" alt="A railway of Create round a jungle with four stations: a running train in green, one waiting at a signal in orange, one standing in grey" width="80%">
+</p>
+
+<h3>Sable</h3>
+
+Ships and other moving structures on the radar, drawn from their own blocks and turned as they sail; far out an icon.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/sable.jpg" alt="A sailing ship of Sable named Sloop, drawn from its own blocks on the world map" width="80%">
+</p>
+
+<h3>Vanilla Backport and Tiny Takeover Backport</h3>
+
+The radar shows their mobs with their own faces: the happy ghast, the copper golem and the warm and cold farm animals of Vanilla Backport, the new babies of Tiny Takeover Backport.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/backports-vb.jpg" alt="The happy ghast, the copper golem and the warm and cold farm animals of Vanilla Backport as faces on the world map" width="49%">
+  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/backports-ttb.jpg" alt="The babies of Tiny Takeover Backport as faces on the world map" width="49%">
+</p>
+
+<h3>The Aether and The Sift</h3>
+
+Each gets a Fog of War of its own: a sea of clouds under the islands of the Aether, a pearly haze in The Sift, where ichor and ichor snow shimmer in their colours.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/aether-map.jpg" alt="The map of the Aether over its sea of clouds" width="49%">
+  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/sift.jpg" alt="Ichor shimmering in its colours on the map of The Sift" width="49%">
+</p>
+
 
 <h2 id="faq">❓ Questions</h2>
 
