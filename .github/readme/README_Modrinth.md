@@ -111,57 +111,6 @@ Blocks of any mod are drawn in the colours of their textures, so most mods just 
 | [Mod Menu](https://modrinth.com/mod/modmenu) | The settings button in its list | ✅ | ✅ | ✅ | ✅ |
 | [Sinytra Connector](https://modrinth.com/mod/connector) | The Fabric file on NeoForge | ✅ | ✅ | ✅ | ➖ |
 
-<h3>Waystones</h3>
-
-Every waystone, sharestone and warp plate you have seen is a point on both maps that you can track; the ones you have not activated yet are grey.
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/waystones.jpg" alt="A waystone, a sharestone and a warp plate as points on the world map" width="80%">
-</p>
-
-<h3>Xaero's Minimap and Xaero's World Map</h3>
-
-Moving from Xaero's mods? Import their waypoints as pins from the pin list, and their explored map as yours in Settings > Compatibility (in single player, after the full resave in Xaero's map menu).
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/xaero-import.jpg" alt="The import of the explored map from Xaero's World Map, done" width="80%">
-</p>
-
-<h3>Create</h3>
-
-Tracks as rails with sleepers, stations with their names, signals, and every train on the world map with its carriages, coloured by what it is doing; the carriages near you on the minimap.
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/create.jpg" alt="A railway of Create round a jungle with four stations: a running train in green, one waiting at a signal in orange, one standing in grey" width="80%">
-</p>
-
-<h3>Sable</h3>
-
-Ships and other moving structures on the radar, drawn from their own blocks and turned as they sail; far out an icon.
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/sable.jpg" alt="A sailing ship of Sable named Sloop, drawn from its own blocks on the world map" width="80%">
-</p>
-
-<h3>Vanilla Backport and Tiny Takeover Backport</h3>
-
-The radar shows their mobs with their own faces: the happy ghast, the copper golem and the warm and cold farm animals of Vanilla Backport, the new babies of Tiny Takeover Backport.
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/backports-vb.jpg" alt="The happy ghast, the copper golem and the warm and cold farm animals of Vanilla Backport as faces on the world map" width="49%">
-  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/backports-ttb.jpg" alt="The babies of Tiny Takeover Backport as faces on the world map" width="49%">
-</p>
-
-<h3>The Aether and The Sift</h3>
-
-Each gets a Fog of War of its own: a sea of clouds under the islands of the Aether, a pearly haze in The Sift, where ichor and ichor snow shimmer in their colours.
-
-<p align="center">
-  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/aether-map.jpg" alt="The map of the Aether over its sea of clouds" width="49%">
-  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/sift.jpg" alt="Ichor shimmering in its colours on the map of The Sift" width="49%">
-</p>
-
-
 <h2 id="faq">❓ Questions</h2>
 
 <details>
