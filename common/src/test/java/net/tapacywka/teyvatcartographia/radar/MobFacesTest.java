@@ -152,9 +152,6 @@ class MobFacesTest {
                 MobFaces.layerPath("textures/entity/copper_golem/copper_golem.png", golem.textures()[1]));
         assertEquals(13, golem.h());
         assertEquals(6, MobFaces.of("minecraft:chicken/cold").w());
-        // no face is another mod's on 26.x
-        assertNull(MobFaces.modOf("minecraft:cow/baby"));
-        assertFalse(MobFaces.fromMod("minecraft:creaking"));
     }
 
     /** The babies of the Tiny Takeover (26.1): a baby face for every adult face of a mob with a baby model. */

@@ -1,13 +1,10 @@
 package net.tapacywka.teyvatcartographia.client;
 
-import net.tapacywka.teyvatcartographia.compat.CreateMap;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
 import net.tapacywka.teyvatcartographia.platform.Platform;
 
 import java.nio.file.Path;
-import net.tapacywka.teyvatcartographia.compat.ModCompat;
 import net.tapacywka.teyvatcartographia.compat.WaystonesCompat;
-import net.tapacywka.teyvatcartographia.radar.SableRadar;
 import net.tapacywka.teyvatcartographia.compat.XaeroWaypoints;
 
 /** The common start of the client, first thing in each loader's entry point. */
@@ -20,10 +17,7 @@ public final class ClientStart {
         Path config = platform.configDir();
         MapConfig.load(config.resolve("teyvatcartographia-client.json"), config.resolve("teyvatcartographia-client.toml"));
         // The sub-sections of Compatibility for the supported mods, added as other mods add theirs (shown only with the mod).
-        ModCompat.settings();
         XaeroWaypoints.settings();
         WaystonesCompat.settings();
-        SableRadar.settings();
-        CreateMap.settings();
     }
 }

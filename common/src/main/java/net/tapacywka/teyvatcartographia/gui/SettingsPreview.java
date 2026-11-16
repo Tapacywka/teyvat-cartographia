@@ -1,14 +1,11 @@
 package net.tapacywka.teyvatcartographia.gui;
 
 import net.tapacywka.aacs.api.AacsScreen;
-import net.tapacywka.teyvatcartographia.compat.ModCompat;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
 import net.tapacywka.teyvatcartographia.gui.Ui.Grid;
 import net.tapacywka.teyvatcartographia.map.MapView;
 import net.tapacywka.teyvatcartographia.map.data.MapDataManager;
 import net.tapacywka.teyvatcartographia.map.data.MapTile;
-import net.tapacywka.teyvatcartographia.map.data.Shimmer;
-import net.tapacywka.teyvatcartographia.map.data.TextureColors;
 import net.tapacywka.teyvatcartographia.map.data.TileStore;
 import net.tapacywka.teyvatcartographia.marker.MarkerType;
 import net.tapacywka.teyvatcartographia.render.Draw;
@@ -19,10 +16,7 @@ import net.tapacywka.teyvatcartographia.render.MarkerRenderer;
 import net.tapacywka.teyvatcartographia.render.Theme;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
-import net.minecraft.world.level.block.Block;
 
 import java.util.List;
 import com.mojang.blaze3d.platform.NativeImage;
@@ -34,7 +28,6 @@ import java.util.Locale;
 import java.util.NavigableSet;
 import java.util.Objects;
 import net.minecraft.client.renderer.texture.DynamicTexture;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 import net.tapacywka.teyvatcartographia.hud.MinimapLayer;
 import net.tapacywka.teyvatcartographia.map.data.CaveScanner;
@@ -540,17 +533,9 @@ final class SettingsPreview {
 
     // ------------------------------------------------------------------ Compatibility
 
-    private static final Block ICHOR_SNOW = BuiltInRegistries.BLOCK.getOptional(Identifier.fromNamespaceAndPath("the_sift", "ichor_snow_block")).orElse(null);
-
-    /** Blocks across the large sample of ichor or snow, and its pictures (ichor, snow), drawn again when a switch changes. */
-    private static final int SIFT_BLOCKS = 48;
-    private static final DynamicTexture[] SIFT_TEX = new DynamicTexture[2];
-    private static final Boolean[] SIFT_SHOWN = new Boolean[2];
-
     /**
-     * Compatibility: the sample of the setting {@code key} alone, over the whole area: a piece of the dimension's fog of war
-     * (the theme's fog while it is off), a field of ichor or of ichor snow as the map colours them (shimmering or
-     * plain); Xaero's rows have no picture, only their description.
+     * Compatibility: the sample of the setting {@code key} alone, over the whole area: a piece of the dimension's fog of
+     * war (the theme's fog while it is off); Xaero's rows have no picture, only their description.
      */
     static void compatSample(GuiGraphicsExtractor g, float x, float y, float w, float h, String key, MapArea map) {
         x = Draw.snap(x);
@@ -558,34 +543,7 @@ final class SettingsPreview {
         w = Draw.snap(w);
         h = Draw.snap(h);
         if (key.endsWith("_fog")) {
-            ResourceKey<Level> dim = key.endsWith("sift_fog") ? ModCompat.SIFT_DIMENSION
-                    : key.endsWith("aether_fog") ? ModCompat.AETHER_DIMENSION : key.endsWith("nether_fog") ? Level.NETHER
-                    : Level.END;
-            FogTexture.draw(g, dim, x, y, x + w, y + h, 0, 0, Theme.WHITE);
-            Draw.frame(g, x, y, w, h, 1, Theme.PANEL_LINE);
-        } else if (key.endsWith("compat.sift_ichor") || key.endsWith("compat.sift_snow")) {
-            boolean snow = key.endsWith("sift_snow");
-            int i = snow ? 1 : 0;
-            boolean shimmer = MapConfig.get(snow ? MapConfig.SIFT_SNOW_SHIMMER : MapConfig.SIFT_ICHOR_SHIMMER);
-            if (SIFT_TEX[i] == null) SIFT_TEX[i] = new DynamicTexture(() -> "Teyvat Cartographia preview", SIFT_BLOCKS, SIFT_BLOCKS, true);
-            if (!Boolean.valueOf(shimmer).equals(SIFT_SHOWN[i])) {
-                SIFT_SHOWN[i] = shimmer;
-                int plainIchor = TextureColors.ichor();
-                TextureColors.Entry plainSnow = ICHOR_SNOW == null ? null : TextureColors.get(ICHOR_SNOW);
-                NativeImage img = SIFT_TEX[i].getPixels();
-                for (int bz = 0; bz < SIFT_BLOCKS; bz++) {
-                    for (int bx = 0; bx < SIFT_BLOCKS; bx++) {
-                        int c = snow ? (shimmer || plainSnow == null ? 0xFF000000 | Shimmer.ichorSnow(bx, bz) : plainSnow.argb())
-                                : (shimmer || plainIchor == 0 ? 0xFF000000 | Shimmer.ichor(bx, bz) : plainIchor);
-                        // ARGB to the image's ABGR.
-                        img.setPixelABGR(bx, bz, (c & 0xFF00FF00) | (c & 0xFF) << 16 | (c >> 16) & 0xFF);
-                    }
-                }
-                SIFT_TEX[i].upload();
-            }
-            // Square blocks: as many as the longer side shows of the field.
-            float side = Math.max(w, h);
-            Draw.texturedQuad(g, Tex.clamped(SIFT_TEX[i], false), x, y, x + w, y + h, 0, 0, w / side, h / side, 0xFFFFFFFF);
+            FogTexture.draw(g, key.endsWith("nether_fog") ? Level.NETHER : Level.END, x, y, x + w, y + h, 0, 0, Theme.WHITE);
             Draw.frame(g, x, y, w, h, 1, Theme.PANEL_LINE);
         }
     }

@@ -16,6 +16,10 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
   out, coloured by what it is doing) with a tooltip of its name, owner, destination and state, and the carriages near
   you on the minimap. Where each shows: Settings > Compatibility > Create.
 
+### Removed
+- Minecraft 26.x: the support of The Aether and The Sift (their own Fog of War, no cave map in the Aether, the shimmer
+  of ichor and ichor snow), as both mods are made for 1.21.1 only.
+
 ### Fixed
 - A map region the game could not read for want of memory is no longer set aside as damaged: its files stay as
   they are and the region loads when the world is opened again.

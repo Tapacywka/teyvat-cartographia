@@ -71,7 +71,7 @@ final class MapPicture {
         if (dirty) {
             layer.bind(g, w.getWidth(), w.getHeight(), false);
             try {
-                // The dimension's own fog (the Aether's sea of clouds), not under a cave layer.
+                // The dimension's own fog (the End's starry void), not under a cave layer.
                 FogTexture.draw(g, store == null || store.cave ? null : store.dimension, 0, 0, width, height, (float) fogOffsetX, (float) fogOffsetZ, Theme.WHITE);
                 boolean farDone = MapLayerRenderer.drawFar(g, far, view, 0, 0, width, height, true);
                 MapLayerRenderer.breathing(true);

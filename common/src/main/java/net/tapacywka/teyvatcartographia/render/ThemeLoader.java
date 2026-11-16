@@ -167,7 +167,7 @@ public final class ThemeLoader extends SimplePreparableReloadListener<ThemeLoade
         return out;
     }
 
-    /** {@code aether/the_aether.json} as the dimension {@code aether:the_aether}; null for another path. */
+    /** {@code minecraft/the_end.json} as the dimension {@code minecraft:the_end}; null for another path. */
     static Identifier dimensionOf(String file) {
         int slash = file.indexOf('/');
         if (slash <= 0 || !file.endsWith(".json")) return null;

@@ -1,53 +1,16 @@
 package net.tapacywka.teyvatcartographia.compat;
 
-import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.Level;
 import net.tapacywka.teyvatcartographia.platform.Platform;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
-import net.tapacywka.teyvatcartographia.gui.TeyvatConfigScreen;
-import net.tapacywka.teyvatcartographia.render.Theme;
 
 /**
- * Other mods the map knows about, and their settings (the Compatibility section of the settings shows a mod's
- * sub-section only while that mod is in the game):
- * <ul>
- *   <li>The Aether: its islands float over the void, so the cave map (under an island counts as underground) is off
- *       there unless asked for; its fog of war, a sea of clouds.</li>
- *   <li>Mielon's The Sift: its rainbow ichor and ichor snow shimmer on the map, or show their texture colour; its fog
- *       of war, a pearly haze.</li>
- *   <li>Xaero's Minimap: the import of its waypoints (which type they get, hidden ones, death points).</li>
- * </ul>
+ * Other mods the map knows about: VulkanMod (how its textures are kept), Waystones and Xaero's maps (the Compatibility
+ * section of the settings shows a mod's sub-section only while that mod is in the game).
  */
 public final class ModCompat {
     private ModCompat() {}
-
-    /**
-     * The sub-sections of Compatibility for the Aether and The Sift (shown only with them): their fogs of war and The
-     * Sift's shimmers.
-     */
-    public static void settings() {
-        String k = "teyvatcartographia.config.";
-        TeyvatConfigScreen.compatPart("compat_aether", ModCompat::aether, t -> t
-                .toggle(k + "compat.aether_fog", MapConfig.AETHER_FOG).then(Theme.Style::update));
-        TeyvatConfigScreen.compatPart("compat_sift", ModCompat::sift, t -> t
-                .toggle(k + "compat.sift_fog", MapConfig.SIFT_FOG).then(Theme.Style::update)
-                .toggle(k + "compat.sift_ichor", MapConfig.SIFT_ICHOR_SHIMMER).then(TeyvatConfigScreen::remap)
-                .toggle(k + "compat.sift_snow", MapConfig.SIFT_SNOW_SHIMMER).then(TeyvatConfigScreen::remap));
-    }
-
-    public static final String AETHER = "aether";
-    public static final ResourceKey<Level> AETHER_DIMENSION =
-            ResourceKey.create(Registries.DIMENSION, Identifier.fromNamespaceAndPath(AETHER, "the_aether"));
-
-    public static boolean aether() {
-        return loaded(AETHER);
-    }
-
-    public static boolean sift() {
-        return loaded("the_sift");
-    }
 
     /** VulkanMod (Fabric) in the game. */
     public static boolean vulkan() {
@@ -84,27 +47,14 @@ public final class ModCompat {
         return loaded("xaerominimap") || loaded("xaeroworldmap") || !XaeroWaypoints.roots().isEmpty() || !XaeroMapFolders.roots().isEmpty();
     }
 
-    public static final ResourceKey<Level> SIFT_DIMENSION =
-            ResourceKey.create(Registries.DIMENSION, Identifier.fromNamespaceAndPath("the_sift", "the_sift"));
-
     /**
-     * Whether a dimension's own fog of war may show: the Nether's, the End's, the Aether's and The Sift's by their switch
-     * in Compatibility; the fogs a theme brings for other dimensions always show.
+     * Whether a dimension's own fog of war may show: the Nether's and the End's by their switch in Compatibility; the
+     * fogs a theme brings for other dimensions always show.
      */
     public static boolean ownFog(ResourceKey<Level> dimension) {
         if (dimension == Level.NETHER) return MapConfig.get(MapConfig.NETHER_FOG);
         if (dimension == Level.END) return MapConfig.get(MapConfig.END_FOG);
-        if (dimension == AETHER_DIMENSION) return MapConfig.get(MapConfig.AETHER_FOG);
-        if (dimension == SIFT_DIMENSION) return MapConfig.get(MapConfig.SIFT_FOG);
         return true;
-    }
-
-    /**
-     * Whether the cave map works in this dimension (the general switch aside): not in the Aether, whose islands float
-     * over the void, so under any island would count as underground.
-     */
-    public static boolean caves(ResourceKey<Level> dimension) {
-        return dimension != AETHER_DIMENSION;
     }
 
     private static boolean loaded(String modId) {

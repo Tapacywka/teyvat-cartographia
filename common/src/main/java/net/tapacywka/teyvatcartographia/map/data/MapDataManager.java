@@ -1,7 +1,6 @@
 package net.tapacywka.teyvatcartographia.map.data;
 
 import net.tapacywka.teyvatcartographia.TeyvatCartographia;
-import net.tapacywka.teyvatcartographia.compat.ModCompat;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
 import net.tapacywka.teyvatcartographia.map.MapView;
 import net.tapacywka.teyvatcartographia.map.WorldId;
@@ -138,9 +137,8 @@ public final class MapDataManager {
     private MapDataManager() {}
 
     /**
-     * Whether the active dimension has cave layers: a sky and no ceiling, the setting on for either map, and not a
-     * dimension where a mod's world makes no sense of them (the Aether's floating islands, see {@link ModCompat}).
-     * The caves are mapped while either map shows them.
+     * Whether the active dimension has cave layers: a sky and no ceiling, and the setting on for either map. The caves
+     * are mapped while either map shows them.
      */
     public boolean cavesSupported() {
         return cavesHere() && (MapConfig.get(MapConfig.CAVES_ENABLED) || MapConfig.get(MapConfig.CAVES_MINIMAP));
@@ -157,8 +155,7 @@ public final class MapDataManager {
     }
 
     private boolean cavesHere() {
-        return level != null && active != null && level.dimensionType().hasSkyLight() && !level.dimensionType().hasCeiling()
-                && ModCompat.caves(level.dimension());
+        return level != null && active != null && level.dimensionType().hasSkyLight() && !level.dimensionType().hasCeiling();
     }
 
     /** Natural blocks above an entity looked for at most, from its head (less than the player's: many a tick). */

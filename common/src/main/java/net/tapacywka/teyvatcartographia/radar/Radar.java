@@ -149,7 +149,6 @@ public final class Radar {
     /** Gathers the entities around the player (once a tick; the client's list is walked here, never while drawing). */
     public static void tick(Minecraft mc) {
         count = 0;
-        SableRadar.tick(mc);
         LocalPlayer player = mc.player;
         if (player == null || mc.level == null || !on(false) && !on(true)) {
             far = null;
@@ -439,7 +438,6 @@ public final class Radar {
 
     /** The player left the world: the entities and the server's signal are forgotten. */
     public static void leave() {
-        SableRadar.leave();
         count = 0;
         Arrays.fill(names, null);
         Arrays.fill(skins, null);
@@ -471,7 +469,7 @@ public final class Radar {
 
     /** Whether anything is on the radar at all. */
     public static boolean any() {
-        return count > 0 || SableRadar.any();
+        return count > 0;
     }
 
     /** A shape the drawn radar must stay in: inside {@code r} of ({@code cx}, {@code cy}), a circle or a square. */
@@ -492,7 +490,7 @@ public final class Radar {
      */
     public static long signature(MapView view, float pt, float cx, float cy, float r, boolean square, double playerY, boolean caves, Integer viewed) {
         if (!on(true)) return 0;
-        long h = SableRadar.signature(view, pt, cx, cy, r, square);
+        long h = 0;
         boolean arrows = MapConfig.get(MapConfig.RADAR_HEIGHT);
         boolean heads = MapConfig.get(MapConfig.RADAR_PLAYER_LOOK) == RadarRules.PlayerLook.HEADS;
         for (int i = 0; i < count; i++) {
@@ -524,8 +522,6 @@ public final class Radar {
         Component pointed = null;
         float dot = minimap ? DOT_MINIMAP : DOT_MAP, arrow = minimap ? ARROW_MINIMAP : ARROW_MAP;
         float playerHead = minimap ? HEAD_MINIMAP : HEAD_MAP, mobHead = minimap ? MOB_HEAD_MINIMAP : MOB_HEAD_MAP;
-        // Sable's sub-levels first, under everything that may stand on them.
-        SableRadar.draw(g, view, pt, minimap, cx, cy, r, square, alpha);
         boolean arrows = MapConfig.get(MapConfig.RADAR_HEIGHT);
         boolean heads = MapConfig.get(MapConfig.RADAR_PLAYER_LOOK) == RadarRules.PlayerLook.HEADS;
         // Players last, over the mobs.

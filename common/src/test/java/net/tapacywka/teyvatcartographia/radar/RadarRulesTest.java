@@ -65,29 +65,6 @@ class RadarRulesTest {
     }
 
     @Test
-    void smallNamelessSubLevelsAreLeftOut() {
-        assertFalse(RadarRules.shipShown(false, RadarRules.SHIP_MIN_COLUMNS - 1));
-        assertTrue(RadarRules.shipShown(false, RadarRules.SHIP_MIN_COLUMNS));
-        assertTrue(RadarRules.shipShown(true, 1));
-    }
-
-    @Test
-    void theIconStandsInWhileTheSilhouetteIsMissingOrTiny() {
-        assertFalse(RadarRules.shipSilhouette(0, 100));
-        assertFalse(RadarRules.shipSilhouette(500, RadarRules.SHIP_SILHOUETTE_FROM - 1));
-        assertTrue(RadarRules.shipSilhouette(500, RadarRules.SHIP_SILHOUETTE_FROM));
-    }
-
-    @Test
-    void lowerColumnsAreDarkerUpToALimit() {
-        assertEquals(0xFF808080, RadarRules.shade(0xFF808080, 0));
-        assertEquals(0xFF7A7A7A, RadarRules.shade(0xFF808080, 1));
-        int deep = RadarRules.shade(0xFFFFFFFF, 100);
-        assertEquals(Math.round(255 * (1 - RadarRules.SHADE_MAX)), deep & 0xFF);
-        assertEquals(0xFF000000, deep & 0xFF000000);
-    }
-
-    @Test
     void rangeIsACircle() {
         assertTrue(RadarRules.inRange(60, 80, 100));
         assertFalse(RadarRules.inRange(80, 80, 100));

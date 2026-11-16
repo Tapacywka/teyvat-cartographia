@@ -199,23 +199,11 @@ public final class MapConfig {
     public static final IntValue SHALLOW_WATER;
 
     // Compatibility with other mods (shown in the settings only while that mod is there).
-    public static final BoolValue SIFT_ICHOR_SHIMMER;
-    public static final BoolValue SIFT_SNOW_SHIMMER;
-    public static final BoolValue SIFT_FOG;
-    public static final BoolValue AETHER_FOG;
     public static final BoolValue NETHER_FOG;
     public static final BoolValue END_FOG;
     public static final EnumValue<MarkerType> XAERO_PIN_TYPE;
     public static final BoolValue XAERO_HIDDEN;
     public static final BoolValue XAERO_DEATHS;
-    /** Where Sable's sub-levels show on the radar (radar/SableRadar). */
-    public static final EnumValue<RadarRules.Show> SABLE_RADAR;
-    /** Where Create's tracks show (compat/CreateMap). */
-    public static final EnumValue<RadarRules.Show> CREATE_TRACKS;
-    /** Where Create's stations and signals show. */
-    public static final EnumValue<RadarRules.Show> CREATE_STATIONS;
-    /** Where Create's trains show: every train of the world on the world map, the carriages near the player on the minimap. */
-    public static final EnumValue<RadarRules.Show> CREATE_TRAINS;
 
     public enum Detail { LOW, MEDIUM, HIGH }
 
@@ -339,26 +327,10 @@ public final class MapConfig {
         NETHER_FOG = b.bool("netherFog", true);
         END_FOG = b.bool("endFog", true);
         b.pop();
-        b.push("aether");
-        AETHER_FOG = b.bool("fog", true);
-        b.pop();
-        b.push("the_sift");
-        SIFT_ICHOR_SHIMMER = b.bool("ichorShimmer", true);
-        SIFT_SNOW_SHIMMER = b.bool("snowShimmer", true);
-        SIFT_FOG = b.bool("fog", true);
-        b.pop();
         b.push("xaero");
         XAERO_PIN_TYPE = b.choice("pinType", MarkerType.STAR, List.copyOf(MarkerType.customTypes()));
         XAERO_HIDDEN = b.bool("hidden", true);
         XAERO_DEATHS = b.bool("deaths", false);
-        b.pop();
-        b.push("sable");
-        SABLE_RADAR = b.choice("radar", RadarRules.Show.BOTH);
-        b.pop();
-        b.push("create");
-        CREATE_TRACKS = b.choice("tracks", RadarRules.Show.BOTH);
-        CREATE_STATIONS = b.choice("stations", RadarRules.Show.MAP);
-        CREATE_TRAINS = b.choice("trains", RadarRules.Show.BOTH);
         b.pop();
         b.pop();
 

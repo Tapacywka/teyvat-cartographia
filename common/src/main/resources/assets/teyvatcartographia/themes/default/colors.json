@@ -92,7 +92,6 @@
     "radar_player_frame": "#FFFFFFFF",
     "radar_outline": "#8C000000",
     "radar_height": "#E6FFFFFF",
-    "radar_ship_shadow": "#50000000",
     "ping_glow": "#30FFFFFF",
     "ping_ring": "#FFFFFFFF",
     "ping_core": "#FFFFFFFF",

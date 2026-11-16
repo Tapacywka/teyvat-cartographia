@@ -8,8 +8,6 @@ import net.minecraft.client.renderer.BiomeColors;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.QuartPos;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.Identifier;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.level.ColorResolver;
 import net.minecraft.world.level.LightLayer;
@@ -20,7 +18,6 @@ import net.minecraft.world.level.block.SnowLayerBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.levelgen.Heightmap;
-import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.MapColor;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
@@ -43,7 +40,7 @@ public final class ChunkScanner {
 
     /**
      * Immutable sampled data of one chunk, safe to hand to worker threads. {@code keepColour}: columns whose colour is
-     * final (no depth gradient), such as a {@link Shimmer}; {@code bottom}: the colour of the ground under shallow water
+     * final (no depth gradient), such as a plant on the water; {@code bottom}: the colour of the ground under shallow water
      * (0 elsewhere), seen through it.
      */
     public record Snapshot(int cx, int cz, int[] color, short[] height, byte[] waterDepth, boolean[] isVoid, byte[] blockLight,
@@ -96,8 +93,7 @@ public final class ChunkScanner {
         // this dimension's blocks come first.
         Map<Block, Integer> own = MapPalette.dimension(level.dimension());
         Set<Block> plantSet = Plants.shownSet();
-        boolean plants = MapConfig.get(MapConfig.MAP_PLANTS), ichorShimmer = MapConfig.get(MapConfig.SIFT_ICHOR_SHIMMER),
-                snowShimmer = MapConfig.get(MapConfig.SIFT_SNOW_SHIMMER);
+        boolean plants = MapConfig.get(MapConfig.MAP_PLANTS);
 
         for (int z = 0; z < 16; z++) {
             for (int x = 0; x < 16; x++) {
@@ -134,7 +130,7 @@ public final class ChunkScanner {
                     for (int py = chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x, z); py > y; py--) {
                         BlockState s = chunk.getBlockState(pos.set(wx, py, wz));
                         // A colour of its texture is enough: many mod plants (Regions Unexplored's flowers, shrubs, branches,
-                        // leaf litter; The Sift's sculkflower) leave the vanilla map colour unset, and were left off
+                        // leaf litter) leave the vanilla map colour unset, and were left off
                         // the map.
                         if (plantSet.contains(s.getBlock()) && (s.getMapColor(level, pos) != MapColor.NONE || TextureColors.get(s) != null)) {
                             shown = s;
@@ -159,13 +155,6 @@ public final class ChunkScanner {
                                 : MapPalette.standard(floor.getMapColor(level, pos));
                     }
                     pos.set(wx, y, wz);
-                    if (Sift.ichor(fluid)) {
-                        // The Sift's rainbow water is in the water tag: walked around like water, drawn as itself (its
-                        // shimmer, or the average of its texture when that is off).
-                        color[i] = ichorShimmer || TextureColors.ichor() == 0 ? 0xFF000000 | Shimmer.ichor(wx, wz) : TextureColors.ichor();
-                        keep[i] = true;
-                        continue;
-                    }
                     TextureColors.Entry floating = shown == state ? null : TextureColors.get(shown);
                     if (floating != null) {
                         // A plant on the water (lily pads): its colour, no depth gradient; still water for the paths.
@@ -187,11 +176,7 @@ public final class ChunkScanner {
                 pos.set(wx, y, wz);
                 Integer mine = own == null ? null : own.get(shown.getBlock());
                 TextureColors.Entry tex = TextureColors.get(shown);
-                if (Sift.snow(state.getBlock()) || Sift.snow(above.getBlock())) {
-                    // Before vanilla snow (it is a snow layer too): its shimmer, or its texture colour when that is off.
-                    TextureColors.Entry s = TextureColors.get(Sift.snow(above.getBlock()) ? above.getBlock() : state.getBlock());
-                    color[i] = snowShimmer || s == null ? 0xFF000000 | Shimmer.ichorSnow(wx, wz) : s.argb();
-                } else if (above.getBlock() instanceof SnowLayerBlock) {
+                if (above.getBlock() instanceof SnowLayerBlock) {
                     color[i] = TextureColors.snow() != 0 ? TextureColors.snow() : MapPalette.standard(MapColor.SNOW);
                 } else if (mine != null) {
                     color[i] = mine; // before the biome tints: the theme gives the block's whole colour
@@ -219,32 +204,6 @@ public final class ChunkScanner {
         // From the chunk itself, like the tints: through the level a chunk unloaded meanwhile gave the default biome.
         Holder<Biome> biome = chunk.getNoiseBiome(QuartPos.fromBlock((cx << 4) + 8), QuartPos.fromBlock(height[8 * 16 + 8]), QuartPos.fromBlock((cz << 4) + 8));
         return new Snapshot(cx, cz, color, height, depth, isVoid, blockLight, keep, bottom, biome.unwrapKey().orElse(null));
-    }
-
-    /**
-     * Mielon's The Sift: its ichor and ichor snow, drawn with a {@link Shimmer} (their texture averages are a grey
-     * lilac, nothing like the rainbow in the world). Looked up once, the first time a chunk has water or snow; all null
-     * without the mod.
-     */
-    private static final class Sift {
-        private static final Fluid ICHOR = fluid("ichor"), FLOWING_ICHOR = fluid("flowing_ichor");
-        private static final Block SNOW = block("ichor_snow"), SNOW_BLOCK = block("ichor_snow_block");
-
-        static boolean ichor(FluidState f) {
-            return ICHOR != null && (f.getType() == ICHOR || f.getType() == FLOWING_ICHOR);
-        }
-
-        static boolean snow(Block b) {
-            return SNOW != null && (b == SNOW || b == SNOW_BLOCK);
-        }
-
-        private static Fluid fluid(String path) {
-            return BuiltInRegistries.FLUID.getOptional(Identifier.fromNamespaceAndPath("the_sift", path)).orElse(null);
-        }
-
-        private static Block block(String path) {
-            return BuiltInRegistries.BLOCK.getOptional(Identifier.fromNamespaceAndPath("the_sift", path)).orElse(null);
-        }
     }
 
     /** Where a {@link TintGrid} reads the game's tint: at a block, and whether a chunk is loaded. */

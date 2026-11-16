@@ -915,7 +915,7 @@ public final class MinimapLayer {
         g.pose().pushMatrix();
         g.pose().scale(guiW / (2f * cR), guiH / (2f * cR));
         if (store != null && !store.cave && FogTexture.hasOwn(store.dimension)) {
-            // A dimension with a fog of its own (the Aether's clouds): it fills the minimap too, fixed to the world (the cached
+            // A dimension with a fog of its own (the End's starry void): it fills the minimap too, fixed to the world (the cached
             // square moves with the map between redraws, so the fog must too).
             FogTexture.draw(g, store.dimension, 0, 0, 2 * cR, 2 * cR, (float) (px * zoom), (float) (pz * zoom), tint);
         } else {

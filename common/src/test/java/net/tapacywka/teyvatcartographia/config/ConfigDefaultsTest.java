@@ -83,10 +83,6 @@ class ConfigDefaultsTest {
     void otherMods() {
         assertTrue(MapConfig.NETHER_FOG.getDefault(), "the Nether's own fog on");
         assertTrue(MapConfig.END_FOG.getDefault(), "the End's own fog on");
-        assertTrue(MapConfig.AETHER_FOG.getDefault());
-        assertTrue(MapConfig.SIFT_FOG.getDefault());
-        assertTrue(MapConfig.SIFT_ICHOR_SHIMMER.getDefault());
-        assertTrue(MapConfig.SIFT_SNOW_SHIMMER.getDefault());
         assertEquals(MarkerType.STAR, MapConfig.XAERO_PIN_TYPE.getDefault());
         assertTrue(MapConfig.XAERO_HIDDEN.getDefault());
         assertFalse(MapConfig.XAERO_DEATHS.getDefault());

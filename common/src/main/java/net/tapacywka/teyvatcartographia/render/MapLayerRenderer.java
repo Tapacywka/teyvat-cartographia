@@ -40,9 +40,9 @@ public final class MapLayerRenderer {
     private static final float EDGE = 0.5f / MapTile.SIZE;
 
     /**
-     * Without smoothing a sliver of a texel is enough: at the very edge (a coordinate of exactly 1) VulkanMod-Reforged
-     * took the opposite edge of the region for a row of pixels wherever a region border fell between pixels, a dark
-     * line across the map at zoom 1 (a flight to a far pin; the suite's category flight).
+     * Without smoothing a sliver of a texel is enough: at the very edge (a coordinate of exactly 1) VulkanMod, which
+     * does not clamp to the edge, took the opposite edge of the region for a row of pixels wherever a region border fell
+     * between pixels, a dark line across the map at zoom 1.
      */
     private static final float NEAR_EDGE = 1f / 64 / MapTile.SIZE;
 

@@ -206,8 +206,6 @@ public final class Theme {
     public static int RADAR_PLAYER_FRAME = 0xFFFFFFFF;
     public static int RADAR_OUTLINE = 0x8C000000;
     public static int RADAR_HEIGHT = 0xE6FFFFFF;
-    /** The shadow a Sable sub-level casts on the map under its silhouette (radar/SableRadar). */
-    public static int RADAR_SHIP_SHADOW = 0x50000000;
     public static int PING_GLOW = 0x30FFFFFF;
     public static int PING_RING = 0xFFFFFFFF;
     public static int PING_CORE = 0xFFFFFFFF;

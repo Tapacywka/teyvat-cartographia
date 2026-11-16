@@ -80,7 +80,7 @@ Blocks of any mod are drawn in the colours of their textures, so most mods just 
 [Waystones](https://modrinth.com/mod/waystones) (its stones on the map, trackable),
 [Xaero's Minimap](https://modrinth.com/mod/xaeros-minimap) (import its waypoints) and
 [Xaero's World Map](https://modrinth.com/mod/xaeros-world-map) (import the explored map),
-[The Aether](https://modrinth.com/mod/aether) and [Mielon's The Sift](https://modrinth.com/mod/mielons-the-sift) (their own fog),
+[The Aether](https://modrinth.com/mod/aether) and [Mielon's The Sift](https://modrinth.com/mod/mielons-the-sift) (their own fog, 1.21.1),
 [Sable](https://modrinth.com/mod/sable) (its ships on the radar, 1.21.1),
 [Vanilla Backport](https://modrinth.com/mod/vanillabackport) and [Tiny Takeover Backport](https://modrinth.com/mod/tiny-takeover-backport) (their mobs' faces on the radar, 1.21.1),
 [Sodium](https://modrinth.com/mod/sodium), [Iris](https://modrinth.com/mod/iris),

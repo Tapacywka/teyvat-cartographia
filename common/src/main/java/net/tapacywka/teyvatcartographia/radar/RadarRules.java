@@ -83,34 +83,6 @@ public final class RadarRules {
         return before || message.contains(FAIR_PLAY) || message.contains(NO_MINIMAP);
     }
 
-    /** Blocks seen from above under which a sub-level of Sable without a name is left out (falling trees, debris). */
-    public static final int SHIP_MIN_COLUMNS = 24;
-    /** The silhouette's longest side on screen (GUI units) under which a sub-level shows as its icon instead. */
-    public static final float SHIP_SILHOUETTE_FROM = 8;
-
-    /** Whether a sub-level of Sable shows at all: one with a name always, one without only when it is large enough. */
-    public static boolean shipShown(boolean named, int columns) {
-        return named || columns >= SHIP_MIN_COLUMNS;
-    }
-
-    /**
-     * Whether a sub-level is drawn as its silhouette or as its icon: the icon
-     * while no silhouette is read yet ({@code columns} 0) or while it would be too small to tell on the map.
-     */
-    public static boolean shipSilhouette(int columns, float longestSideOnScreen) {
-        return columns > 0 && longestSideOnScreen >= SHIP_SILHOUETTE_FROM;
-    }
-
-    /** How much darker a column of a silhouette gets per block below the sub-level's top, and at most. */
-    public static final float SHADE_STEP = 0.05f, SHADE_MAX = 0.4f;
-
-    /** A column's colour {@code below} blocks under the top of its sub-level: a little darker, as the map shades relief. */
-    public static int shade(int argb, int below) {
-        float f = 1 - Math.min(SHADE_MAX, Math.max(0, below) * SHADE_STEP);
-        int r = Math.round(((argb >> 16) & 0xFF) * f), g = Math.round(((argb >> 8) & 0xFF) * f), b = Math.round((argb & 0xFF) * f);
-        return argb & 0xFF000000 | r << 16 | g << 8 | b;
-    }
-
     /** Whether a point {@code dx, dz} from the centre lies within {@code range} blocks (a circle, as the game counts). */
     public static boolean inRange(double dx, double dz, int range) {
         return dx * dx + dz * dz <= (double) range * range;

@@ -67,7 +67,7 @@ public final class TextureColors {
     private static volatile Map<Block, Entry> blocks = Map.of();
     /** Plants whose look changes with their state (crops by age, double plants by half): one colour per state. */
     private static volatile Map<BlockState, Entry> states = Map.of();
-    private static volatile int water, lava, snow, ichor;
+    private static volatile int water, lava, snow;
     /** A reload happened: read again once the game is out of its loading screen (the models are baked by then). */
     private static volatile boolean pending = true;
     /** New colours arrived: the map draws the loaded chunks again. */
@@ -98,11 +98,6 @@ public final class TextureColors {
 
     public static int snow() {
         return snow;
-    }
-
-    /** The Sift's ichor (its still texture, ARGB), 0 without the mod. */
-    public static int ichor() {
-        return ichor;
     }
 
     /** Called after a resource reload (packs, F3+T). */
@@ -171,7 +166,6 @@ public final class TextureColors {
             water = averages.computeIfAbsent(Identifier.withDefaultNamespace("block/water_still"), t -> read(rm, t));
             lava = averages.computeIfAbsent(Identifier.withDefaultNamespace("block/lava_still"), t -> read(rm, t));
             snow = averages.computeIfAbsent(Identifier.withDefaultNamespace("block/snow"), t -> read(rm, t));
-            ichor = averages.computeIfAbsent(Identifier.fromNamespaceAndPath("the_sift", "block/ichor_still"), t -> read(rm, t));
             blocks = out;
             states = outStates;
             fresh = true;
@@ -227,7 +221,7 @@ public final class TextureColors {
         else if (index >= 0 && vanilla && (mc0 == MapColor.GRASS || GRASSY.contains(state.getBlock()))) tint = Tint.GRASS;
         else if (index >= 0) {
             // What the block's colour handler gives without a world tells the kind of tint. No handler: the game does
-            // not tint it (the willow leaves of The Sift keep their cyan texture). The default foliage or grass colour
+            // not tint it (a mod's leaves keep the colour of their texture). The default foliage or grass colour
             // (oak leaves, vines, grass, sugar cane): the biome's, sampled per chunk. A handler that needs a world: a
             // vanilla leaf, plant or grass block takes the biome's; anything else (leaves and grass of mods with a palette
             // of their own, seasons) asks the handler at its place. Any other colour (lily pads, stems, redstone, leaf

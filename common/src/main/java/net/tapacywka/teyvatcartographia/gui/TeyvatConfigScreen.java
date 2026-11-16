@@ -301,11 +301,6 @@ public final class TeyvatConfigScreen {
         }).title(K + "subsection." + id).shownIf(loaded);
     }
 
-    /** The chunks around mapped again in the new way (a setting of the map's colours changed). */
-    public static void remap() {
-        MapDataManager.get().remapLoaded();
-    }
-
     /** A zoom setting: the steps of MapView.ZOOM_STEPS, shown as "1/4", "1", "8". */
     private static void zoom(AacsScreen.Slider s) {
         s.steps(MapView.ZOOM_STEPS).label(MapView::zoomLabel);

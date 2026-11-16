@@ -95,29 +95,8 @@ public final class MobFaces {
         return at < 0 ? first : first.substring(0, slash) + name.substring(0, at) + to + name.substring(at + from.length());
     }
 
-    /**
-     * The mods whose faces the 1.21.1 build marks as theirs (Vanilla Backport, Tiny Takeover Backport); on 26.x the
-     * game has these mobs, variants and babies itself, so no face is a mod's (kept for the suite, shared by both builds).
-     */
-    public static final String VANILLA_BACKPORT = "vanillabackport", TINY_TAKEOVER = "tiny_takeover_backport";
-
-    /** The ids of the faces of a baby ({@code minecraft:cow/baby}) and, on 1.21.1, of an adult's new look. */
-    public static final String BABY = "baby", ADULT = "adult";
-
-    /** Whether a face is of a mob another mod adds: never on 26.x. */
-    public static boolean fromMod(String id) {
-        return false;
-    }
-
-    /** The mod a face of the table belongs to: none on 26.x. */
-    public static String modOf(String id) {
-        return null;
-    }
-
-    /** The mod a face belongs to: none on 26.x. */
-    public static String modOf(Face face) {
-        return null;
-    }
+    /** The id of the face of a baby ({@code minecraft:cow/baby}). */
+    public static final String BABY = "baby";
 
     static {
         int[] cube = front(8, 8, 8, 8), tall = front(8, 8, 8, 10);

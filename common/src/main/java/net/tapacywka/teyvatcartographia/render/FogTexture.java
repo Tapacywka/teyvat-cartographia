@@ -26,7 +26,7 @@ import java.util.Optional;
  * sparse faint stars in the built-in theme), loaded once per theme and drawn as one repeating quad, every
  * {@link #REPEAT} GUI units whatever its resolution (the built-in fogs are 256 x 256: soft clouds lose nothing by being
  * scaled up). A dimension may have a
- * fog of its own, {@code fog/<namespace>/<path>.png} (the Aether: a sea of clouds). A {@code .json} beside a fog
+ * fog of its own, {@code fog/<namespace>/<path>.png} (the End: a starry void). A {@code .json} beside a fog
  * ({@code fog.json}, {@code fog/<namespace>/<path>.json}) may say {@code "repeat": 384} (GUI units per repeat) and,
  * for a dimension, {@code "island_shadow": true} when the land floats over it and casts a shadow on it
  * ({@code MapLayerRenderer}).

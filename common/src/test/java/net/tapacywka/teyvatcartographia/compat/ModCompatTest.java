@@ -1,19 +1,12 @@
 package net.tapacywka.teyvatcartographia.compat;
 
-import net.minecraft.world.level.Level;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** Other mods: no cave map in the Aether. */
+/** Other mods: which VulkanMod keeps its textures' top row first. */
 class ModCompatTest {
-    @Test
-    void noCavesInTheAether() {
-        assertFalse(ModCompat.caves(ModCompat.AETHER_DIMENSION), "its islands float over the void");
-        assertTrue(ModCompat.caves(Level.OVERWORLD), "other dimensions keep them");
-    }
-
     @Test
     void vulkanModBefore069KeepsTheTopRowFirst() {
         assertTrue(ModCompat.topFirst("0.6.8+26.1.2"));
