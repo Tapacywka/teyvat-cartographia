@@ -77,14 +77,25 @@ Every key can be changed in the game's controls.
 <h2 id="compatibility">🧩 Works with</h2>
 
 Blocks of any mod are drawn in the colours of their textures, so most mods just work. Some get a little more:
-[Waystones](https://modrinth.com/mod/waystones) (its stones on the map, trackable),
-[Xaero's Minimap](https://modrinth.com/mod/xaeros-minimap) (import its waypoints) and
-[Xaero's World Map](https://modrinth.com/mod/xaeros-world-map) (import the explored map),
-[The Aether](https://modrinth.com/mod/aether) and [Mielon's The Sift](https://modrinth.com/mod/mielons-the-sift) (their own fog, 1.21.1),
-[Sable](https://modrinth.com/mod/sable) (its ships on the radar, 1.21.1),
-[Vanilla Backport](https://modrinth.com/mod/vanillabackport) and [Tiny Takeover Backport](https://modrinth.com/mod/tiny-takeover-backport) (their mobs' faces on the radar, 1.21.1),
-[Sodium](https://modrinth.com/mod/sodium), [Iris](https://modrinth.com/mod/iris),
-[VulkanMod](https://modrinth.com/mod/vulkanmod) and [Mod Menu](https://modrinth.com/mod/modmenu).
+
+| Mod | What you get | 1.21.1 | 26.1.2 | 26.2 | 26.3 |
+|---|---|:-:|:-:|:-:|:-:|
+| [Waystones](https://modrinth.com/mod/waystones) | Its stones on the map, trackable | ✅ | ✅ | ✅ | ✅ |
+| [Xaero's Minimap](https://modrinth.com/mod/xaeros-minimap) | Import of its waypoints | ✅ | ✅ | ✅ | ✅ |
+| [Xaero's World Map](https://modrinth.com/mod/xaeros-world-map) | Import of the explored map | ✅ | ✅ | ✅ | ✅ |
+| [Create](https://modrinth.com/mod/create) | Its railways, stations and trains on the maps | ✅ | ➖ | ➖ | ➖ |
+| [Sable](https://modrinth.com/mod/sable) | Its ships on the radar | ✅ | ➖ | ➖ | ➖ |
+| [Vanilla Backport](https://modrinth.com/mod/vanillabackport) | Its mobs' faces on the radar | ✅ | ➖ | ➖ | ➖ |
+| [Tiny Takeover Backport](https://modrinth.com/mod/tiny-takeover-backport) | Its mobs' faces on the radar | ✅ | ➖ | ➖ | ➖ |
+| [The Aether](https://modrinth.com/mod/aether) | Its own Fog of War over a sea of clouds | ✅ | ➖ | ➖ | ➖ |
+| [Mielon's The Sift](https://modrinth.com/mod/mielons-the-sift) | Its own Fog of War, the shimmer of ichor | ✅ | ➖ | ➖ | ➖ |
+| [VulkanMod](https://modrinth.com/mod/vulkanmod) (Fabric) | Maps and markers drawn right under Vulkan | ✅ | ✅ | ✅ | 🧪 |
+| [VulkanMod-Reforged](https://modrinth.com/mod/vulkanmod-reforged) (NeoForge) | Maps and markers drawn right under Vulkan | ✅ | ➖ | ➖ | ➖ |
+| [Sodium](https://modrinth.com/mod/sodium), [Iris](https://modrinth.com/mod/iris), [Sodium Extra](https://modrinth.com/mod/sodium-extra) | Work together, shaders included | ✅ | ✅ | ✅ | ✅ |
+| [Mod Menu](https://modrinth.com/mod/modmenu) | The settings button in its list | ✅ | ✅ | ✅ | ✅ |
+| [Sinytra Connector](https://modrinth.com/mod/connector) | The Fabric file on NeoForge | ✅ | ✅ | ✅ | ➖ |
+
+✅ supported &nbsp; 🧪 the mod is in beta for this version &nbsp; ➖ the mod is not out for this version
 
 The mod costs at most a few percent of your frame rate: the minimap is redrawn only when it changes, and the map is made on background threads.
 
