@@ -16,7 +16,8 @@ import java.nio.file.attribute.BasicFileAttributes;
  * The folders of Xaero's World Map that hold the Overworld's explored map, for the import (the
  * Overworld only): {@code <gameDir>/xaero/world-map/<world>/null/} ({@code XaeroWorldMap/} in
  * older versions); on a server the regions sit in a map folder under it, {@code mw$<id>}, named in the dimension's
- * {@code dimension_config.txt} ({@code MWName:mw$<id>:Map 1}). The current world's folders come first.
+ * {@code dimension_config.txt} ({@code MWName:mw$<id>:Map 1}). In single player, the
+ * map Xaero's full resave writes into {@code cm$converted}. The current world's folders come first.
  */
 public final class XaeroMapFolders {
     private XaeroMapFolders() {}
@@ -55,7 +56,7 @@ public final class XaeroMapFolders {
                 if (own != null) out.add(own);
                 for (Path mw : list(dim)) {
                     String name = mw.getFileName().toString();
-                    if (!name.startsWith("mw$")) continue;
+                    if (!mapFolder(name)) continue;
                     Source s = source(mw, shown, mapName(config, name), isCurrent);
                     if (s != null) out.add(s);
                 }
@@ -89,8 +90,22 @@ public final class XaeroMapFolders {
         return s.replace("%us%", "_").replace("%fs%", "/").replace("%bs%", "\\").replace("%lb%", "[").replace("%rb%", "]").replace("§", ":");
     }
 
+    /**
+     * Whether a folder under a dimension holds a map: a server's {@code mw$<id>}, or {@code cm$converted}, where Xaero's
+     * full resave puts a single player world's map (in single player it otherwise reads the world's own save and
+     * writes no regions).
+     */
+    static boolean mapFolder(String name) {
+        return name.startsWith("mw$") || name.equals(CONVERTED);
+    }
+
+    /** Xaero's folder of a single player world's map made into regions. */
+    static final String CONVERTED = "cm$converted";
+
     /** The name Xaero's World Map gives a map folder ({@code MWName:mw$1:Map 1}), else the folder's own. */
     static String mapName(List<String> config, String folder) {
+        // Xaero names this one by a key of its translations (gui.xaero_converted_world_save).
+        if (folder.equals(CONVERTED)) return "Converted World Save";
         for (String line : config) {
             if (!line.startsWith("MWName:")) continue;
             String rest = line.substring("MWName:".length());

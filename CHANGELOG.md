@@ -33,6 +33,9 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
   mapped anew over its old picture, and is no longer deleted as an old format when the map's folder is checked.
 - One damaged line of a map's index, or one damaged stone in the file of the waystones seen, no longer loses the
   others with it.
+- The import of the explored map from Xaero's World Map also finds the map of a single player world. Xaero's World Map
+  draws such a world straight from its save and keeps no map files of its own, until you use its full resave
+  (its map > the map's menu), which keeps them as "Converted World Save": the import now lists that one too.
 
 ## [1.4.1] - 2026-11-14
 
