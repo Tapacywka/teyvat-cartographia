@@ -86,6 +86,16 @@ class CreateRulesTest {
     }
 
     @Test
+    void aStationsNameGoesToTheSideOfItsBlock() {
+        assertEquals(CreateRules.Side.ABOVE, CreateRules.labelSide(0, -3), "a track across the screen, its block north");
+        assertEquals(CreateRules.Side.BELOW, CreateRules.labelSide(0, 3));
+        assertEquals(CreateRules.Side.LEFT, CreateRules.labelSide(-3, 0), "a track up and down, its block west: off the rails");
+        assertEquals(CreateRules.Side.RIGHT, CreateRules.labelSide(3, 0.5));
+        assertEquals(CreateRules.Side.ABOVE, CreateRules.labelSide(Double.NaN, Double.NaN), "the block not known");
+        assertEquals(CreateRules.Side.ABOVE, CreateRules.labelSide(0, 0));
+    }
+
+    @Test
     void aTrainWithoutANameIsNamedByTheCaller() {
         assertNull(CreateRules.name(null));
         assertNull(CreateRules.name("  "));

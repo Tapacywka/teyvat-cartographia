@@ -1,6 +1,7 @@
 package net.tapacywka.teyvatcartographia.compat;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.Entity;
@@ -45,7 +46,12 @@ public final class CreateBridge {
     }
 
     /** A station or a signal on a track. */
-    public record Point(ResourceKey<Level> dimension, String name, double x, double z) {}
+    public record Point(ResourceKey<Level> dimension, String name, double x, double z, double blockX, double blockZ) {
+        /** A point whose block is not known. */
+        public Point(ResourceKey<Level> dimension, String name, double x, double z) {
+            this(dimension, name, x, z, Double.NaN, Double.NaN);
+        }
+    }
 
     /** A train as the world map shows it: each carriage its leading and trailing wheels (x, z, x, z), interpolated. */
     public static final class Train {
@@ -77,8 +83,8 @@ public final class CreateBridge {
     private static Field railwaysField, versionField, networksField, trainsField, trainName;
     private static Method getNodes, locateNode, connectionsFrom, edgeLength, edgeTurn, edgeInterDim, edgePosition;
     private static Field locationDim;
-    private static Method getPoints, getLocationOn, coupleFirst, coupleSecond, getConnection;
-    private static Field stationName, edgeLocation;
+    private static Method getPoints, getLocationOn, coupleFirst, coupleSecond;
+    private static Field stationName, stationBlock, edgeLocation;
     private static Object stationType, signalType;
     private static Class<?> coupleClass;
     private static Method requestData, stopRequesting;
@@ -212,6 +218,7 @@ public final class CreateBridge {
             edgeLocation = point.getField("edgeLocation");
             getLocationOn = point.getMethod("getLocationOn", edge);
             stationName = Class.forName("com.simibubi.create.content.trains.station.GlobalStation").getField("name");
+            stationBlock = Class.forName("com.simibubi.create.content.trains.station.GlobalStation").getField("blockEntityPos");
             coupleClass = edgeLocation.getType();
             coupleFirst = coupleClass.getMethod("getFirst");
             coupleSecond = coupleClass.getMethod("getSecond");
@@ -290,7 +297,9 @@ public final class CreateBridge {
             Vec3 pos = (Vec3) edgePosition.invoke(edge, graph, t);
             @SuppressWarnings("unchecked")
             ResourceKey<Level> dim = (ResourceKey<Level>) locationDim.get(coupleFirst.invoke(couple));
-            into.add(new Point(dim, named ? (String) stationName.get(p) : null, pos.x, pos.z));
+            BlockPos block = named ? (BlockPos) stationBlock.get(p) : null;
+            into.add(new Point(dim, named ? (String) stationName.get(p) : null, pos.x, pos.z,
+                    block == null ? Double.NaN : block.getX() + 0.5, block == null ? Double.NaN : block.getZ() + 0.5));
         }
     }
 

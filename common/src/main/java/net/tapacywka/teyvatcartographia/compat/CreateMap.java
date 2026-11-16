@@ -226,8 +226,16 @@ public final class CreateMap {
             if (!inside(x, y, cx, cy, edge - STATION_R, square)) continue;
             station(g, x, y, alpha);
             if (names && s.name() != null && !s.name().isBlank()) {
-                DrawText.textCentered(g, Component.literal(s.name()), Draw.snap(x), Draw.snap(y - STATION_R - 2 - DrawText.LINE),
-                        Theme.withAlpha(Theme.WHITE, alpha), true);
+                // On the side of the track its block stands: above a track running up and down it lay on the rails.
+                Component name = Component.literal(s.name());
+                int white = Theme.withAlpha(Theme.WHITE, alpha);
+                float middle = Draw.snap(y - DrawText.LINE / 2f + 1);
+                switch (CreateRules.labelSide(view.screenX(s.blockX(), s.blockZ()) - x, view.screenY(s.blockX(), s.blockZ()) - y)) {
+                    case ABOVE -> DrawText.textCentered(g, name, Draw.snap(x), Draw.snap(y - STATION_R - 2 - DrawText.LINE), white, true);
+                    case BELOW -> DrawText.textCentered(g, name, Draw.snap(x), Draw.snap(y + STATION_R + 3), white, true);
+                    case RIGHT -> DrawText.text(g, name, Draw.snap(x + STATION_R + 3), middle, white, true);
+                    case LEFT -> DrawText.textRight(g, name, Draw.snap(x - STATION_R - 3), middle, white, true);
+                }
             }
             if (!minimap && Math.hypot(mx - x, my - y) <= STATION_R + 2) pointed = s;
         }
