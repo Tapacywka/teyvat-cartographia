@@ -4,7 +4,7 @@ package net.tapacywka.teyvatcartographia.hud;
  * Where a straight piece of a path line crosses the edge of the minimap: the map is a circle, or a square, of a given
  * half-size round its centre. Main thread only (the result is kept in static fields, nothing is allocated).
  */
-final class EdgeClip {
+public final class EdgeClip {
     private EdgeClip() {}
 
     private static float lo, hi;
@@ -14,7 +14,7 @@ final class EdgeClip {
      * ({@code square}) the square of that half-size, as t 0..1 along it ({@link #t0}, {@link #t1}); false when no part
      * is inside.
      */
-    static boolean clip(float ax, float ay, float bx, float by, float cx, float cy, float edge, boolean square) {
+    public static boolean clip(float ax, float ay, float bx, float by, float cx, float cy, float edge, boolean square) {
         float dx = bx - ax, dy = by - ay, ox = ax - cx, oy = ay - cy;
         lo = 0;
         hi = 1;
@@ -33,11 +33,11 @@ final class EdgeClip {
         return lo < hi;
     }
 
-    static float t0() {
+    public static float t0() {
         return lo;
     }
 
-    static float t1() {
+    public static float t1() {
         return hi;
     }
 

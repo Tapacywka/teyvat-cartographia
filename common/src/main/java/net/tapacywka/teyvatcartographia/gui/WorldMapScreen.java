@@ -1,6 +1,7 @@
 package net.tapacywka.teyvatcartographia.gui;
 
 import net.minecraft.world.level.biome.Biome;
+import net.tapacywka.teyvatcartographia.compat.CreateMap;
 import net.tapacywka.teyvatcartographia.client.Keybinds;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
 import net.tapacywka.teyvatcartographia.radar.Radar;
@@ -620,7 +621,13 @@ public final class WorldMapScreen extends Screen {
         if (MapConfig.get(MapConfig.MAP_SHOW_LABELS)) {
             MapLayerRenderer.drawBiomeLabels(g, store, view, 0, 0, width, height, bars.visible() ? uiRects(store, mx, my) : List.of());
         }
-        // 5. Path to the navigation target
+        // 5. Create's railways, then the path to the navigation target over them
+        createPointed = null;
+        if (CreateMap.loaded()) {
+            boolean overUi = exiting || overPanels(mx, my) || pick != null && pick.contains(mx, my) || menu != null && menu.contains(mx, my);
+            createPointed = CreateMap.draw(g, view, viewedDimension(), false, 0, 0, 0, false, 1f, width, height,
+                    overUi || dragging ? -1000 : mx, overUi || dragging ? -1000 : my);
+        }
         drawRoute(g);
         // 6. The radar (under the pins, they matter more), then the markers
         radarPointed = null;
@@ -682,6 +689,8 @@ public final class WorldMapScreen extends Screen {
             if (hovered != null) drawTooltip(g, hovered, mx, my);
             // Another player of the radar: their name.
             else if (radarPointed != null) Ui.tooltip(g, radarPointed.getString(), null, mx, my, width, height);
+            // A train or a station of Create.
+            else if (createPointed != null) CreateMap.tooltip(g, createPointed, mx, my, width, height);
             // The sea icon where a crossing of the path begins.
             else if (overSeaIcon(mx, my)) Ui.tooltip(g, Component.translatable("teyvatcartographia.nav.sea").getString(), null, mx, my, width, height);
             else if (airIcon && Math.hypot(mx - airX, my - airY) <= SEA_BADGE) Ui.tooltip(g, Component.translatable("teyvatcartographia.nav.air").getString(), null, mx, my, width, height);
@@ -970,6 +979,8 @@ public final class WorldMapScreen extends Screen {
 
     /** The other player of the radar under the pointer this frame, or null. */
     private Component radarPointed;
+    /** What of Create's railways the pointer is on (CreateMap.draw), for its tooltip. */
+    private Object createPointed;
 
     /** The layer shown while the pins are drawn (pins on other layers get an arrow). */
     private Integer shownBand;

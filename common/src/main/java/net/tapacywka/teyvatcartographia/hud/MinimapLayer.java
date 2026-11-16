@@ -2,6 +2,7 @@ package net.tapacywka.teyvatcartographia.hud;
 
 import net.minecraft.world.level.Level;
 import net.minecraft.resources.ResourceKey;
+import net.tapacywka.teyvatcartographia.compat.CreateMap;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
 import net.tapacywka.teyvatcartographia.radar.Radar;
 import net.tapacywka.teyvatcartographia.gui.Ui;
@@ -285,6 +286,8 @@ public final class MinimapLayer implements LayeredDraw.Layer {
         radarY = pos.y;
         long radar = Radar.any() ? Radar.signature(view, pt, cx, cy, innerRadius(Math.max(8, r - padding)), Theme.Style.squareMap, pos.y,
                 MapDataManager.get().cavesOnMinimap(), MapDataManager.get().minimapBand()) : 0;
+        // Create's railways: the tracks when they changed, the carriages near the player as they move.
+        radar = radar * 31 + CreateMap.signature();
         if (!preview) {
             shown = true;
             shownX0 = bx0;
@@ -461,6 +464,8 @@ public final class MinimapLayer implements LayeredDraw.Layer {
         // end where the map is still half seen.
         float edge = fadeEdge >= 1f ? mapR - TARGET_EDGE : Math.min(mapR - TARGET_EDGE, mapR * (1 + fadeStart) / 2);
         if (path) drawRoute(g, cx, cy, edge, inner, alpha);
+        // Create's railways under the radar and the pins, out to the map's edge.
+        if (CreateMap.loaded()) CreateMap.draw(g, view, dim, true, cx, cy, mapR - 1, Theme.Style.squareMap, alpha, 0, 0, -1000, -1000);
         // The radar under the pins (they matter more), inside the same circle.
         Draw.snapIcons(false);
         if (Radar.any()) Radar.draw(g, view, radarPt, true, cx, cy, inner, Theme.Style.squareMap, radarY, alpha, -1, -1,

@@ -353,6 +353,23 @@ public final class Ui {
         if (sub != null) DrawText.text(g, sub, x + Grid.PAD, y + Grid.PAD + DrawText.LINE + 2, Theme.CREAM, false);
     }
 
+    /** Tooltip with a gold title and lines of their own colours, placed near the cursor and kept on screen. */
+    public static void tooltip(GuiGraphics g, String title, List<String> lines, int[] colours, int mx, int my, int screenW, int screenH) {
+        int w = DrawText.width(title);
+        for (String l : lines) w = Math.max(w, DrawText.width(l));
+        w += 2 * Grid.PAD;
+        int h = Grid.PAD * 2 + DrawText.LINE + lines.size() * (DrawText.LINE + 2);
+        DrawText.room(title, screenW - 2 * Grid.MARGIN - 2 * Grid.PAD);
+        for (String l : lines) DrawText.room(l, screenW - 2 * Grid.MARGIN - 2 * Grid.PAD);
+        float x = Math.min(mx + 12, screenW - w - Grid.MARGIN), y = Math.max(Grid.MARGIN, my - h - 4);
+        if (x < Grid.MARGIN) x = Grid.MARGIN;
+        tooltipBox(g, x, y, w, h);
+        DrawText.text(g, title, x + Grid.PAD, y + Grid.PAD, Theme.GOLD, false);
+        for (int i = 0; i < lines.size(); i++) {
+            DrawText.text(g, lines.get(i), x + Grid.PAD, y + Grid.PAD + (i + 1) * (DrawText.LINE + 2), i < colours.length ? colours[i] : Theme.CREAM, false);
+        }
+    }
+
     /** Length and half height of the pointer of {@link #popupLeftOf} (the size of the pick list's pointer). */
     private static final float POINTER_L = 5, POINTER_H = 4;
 

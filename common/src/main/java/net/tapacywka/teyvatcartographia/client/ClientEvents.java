@@ -1,5 +1,6 @@
 package net.tapacywka.teyvatcartographia.client;
 
+import net.tapacywka.teyvatcartographia.compat.CreateMap;
 import net.tapacywka.teyvatcartographia.compat.WaystonesCompat;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
 import net.tapacywka.teyvatcartographia.gui.WorldMapScreen;
@@ -32,6 +33,7 @@ public final class ClientEvents {
         FarPath.tick();
         DirectPath.tick();
         Radar.tick(mc);
+        CreateMap.tick(mc);
         if (mc.player == null) return;
         WorldMapScreen.tickTeleport(mc);
 

@@ -208,6 +208,23 @@ public final class Theme {
     public static int RADAR_HEIGHT = 0xE6FFFFFF;
     /** The shadow a Sable sub-level casts on the map under its silhouette (radar/SableRadar). */
     public static int RADAR_SHIP_SHADOW = 0x50000000;
+    /**
+     * Create's railways on the maps ({@code compat/CreateMap}): the rails, the sleepers between them and the dark edge
+     * under both; a station's plate and its mark, a signal; a carriage, and the colours of a train's state (running,
+     * waiting, in trouble, standing still), also the ring of its badge.
+     */
+    public static int CREATE_RAIL = 0xFFE9E4DA;
+    public static int CREATE_SLEEPER = 0xFF8C8378;
+    public static int CREATE_TRACK_EDGE = 0x99161A20;
+    public static int CREATE_TRACK_BED = 0x40161A20;
+    public static int CREATE_STATION = 0xFFF4F1EA;
+    public static int CREATE_STATION_MARK = 0xFF2C323C;
+    public static int CREATE_SIGNAL = 0xFF5CC66A;
+    public static int CREATE_CARRIAGE = 0xFFF2F2F2;
+    public static int CREATE_MOVING = 0xFF4CC46A;
+    public static int CREATE_WAITING = 0xFFF2B33D;
+    public static int CREATE_TROUBLE = 0xFFE05050;
+    public static int CREATE_STOPPED = 0xFF9AA6B6;
     public static int PING_GLOW = 0x30FFFFFF;
     public static int PING_RING = 0xFFFFFFFF;
     public static int PING_CORE = 0xFFFFFFFF;
