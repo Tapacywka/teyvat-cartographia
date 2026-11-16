@@ -1,6 +1,8 @@
 package net.tapacywka.teyvatcartographia.gui;
 
 import net.tapacywka.aacs.api.AacsScreen;
+import net.tapacywka.teyvatcartographia.radar.Radar;
+import net.tapacywka.teyvatcartographia.radar.RadarRules;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
 import net.tapacywka.teyvatcartographia.gui.Ui.Grid;
 import net.tapacywka.teyvatcartographia.map.MapView;
@@ -227,6 +229,68 @@ final class SettingsPreview {
         g.pose().popMatrix();
         g.disableScissor();
     }
+
+    /** What one of two pictures side by side shows over the map in it: picture {@code i}, a square of side {@code s}. */
+    interface FramePainter {
+        void paint(GuiGraphicsExtractor g, float x, float y, float s, int i);
+    }
+
+    private static final String[] MAP_FRAMES = {"teyvatcartographia.config.preview.frame.map", "teyvatcartographia.config.preview.frame.minimap"};
+
+    /**
+     * Two square pictures side by side under the captions {@code keys}, each the map around the player at {@code zoom}
+     * with what {@code painter} draws over it, dimmed where {@code on} is false; the picture of the box pointed at in
+     * the row lit.
+     */
+    private static void twoFrames(GuiGraphicsExtractor g, float x, float y, float w, MapArea map, double zoom, String[] keys, boolean[] on, FramePainter painter) {
+        float side = Draw.snap((w - Grid.GAP) / 2f);
+        for (int i = 0; i < 2; i++) {
+            float fx = Draw.snap(x + i * (side + Grid.GAP)), fy = Draw.snap(y);
+            g.enableScissor((int) fx, (int) fy, (int) (fx + side), (int) (fy + side));
+            mapArea(g, fx, fy, side, side, map, zoom);
+            painter.paint(g, fx, fy, side, i);
+            if (!on[i]) Draw.rect(g, fx, fy, fx + side, fy + side, OFF_DIM);
+            g.disableScissor();
+            boolean pointed = AacsScreen.pointedCheck() == i;
+            Draw.frame(g, fx, fy, side, side, pointed ? 2 : 1, pointed ? Theme.GOLD : Theme.PANEL_LINE);
+            Component caption = Component.translatable(keys[i]);
+            DrawText.room(caption, side);
+            DrawText.textCentered(g, Component.literal(DrawText.fit(caption.getString(), (int) side)), Draw.snap(fx + side / 2f), fy + side + Grid.GAP,
+                    on[i] ? Theme.CREAM : Theme.TEXT_MUTED, false);
+        }
+    }
+
+    /** The radar's kinds by their rows (the rows of boxes per map). */
+    private static RadarRules.Kind radarKind(String key) {
+        for (RadarRules.Kind k : RadarRules.Kind.values()) {
+            if (key.endsWith("radar_" + k.name().toLowerCase(Locale.ROOT))) return k;
+        }
+        return null;
+    }
+
+    /**
+     * A row of the radar: a made-up crowd of every kind round the player, drawn as the radar draws it now. The radar's
+     * switch and a kind's row: the world map and the minimap (a kind's row lights that kind); the others: the world map
+     * alone, larger.
+     */
+    static void radar(GuiGraphicsExtractor g, float x, float y, float w, float h, MapArea map, String key) {
+        x = Draw.snap(x);
+        y = Draw.snap(y);
+        RadarRules.Kind kind = radarKind(key);
+        if (kind != null || key.endsWith("radar_enabled")) {
+            boolean[] on = kind == null ? new boolean[] {Radar.on(false), Radar.on(true)}
+                    : new boolean[] {Radar.on(false) && Radar.show(kind).on(false), Radar.on(true) && Radar.show(kind).on(true)};
+            twoFrames(g, x, y, w, map, 2, MAP_FRAMES, on, (g2, fx, fy, s, i) -> Radar.sample(g2, fx, fy, s, i == 1, kind));
+            return;
+        }
+        float s = Draw.snap(Math.min(w, h)), fx = Draw.snap(x + (w - s) / 2f);
+        g.enableScissor((int) fx, (int) y, (int) (fx + s), (int) (y + s));
+        mapArea(g, fx, y, s, s, map, 2);
+        Radar.sample(g, fx + s * 0.15f, y + s * 0.15f, s * 0.7f, false, null);
+        g.disableScissor();
+        Draw.frame(g, fx, y, s, s, 1, Theme.PANEL_LINE);
+    }
+
 
     /** The map around the player in an area at a zoom, or the theme's fog without a world. */
     private static void mapArea(GuiGraphicsExtractor g, float x, float y, float w, float h, MapArea map, double zoom) {

@@ -717,4 +717,70 @@ public final class Radar {
             Draw.triangle(g, x, y + s, x - s, y - s * 0.7f, x + s, y - s * 0.7f, fill);
         }
     }
+
+    // ---------------------------------------------------------------- the settings' pictures
+
+    /** The made-up entities of the settings' pictures: kind, place (a share of the picture from its middle), face, height. */
+    private record Sample(RadarRules.Kind kind, float x, float y, String face, int level) {}
+
+    private static final List<Sample> SAMPLES = List.of(
+            new Sample(RadarRules.Kind.PLAYERS, -0.28f, -0.24f, null, 0),
+            new Sample(RadarRules.Kind.VILLAGERS, 0.26f, -0.26f, "minecraft:villager", 0),
+            new Sample(RadarRules.Kind.HOSTILE, 0.31f, 0.04f, "minecraft:zombie", 0),
+            new Sample(RadarRules.Kind.HOSTILE, -0.04f, 0.31f, "minecraft:skeleton", 1),
+            new Sample(RadarRules.Kind.PASSIVE, -0.32f, 0.1f, "minecraft:cow", 0),
+            new Sample(RadarRules.Kind.PASSIVE, -0.2f, 0.32f, "minecraft:sheep", 0),
+            new Sample(RadarRules.Kind.PETS, 0.14f, 0.2f, "minecraft:wolf", 0),
+            new Sample(RadarRules.Kind.OTHER, 0.33f, 0.3f, null, 0));
+
+    /**
+     * Made-up entities of every kind round the middle of a square picture of side {@code s} at ({@code x}, {@code y}),
+     * as the radar draws them on the minimap or the world map with the settings as they are (the kinds shown there, the
+     * looks, the height arrows); with {@code focus} that kind lit and the others faint.
+     */
+    public static void sample(GuiGraphicsExtractor g, float x, float y, float s, boolean minimap, RadarRules.Kind focus) {
+        float dot = minimap ? DOT_MINIMAP : DOT_MAP, arrow = minimap ? ARROW_MINIMAP : ARROW_MAP;
+        float playerHead = minimap ? HEAD_MINIMAP : HEAD_MAP, mobHead = minimap ? MOB_HEAD_MINIMAP : MOB_HEAD_MAP;
+        boolean arrows = MapConfig.get(MapConfig.RADAR_HEIGHT);
+        boolean playerHeads = MapConfig.get(MapConfig.RADAR_PLAYER_LOOK) == RadarRules.PlayerLook.HEADS;
+        boolean mobHeads = MapConfig.get(MapConfig.RADAR_MOB_LOOK) == RadarRules.MobLook.HEADS;
+        for (Sample e : SAMPLES) {
+            if (!show(e.kind).on(minimap)) continue;
+            float a = focus == null || focus == e.kind ? 1f : 0.3f;
+            if (arrows && e.level != 0) a *= OTHER_HEIGHT_ALPHA;
+            float sx = x + s * (0.5f + e.x), sy = y + s * (0.5f + e.y), ox, oy;
+            int colour = colour(e.kind);
+            MobFaces.Face face = e.face == null ? null : MobFaces.of(e.face);
+            if (e.kind == RadarRules.Kind.PLAYERS && playerHeads && Minecraft.getInstance().player != null) {
+                head(g, Minecraft.getInstance().player.getSkin().body().texturePath(), MobFaces.PLAYER, sx, sy, playerHead, Theme.RADAR_PLAYER_FRAME, a);
+                ox = reach(MobFaces.PLAYER, playerHead, true);
+                oy = reach(MobFaces.PLAYER, playerHead, false);
+            } else if (e.kind == RadarRules.Kind.PLAYERS) {
+                Draw.icon(g, Icon.PLAYER, sx, sy, arrow + 2.5f, Theme.withAlpha(Theme.RADAR_OUTLINE, a), 0.7f);
+                Draw.icon(g, Icon.PLAYER, sx, sy, arrow, Theme.withAlpha(colour, a), 0.7f);
+                ox = arrow * 0.45f;
+                oy = arrow * 0.3f;
+            } else if (mobHeads && face != null) {
+                head(g, texture(face), face, sx, sy, mobHead, colour, a);
+                ox = reach(face, mobHead, true);
+                oy = reach(face, mobHead, false);
+            } else {
+                Draw.circle(g, sx, sy, dot + 0.6f, Theme.withAlpha(Theme.RADAR_OUTLINE, a));
+                Draw.circle(g, sx, sy, dot, Theme.withAlpha(colour, a));
+                ox = oy = dot;
+            }
+            if (arrows && e.level != 0) heightArrow(g, sx + ox + 1.4f, sy - oy + 0.4f, minimap ? 1.3f : 1.7f, e.level, a);
+        }
+    }
+
+    /** One face of the table ({@code id}) as the radar draws a mob's head, in a frame of {@code frame}, {@code size} across. */
+    public static void sampleFace(GuiGraphicsExtractor g, String id, float x, float y, float size, int frame) {
+        MobFaces.Face face = MobFaces.of(id);
+        if (face != null) head(g, texture(face), face, x, y, size, frame, 1f);
+    }
+
+    /** The colour of a kind of mob on the radar (the settings' pictures). */
+    public static int sampleColour(RadarRules.Kind kind) {
+        return colour(kind);
+    }
 }

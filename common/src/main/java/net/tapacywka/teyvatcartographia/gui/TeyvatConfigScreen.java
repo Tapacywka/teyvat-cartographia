@@ -204,7 +204,7 @@ public final class TeyvatConfigScreen {
             t.slider(K + "minimap_info_gap", MapConfig.MINIMAP_INFO_GAP, s -> {});
         });
         // Radar (a tab of its own right after the minimap): the rows
-        // for every kind first, then where each kind shows. Its pictures are the minimap's (the minimap alone, large).
+        // for every kind first, then where each kind shows. Its pictures: a made-up crowd of every kind (SettingsPreview.radar).
         b.tab(K + "tab.radar", t -> {
             t.defaultPreview(new Pictures(K + "tab.minimap"));
             t.section(K + "subsection.radar");
@@ -361,10 +361,7 @@ public final class TeyvatConfigScreen {
     private static final Set<String> PLACE_ROWS = Set.of(K + "minimap_radius", K + "minimap_corner", K + "minimap_offset_x", K + "minimap_offset_y");
 
     /** The minimap's look: their preview is the minimap alone, without the lines under it. */
-    private static final Set<String> LOOK_ROWS = Set.of(K + "minimap_shape", K + "minimap_opacity",K + "minimap_padding", K + "minimap_fade_width", K + "minimap_fade_strength",
-            // The radar's rows: the minimap alone too, large, so its dots show.
-            K + "radar_enabled", K + "radar_range", K + "radar_height", K + "radar_server_mobs", K + "radar_players", K + "radar_player_look", K + "radar_mob_look", K + "radar_hostile",
-            K + "radar_passive", K + "radar_villagers", K + "radar_pets", K + "radar_other");
+    private static final Set<String> LOOK_ROWS = Set.of(K + "minimap_shape", K + "minimap_opacity",K + "minimap_padding", K + "minimap_fade_width", K + "minimap_fade_strength");
 
     /** The far land, the map edges and the world border: the map from farther out, where they show. */
     private static final Set<String> FAR_ROWS = Set.of(K + "far_land", K + "map_outline", K + "world_border");
@@ -414,6 +411,9 @@ public final class TeyvatConfigScreen {
             } else if (tab.equals(K + "tab.map") || FAR_ROWS.contains(rk)) {
                 if (world) map(g, cx, cy, cw, ch, FAR_ROWS.contains(rk) ? FAR_ZOOM : MapView.snapZoom(MapConfig.get(MapConfig.MAP_DEFAULT_ZOOM)), pt);
                 else note(g, cx, cy, cw, ch, K + "preview.no_world");
+            } else if (rk.startsWith(K + "radar_")) {
+                // The radar: a made-up crowd round the player, as it draws them now (none may be near).
+                SettingsPreview.radar(g, cx, cy, cw, ch, (g2, mx, my, mw, mh, zoom) -> map(g2, mx, my, mw, mh, zoom, pt), rk);
             } else if (tab.equals(K + "tab.minimap")) {
                 if (!world) note(g, cx, cy, cw, ch, K + "preview.no_world");
                 else if (!minimap) note(g, cx, cy, cw, ch, K + "preview.minimap_off");
