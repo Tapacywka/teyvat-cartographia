@@ -210,6 +210,12 @@ public final class MapConfig {
     public static final BoolValue XAERO_DEATHS;
     /** Where Sable's sub-levels show on the radar (radar/SableRadar). */
     public static final EnumValue<RadarRules.Show> SABLE_RADAR;
+    /** Where Create's tracks show (compat/CreateMap). */
+    public static final EnumValue<RadarRules.Show> CREATE_TRACKS;
+    /** Where Create's stations and signals show. */
+    public static final EnumValue<RadarRules.Show> CREATE_STATIONS;
+    /** Where Create's trains show: every train of the world on the world map, the carriages near the player on the minimap. */
+    public static final EnumValue<RadarRules.Show> CREATE_TRAINS;
 
     public enum Detail { LOW, MEDIUM, HIGH }
 
@@ -348,6 +354,11 @@ public final class MapConfig {
         b.pop();
         b.push("sable");
         SABLE_RADAR = b.choice("radar", RadarRules.Show.BOTH);
+        b.pop();
+        b.push("create");
+        CREATE_TRACKS = b.choice("tracks", RadarRules.Show.BOTH);
+        CREATE_STATIONS = b.choice("stations", RadarRules.Show.MAP);
+        CREATE_TRAINS = b.choice("trains", RadarRules.Show.BOTH);
         b.pop();
         b.pop();
 

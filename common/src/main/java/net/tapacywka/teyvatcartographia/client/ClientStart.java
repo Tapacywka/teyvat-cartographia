@@ -1,5 +1,6 @@
 package net.tapacywka.teyvatcartographia.client;
 
+import net.tapacywka.teyvatcartographia.compat.CreateMap;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
 import net.tapacywka.teyvatcartographia.platform.Platform;
 
@@ -23,5 +24,6 @@ public final class ClientStart {
         XaeroWaypoints.settings();
         WaystonesCompat.settings();
         SableRadar.settings();
+        CreateMap.settings();
     }
 }
