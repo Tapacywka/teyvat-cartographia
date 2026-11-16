@@ -124,8 +124,7 @@ Every waystone, sharestone and warp plate you have seen is a point on both maps 
 Moving from Xaero's mods? Import their waypoints as pins from the pin list, and their explored map as yours in Settings > Compatibility (in single player, after the full resave in Xaero's map menu).
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/xaero-import.jpg" alt="The import of the explored map from Xaero's World Map, done" width="49%">
-  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/xaero-map.jpg" alt="The world map after the import: the land Xaero's World Map had explored now on it" width="49%">
+  <img src="https://raw.githubusercontent.com/Tapacywka/teyvat-cartographia/main/.github/images/xaero-import.jpg" alt="The import of the explored map from Xaero's World Map, done" width="80%">
 </p>
 
 <h3>Create</h3>
