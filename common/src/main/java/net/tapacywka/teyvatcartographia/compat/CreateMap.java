@@ -366,6 +366,44 @@ public final class CreateMap {
         Draw.quads(g, quads, colours, q);
     }
 
+    // ---------------------------------------------------------------- the settings' pictures
+
+    /** The scale of the sample railway, screen units a block: near enough for rails and carriages. */
+    public static final float SAMPLE_SCALE = 2;
+
+    /**
+     * A made-up railway in the middle of a square picture of side {@code s} at ({@code x}, {@code y}), its top left
+     * corner: a track coming from the left and turning up; {@code part} 0 the track alone, 1 with a station and a
+     * signal, 2 with a train (on the minimap only its carriages, as the minimap shows them).
+     */
+    public static void sample(GuiGraphics g, float x, float y, float s, int part, boolean minimap) {
+        float y0 = y + s * 0.62f, r = s * 0.3f, turnX = x + s * 0.5f, cy = y0 - r;
+        runN = 0;
+        runStart = 0;
+        add(x - 4, y0);
+        for (int i = 0; i <= 12; i++) {
+            double a = Math.PI / 2 * (1 - i / 12.0);
+            add(turnX + (float) (r * Math.cos(a)), cy + (float) (r * Math.sin(a)));
+        }
+        add(turnX + r, y - 4);
+        endRun(g, true, SAMPLE_SCALE, 1f);
+        if (part == 1) {
+            station(g, x + s * 0.25f, y0, 1f);
+            float sx = turnX + r, sy = cy - s * 0.12f;
+            Draw.circle(g, sx, sy, 2.4f, Theme.CREATE_TRACK_EDGE);
+            Draw.circle(g, sx, sy, 1.6f, Theme.CREATE_SIGNAL);
+        } else if (part == 2) {
+            float half = minimap ? 1.5f : 1.8f, len = 4.5f * SAMPLE_SCALE, gap = 1.2f;
+            int q = 0;
+            for (int c = 0; c < 3; c++) {
+                float x1 = turnX - s * 0.04f - c * (len + gap), x0 = x1 - len;
+                q = carriage(x0, y0, x1, y0, half + 0.8f, 0.8f, Theme.CREATE_TRACK_EDGE, q);
+                q = carriage(x0, y0, x1, y0, half, 0, c == 0 && !minimap ? Theme.CREATE_MOVING : Theme.CREATE_CARRIAGE, q);
+            }
+            Draw.quads(g, quads, colours, q);
+        }
+    }
+
     // ---------------------------------------------------------------- tooltip
 
     /** The world map's tooltip for what {@link #draw} said the pointer is on. */

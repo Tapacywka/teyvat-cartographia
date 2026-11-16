@@ -2,6 +2,10 @@ package net.tapacywka.teyvatcartographia.gui;
 
 import net.tapacywka.aacs.api.AacsScreen;
 import net.tapacywka.teyvatcartographia.compat.ModCompat;
+import net.tapacywka.teyvatcartographia.compat.CreateMap;
+import net.tapacywka.teyvatcartographia.radar.Radar;
+import net.tapacywka.teyvatcartographia.radar.RadarRules;
+import net.tapacywka.teyvatcartographia.radar.SableRadar;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
 import net.tapacywka.teyvatcartographia.gui.Ui.Grid;
 import net.tapacywka.teyvatcartographia.map.MapView;
@@ -546,17 +550,142 @@ final class SettingsPreview {
     private static final DynamicTexture[] SIFT_TEX = new DynamicTexture[2];
     private static final Boolean[] SIFT_SHOWN = new Boolean[2];
 
+    /** What one of two pictures side by side shows over the map in it: picture {@code i}, a square of side {@code s}. */
+    interface FramePainter {
+        void paint(GuiGraphics g, float x, float y, float s, int i);
+    }
+
+    private static final String[] MAP_FRAMES = {"teyvatcartographia.config.preview.frame.map", "teyvatcartographia.config.preview.frame.minimap"};
+
+    /**
+     * Two square pictures side by side under the captions {@code keys}, each the map around the player at {@code zoom}
+     * with what {@code painter} draws over it, dimmed where {@code on} is false; the picture of the box pointed at in
+     * the row lit.
+     */
+    private static void twoFrames(GuiGraphics g, float x, float y, float w, MapArea map, double zoom, String[] keys, boolean[] on, FramePainter painter) {
+        float side = Draw.snap((w - Grid.GAP) / 2f);
+        for (int i = 0; i < 2; i++) {
+            float fx = Draw.snap(x + i * (side + Grid.GAP)), fy = Draw.snap(y);
+            g.enableScissor((int) fx, (int) fy, (int) (fx + side), (int) (fy + side));
+            mapArea(g, fx, fy, side, side, map, zoom);
+            painter.paint(g, fx, fy, side, i);
+            if (!on[i]) Draw.rect(g, fx, fy, fx + side, fy + side, OFF_DIM);
+            g.disableScissor();
+            boolean pointed = AacsScreen.pointedCheck() == i;
+            Draw.frame(g, fx, fy, side, side, pointed ? 2 : 1, pointed ? Theme.GOLD : Theme.PANEL_LINE);
+            Component caption = Component.translatable(keys[i]);
+            DrawText.room(caption, side);
+            DrawText.textCentered(g, Component.literal(DrawText.fit(caption.getString(), (int) side)), Draw.snap(fx + side / 2f), fy + side + Grid.GAP,
+                    on[i] ? Theme.CREAM : Theme.TEXT_MUTED, false);
+        }
+    }
+
+    /** Where a row of boxes per map (world map, minimap) shows its thing. */
+    private static boolean[] onMaps(net.tapacywka.aacs.api.EnumValue<RadarRules.Show> value) {
+        return new boolean[] {MapConfig.get(value).on(false), MapConfig.get(value).on(true)};
+    }
+
+    /**
+     * A row of Create: the world map and the minimap, each with a made-up railway (the track; a station and a signal, or
+     * a train, for those rows).
+     */
+    private static void create(GuiGraphics g, float x, float y, float w, MapArea map, String key) {
+        int part = key.endsWith("create_stations") ? 1 : key.endsWith("create_trains") ? 2 : 0;
+        var value = part == 1 ? MapConfig.CREATE_STATIONS : part == 2 ? MapConfig.CREATE_TRAINS : MapConfig.CREATE_TRACKS;
+        twoFrames(g, x, y, w, map, CreateMap.SAMPLE_SCALE, MAP_FRAMES, onMaps(value),
+                (g2, fx, fy, s, i) -> CreateMap.sample(g2, fx, fy, s, part, i == 1));
+    }
+
+    /** Sable's row: the world map and the minimap, each with a made-up ship and its shadow, the world map also its far icon. */
+    private static void sable(GuiGraphics g, float x, float y, float w, MapArea map) {
+        twoFrames(g, x, y, w, map, 2, MAP_FRAMES, onMaps(MapConfig.SABLE_RADAR),
+                (g2, fx, fy, s, i) -> SableRadar.sample(g2, fx, fy, s, 4, i == 1, i == 0));
+    }
+
+    /** The radar's kinds by their rows (the rows of boxes per map). */
+    private static RadarRules.Kind radarKind(String key) {
+        for (RadarRules.Kind k : RadarRules.Kind.values()) {
+            if (key.endsWith("radar_" + k.name().toLowerCase(Locale.ROOT))) return k;
+        }
+        return null;
+    }
+
+    /**
+     * A row of the radar: a made-up crowd of every kind round the player, drawn as the radar draws it now. The radar's
+     * switch and a kind's row: the world map and the minimap (a kind's row lights that kind); the others: the world map
+     * alone, larger.
+     */
+    static void radar(GuiGraphics g, float x, float y, float w, float h, MapArea map, String key) {
+        x = Draw.snap(x);
+        y = Draw.snap(y);
+        RadarRules.Kind kind = radarKind(key);
+        if (kind != null || key.endsWith("radar_enabled")) {
+            boolean[] on = kind == null ? new boolean[] {Radar.on(false), Radar.on(true)}
+                    : new boolean[] {Radar.on(false) && Radar.show(kind).on(false), Radar.on(true) && Radar.show(kind).on(true)};
+            twoFrames(g, x, y, w, map, 2, MAP_FRAMES, on, (g2, fx, fy, s, i) -> Radar.sample(g2, fx, fy, s, i == 1, kind));
+            return;
+        }
+        float s = Draw.snap(Math.min(w, h)), fx = Draw.snap(x + (w - s) / 2f);
+        g.enableScissor((int) fx, (int) y, (int) (fx + s), (int) (y + s));
+        mapArea(g, fx, y, s, s, map, 2);
+        Radar.sample(g, fx + s * 0.15f, y + s * 0.15f, s * 0.7f, false, null);
+        g.disableScissor();
+        Draw.frame(g, fx, y, s, s, 1, Theme.PANEL_LINE);
+    }
+
+    /**
+     * The faces of a backport's mobs (Vanilla Backport: its new mobs and the warm and cold farm animals; Tiny Takeover
+     * Backport: the babies): off, as dots and the usual faces; on, as their own faces. The picture of the setting as it
+     * is stays bright, the other dimmed.
+     */
+    private static void faces(GuiGraphics g, float x, float y, float w, MapArea map, boolean tiny) {
+        boolean on = MapConfig.get(tiny ? MapConfig.TINY_TAKEOVER_FACES : MapConfig.VANILLA_BACKPORT_FACES);
+        // id when on, id when off (null: a dot), kind, place as a share of the picture
+        Object[][] mobs = tiny ? new Object[][] {
+                {"minecraft:cow/baby", "minecraft:cow", RadarRules.Kind.PASSIVE, 0.22f, 0.26f},
+                {"minecraft:pig/baby", "minecraft:pig", RadarRules.Kind.PASSIVE, 0.5f, 0.24f},
+                {"minecraft:chicken/baby", "minecraft:chicken", RadarRules.Kind.PASSIVE, 0.78f, 0.26f},
+                {"minecraft:villager/baby", "minecraft:villager", RadarRules.Kind.VILLAGERS, 0.3f, 0.76f},
+                {"minecraft:wolf/baby", "minecraft:wolf", RadarRules.Kind.PETS, 0.7f, 0.76f}}
+                : new Object[][] {
+                {"minecraft:creaking", null, RadarRules.Kind.HOSTILE, 0.22f, 0.26f},
+                {"minecraft:happy_ghast", null, RadarRules.Kind.PASSIVE, 0.5f, 0.24f},
+                {"minecraft:copper_golem", null, RadarRules.Kind.PASSIVE, 0.78f, 0.26f},
+                {"minecraft:cow/warm", "minecraft:cow", RadarRules.Kind.PASSIVE, 0.3f, 0.76f},
+                {"minecraft:chicken/cold", "minecraft:chicken", RadarRules.Kind.PASSIVE, 0.7f, 0.76f}};
+        String[] keys = {"teyvatcartographia.config.preview.frame.off", "teyvatcartographia.config.preview.frame.on"};
+        twoFrames(g, x, y, w, map, 2, keys, new boolean[] {!on, on}, (g2, fx, fy, s, i) -> {
+            for (Object[] m : mobs) {
+                String id = (String) (i == 1 ? m[0] : m[1]);
+                int colour = Radar.sampleColour((RadarRules.Kind) m[2]);
+                float mx = fx + s * (Float) m[3], my = fy + s * (Float) m[4];
+                if (id != null) Radar.sampleFace(g2, id, mx, my, Radar.MOB_HEAD_MAP * 1.4f, colour);
+                else {
+                    Draw.circle(g2, mx, my, Radar.DOT_MAP * 1.4f + 0.6f, Theme.RADAR_OUTLINE);
+                    Draw.circle(g2, mx, my, Radar.DOT_MAP * 1.4f, colour);
+                }
+            }
+        });
+    }
+
     /**
      * Compatibility: the sample of the setting {@code key} alone, over the whole area: a piece of the dimension's fog of war
      * (the theme's fog while it is off), a field of ichor or of ichor snow as the map colours them (shimmering or
-     * plain); Xaero's rows have no picture, only their description.
+     * plain), the made-up railway of Create, ship of Sable and faces of the backports; Xaero's rows have no picture, only
+     * their description.
      */
     static void compatSample(GuiGraphics g, float x, float y, float w, float h, String key, MapArea map) {
         x = Draw.snap(x);
         y = Draw.snap(y);
         w = Draw.snap(w);
         h = Draw.snap(h);
-        if (key.endsWith("_fog")) {
+        if (key.endsWith("compat.create_tracks") || key.endsWith("compat.create_stations") || key.endsWith("compat.create_trains")) {
+            create(g, x, y, w, map, key);
+        } else if (key.endsWith("compat.sable_radar")) {
+            sable(g, x, y, w, map);
+        } else if (key.endsWith("compat.vanilla_backport_faces") || key.endsWith("compat.tiny_takeover_faces")) {
+            faces(g, x, y, w, map, key.endsWith("tiny_takeover_faces"));
+        } else if (key.endsWith("_fog")) {
             ResourceKey<Level> dim = key.endsWith("sift_fog") ? ModCompat.SIFT_DIMENSION
                     : key.endsWith("aether_fog") ? ModCompat.AETHER_DIMENSION : key.endsWith("nether_fog") ? Level.NETHER
                     : Level.END;

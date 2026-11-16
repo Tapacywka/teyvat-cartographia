@@ -16,6 +16,12 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
   out, coloured by what it is doing) with a tooltip of its name, owner, destination and state, and the carriages near
   you on the minimap. Where each shows: Settings > Compatibility > Create.
 
+### Changed
+- The preview card of the settings shows an example for every row of the radar: one of each kind round you, drawn
+  as the radar draws them with your settings, on the world map and the minimap. On Minecraft 1.21.1 likewise for the
+  rows of Create (a railway with a station, a signal and a train), Sable (a ship) and the faces of Vanilla Backport
+  and Tiny Takeover Backport (off and on side by side).
+
 ### Removed
 - Minecraft 26.x: the support of The Aether and The Sift (their own Fog of War, no cave map in the Aether, the shimmer
   of ichor and ichor snow), as both mods are made for 1.21.1 only.

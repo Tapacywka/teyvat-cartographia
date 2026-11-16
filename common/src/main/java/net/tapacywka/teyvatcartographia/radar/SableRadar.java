@@ -395,6 +395,57 @@ public final class SableRadar {
         Draw.triangle(g, tx + dx * 4, ty + dy * 4, tx - dy * 3, ty + dx * 3, tx + dy * 3, ty - dx * 3, gold);
     }
 
+    // ---------------------------------------------------------------- the settings' pictures
+
+    /** A made-up ship seen from above, a block a letter: h hull, d deck, m mast, s sail. */
+    private static final String[] SAMPLE_SHIP = {
+            "...hhhhhhhh....",
+            "..hddddddddhh..",
+            ".hddddmsdddddhh",
+            "hddddddmsddddddh",
+            ".hddddmsdddddhh",
+            "..hddddddddhh..",
+            "...hhhhhhhh...."};
+    private static final float[] SAMPLE_QUADS = new float[SAMPLE_SHIP.length * 16 * 16];
+    private static final int[] SAMPLE_COLOURS = new int[SAMPLE_SHIP.length * 16 * 2];
+
+    /**
+     * A made-up ship of Sable in the middle of a square picture of side {@code s} at ({@code x}, {@code y}), turned as
+     * it sails, its shadow under it, {@code block} GUI units a block; with {@code icon} also its icon as seen far out,
+     * in the corner.
+     */
+    public static void sample(GuiGraphics g, float x, float y, float s, float block, boolean minimap, boolean icon) {
+        float cx = x + s / 2, cy = y + s / 2, turn = -0.45f, cos = (float) Math.cos(turn), sin = (float) Math.sin(turn);
+        int rows = SAMPLE_SHIP.length, cols = SAMPLE_SHIP[3].length();
+        float shadow = minimap ? 1.5f : 3f;
+        int n = 0;
+        for (int pass = 0; pass < 2; pass++) {
+            float off = pass == 0 ? shadow : 0;
+            for (int r = 0; r < rows; r++) {
+                for (int c = 0; c < SAMPLE_SHIP[r].length(); c++) {
+                    char k = SAMPLE_SHIP[r].charAt(c);
+                    if (k == '.') continue;
+                    int o = n * 8;
+                    float[] bx = {c, c + 1, c + 1, c}, bz = {r, r, r + 1, r + 1};
+                    for (int i = 0; i < 4; i++) {
+                        float lx = (bx[i] - cols / 2f) * block, lz = (bz[i] - rows / 2f) * block;
+                        SAMPLE_QUADS[o + 2 * i] = cx + lx * cos - lz * sin + off;
+                        SAMPLE_QUADS[o + 2 * i + 1] = cy + lx * sin + lz * cos + off;
+                    }
+                    SAMPLE_COLOURS[n++] = pass == 0 ? Theme.RADAR_SHIP_SHADOW
+                            : k == 'h' ? 0xFF5A3D24 : k == 'd' ? 0xFF9C7448 : k == 'm' ? 0xFF3E2A18 : 0xFFE9E3D2;
+                }
+            }
+        }
+        Draw.quads(g, SAMPLE_QUADS, SAMPLE_COLOURS, n);
+        if (icon) {
+            float rad = minimap ? 6 : 9, ix = x + s - rad - 6, iy = y + rad + 6;
+            Draw.circle(g, ix, iy, rad + 0.8f, Theme.RADAR_OUTLINE);
+            Draw.circle(g, ix, iy, rad, Theme.INDICATOR);
+            Draw.icon(g, Icon.SHIP, ix, iy, rad * 1.5f, Theme.INDICATOR_ICON);
+        }
+    }
+
     private static boolean inside(float sx, float sy, float cx, float cy, float r, boolean square) {
         float dx = sx - cx, dy = sy - cy;
         return square ? Math.abs(dx) <= r && Math.abs(dy) <= r : dx * dx + dy * dy <= r * r;
