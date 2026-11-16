@@ -12,8 +12,8 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 
 ### Added
 - Create's railways on the maps (Minecraft 1.21.1): the tracks as rails with sleepers on both maps (one line far out),
-  stations with their names and signals, every train of the world on the world map (its carriages near, a badge far
-  out, coloured by what it is doing) with a tooltip of its name, owner, destination and state, and the carriages near
+  stations with their names and signals, every train of the world on the world map (its carriages near, joined by
+  couplings, a badge far out, coloured by what it is doing) with a tooltip of its name, owner, destination and state, and the carriages near
   you on the minimap. Where each shows: Settings > Compatibility > Create.
 
 ### Changed
