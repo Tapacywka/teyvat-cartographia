@@ -17,7 +17,12 @@ public final class CreateBridge {
     public record Track(ResourceKey<Level> dimension, float[] xz, float minX, float minZ, float maxX, float maxZ) {}
 
     /** A station or a signal on a track. */
-    public record Point(ResourceKey<Level> dimension, String name, double x, double z) {}
+    public record Point(ResourceKey<Level> dimension, String name, double x, double z, double blockX, double blockZ) {
+        /** A point whose block is not known. */
+        public Point(ResourceKey<Level> dimension, String name, double x, double z) {
+            this(dimension, name, x, z, Double.NaN, Double.NaN);
+        }
+    }
 
     /** A train as the world map shows it. */
     public static final class Train {

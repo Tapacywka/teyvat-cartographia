@@ -119,6 +119,20 @@ public final class CreateRules {
         return out;
     }
 
+    /** Where a station's name goes beside its plate on the map. */
+    public enum Side { ABOVE, BELOW, LEFT, RIGHT }
+
+    /**
+     * The side of its plate a station's name goes to: the side of the track its station block stands, ({@code dx},
+     * {@code dy}) on screen from the track to the block. Above a track running up and down the name lay on the rails.
+     * Not known (no offset, NaN): above.
+     */
+    public static Side labelSide(double dx, double dy) {
+        if (Double.isNaN(dx) || Double.isNaN(dy) || Math.abs(dx) < 1e-6 && Math.abs(dy) < 1e-6) return Side.ABOVE;
+        if (Math.abs(dx) > Math.abs(dy)) return dx > 0 ? Side.RIGHT : Side.LEFT;
+        return dy > 0 ? Side.BELOW : Side.ABOVE;
+    }
+
     /** The name a train is shown with: its own, else none (the caller names it after its owner). */
     public static String name(String own) {
         return own == null || own.isBlank() ? null : own.strip();
