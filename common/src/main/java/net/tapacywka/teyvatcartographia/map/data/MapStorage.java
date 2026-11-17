@@ -364,9 +364,10 @@ public final class MapStorage {
      * Puts a finished temporary file in a file's place. Tried again a few times: regions are also read on threads of
      * their own (thumbnails, chunk lists, the biome search), and where a file being read cannot be replaced (Windows
      * before 10 1809, volumes that are not NTFS) the move fails until the reader is done, a matter of milliseconds.
-     * Called on the writes' thread only, so the wait holds no frame.
+     * The map calls it on the writes' thread, so the wait holds no frame; the pin file on the game's thread, where a
+     * failed move (another program holding the file) waits at most 125 ms before it gives up.
      */
-    static void replace(Path tmp, Path file) throws IOException {
+    public static void replace(Path tmp, Path file) throws IOException {
         replace(tmp, file, (from, to) -> Files.move(from, to, StandardCopyOption.REPLACE_EXISTING));
     }
 

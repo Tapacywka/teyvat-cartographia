@@ -470,13 +470,6 @@ public final class TileStore {
         return edgesOn;
     }
 
-    /** Regions in memory with a outline. */
-    public int fadedRegions() {
-        int n = 0;
-        for (MapTile t : tiles.values()) if (t.edge.faded()) n++;
-        return n;
-    }
-
     /** Whether every picture in memory has the outline of the chunks known now. */
     public boolean edgesDone() {
         if (!edgeStale.isEmpty() || !edgeOnlyStale.isEmpty() || edgeJobs > 0 || !chunksLoading.isEmpty() || !lod.edgesDone()) return false;
