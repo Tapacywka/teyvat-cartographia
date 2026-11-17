@@ -27,10 +27,6 @@ public final class CaveScanner {
     public static final int BAND = 16;
     /** How far below the band a floor is still looked for under an open shaft. */
     private static final int DROP = 16;
-    /** Solid rock between the caves. */
-    private static final int ROCK = 0xFF3A3D44;
-    /** Ore on the floor: gems (diamond, emerald, lapis) and the rest. */
-    private static final int ORE_GEM = 0xFF7CC7C2, ORE = 0xFFD9C27A;
     private static final int UNKNOWN = Integer.MIN_VALUE, SOLID = Integer.MIN_VALUE + 1;
 
     /** The band a height belongs to. */
@@ -100,7 +96,7 @@ public final class CaveScanner {
                 if (found == UNKNOWN && !open) {
                     floor[i] = SOLID;
                     flags[i] = (byte) (MapTile.FLAG_KNOWN | MapTile.FLAG_IMPASSABLE);
-                    color[i] = ROCK;
+                    color[i] = MapPalette.CAVE_ROCK;
                     continue;
                 }
                 if (found == UNKNOWN) found = yMin - DROP; // a deep shaft: painted as a dark drop
@@ -121,7 +117,7 @@ public final class CaveScanner {
                 } else if (s.is(CommonTags.ORES)) {
                     // Ore stands out from the stone: gems in teal, everything else in pale gold.
                     boolean gem = s.is(CommonTags.DIAMOND_ORES) || s.is(CommonTags.EMERALD_ORES) || s.is(CommonTags.LAPIS_ORES);
-                    c = gem ? ORE_GEM : ORE;
+                    c = gem ? MapPalette.ORE_GEM : MapPalette.ORE;
                 } else {
                     MapColor mc = s.getMapColor(level, pos);
                     Integer mine = own == null ? null : own.get(s.getBlock());
@@ -142,7 +138,7 @@ public final class CaveScanner {
                 if (h == UNKNOWN) continue;
                 if (h == SOLID) {
                     heights[i] = (short) (yMax + 1);
-                    abgr[i] = MapPalette.toAbgr(ROCK);
+                    abgr[i] = MapPalette.toAbgr(MapPalette.CAVE_ROCK);
                     continue;
                 }
                 heights[i] = (short) h;
