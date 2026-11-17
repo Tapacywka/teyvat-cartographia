@@ -28,6 +28,31 @@ public final class BorderLine {
     /** The smallest and the largest screen coordinate across the side, of the points {@link #points} made last. */
     private static float least, most;
 
+    /**
+     * One side of the border: at {@code at} on one axis, from {@code lo} to {@code hi} on the other, each end moved on
+     * by the roughness at that corner ({@code cornerLo}, {@code cornerHi}); the view spans {@code viewLo} to
+     * {@code viewHi} along it. Four kept and set again each draw, so drawing allocates nothing.
+     */
+    private static final class Side {
+        double at, lo, hi, cornerLo, cornerHi, viewLo, viewHi;
+        /** The side runs along z. */
+        boolean upright;
+
+        Side set(double at, double lo, double hi, double cornerLo, double cornerHi, double viewLo, double viewHi, boolean upright) {
+            this.at = at;
+            this.lo = lo;
+            this.hi = hi;
+            this.cornerLo = cornerLo;
+            this.cornerHi = cornerHi;
+            this.viewLo = viewLo;
+            this.viewHi = viewHi;
+            this.upright = upright;
+            return this;
+        }
+    }
+
+    private static final Side EAST = new Side(), WEST = new Side(), SOUTH = new Side(), NORTH = new Side();
+
     /** The border to draw for {@code dimension}, null: none. */
     private static WorldBorder border(ResourceKey<Level> dimension) {
         ClientLevel level = Minecraft.getInstance().level;
@@ -59,14 +84,16 @@ public final class BorderLine {
         double nw = rough(minX, minZ), ne = rough(maxX, minZ), sw = rough(minX, maxZ), se = rough(maxX, maxZ);
         // The dark, each part once: east and west go on straight past the corners to the end of the rectangle, north and
         // south lie between them, and each pair shares that straight side exactly.
-        beyond(g, view, maxX, minZ, maxZ, ne, se, top, bottom, blocks, true, 1, x1);
-        beyond(g, view, minX, minZ, maxZ, nw, sw, top, bottom, blocks, true, -1, x0);
-        beyond(g, view, maxZ, minX, maxX, sw, se, left, right, blocks, false, 1, y1);
-        beyond(g, view, minZ, minX, maxX, nw, ne, left, right, blocks, false, -1, y0);
-        line(g, view, maxX, minZ, maxZ, ne, se, top, bottom, blocks, true);
-        line(g, view, minX, minZ, maxZ, nw, sw, top, bottom, blocks, true);
-        line(g, view, maxZ, minX, maxX, sw, se, left, right, blocks, false);
-        line(g, view, minZ, minX, maxX, nw, ne, left, right, blocks, false);
+        Side east = EAST.set(maxX, minZ, maxZ, ne, se, top, bottom, true), west = WEST.set(minX, minZ, maxZ, nw, sw, top, bottom, true);
+        Side south = SOUTH.set(maxZ, minX, maxX, sw, se, left, right, false), north = NORTH.set(minZ, minX, maxX, nw, ne, left, right, false);
+        beyond(g, view, east, blocks, 1, x1);
+        beyond(g, view, west, blocks, -1, x0);
+        beyond(g, view, south, blocks, 1, y1);
+        beyond(g, view, north, blocks, -1, y0);
+        line(g, view, east, blocks);
+        line(g, view, west, blocks);
+        line(g, view, south, blocks);
+        line(g, view, north, blocks);
     }
 
     /** Point {@code n} of {@link #XY}; returns the next. */
@@ -81,15 +108,14 @@ public final class BorderLine {
     }
 
     /**
-     * The points of a side of the border inside the view, into {@link #XY}: at {@code at} on one axis, from {@code lo} to
-     * {@code hi} on the other, each end moved on by the roughness at that corner.
+     * The points of a side of the border inside the view, into {@link #XY}.
      *
-     * @param upright the side runs along z
-     * @param onward  it goes on straight from its corners up to the ends of the view
+     * @param onward it goes on straight from its corners up to the ends of the view
      * @return how many
      */
-    private static int points(MapView view, double at, double lo, double hi, double cornerLo, double cornerHi, double viewLo, double viewHi, double blocks,
-                              boolean upright, boolean onward) {
+    private static int points(MapView view, Side s, double blocks, boolean onward) {
+        double at = s.at, lo = s.lo, hi = s.hi, cornerLo = s.cornerLo, cornerHi = s.cornerHi, viewLo = s.viewLo, viewHi = s.viewHi;
+        boolean upright = s.upright;
         least = Float.MAX_VALUE;
         most = -Float.MAX_VALUE;
         int n = 0;
@@ -121,15 +147,14 @@ public final class BorderLine {
      * @param out   1 where beyond lies at higher coordinates, -1 at lower ones
      * @param limit where the rectangle ends on the screen on that side
      */
-    private static void beyond(GuiGraphicsExtractor g, MapView view, double at, double lo, double hi, double cornerLo, double cornerHi, double viewLo, double viewHi, double blocks,
-                               boolean upright, int out, float limit) {
-        int n = points(view, at, lo, hi, cornerLo, cornerHi, viewLo, viewHi, blocks, upright, upright);
+    private static void beyond(GuiGraphicsExtractor g, MapView view, Side s, double blocks, int out, float limit) {
+        int n = points(view, s, blocks, s.upright);
         if (n < 2 || (out > 0 ? least > limit : most < limit)) return;
         float reach = out > 0 ? limit - least + 2 : limit - most - 2;
-        Draw.band(g, XY, n, upright ? reach : 0, upright ? 0 : reach, Theme.WORLD_BORDER_BEYOND);
+        Draw.band(g, XY, n, s.upright ? reach : 0, s.upright ? 0 : reach, Theme.WORLD_BORDER_BEYOND);
     }
 
-    private static void line(GuiGraphicsExtractor g, MapView view, double at, double lo, double hi, double cornerLo, double cornerHi, double viewLo, double viewHi, double blocks, boolean upright) {
-        Draw.polyline(g, XY, points(view, at, lo, hi, cornerLo, cornerHi, viewLo, viewHi, blocks, upright, false), WIDTH * Draw.px(), Theme.WORLD_BORDER_LINE);
+    private static void line(GuiGraphicsExtractor g, MapView view, Side s, double blocks) {
+        Draw.polyline(g, XY, points(view, s, blocks, false), WIDTH * Draw.px(), Theme.WORLD_BORDER_LINE);
     }
 }
