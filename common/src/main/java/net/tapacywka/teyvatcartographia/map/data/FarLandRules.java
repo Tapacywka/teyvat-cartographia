@@ -24,7 +24,7 @@ public final class FarLandRules {
     /** Blocks one pixel stands for, level by level (GUI 3: zoom 1/8 and nearer, 1/16, 1/32). */
     public static final int[] STEPS = {2, 4, 8};
 
-    /** The generator is asked every so many blocks, at every level (98.5% as the real map). */
+    /** The generator is asked every so many blocks, at every level (99.38% of the columns as the real map). */
     static final int FINE = 8;
 
     /** The first look: answers this far apart, which settle a square of land or water at once. */

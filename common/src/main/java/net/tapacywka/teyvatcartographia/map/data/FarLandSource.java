@@ -28,7 +28,7 @@ import java.util.function.Supplier;
  * after the world closed. No reflection by name: on Fabric the game's names differ in a released game.
  * <p>
  * The density around the sea (about 30 microseconds) is asked every {@link FarLandRules#FINE} blocks and blended between
- * (98.5% of the columns as the real map), the same answers for every level, and asked there
+ * (99.38% of the columns as the real map), the same answers for every level, and asked there
  * only near a coast: the corners of each {@link FarLandRules#SQUARE} first, and between them only where they are not
  * all sure of one thing ({@link FarLandRules#sure}). Carvers, structures and features are not seen (a spring's stream,
  * a village's farms), nor ice on the water.
