@@ -12,6 +12,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -83,6 +84,42 @@ class MarkerFileTest {
         MarkerStore.keepUnreadable(file);
         assertEquals("{\"markers\": [ broken", Files.readString(dir.resolve("markers.json.broken"), StandardCharsets.UTF_8));
         assertTrue(Files.exists(file));
+    }
+
+    /** A world's pin file read in part: the good pins load, and the file as it was is kept beside it first. */
+    @Test
+    void aPartlyBrokenWorldFileIsKeptAndItsGoodPinsLoad() throws IOException {
+        Path file = dir.resolve("markers.json");
+        String text = """
+                {"version": 1, "markers": [
+                  {"id": "dddddddd-0000-4000-8000-000000000001", "name": "Good", "type": "STAR", "dimension": "minecraft:overworld", "x": 1, "z": 2},
+                  {"id": "dddddddd-0000-4000-8000-000000000002", "name": "No z", "type": "STAR", "dimension": "minecraft:overworld", "x": 1}
+                ]}""";
+        Files.writeString(file, text, StandardCharsets.UTF_8);
+        MarkerStore.Saved saved = MarkerStore.read(file);
+        assertEquals(1, saved.markers().size());
+        assertEquals("Good", saved.markers().get(0).name);
+        assertEquals(text, Files.readString(dir.resolve("markers.json.broken"), StandardCharsets.UTF_8));
+    }
+
+    @Test
+    void anUnreadableWorldFileGivesNothingAndIsKept() throws IOException {
+        Path file = dir.resolve("markers.json");
+        Files.writeString(file, "{\"markers\": [ broken", StandardCharsets.UTF_8);
+        assertNull(MarkerStore.read(file));
+        assertTrue(Files.exists(dir.resolve("markers.json.broken")));
+    }
+
+    @Test
+    void aGoodWorldFileIsNotSetAside() throws IOException {
+        Path file = dir.resolve("markers.json");
+        Files.writeString(file, """
+                {"version": 1, "markers": [
+                  {"id": "dddddddd-0000-4000-8000-000000000003", "name": "Home", "type": "STAR", "dimension": "minecraft:overworld", "x": 5, "z": 5}
+                ]}""", StandardCharsets.UTF_8);
+        assertEquals(1, MarkerStore.read(file).markers().size());
+        assertFalse(Files.exists(dir.resolve("markers.json.broken")));
+        assertNull(MarkerStore.read(dir.resolve("none.json")), "no file: nothing");
     }
 
     @Test

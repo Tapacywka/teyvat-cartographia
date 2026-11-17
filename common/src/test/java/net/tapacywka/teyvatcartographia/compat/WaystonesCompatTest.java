@@ -5,7 +5,12 @@ import net.minecraft.world.level.Level;
 import net.tapacywka.teyvatcartographia.marker.Marker;
 import net.tapacywka.teyvatcartographia.marker.MarkerType;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -154,5 +159,27 @@ class WaystonesCompatTest {
         seen.put(s.key(), s);
         assertEquals(markers(seen, List.of()).get(0).id, markers(seen, List.of()).get(0).id,
                 "the same id every time, so a selected or tracked stone stays the same");
+    }
+
+    /** The file of stones seen is written through a temporary one, which is gone afterwards; an old file is replaced. */
+    @Test
+    void theSeenFileIsWrittenThroughATemporaryOne(@TempDir Path dir) throws IOException {
+        Path file = dir.resolve("map").resolve("waystones.json");
+        WaystonesCompat.write(file, "{\"seen\": []}");
+        assertEquals("{\"seen\": []}", Files.readString(file, StandardCharsets.UTF_8));
+        WaystonesCompat.write(file, "{\"seen\": [1]}");
+        assertEquals("{\"seen\": [1]}", Files.readString(file, StandardCharsets.UTF_8));
+        assertFalse(Files.exists(file.resolveSibling("waystones.json.tmp")));
+    }
+
+    /** A file of stones seen that cannot be read gives none and is kept beside it, so the next save does not lose it. */
+    @Test
+    void anUnreadableSeenFileIsKept(@TempDir Path dir) throws IOException {
+        Path file = dir.resolve("waystones.json");
+        Files.writeString(file, "{\"seen\": [ broken", StandardCharsets.UTF_8);
+        assertTrue(WaystonesCompat.readFile(file).isEmpty());
+        assertEquals("{\"seen\": [ broken", Files.readString(dir.resolve("waystones.json.broken"), StandardCharsets.UTF_8));
+        assertTrue(WaystonesCompat.readFile(dir.resolve("none.json")).isEmpty(), "no file: none");
+        assertFalse(Files.exists(dir.resolve("none.json.broken")));
     }
 }

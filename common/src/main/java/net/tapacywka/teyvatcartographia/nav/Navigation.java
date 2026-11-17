@@ -49,19 +49,11 @@ public final class Navigation {
     private static Target target;
     private static final double ARRIVE_DISTANCE = 4.0;
 
-    /** {@link MarkerStore#version()} at which the marker target was last checked (avoids a lookup per call). */
-    private static int checkedVersion = Integer.MIN_VALUE;
-
+    /**
+     * The tracked target, or null. Only reads: a pin's target ends where the pin goes ({@link MarkerStore#remove}),
+     * and a saved target whose pin did not load is not restored ({@link MarkerStore#switchWorld}).
+     */
     public static Target target() {
-        // Keep marker targets in sync with renamed/deleted markers.
-        if (target != null && target.markerId() != null && checkedVersion != MarkerStore.version()) {
-            checkedVersion = MarkerStore.version();
-            Marker m = MarkerStore.find(target.markerId());
-            if (m == null) {
-                target = null;
-                MarkerStore.save();
-            }
-        }
         return target;
     }
 

@@ -4,9 +4,10 @@ import net.minecraft.world.level.Level;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+import net.tapacywka.teyvatcartographia.nav.Navigation;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -23,11 +24,8 @@ import net.minecraft.nbt.NbtOps;
  */
 class ImportRulesTest {
     @BeforeEach
-    @SuppressWarnings("unchecked")
-    void noPins() throws ReflectiveOperationException {
-        Field f = MarkerStore.class.getDeclaredField("markers");
-        f.setAccessible(true);
-        ((List<Marker>) f.get(null)).clear();
+    void noPins() {
+        for (Marker m : MarkerStore.all()) MarkerStore.remove(m);
     }
 
     private static Marker pin(String name, MarkerType type, int x) {
@@ -123,5 +121,20 @@ class ImportRulesTest {
         cave.band = -2;
         MarkerStore.addAll(List.of(cave));
         assertEquals(-2, MarkerStore.find(cave.id).band);
+    }
+
+    /** A saved target comes back only with something on the map it stands for. */
+    @Test
+    void aSavedTargetComesBackOnlyWithItsPin() {
+        Marker home = pin("Home", MarkerType.STAR, 9);
+        MarkerStore.add(home);
+        var onPin = new Navigation.Target(Level.OVERWORLD, 9.5, 0.5, 64, home.id, null);
+        var gone = new Navigation.Target(Level.OVERWORLD, 9.5, 0.5, 64, UUID.randomUUID(), null);
+        var spawn = new Navigation.Target(Level.OVERWORLD, 0.5, 0.5, 64, null, MarkerType.SPAWN);
+        var free = new Navigation.Target(Level.OVERWORLD, 0.5, 0.5, 64, null, null);
+        assertTrue(MarkerStore.restorable(onPin), "its pin loaded");
+        assertFalse(MarkerStore.restorable(gone), "its pin did not load");
+        assertTrue(MarkerStore.restorable(spawn), "an automatic point");
+        assertFalse(MarkerStore.restorable(free), "a free point of an older version");
     }
 }
