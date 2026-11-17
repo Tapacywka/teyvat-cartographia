@@ -112,6 +112,24 @@ public final class Ui {
 
     // ------------------------------------------------------------------ scroll bar arrows
 
+    /** Width of the thin scroll bar of the dark lists ({@link #thinScrollBar}). */
+    public static final float THIN_BAR_W = 2;
+
+    /**
+     * The thin scroll bar of a dark list from {@code top}, {@code h} high, its left edge at {@code barX}: the track
+     * between its arrows, the thumb over the part of {@code content} (the list's whole height) in view, the arrows at
+     * both ends. Pass the pointer off the screen while the list slides (its arrows then take no pointer).
+     */
+    public static void thinScrollBar(GuiGraphics g, float barX, float top, float h, float content, SmoothScroll s, ScrollArrows a,
+                                     int mx, int my) {
+        float tt = top + ScrollArrows.ROOM, track = h - 2 * ScrollArrows.ROOM;
+        Draw.rect(g, barX, tt, barX + THIN_BAR_W, tt + track, Theme.SCROLL_TRACK);
+        float th = Math.min(track, Math.max(8, track * h / content));
+        float ty = tt + (track - th) * s.fraction();
+        Draw.rect(g, barX, ty, barX + THIN_BAR_W, ty + th, Theme.SCROLL_THUMB);
+        scrollArrows(g, barX + THIN_BAR_W / 2f, top, top + h, s, a, mx, my, Theme.SCROLL_THUMB, false);
+    }
+
     /**
      * The arrows of a scroll bar whose middle is {@code cx}, in the room {@link ScrollArrows#ROOM} at both ends of
      * {@code top} to {@code bottom}: in the thumb's colour {@code colour}, gold pointed at or held (darker on a light
@@ -340,14 +358,23 @@ public final class Ui {
         }
     }
 
+    /** Left edge of a tooltip {@code w} wide by the pointer: right of it, pushed back inside the screen. */
+    static float tipX(int mx, int w, int screenW) {
+        return Math.max(Grid.MARGIN, Math.min(mx + 12, screenW - w - Grid.MARGIN));
+    }
+
+    /** Top of a tooltip {@code h} high by the pointer: above it, never above the screen's margin. */
+    static float tipY(int my, int h) {
+        return Math.max(Grid.MARGIN, my - h - 4);
+    }
+
     /** Tooltip box with a gold title and an optional cream subtitle, placed near the cursor and kept on screen. */
     public static void tooltip(GuiGraphics g, String title, String sub, int mx, int my, int screenW, int screenH) {
         int w = Math.max(DrawText.width(title), sub == null ? 0 : DrawText.width(sub)) + 2 * Grid.PAD;
         int h = Grid.PAD * 2 + DrawText.LINE + (sub == null ? 0 : DrawText.LINE + 2);
         DrawText.room(title, screenW - 2 * Grid.MARGIN - 2 * Grid.PAD);
         if (sub != null) DrawText.room(sub, screenW - 2 * Grid.MARGIN - 2 * Grid.PAD);
-        float x = Math.min(mx + 12, screenW - w - Grid.MARGIN), y = Math.max(Grid.MARGIN, my - h - 4);
-        if (x < Grid.MARGIN) x = Grid.MARGIN;
+        float x = tipX(mx, w, screenW), y = tipY(my, h);
         tooltipBox(g, x, y, w, h); // near-opaque so map labels underneath don't show through
         DrawText.text(g, title, x + Grid.PAD, y + Grid.PAD, Theme.GOLD, false);
         if (sub != null) DrawText.text(g, sub, x + Grid.PAD, y + Grid.PAD + DrawText.LINE + 2, Theme.CREAM, false);
@@ -361,8 +388,7 @@ public final class Ui {
         int h = Grid.PAD * 2 + DrawText.LINE + lines.size() * (DrawText.LINE + 2);
         DrawText.room(title, screenW - 2 * Grid.MARGIN - 2 * Grid.PAD);
         for (String l : lines) DrawText.room(l, screenW - 2 * Grid.MARGIN - 2 * Grid.PAD);
-        float x = Math.min(mx + 12, screenW - w - Grid.MARGIN), y = Math.max(Grid.MARGIN, my - h - 4);
-        if (x < Grid.MARGIN) x = Grid.MARGIN;
+        float x = tipX(mx, w, screenW), y = tipY(my, h);
         tooltipBox(g, x, y, w, h);
         DrawText.text(g, title, x + Grid.PAD, y + Grid.PAD, Theme.GOLD, false);
         for (int i = 0; i < lines.size(); i++) {

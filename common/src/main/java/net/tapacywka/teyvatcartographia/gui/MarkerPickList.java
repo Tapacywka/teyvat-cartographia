@@ -24,7 +24,7 @@ final class MarkerPickList {
     private static final int MAX_ROWS = 5;
     private static final int ROW_H = Grid.ACTION_H, STEP = ROW_H + Grid.GAP;
     private static final int W = 190;
-    private static final int BAR_W = 2;
+    private static final int BAR_W = (int) Ui.THIN_BAR_W;
     /** Pointer of the hovered row: sway distance (GUI units). */
     private static final float POINTER_SWAY = 3f;
     /**
@@ -166,12 +166,8 @@ final class MarkerPickList {
 
     /** Thin bar at the list's right end, between its arrows: track over all items, thumb over the visible ones. */
     private void scrollBar(GuiGraphics g, float rx, int mx, int my) {
-        float bx = rx + w - BAR_W, h = height(), top = y + ScrollArrows.ROOM, track = h - 2 * ScrollArrows.ROOM;
-        Draw.rect(g, bx, top, bx + BAR_W, top + track, Theme.SCROLL_TRACK);
-        float th = Math.min(track, Math.max(8, track * h / (items.size() * STEP - Grid.GAP)));
-        float ty = top + (track - th) * scroller.fraction();
-        Draw.rect(g, bx, ty, bx + BAR_W, ty + th, Theme.SCROLL_THUMB);
         boolean still = rx == x; // sliding, the arrows take no pointer
-        Ui.scrollArrows(g, bx + BAR_W / 2f, y, y + h, scroller, arrows, still ? mx : -10_000, still ? my : -10_000, Theme.SCROLL_THUMB, false);
+        Ui.thinScrollBar(g, rx + w - BAR_W, y, height(), items.size() * STEP - Grid.GAP, scroller, arrows,
+                still ? mx : -10_000, still ? my : -10_000);
     }
 }
