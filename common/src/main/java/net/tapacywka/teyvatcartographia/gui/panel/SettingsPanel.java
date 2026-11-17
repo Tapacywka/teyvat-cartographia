@@ -10,7 +10,6 @@ import net.tapacywka.teyvatcartographia.gui.TeyvatConfigScreen;
 import net.tapacywka.teyvatcartographia.gui.Ui;
 import net.tapacywka.teyvatcartographia.gui.Ui.Grid;
 import net.tapacywka.teyvatcartographia.gui.WorldMapScreen;
-import net.tapacywka.teyvatcartographia.render.Draw;
 import net.tapacywka.teyvatcartographia.render.DrawText;
 import net.tapacywka.teyvatcartographia.render.EdgeFade;
 import net.tapacywka.teyvatcartographia.render.Icon;
@@ -139,7 +138,7 @@ public final class SettingsPanel extends SidePanel {
      */
     private final SmoothScroll scroller = new SmoothScroll();
     private final ScrollArrows arrows = new ScrollArrows();
-    private static final float BAR_W = 2;
+    private static final float BAR_W = Ui.THIN_BAR_W;
     /** Height of the dissolving edges of the rows, GUI units. */
     private static final float FADE = 10;
 
@@ -216,13 +215,7 @@ public final class SettingsPanel extends SidePanel {
         if (scrollable()) {
             // Track over the rows' area in the right margin between its arrows, thumb over the visible part (as in the
             // pin list).
-            float barX = bx + bw + (Grid.PAD - BAR_W) / 2f, total = rows.size() * Grid.ROW;
-            float tt = top + ScrollArrows.ROOM, track = h - 2 * ScrollArrows.ROOM;
-            Draw.rect(g, barX, tt, barX + BAR_W, tt + track, Theme.SCROLL_TRACK);
-            float th = Math.min(track, Math.max(8, track * h / total));
-            float thy = tt + (track - th) * scroller.fraction();
-            Draw.rect(g, barX, thy, barX + BAR_W, thy + th, Theme.SCROLL_THUMB);
-            Ui.scrollArrows(g, barX + BAR_W / 2f, top, top + h, scroller, arrows, mx, my, Theme.SCROLL_THUMB, false);
+            Ui.thinScrollBar(g, bx + bw + (Grid.PAD - BAR_W) / 2f, top, h, rows.size() * Grid.ROW, scroller, arrows, mx, my);
         }
         Ui.actionButton(g, bx, bottomActionY(), bw, Component.translatable("teyvatcartographia.settings.all"), Icon.GEAR, true, mx, my);
         // Tooltip for the option whose label is under the cursor.

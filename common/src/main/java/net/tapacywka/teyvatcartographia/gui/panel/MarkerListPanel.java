@@ -40,7 +40,8 @@ import java.util.List;
  * field ({@link MapSearch}): while it holds text, the list shows the matching pins of every dimension and the matching
  * explored biomes under two small headings; a click on a biome flies to its nearest place, each further click to the
  * next one. Rows fill a block centred vertically in the panel (shorter lists start at the block's top); longer lists
- * scroll by rows with the mouse wheel and show a thin scroll bar, like the pick list on the map.
+ * scroll smoothly ({@code SmoothScroll}: the wheel a row's distance per notch) and show a thin scroll bar, like the
+ * pick list on the map.
  * At the bottom: Export and Import ({@link PinTransfer}); with Xaero's Minimap in the game Import opens a choice between
  * our file and Xaero's Minimap above the buttons (it stays open after a pick), without it our file at once; the outcome
  * is shown for a while in a popup left of the panel, pointing at the button that was used.
@@ -55,7 +56,7 @@ public final class MarkerListPanel extends SidePanel {
     /** Side of a biome's colour swatch in the row's leading square. */
     private static final float SWATCH = 12;
     private static final int MAX_ROWS = 10;
-    private static final float BAR_W = 2;
+    private static final float BAR_W = Ui.THIN_BAR_W;
 
     private enum Kind { PIN, BIOME, HEADING, NOTE }
 
@@ -152,35 +153,44 @@ public final class MarkerListPanel extends SidePanel {
      * the texts are fitted once, to the width that is left beside the scroll bar if the list scrolls.
      */
     private void buildRows(float bw) {
-        List<Object> plan = new ArrayList<>(); // a Marker, a BiomeHit, or the Kind and key of a heading or note
+        List<Planned> plan = new ArrayList<>();
         if (!search.active()) {
-            plan.addAll(items);
+            for (Marker m : items) plan.add(new Pin(m));
         } else {
             if (!search.pins().isEmpty()) {
                 plan.add(new Line(Kind.HEADING, "teyvatcartographia.search.pins"));
-                plan.addAll(search.pins());
+                for (Marker m : search.pins()) plan.add(new Pin(m));
             }
             if (!search.biomes().isEmpty() || search.searchingBiomes()) plan.add(new Line(Kind.HEADING, "teyvatcartographia.search.biomes"));
-            plan.addAll(search.biomes());
+            for (MapSearch.BiomeHit h : search.biomes()) plan.add(new Biome(h));
             if (search.searchingBiomes()) plan.add(new Line(Kind.NOTE, "teyvatcartographia.search.reading"));
             if (plan.isEmpty()) plan.add(new Line(Kind.NOTE, "teyvatcartographia.search.none"));
         }
         float total = -Grid.GAP;
-        for (Object o : plan) total += (o instanceof Line ? LINE_H : ROW_H) + Grid.GAP;
+        for (Planned p : plan) total += (p instanceof Line ? LINE_H : ROW_H) + Grid.GAP;
         float rw = total > blockHeight() + 0.01f ? bw - BAR_W - Grid.GAP : bw;
         List<Row> out = new ArrayList<>(plan.size());
         boolean everywhere = search.active();
-        for (Object o : plan) {
-            if (o instanceof Marker m) out.add(pinRow(m, rw, everywhere));
-            else if (o instanceof MapSearch.BiomeHit h) out.add(biomeRow(h, rw));
-            else if (o instanceof Line l) out.add(line(l.kind, l.key, rw));
+        for (Planned p : plan) {
+            out.add(switch (p) {
+                case Pin pin -> pinRow(pin.marker(), rw, everywhere);
+                case Biome b -> biomeRow(b.hit(), rw);
+                case Line l -> line(l.kind(), l.key(), rw);
+            });
         }
         rows = out;
         rowsWidth = rw;
     }
 
+    /** What a row of the list will be, before its texts are fitted: a pin, a biome, or a heading or note. */
+    private sealed interface Planned permits Pin, Biome, Line {}
+
+    private record Pin(Marker marker) implements Planned {}
+
+    private record Biome(MapSearch.BiomeHit hit) implements Planned {}
+
     /** A heading or note of the search results. */
-    private record Line(Kind kind, String key) {}
+    private record Line(Kind kind, String key) implements Planned {}
 
     private static Row line(Kind kind, String key, float rw) {
         return new Row(kind, null, null, DrawText.fit(Component.translatable(key).getString(), (int) rw), null, null, 0);
@@ -395,12 +405,7 @@ public final class MarkerListPanel extends SidePanel {
         EdgeFade.release();
         if (scrollable()) {
             // Track over the block of rows between its arrows, thumb over the visible part (as in the map's pick list).
-            float barX = bx + bw - BAR_W, tt = top + ScrollArrows.ROOM, track = h - 2 * ScrollArrows.ROOM;
-            Draw.rect(g, barX, tt, barX + BAR_W, tt + track, Theme.SCROLL_TRACK);
-            float th = Math.min(track, Math.max(8, track * h / total()));
-            float ty = tt + (track - th) * scroller.fraction();
-            Draw.rect(g, barX, ty, barX + BAR_W, ty + th, Theme.SCROLL_THUMB);
-            Ui.scrollArrows(g, barX + BAR_W / 2f, top, top + h, scroller, arrows, mx, my, Theme.SCROLL_THUMB, false);
+            Ui.thinScrollBar(g, bx + bw - BAR_W, top, h, total(), scroller, arrows, mx, my);
         }
     }
 
