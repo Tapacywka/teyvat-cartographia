@@ -11,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
@@ -18,6 +19,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -117,5 +119,23 @@ class LangTest {
         assertEquals("%s блок", ru.get("teyvatcartographia.distance.blocks.one").getAsString());
         assertEquals("%s блока", ru.get("teyvatcartographia.distance.blocks.few").getAsString());
         assertEquals("%s блоков", ru.get("teyvatcartographia.distance.blocks.many").getAsString());
+    }
+
+    /**
+     * The Russian names of the audit's fixes 63 to 66: the minimap is «мини-карта» everywhere, Stop tracking has one
+     * name (key and button), the marker over a tracked pin in the world is «метка» like the pin, never «значок» (that word
+     * is left to icons), and the Route description says that by land the path swims only across narrow water.
+     */
+    @Test
+    void russianNamesAreTheSameEverywhere() {
+        for (String k : ru.keySet()) assertFalse(ru.get(k).getAsString().toLowerCase(Locale.ROOT).contains("миникарт"), k);
+        assertEquals(ru.get("teyvatcartographia.pin.untrack").getAsString(), ru.get("key.teyvatcartographia.clear_target").getAsString());
+        assertEquals("Метка в мире", ru.get("teyvatcartographia.config.preview.frame.marker").getAsString());
+        for (String k : new String[]{"settings.custom_pins", "settings.system_pins", "settings.stones", "config.pins.custom", "config.pins.interactive", "config.pins.system"})
+            assertFalse(ru.get("teyvatcartographia." + k + ".tooltip").getAsString().contains("знач"), k);
+        assertTrue(ru.get("teyvatcartographia.config.marker_show_for.tooltip").getAsString().startsWith("Сколько видны метка,"));
+        String route = "teyvatcartographia.config.path_route.tooltip";
+        assertTrue(en.get(route).getAsString().contains("swimming only where it is narrow"));
+        assertTrue(ru.get(route).getAsString().startsWith("По суше: в обход глубокой воды, вплавь только там, где узко."));
     }
 }
