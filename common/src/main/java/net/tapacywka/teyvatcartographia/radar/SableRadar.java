@@ -113,6 +113,7 @@ public final class SableRadar {
             bind(container, null);
             List<?> all = (List<?>) getAll.invoke(container);
             for (Ship s : ships.values()) s.seen = false;
+            boolean readThisTick = false;
             int range = Radar.rangeBlocks();
             for (Object sub : all) {
                 bind(container, sub);
@@ -131,7 +132,9 @@ public final class SableRadar {
                 }
                 s.lastX = p.x();
                 s.lastZ = p.z();
-                if (s.neverRead || ticks - s.readAt >= (s.columns == 0 ? RETRY_TICKS : REREAD_TICKS)) {
+                // One silhouette read a tick at most (a large one takes about 3 ms): the others due wait for the next.
+                if (!readThisTick && (s.neverRead || ticks - s.readAt >= (s.columns == 0 ? RETRY_TICKS : REREAD_TICKS))) {
+                    readThisTick = true;
                     s.neverRead = false;
                     s.readAt = ticks;
                     read(s, getPlot.invoke(sub));
