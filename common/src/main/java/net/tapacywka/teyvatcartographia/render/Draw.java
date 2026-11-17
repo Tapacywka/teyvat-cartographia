@@ -82,9 +82,23 @@ public final class Draw {
     private static BufferBuilder pending;
     private static int pendingKind, pendingTexture;
 
-    /** Starts a batch (see above). Batches do not nest: the first {@link #endBatch} ends it. */
-    public static void batch() {
+    /** A batch to close: {@code try (var b = Draw.batch()) { ... }} ends it also when the drawing throws. */
+    public static final class Batch implements AutoCloseable {
+        private Batch() {}
+
+        @Override
+        public void close() {
+            endBatch();
+        }
+    }
+
+    /** One for every batch (they do not nest), so starting one allocates nothing. */
+    private static final Batch BATCH = new Batch();
+
+    /** Starts a batch (see above), to close with try-with-resources. Batches do not nest: the first close ends it. */
+    public static Batch batch() {
         batching = batchesAllowed;
+        return BATCH;
     }
 
     /** Draws what the batch holds and ends it. */
@@ -124,18 +138,33 @@ public final class Draw {
         MeshData mesh = b.build();
         if (mesh == null) return;
         drawCalls++;
+        if (kind != COLOR) {
+            drawTextured(mesh, texture, kind == PREMULTIPLIED ? BLEND_PREMULTIPLIED : BLEND);
+            return;
+        }
         setup();
-        if (kind == PREMULTIPLIED) {
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
+        BufferUploader.drawWithShader(mesh);
+        restore();
+    }
+
+    /** How {@link #drawTextured} lays its mesh over what is there: blended, blended as premultiplied, or replacing it. */
+    private static final int BLEND = 0, BLEND_PREMULTIPLIED = 1, NO_BLEND = 2;
+
+    /** Draws a textured mesh with the game's position-texture-colour shader, the GL state set and given back around it. */
+    private static void drawTextured(MeshData mesh, int textureId, int blend) {
+        if (mesh == null) return;
+        setup();
+        if (blend == BLEND_PREMULTIPLIED) {
             RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA,
                     GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+        } else if (blend == NO_BLEND) {
+            RenderSystem.disableBlend();
         }
-        if (kind == COLOR) {
-            RenderSystem.setShader(GameRenderer::getPositionColorShader);
-        } else {
-            RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
-            RenderSystem.setShaderTexture(0, texture);
-        }
+        RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
+        RenderSystem.setShaderTexture(0, textureId);
         BufferUploader.drawWithShader(mesh);
+        if (blend == NO_BLEND) RenderSystem.enableBlend();
         restore();
     }
 
@@ -173,25 +202,11 @@ public final class Draw {
     }
 
     public static void endTex(BufferBuilder buffer, int textureId) {
-        MeshData mesh = buffer.build();
-        if (mesh == null) return;
-        setup();
-        RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
-        RenderSystem.setShaderTexture(0, textureId);
-        BufferUploader.drawWithShader(mesh);
-        restore();
+        drawTextured(buffer.build(), textureId, BLEND);
     }
 
     static void endPremultiplied(BufferBuilder buffer, int textureId) {
-        MeshData mesh = buffer.build();
-        if (mesh == null) return;
-        setup();
-        RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA,
-                GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
-        RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
-        RenderSystem.setShaderTexture(0, textureId);
-        BufferUploader.drawWithShader(mesh);
-        restore();
+        drawTextured(buffer.build(), textureId, BLEND_PREMULTIPLIED);
     }
 
     public static void vtx(BufferBuilder b, Matrix4f m, float x, float y, int argb) {
@@ -894,15 +909,7 @@ public final class Draw {
         int c = 0xFFFFFFFF;
         vtx(b, m, x0, y0, u0, v0, c); vtx(b, m, x0, y1, u0, v1, c); vtx(b, m, x1, y1, u1, v1, c);
         vtx(b, m, x0, y0, u0, v0, c); vtx(b, m, x1, y1, u1, v1, c); vtx(b, m, x1, y0, u1, v0, c);
-        MeshData mesh = b.build();
-        if (mesh == null) return;
-        setup();
-        RenderSystem.disableBlend();
-        RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
-        RenderSystem.setShaderTexture(0, textureId);
-        BufferUploader.drawWithShader(mesh);
-        RenderSystem.enableBlend();
-        restore();
+        drawTextured(b.build(), textureId, NO_BLEND);
     }
 
     /** A triangle of a texture replacing what is underneath, like {@link #texturedQuadOpaque}; points and UVs as x, y, u, v. */
@@ -912,15 +919,7 @@ public final class Draw {
         BufferBuilder b = beginTex();
         int c = 0xFFFFFFFF;
         vtx(b, m, x1, y1, u1, v1, c); vtx(b, m, x2, y2, u2, v2, c); vtx(b, m, x3, y3, u3, v3, c);
-        MeshData mesh = b.build();
-        if (mesh == null) return;
-        setup();
-        RenderSystem.disableBlend();
-        RenderSystem.setShader(GameRenderer::getPositionTexColorShader);
-        RenderSystem.setShaderTexture(0, textureId);
-        BufferUploader.drawWithShader(mesh);
-        RenderSystem.enableBlend();
-        restore();
+        drawTextured(b.build(), textureId, NO_BLEND);
     }
 
     /** As {@link #texturedQuad} for a texture holding premultiplied colour (e.g. an off-screen layer). */

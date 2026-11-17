@@ -579,14 +579,14 @@ public final class WorldMapScreen extends Screen {
         }
     }
 
-    private void zoomAt(double mx, double my, double factor) {
+    /** One zoom step in ({@code steps} 1) or out (-1), keeping the place under (mx, my) where it is. */
+    private void zoomAt(double mx, double my, int steps) {
         anchorSX = mx;
         anchorSY = my;
         anchorWX = view.worldX(mx, my);
         anchorWZ = view.worldZ(mx, my);
         flying = false;
-        // One step in the direction of the factor (factor > 1 zooms in, < 1 zooms out).
-        targetScale = MapView.stepZoom(targetScale, factor > 1 ? 1 : factor < 1 ? -1 : 0);
+        targetScale = MapView.stepZoom(targetScale, steps);
         thumbAtTarget = false;
         zoomAnchored = true;
     }
@@ -635,12 +635,9 @@ public final class WorldMapScreen extends Screen {
         radarPointed = null;
         if (Radar.any() && viewingPlayerDim()) {
             boolean overUi = exiting || overPanels(mx, my) || pick != null && pick.contains(mx, my) || menu != null && menu.contains(mx, my);
-            Draw.batch();
-            try {
+            try (var batch = Draw.batch()) {
                 radarPointed = Radar.draw(g, view, pt, false, 0, 0, 0, false, Minecraft.getInstance().player.getY(), 1f,
                         overUi || dragging ? -1000 : mx, overUi || dragging ? -1000 : my, MapDataManager.get().cavesOnMap(), viewedBand());
-            } finally {
-                Draw.endBatch();
             }
         }
         hovered = null;
@@ -993,8 +990,7 @@ public final class WorldMapScreen extends Screen {
         boolean overUi = exiting || overPanels(mx, my) || pick != null && pick.contains(mx, my) || menu != null && menu.contains(mx, my);
         // No list building per frame: custom pins straight from the store, then the automatic points. The pin whose
         // panel is open stays visible whatever the filters.
-        Draw.batch(); // a pin's tile and frame drawn as one
-        try {
+        try (var batch = Draw.batch()) { // a pin's tile and frame drawn as one
             if (viewedDim != null) {
                 for (int i = 0, n = MarkerStore.count(); i < n; i++) {
                     Marker m = MarkerStore.get(i);
@@ -1007,8 +1003,6 @@ public final class WorldMapScreen extends Screen {
                 }
             }
             if (selX != null && !panelsShown()) drawSelectedPoint(g);
-        } finally {
-            Draw.endBatch();
         }
     }
 
@@ -1354,8 +1348,7 @@ public final class WorldMapScreen extends Screen {
         }
         // Each group slides out over its own edge of the screen by moving where its part of the layer is laid; all of
         // them one draw (one texture).
-        Draw.batch();
-        try {
+        try (var batch = Draw.batch()) {
             for (int i = 0; i < chromeRects.length; i++) {
                 if (i != CHROME_ZOOM && !barsOn) continue; // with a panel open only the zoom slider is shown
                 float[] r = chromeRects[i];
@@ -1367,8 +1360,6 @@ public final class WorldMapScreen extends Screen {
                 Draw.texturedQuadPremultiplied(g, chrome.textureId(), x0 + dx, y0 + dy, x1 + dx, y1 + dy,
                         x0 / width, CachedLayer.v(1f - y0 / height), x1 / width, CachedLayer.v(1f - y1 / height));
             }
-        } finally {
-            Draw.endBatch();
         }
     }
 
@@ -1765,11 +1756,11 @@ public final class WorldMapScreen extends Screen {
         // Zoom slider
         float sx = leftColumnX();
         if (Draw.inCircle(mx, my, sx, sliderPlusY(), 9)) {
-            zoomAt(width / 2.0, height / 2.0, 2);
+            zoomAt(width / 2.0, height / 2.0, 1);
             return true;
         }
         if (Draw.inCircle(mx, my, sx, sliderMinusY(), 9)) {
-            zoomAt(width / 2.0, height / 2.0, 0.5); // one step out
+            zoomAt(width / 2.0, height / 2.0, -1);
             return true;
         }
         if (Draw.inRect(mx, my, sx - 9, sliderTop() - 4, 18, sliderBottom() - sliderTop() + 8)) {
@@ -2038,7 +2029,7 @@ public final class WorldMapScreen extends Screen {
             return true;
         }
         if (scrollY != 0) {
-            zoomAt(mx, my, scrollY > 0 ? 2 : 0.5); // one step per wheel notch
+            zoomAt(mx, my, scrollY > 0 ? 1 : -1); // one step per wheel notch
         }
         return true;
     }
@@ -2072,8 +2063,8 @@ public final class WorldMapScreen extends Screen {
         closePick(); // keys move or zoom the map under it
         switch (key) {
             case GLFW.GLFW_KEY_SPACE -> recenterOnPlayer();
-            case GLFW.GLFW_KEY_EQUAL, GLFW.GLFW_KEY_KP_ADD -> zoomAt(width / 2.0, height / 2.0, 1.5);
-            case GLFW.GLFW_KEY_MINUS, GLFW.GLFW_KEY_KP_SUBTRACT -> zoomAt(width / 2.0, height / 2.0, 1 / 1.5);
+            case GLFW.GLFW_KEY_EQUAL, GLFW.GLFW_KEY_KP_ADD -> zoomAt(width / 2.0, height / 2.0, 1);
+            case GLFW.GLFW_KEY_MINUS, GLFW.GLFW_KEY_KP_SUBTRACT -> zoomAt(width / 2.0, height / 2.0, -1);
             case GLFW.GLFW_KEY_LEFT, GLFW.GLFW_KEY_A -> flyTo(targetX - 80 / scale, targetZ);
             case GLFW.GLFW_KEY_RIGHT, GLFW.GLFW_KEY_D -> flyTo(targetX + 80 / scale, targetZ);
             case GLFW.GLFW_KEY_UP, GLFW.GLFW_KEY_W -> flyTo(targetX, targetZ - 80 / scale);
