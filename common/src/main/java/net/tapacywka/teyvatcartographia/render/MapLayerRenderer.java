@@ -218,14 +218,10 @@ public final class MapLayerRenderer {
                     continue;
                 }
                 t.setFilter(blur);
-                float sx0 = view.screenX(t.blockX0(), t.blockZ0()), sy0 = view.screenY(t.blockX0(), t.blockZ0());
-                float sx1 = view.screenX(t.blockX0() + MapTile.SIZE, t.blockZ0() + MapTile.SIZE);
-                float sy1 = view.screenY(t.blockX0() + MapTile.SIZE, t.blockZ0() + MapTile.SIZE);
                 // Clip to the target rectangle so panels/edges stay clean.
-                float cx0 = Math.max(sx0, x0), cy0 = Math.max(sy0, y0), cx1 = Math.min(sx1, x1), cy1 = Math.min(sy1, y1);
-                if (cx1 <= cx0 || cy1 <= cy0) continue;
-                float w = sx1 - sx0, h = sy1 - sy0;
-                float u0 = in((cx0 - sx0) / w, edge), v0 = in((cy0 - sy0) / h, edge), u1 = in((cx1 - sx0) / w, edge), v1 = in((cy1 - sy0) / h, edge);
+                if (!clip(view, t.blockX0(), t.blockZ0(), MapTile.SIZE, x0, y0, x1, y1)) continue;
+                float cx0 = CLIP[0], cy0 = CLIP[1], cx1 = CLIP[2], cy1 = CLIP[3];
+                float u0 = in(CLIP[4], edge), v0 = in(CLIP[5], edge), u1 = in(CLIP[6], edge), v1 = in(CLIP[7], edge);
                 boolean byShader = t.edgeByShader();
                 if (byShader) {
                     edgeQuad(g, id, t.edgeFieldId(), t.blockX0(), t.blockZ0(), MapTile.SIZE, t.edgeMode(), edge, cx0, cy0, cx1, cy1, u0, v0, u1, v1, tint);
@@ -255,18 +251,39 @@ public final class MapLayerRenderer {
         return complete;
     }
 
+    /** What {@link #clip} found: the clipped corners on the screen, then how far into the square they lie (0 to 1). */
+    private static final float[] CLIP = new float[8];
+
+    /**
+     * Clips the screen square of the {@code size} blocks from block (bx0, bz0) to the rectangle: its visible corners
+     * into {@link #CLIP} 0 to 3, their place in the square into 4 to 7 (the texture coordinates before the edge inset).
+     * False when nothing of it shows. Render thread only.
+     */
+    private static boolean clip(MapView view, int bx0, int bz0, int size, float x0, float y0, float x1, float y1) {
+        float sx0 = view.screenX(bx0, bz0), sy0 = view.screenY(bx0, bz0);
+        float sx1 = view.screenX(bx0 + size, bz0 + size), sy1 = view.screenY(bx0 + size, bz0 + size);
+        float cx0 = Math.max(sx0, x0), cy0 = Math.max(sy0, y0), cx1 = Math.min(sx1, x1), cy1 = Math.min(sy1, y1);
+        if (cx1 <= cx0 || cy1 <= cy0) return false;
+        float w = sx1 - sx0, h = sy1 - sy0;
+        CLIP[0] = cx0;
+        CLIP[1] = cy0;
+        CLIP[2] = cx1;
+        CLIP[3] = cy1;
+        CLIP[4] = (cx0 - sx0) / w;
+        CLIP[5] = (cy0 - sy0) / h;
+        CLIP[6] = (cx1 - sx0) / w;
+        CLIP[7] = (cy1 - sy0) / h;
+        return true;
+    }
+
     /** The outline that comes into a region with nothing explored ({@link EdgeOnly}), drawn as that region would be. */
     private static void edgeOnly(GuiGraphics g, EdgeOnly e, MapView view, float x0, float y0, float x1, float y1, int tint, boolean blur, float edge) {
         int id = e.textureId();
         if (id < 0) return;
         e.setFilter(blur);
-        float sx0 = view.screenX(e.blockX0(), e.blockZ0()), sy0 = view.screenY(e.blockX0(), e.blockZ0());
-        float sx1 = view.screenX(e.blockX0() + MapTile.SIZE, e.blockZ0() + MapTile.SIZE);
-        float sy1 = view.screenY(e.blockX0() + MapTile.SIZE, e.blockZ0() + MapTile.SIZE);
-        float cx0 = Math.max(sx0, x0), cy0 = Math.max(sy0, y0), cx1 = Math.min(sx1, x1), cy1 = Math.min(sy1, y1);
-        if (cx1 <= cx0 || cy1 <= cy0) return;
-        float w = sx1 - sx0, h = sy1 - sy0;
-        float u0 = in((cx0 - sx0) / w, edge), v0 = in((cy0 - sy0) / h, edge), u1 = in((cx1 - sx0) / w, edge), v1 = in((cy1 - sy0) / h, edge);
+        if (!clip(view, e.blockX0(), e.blockZ0(), MapTile.SIZE, x0, y0, x1, y1)) return;
+        float cx0 = CLIP[0], cy0 = CLIP[1], cx1 = CLIP[2], cy1 = CLIP[3];
+        float u0 = in(CLIP[4], edge), v0 = in(CLIP[5], edge), u1 = in(CLIP[6], edge), v1 = in(CLIP[7], edge);
         if (e.byShader()) {
             edgeQuad(g, id, e.fieldId(), e.blockX0(), e.blockZ0(), MapTile.SIZE, e.mode(), edge, cx0, cy0, cx1, cy1, u0, v0, u1, v1, tint);
         } else {
@@ -318,16 +335,12 @@ public final class MapLayerRenderer {
         if (t.needsUpload() && allow) uploads--;
         int id = t.textureId(allow);
         if (id < 0) return uploads;
-        int bx0 = tx * MapTile.SIZE, bz0 = tz * MapTile.SIZE;
-        float sx0 = view.screenX(bx0, bz0), sy0 = view.screenY(bx0, bz0);
-        float sx1 = view.screenX(bx0 + MapTile.SIZE, bz0 + MapTile.SIZE), sy1 = view.screenY(bx0 + MapTile.SIZE, bz0 + MapTile.SIZE);
-        float cx0 = Math.max(sx0, x0), cy0 = Math.max(sy0, y0), cx1 = Math.min(sx1, x1), cy1 = Math.min(sy1, y1);
-        if (cx1 <= cx0 || cy1 <= cy0) return uploads;
-        float w = sx1 - sx0, h = sy1 - sy0, n = LodStore.REGIONS;
+        if (!clip(view, tx * MapTile.SIZE, tz * MapTile.SIZE, MapTile.SIZE, x0, y0, x1, y1)) return uploads;
+        float n = LodStore.REGIONS;
         float col = Math.floorMod(tx, LodStore.REGIONS), row = Math.floorMod(tz, LodStore.REGIONS);
-        float u0 = in((col + (cx0 - sx0) / w) / n, EDGE), v0 = in((row + (cy0 - sy0) / h) / n, EDGE);
-        float u1 = in((col + (cx1 - sx0) / w) / n, EDGE), v1 = in((row + (cy1 - sy0) / h) / n, EDGE);
-        lodQuad(g, t, id, cx0, cy0, cx1, cy1, u0, v0, u1, v1, tint);
+        float u0 = in((col + CLIP[4]) / n, EDGE), v0 = in((row + CLIP[5]) / n, EDGE);
+        float u1 = in((col + CLIP[6]) / n, EDGE), v1 = in((row + CLIP[7]) / n, EDGE);
+        lodQuad(g, t, id, CLIP[0], CLIP[1], CLIP[2], CLIP[3], u0, v0, u1, v1, tint);
         return uploads;
     }
 
@@ -386,14 +399,9 @@ public final class MapLayerRenderer {
                     complete = false;
                     continue;
                 }
-                float sx0 = view.screenX(t.blockX0(), t.blockZ0()), sy0 = view.screenY(t.blockX0(), t.blockZ0());
-                float sx1 = view.screenX(t.blockX0() + LodStore.BLOCKS, t.blockZ0() + LodStore.BLOCKS);
-                float sy1 = view.screenY(t.blockX0() + LodStore.BLOCKS, t.blockZ0() + LodStore.BLOCKS);
-                float cx0 = Math.max(sx0, x0), cy0 = Math.max(sy0, y0), cx1 = Math.min(sx1, x1), cy1 = Math.min(sy1, y1);
-                if (cx1 <= cx0 || cy1 <= cy0) continue;
-                float w = sx1 - sx0, h = sy1 - sy0;
-                lodQuad(g, t, id, cx0, cy0, cx1, cy1,
-                        in((cx0 - sx0) / w, EDGE), in((cy0 - sy0) / h, EDGE), in((cx1 - sx0) / w, EDGE), in((cy1 - sy0) / h, EDGE), tint);
+                if (!clip(view, t.blockX0(), t.blockZ0(), LodStore.BLOCKS, x0, y0, x1, y1)) continue;
+                lodQuad(g, t, id, CLIP[0], CLIP[1], CLIP[2], CLIP[3],
+                        in(CLIP[4], EDGE), in(CLIP[5], EDGE), in(CLIP[6], EDGE), in(CLIP[7], EDGE), tint);
             }
         }
         return complete;
