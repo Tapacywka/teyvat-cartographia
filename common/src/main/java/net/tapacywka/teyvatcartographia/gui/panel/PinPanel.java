@@ -175,7 +175,7 @@ public final class PinPanel extends SidePanel {
         return (TYPES.size() + cols - 1) / cols * CELL - Grid.GAP;
     }
 
-    // ------------------------------------------------------------------ grid scrolling (short screens, B20)
+    // ------------------------------------------------------------------ grid scrolling (short screens)
 
     /**
      * How far the type grid is scrolled down (as drawn this frame; eased, without steps, like the other lists); whether
@@ -247,7 +247,7 @@ public final class PinPanel extends SidePanel {
                     hoveredType = t;
                     Cursors.want(Cursors.Shape.HAND);
                 }
-                MarkerRenderer.badge(g, t.icon, sx + s / 2f, sy + s / 2f, s, t == type, hover, 1f);
+                MarkerRenderer.badge(g, t.icon, sx + s / 2f, sy + s / 2f, s, t == type, hover, 1f, false);
             }
             if (max > 0) {
                 g.disableScissor();

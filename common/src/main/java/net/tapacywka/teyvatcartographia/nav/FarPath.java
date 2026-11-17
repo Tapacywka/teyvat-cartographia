@@ -15,18 +15,17 @@ import java.util.Arrays;
  * {@code RADIUS} blocks of the player, read from the stored map regions: each cell samples four columns; lava
  * ({@link MapTile#FLAG_IMPASSABLE}) cannot be crossed, deep water only where it is at most {@link PathFinder#NARROW}
  * blocks wide, wider only when there is no other way to the goal (a player in it or over it swims out through the
- * surrounding water),
- * shallow water can, climbs and anything much higher than the
- * player cost more, like the near path. Unexplored cells (the fog) can be crossed at a small extra cost ({@link #fog}
- * marks the points there), and the path is smoothed into soft arcs ({@link PathSmoother}). The forest canopy stands in for the ground there, so the path is
- * coarse; near the player {@link PathFinder} is the precise one. By boat ({@link Navigation#byBoat}) it crosses deep water
- * of any width, like the near path; shallow water costs as much as land, narrow deep water a little more.
+ * surrounding water), shallow water can, climbs and anything much higher than the player cost more, like the near
+ * path. Unexplored cells (the fog) can be crossed at a small extra cost ({@link #fog} marks the points there), and the
+ * path is smoothed into soft arcs ({@link PathSmoother}). The forest canopy stands in for the ground there, so the path
+ * is coarse; near the player {@link PathFinder} is the precise one. By boat ({@link Navigation#byBoat}) it crosses deep
+ * water of any width, like the near path; shallow water costs as much as land, narrow deep water a little more.
  * <p>
  * Runs on the main thread from the client tick, only while the path is shown ({@link Navigation#pathWanted}) and the
  * target is farther than the near path reaches. The path is searched once per {@link Navigation#pathRequest} (a new
  * target, the pulse key, getting into or out of a boat, the end of the near path), not again while the player walks;
- * Only when
- * some regions in range were still on disk, it is searched once more {@code RETRY_TICKS} later, with them loaded. A
+ * only when some regions in range were still on disk, it is searched once more {@code RETRY_TICKS} later, with them
+ * loaded. A
  * search runs in slices of at most {@code SLICE_NANOS} per tick. The grid arrays are allocated on the first search.
  */
 public final class FarPath {
@@ -264,7 +263,7 @@ public final class FarPath {
         startPZ = (float) p.getZ();
         start = cellOf(p.getX(), p.getZ());
         startY = (int) Math.floor(p.getY());
-        // In the water, or over deep water (flying, in a boat): the path may swim out to the shore (B21).
+        // In the water, or over deep water (flying, in a boat): the path may swim out to the shore.
         ground(start);
         swimming = p.isInWater() || deep[start];
         swum[start] = swimming ? Float.NEGATIVE_INFINITY : 0;
