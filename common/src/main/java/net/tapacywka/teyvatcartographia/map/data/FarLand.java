@@ -346,6 +346,9 @@ public final class FarLand {
 
     // ------------------------------------------------------------------ the threads
 
+    /** How long {@link #close} waits for the threads, together. */
+    private static final long CLOSE_WAIT_MS = 500;
+
     private void work(int index) {
         long owed = 0;
         try {
@@ -397,10 +400,25 @@ public final class FarLand {
         return m;
     }
 
-    /** Stops the threads and saves what is done; a job on its way ends unseen. */
+    /**
+     * Stops the threads and saves what is done. A cell takes milliseconds, so the threads are waited for (at most
+     * {@code CLOSE_WAIT_MS} together): one on its way finishes its cell into the queue, which is written in below, and
+     * no thread outlives the world it worked for.
+     */
     void close() {
         running = false;
         threads.forEach(Thread::interrupt);
+        long until = System.currentTimeMillis() + CLOSE_WAIT_MS;
+        for (Thread t : threads) {
+            long left = until - System.currentTimeMillis();
+            if (left <= 0) break;
+            try {
+                t.join(left);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+        }
         threads.clear();
         jobs.clear();
         // What is finished is written in: it was work.
