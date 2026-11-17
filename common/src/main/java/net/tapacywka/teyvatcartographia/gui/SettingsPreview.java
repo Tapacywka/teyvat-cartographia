@@ -67,7 +67,7 @@ final class SettingsPreview {
     private static final boolean[] NO_FOG = new boolean[3];
     /** The illustration of the world under the beam and the stars: sky to the horizon, then the ground. */
     private static final int SKY_TOP = 0xFF5A86C8, SKY_HORIZON = 0xFFA8C8EC, GROUND_NEAR = 0xFF4E7A34, GROUND_FAR = 0xFF355624;
-    /** A frame the chosen step leaves off: darkened this much. */
+    /** A frame the setting leaves off (its box not ticked, a choice not taken): darkened this much. */
     private static final int OFF_DIM = 0xB0222A35;
 
     private static MapConfig.PinKind kind(MarkerType t) {
@@ -82,13 +82,6 @@ final class SettingsPreview {
         return Arrays.stream(MarkerType.values()).filter(t -> stones || t.category != MarkerType.Category.INTERACTION).toArray(MarkerType[]::new);
     }
 
-    /**
-     * Pins. With a pin row in focus ({@code focusKey}: the key of the row last pointed at, "...pins.custom" or
-     * "...path.custom" and so on), three frames of that setting filling the area, each with its caption: the world map,
-     * the minimap and the world (the beam over a pin, or the stars of the path); a frame the chosen step leaves off is
-     * darkened. Without one, the map around the player (the fog without a world) with a pin of every type in a ring
-     * and a path to one of each kind, faint where the world map does not show them.
-     */
     /**
      * The route setting: two pictures of a lake between the player and a tracked pin, the
      * path walking round it ("By land") and going straight across it in the colour of the sea with the sea icon where
@@ -154,6 +147,13 @@ final class SettingsPreview {
     private static final float[] ROUTE_PTS = new float[12];
     private static final boolean[] ROUTE_WATER = new boolean[6], NO_FOG6 = new boolean[6];
 
+    /**
+     * Pins. With a pin row in focus ({@code focusKey}: the key of the row last pointed at, "...pins.custom" or
+     * "...path.custom" and so on), the frames of that setting filling the area, each with its caption: the world map,
+     * the minimap and the world (the marker and the beam over a pin, or the stars of the path); a frame whose box is
+     * not ticked is darkened. Without one, the map around the player (the fog without a world) with a pin of every
+     * type in a ring and a path to one of each kind, faint where the world map does not show them.
+     */
     static void pins(GuiGraphics g, float x, float y, float w, float h, MapArea map, String focusKey) {
         MapConfig.PinKind focus = null;
         boolean path = false;
@@ -441,6 +441,31 @@ final class SettingsPreview {
 
     /** Chunks east and west, and north and south, of the player's in the detail samples (11 x 3 chunks, 176 x 48 blocks). */
     private static final int DETAIL_RX = 5, DETAIL_RZ = 1, DETAIL_W = 16 * (2 * DETAIL_RX + 1), DETAIL_H = 16 * (2 * DETAIL_RZ + 1);
+    /**
+     * The settings screen went (AACS 1.5.1 and on tell it, {@code Preview.closed}): the detail and The Sift textures go
+     * (5, about 120 KB). The next opening makes them again: the detail from the pixels kept, The Sift's drawn anew.
+     */
+    static void dispose() {
+        for (int i = 0; i < DETAIL_TEX.length; i++) {
+            if (DETAIL_TEX[i] != null) DETAIL_TEX[i].close();
+            DETAIL_TEX[i] = null;
+        }
+        detailShown = null;
+        for (int i = 0; i < SIFT_TEX.length; i++) {
+            if (SIFT_TEX[i] != null) SIFT_TEX[i].close();
+            SIFT_TEX[i] = null;
+            SIFT_SHOWN[i] = null;
+        }
+    }
+
+    /** How many of those textures are made now (for the in-game test of their freeing). */
+    static int texturesMade() {
+        int n = 0;
+        for (DynamicTexture t : DETAIL_TEX) if (t != null) n++;
+        for (DynamicTexture t : SIFT_TEX) if (t != null) n++;
+        return n;
+    }
+
     private static final DynamicTexture[] DETAIL_TEX =
             new DynamicTexture[MapConfig.Detail.values().length];
     private static volatile int[][] detailPixels;
@@ -638,27 +663,31 @@ final class SettingsPreview {
      * Backport: the babies): off, as dots and the usual faces; on, as their own faces. The picture of the setting as it
      * is stays bright, the other dimmed.
      */
+    /** A mob of the faces' picture: its face when on, when off (null: a dot), its kind, its place as a share of it. */
+    private record SampleMob(String on, String off, RadarRules.Kind kind, float x, float y) {}
+
+    private static final SampleMob[] TINY_MOBS = {
+            new SampleMob("minecraft:cow/baby", "minecraft:cow", RadarRules.Kind.PASSIVE, 0.22f, 0.26f),
+            new SampleMob("minecraft:pig/baby", "minecraft:pig", RadarRules.Kind.PASSIVE, 0.5f, 0.24f),
+            new SampleMob("minecraft:chicken/baby", "minecraft:chicken", RadarRules.Kind.PASSIVE, 0.78f, 0.26f),
+            new SampleMob("minecraft:villager/baby", "minecraft:villager", RadarRules.Kind.VILLAGERS, 0.3f, 0.76f),
+            new SampleMob("minecraft:wolf/baby", "minecraft:wolf", RadarRules.Kind.PETS, 0.7f, 0.76f)};
+    private static final SampleMob[] BACKPORT_MOBS = {
+            new SampleMob("minecraft:creaking", null, RadarRules.Kind.HOSTILE, 0.22f, 0.26f),
+            new SampleMob("minecraft:happy_ghast", null, RadarRules.Kind.PASSIVE, 0.5f, 0.24f),
+            new SampleMob("minecraft:copper_golem", null, RadarRules.Kind.PASSIVE, 0.78f, 0.26f),
+            new SampleMob("minecraft:cow/warm", "minecraft:cow", RadarRules.Kind.PASSIVE, 0.3f, 0.76f),
+            new SampleMob("minecraft:chicken/cold", "minecraft:chicken", RadarRules.Kind.PASSIVE, 0.7f, 0.76f)};
+
     private static void faces(GuiGraphics g, float x, float y, float w, MapArea map, boolean tiny) {
         boolean on = MapConfig.get(tiny ? MapConfig.TINY_TAKEOVER_FACES : MapConfig.VANILLA_BACKPORT_FACES);
-        // id when on, id when off (null: a dot), kind, place as a share of the picture
-        Object[][] mobs = tiny ? new Object[][] {
-                {"minecraft:cow/baby", "minecraft:cow", RadarRules.Kind.PASSIVE, 0.22f, 0.26f},
-                {"minecraft:pig/baby", "minecraft:pig", RadarRules.Kind.PASSIVE, 0.5f, 0.24f},
-                {"minecraft:chicken/baby", "minecraft:chicken", RadarRules.Kind.PASSIVE, 0.78f, 0.26f},
-                {"minecraft:villager/baby", "minecraft:villager", RadarRules.Kind.VILLAGERS, 0.3f, 0.76f},
-                {"minecraft:wolf/baby", "minecraft:wolf", RadarRules.Kind.PETS, 0.7f, 0.76f}}
-                : new Object[][] {
-                {"minecraft:creaking", null, RadarRules.Kind.HOSTILE, 0.22f, 0.26f},
-                {"minecraft:happy_ghast", null, RadarRules.Kind.PASSIVE, 0.5f, 0.24f},
-                {"minecraft:copper_golem", null, RadarRules.Kind.PASSIVE, 0.78f, 0.26f},
-                {"minecraft:cow/warm", "minecraft:cow", RadarRules.Kind.PASSIVE, 0.3f, 0.76f},
-                {"minecraft:chicken/cold", "minecraft:chicken", RadarRules.Kind.PASSIVE, 0.7f, 0.76f}};
+        SampleMob[] mobs = tiny ? TINY_MOBS : BACKPORT_MOBS;
         String[] keys = {"teyvatcartographia.config.preview.frame.off", "teyvatcartographia.config.preview.frame.on"};
         twoFrames(g, x, y, w, map, 2, keys, new boolean[] {!on, on}, (g2, fx, fy, s, i) -> {
-            for (Object[] m : mobs) {
-                String id = (String) (i == 1 ? m[0] : m[1]);
-                int colour = Radar.sampleColour((RadarRules.Kind) m[2]);
-                float mx = fx + s * (Float) m[3], my = fy + s * (Float) m[4];
+            for (SampleMob m : mobs) {
+                String id = i == 1 ? m.on() : m.off();
+                int colour = Radar.sampleColour(m.kind());
+                float mx = fx + s * m.x(), my = fy + s * m.y();
                 if (id != null) Radar.sampleFace(g2, id, mx, my, Radar.MOB_HEAD_MAP * 1.4f, colour);
                 else {
                     Draw.circle(g2, mx, my, Radar.DOT_MAP * 1.4f + 0.6f, Theme.RADAR_OUTLINE);

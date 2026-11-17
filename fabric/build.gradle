@@ -43,6 +43,7 @@ processResources {
             mod_authors            : mod_authors,
             mod_description        : mod_description,
             minecraft_version_range: fabric_minecraft_range,
+            aacs_min_version       : aacs_min_version,
     ]
     inputs.properties props
     filesMatching('fabric.mod.json') { expand props }
@@ -54,30 +55,27 @@ tasks.named('remapJar') {
 }
 
 tasks.named('compileJava', JavaCompile) {
-    // Source file names and line numbers (crash reports still point at the line), no tables of local variable names
-    // but in the mixins (below): about 60 KB less.
-    options.debugOptions.debugLevel = 'source,lines'
-}
-
-// Sinytra Connector's mixin adapter reads the local variable tables of a mixin's methods and stopped the game without
-// them: the mixins compiled once more with them (no annotation processing, the refmap is compileJava's),
-// and these classes go into the JAR instead (also the test JAR of the Connector runs, devtest-fabric.gradle).
-def mixinSources = 'net/tapacywka/teyvatcartographia/fabric/mixin/'
-def mixinsWithVars = tasks.register('compileMixinsWithVars', JavaCompile) {
-    dependsOn tasks.named('compileJava')
-    source = sourceSets.main.java.matching { include "${mixinSources}**" }
-    classpath = sourceSets.main.compileClasspath + sourceSets.main.output.classesDirs
-    destinationDirectory = layout.buildDirectory.dir('mixinsWithVars')
-    options.encoding = 'UTF-8'
-    options.compilerArgs += ['-proc:none']
+    // With the tables of local variable names: Sinytra Connector's mixin adapter reads them in a mixin's methods and
+    // stopped the game without them. All of it, not the mixins alone: a second compilation of the mixins put into the
+    // JAR by path was fragile, and the tables cost about 60 KB.
     options.debugOptions.debugLevel = 'source,lines,vars'
 }
-ext.mixinsWithVars = mixinsWithVars
-ext.withMixinVars = { Jar jar ->
-    def mainClasses = sourceSets.main.output.classesDirs.files
-    jar.dependsOn mixinsWithVars
-    jar.exclude { e -> e.path.startsWith(mixinSources) && mainClasses.any { e.file.toPath().startsWith(it.toPath()) } }
-    // The classes folder only: the task's outputs also hold the compiler's incremental data (167 KB).
-    jar.from(mixinsWithVars.flatMap { it.destinationDirectory })
+
+// The released JAR's mixins keep those tables after remapping: the build fails otherwise (part of `check`).
+def checkMixinVariables = tasks.register('checkMixinVariables') {
+    def jar = tasks.named('remapJar').flatMap { it.archiveFile }
+    inputs.file(jar)
+    doLast {
+        def mixins = 0
+        new java.util.zip.ZipFile(jar.get().asFile).withCloseable { zip ->
+            zip.entries().findAll { it.name.contains('/fabric/mixin/') && it.name.endsWith('.class') }.each { e ->
+                mixins++
+                def text = new String(zip.getInputStream(e).bytes, 'ISO-8859-1')
+                if (!text.contains('LocalVariableTable')) throw new GradleException("${e.name} has no local variable table: Connector cannot adapt it")
+            }
+        }
+        if (mixins == 0) throw new GradleException('No mixin classes in the JAR')
+        logger.lifecycle("Mixins with local variable tables: ${mixins}")
+    }
 }
-tasks.named('jar', Jar) { withMixinVars(it) }
+tasks.named('check') { dependsOn checkMixinVariables }

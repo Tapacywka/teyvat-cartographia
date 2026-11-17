@@ -1,5 +1,5 @@
 modLoader="javafml"
-loaderVersion="*"
+loaderVersion="${loader_version_range}"
 license="${mod_license}"
 issueTrackerURL="https://github.com/Tapacywka/teyvat-cartographia/issues"
 
@@ -32,6 +32,6 @@ iconBlur=true
 [[dependencies.${mod_id}]]
     modId="aacs"
     type="required"
-    versionRange="[1.5.0,)"
+    versionRange="[${aacs_min_version},)"
     ordering="NONE"
-    side="BOTH"
+    side="CLIENT"

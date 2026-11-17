@@ -83,8 +83,7 @@ public final class TeyvatConfigScreen {
     }
 
     /**
-     * Where a kind of pins shows (a box each instead of the steps): the world map, the
-     * minimap, the marker over a tracked one in the world, its beam (only with the marker).
+     * Where a kind of pins shows, a box each: the world map, the minimap, the marker over a tracked one in the world, its beam (only with the marker).
      */
     public static void pinRow(AacsScreen.Tab t, MapConfig.PinKind kind) {
         MapConfig.PinOptions o = MapConfig.pins(kind);
@@ -107,7 +106,7 @@ public final class TeyvatConfigScreen {
     }
 
 
-    /** Where a kind of the radar shows, a box for each map (the steps before). */
+    /** Where a kind of the radar shows, a box for each map. */
     public static void radarRow(AacsScreen.Tab t, String key, EnumValue<RadarRules.Show> value) {
         t.checks(K + key, K + "step.everywhere", K + "step.off", K + "step.some", List.of(
                 new AacsScreen.Check(FRAME + "map", () -> value.get().on(false),
@@ -225,8 +224,8 @@ public final class TeyvatConfigScreen {
             radarRow(t, "radar_pets", MapConfig.RADAR_PETS);
             radarRow(t, "radar_other", MapConfig.RADAR_OTHER);
         });
-        // Pins: each kind as one choice (off, the map, both maps, in the world with the marker, everywhere with the beam);
-        // then the path to a tracked pin of each kind (off, the map, both maps, everywhere with the stars). The
+        // Pins: each kind as a row of boxes (world map, minimap, the marker in the world, its beam); then the path to a
+        // tracked pin of each kind (world map, minimap, the stars in the world). The
         // interactive pins are the stones of Waystones: their two rows are in Compatibility > Waystones, so this tab is
         // the same with the mod or without it.
         b.tab(K + "tab.pins", t -> {
@@ -365,14 +364,8 @@ public final class TeyvatConfigScreen {
     /** The minimap's look: their preview is the minimap alone, without the lines under it. */
     private static final Set<String> LOOK_ROWS = Set.of(K + "minimap_shape", K + "minimap_opacity",K + "minimap_padding", K + "minimap_fade_width", K + "minimap_fade_strength");
 
-    /** The far land, the map edges and the world border: the map from farther out, where they show. */
-    private static final Set<String> FAR_ROWS = Set.of(K + "far_land", K + "map_outline", K + "world_border");
+    /** The zoom of the far rows' picture ({@link PreviewChoice#FAR_ROWS}): from farther out, where they show. */
     private static final double FAR_ZOOM = 1 / 8.0;
-
-    /** A row of where a kind of pins or its path shows: the frames of the Pins tab, also for the stones of Waystones in Compatibility. */
-    private static boolean pinKindRow(String rk) {
-        return rk.startsWith(K + "pins.") || rk.startsWith(K + "path.");
-    }
 
     /** The pictures of the settings of one tab on the card. */
     private static final class Pictures implements AacsScreen.Preview {
@@ -391,6 +384,12 @@ public final class TeyvatConfigScreen {
             return false;
         }
 
+        /** The screen went: the textures of the pictures go with it (each tab's picture is told; freeing twice is nothing). */
+        @Override
+        public void closed() {
+            SettingsPreview.dispose();
+        }
+
         @Override
         public void prepare(GuiGraphics g, String rk, float w, float h, float pt) {
             // The minimap's layers are brought up to date before any clipping (they draw off screen).
@@ -404,19 +403,23 @@ public final class TeyvatConfigScreen {
         public void draw(GuiGraphics g, String rk, float cx, float cy, float cw, float ch, float pt) {
             Minecraft mc = Minecraft.getInstance();
             boolean world = mc.player != null && mc.level != null;
-            if (rk.equals(K + "caves") && world) {
-                SettingsPreview.caves(g, cx, cy, cw, ch, (g2, mx, my, mw, mh, band) -> map(g2, mx, my, mw, mh,
+            switch (PreviewChoice.of(tab, rk)) {
+            case CAVES -> {
+                if (world) SettingsPreview.caves(g, cx, cy, cw, ch, (g2, mx, my, mw, mh, band) -> map(g2, mx, my, mw, mh,
                         MapView.snapZoom(MapConfig.get(MapConfig.MAP_DEFAULT_ZOOM)), pt, band == null ? MapDataManager.get().active() : MapDataManager.get().caveStore(band)));
-            } else if (rk.equals(K + "detail")) {
+                else note(g, cx, cy, cw, ch, K + "preview.no_world");
+            }
+            case DETAIL -> {
                 if (world) SettingsPreview.detail(g, cx, cy, cw, ch);
                 else note(g, cx, cy, cw, ch, K + "preview.no_world");
-            } else if (tab.equals(K + "tab.map") || FAR_ROWS.contains(rk)) {
-                if (world) map(g, cx, cy, cw, ch, FAR_ROWS.contains(rk) ? FAR_ZOOM : MapView.snapZoom(MapConfig.get(MapConfig.MAP_DEFAULT_ZOOM)), pt);
+            }
+            case MAP -> {
+                if (world) map(g, cx, cy, cw, ch, PreviewChoice.FAR_ROWS.contains(rk) ? FAR_ZOOM : MapView.snapZoom(MapConfig.get(MapConfig.MAP_DEFAULT_ZOOM)), pt);
                 else note(g, cx, cy, cw, ch, K + "preview.no_world");
-            } else if (rk.startsWith(K + "radar_")) {
-                // The radar: a made-up crowd round the player, as it draws them now (none may be near).
-                SettingsPreview.radar(g, cx, cy, cw, ch, (g2, mx, my, mw, mh, zoom) -> map(g2, mx, my, mw, mh, zoom, pt), rk);
-            } else if (tab.equals(K + "tab.minimap")) {
+            }
+            // The radar: a made-up crowd round the player, as it draws them now (none may be near).
+            case RADAR -> SettingsPreview.radar(g, cx, cy, cw, ch, (g2, mx, my, mw, mh, zoom) -> map(g2, mx, my, mw, mh, zoom, pt), rk);
+            case MINIMAP -> {
                 if (!world) note(g, cx, cy, cw, ch, K + "preview.no_world");
                 else if (!minimap) note(g, cx, cy, cw, ch, K + "preview.minimap_off");
                 // Its look: the minimap alone, without the lines under it; the rest (on or off too): with them, at its real size.
@@ -431,15 +434,15 @@ public final class TeyvatConfigScreen {
                     }
                     screenPicture(g, cx + (cw - pw) / 2f, cy + (ch - ph) / 2f, pw, ph, width, height);
                 } else minimapPicture(g, cx, cy, cw, ch);
-            } else if (rk.equals(K + "path_route")) {
-                SettingsPreview.route(g, cx, cy, cw, ch);
-            } else if (tab.equals(K + "tab.pins") || pinKindRow(rk)) {
-                SettingsPreview.pins(g, cx, cy, cw, ch, (g2, mx, my, mw, mh, zoom) -> map(g2, mx, my, mw, mh, zoom, pt), rk);
-            } else if (tab.equals(K + "tab.system")) {
+            }
+            case ROUTE -> SettingsPreview.route(g, cx, cy, cw, ch);
+            case PINS -> SettingsPreview.pins(g, cx, cy, cw, ch, (g2, mx, my, mw, mh, zoom) -> map(g2, mx, my, mw, mh, zoom, pt), rk);
+            case SYSTEM -> {
                 if (world) SettingsPreview.system(g, cx, cy, cw, ch);
                 else note(g, cx, cy, cw, ch, K + "preview.no_world");
-            } else {
-                SettingsPreview.compatSample(g, cx, cy, cw, ch, rk, (g2, mx, my, mw, mh, zoom) -> map(g2, mx, my, mw, mh, zoom, pt)); // this setting's mod alone
+            }
+            // This setting's mod alone.
+            case COMPAT -> SettingsPreview.compatSample(g, cx, cy, cw, ch, rk, (g2, mx, my, mw, mh, zoom) -> map(g2, mx, my, mw, mh, zoom, pt));
             }
         }
 
