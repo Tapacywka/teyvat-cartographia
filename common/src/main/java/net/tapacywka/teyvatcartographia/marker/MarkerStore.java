@@ -44,7 +44,7 @@ public final class MarkerStore {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
     /** The contents of {@code markers.json}: the format version, the pins and the tracked target. */
-    private record Saved(List<Marker> markers, Optional<Navigation.Target> target) {
+    record Saved(List<Marker> markers, Optional<Navigation.Target> target) {
         static final Codec<Saved> CODEC = RecordCodecBuilder.create(i -> i.group(
                 Codec.INT.optionalFieldOf("version", 1).forGetter(s -> 1),
                 Marker.CODEC.listOf().optionalFieldOf("markers", List.of()).forGetter(Saved::markers),
@@ -150,28 +150,42 @@ public final class MarkerStore {
         Navigation.restore(null);
         worldId = id;
         if (id == null) return;
-        Path file = file();
-        if (Files.exists(file)) {
-            try (Reader r = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
-                // A broken pin is left out and logged; the others load. The file is kept as it was, as the next save
-                // writes it without the broken pins.
-                Saved saved = Saved.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseReader(r))
-                        .resultOrPartial(e -> {
-                            TeyvatCartographia.LOGGER.error("Problem in {}: {}", file, e);
-                            keepUnreadable(file);
-                        }).orElse(null);
-                if (saved != null) {
-                    markers.addAll(saved.markers());
-                    // A pin or an automatic point. Free points of older versions (neither) are dropped.
-                    saved.target().filter(t -> t.markerId() != null || t.auto() != null).ifPresent(Navigation::restore);
-                    TeyvatCartographia.LOGGER.info("Teyvat Cartographia: loaded {} markers for {}", markers.size(), id);
-                }
-            } catch (IOException | RuntimeException e) {
-                TeyvatCartographia.LOGGER.error("Could not read markers from {}", file, e);
-                keepUnreadable(file);
-            }
+        Saved saved = read(file());
+        if (saved != null) {
+            markers.addAll(saved.markers());
+            saved.target().filter(MarkerStore::restorable).ifPresent(Navigation::restore);
+            TeyvatCartographia.LOGGER.info("Teyvat Cartographia: loaded {} markers for {}", markers.size(), id);
         }
         takeOldSharedPins();
+    }
+
+    /**
+     * Whether a saved target is tracked again: an automatic point, or a pin that loaded (one left out as broken, or of
+     * a type removed since, would leave a target nothing on the map stands for). Free points of older versions
+     * (neither a pin nor an automatic point) are dropped.
+     */
+    static boolean restorable(Navigation.Target t) {
+        return t.auto() != null || t.markerId() != null && find(t.markerId()) != null;
+    }
+
+    /**
+     * A world's pin file, or null when there is none or nothing of it can be read. A broken pin is left out and
+     * logged, the others load; a file not read whole is first copied aside ({@link #keepUnreadable}), as the next save
+     * writes it without what could not be read.
+     */
+    static Saved read(Path file) {
+        if (!Files.exists(file)) return null;
+        try (Reader r = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
+            return Saved.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseReader(r))
+                    .resultOrPartial(e -> {
+                        TeyvatCartographia.LOGGER.error("Problem in {}: {}", file, e);
+                        keepUnreadable(file);
+                    }).orElse(null);
+        } catch (IOException | RuntimeException e) {
+            TeyvatCartographia.LOGGER.error("Could not read markers from {}", file, e);
+            keepUnreadable(file);
+            return null;
+        }
     }
 
     /**

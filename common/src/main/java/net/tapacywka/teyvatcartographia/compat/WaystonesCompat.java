@@ -314,13 +314,28 @@ public final class WaystonesCompat {
     }
 
     private static void load() {
-        if (file == null || !Files.isRegularFile(file)) return;
+        if (file == null) return;
+        for (Stone s : readFile(file)) SEEN.computeIfAbsent(s.dimension(), d -> new HashMap<>()).put(s.key(), s);
+    }
+
+    /**
+     * The stones seen of a file (none when there is no file). One that cannot be read at all is first copied to
+     * {@code waystones.json.broken}: the next save would write over the only copy with the stones seen from then on.
+     */
+    static List<Stone> readFile(Path file) {
+        if (!Files.isRegularFile(file)) return List.of();
         try {
-            for (Stone s : readSeen(Files.readString(file, StandardCharsets.UTF_8))) {
-                SEEN.computeIfAbsent(s.dimension(), d -> new HashMap<>()).put(s.key(), s);
-            }
+            return readSeen(Files.readString(file, StandardCharsets.UTF_8));
         } catch (IOException | RuntimeException ex) {
             TeyvatCartographia.LOGGER.warn("Could not read the waystones seen from {}", file, ex);
+            Path kept = file.resolveSibling(file.getFileName() + ".broken");
+            try {
+                Files.copy(file, kept, StandardCopyOption.REPLACE_EXISTING);
+                TeyvatCartographia.LOGGER.warn("The unreadable file was kept as {}", kept);
+            } catch (IOException e) {
+                TeyvatCartographia.LOGGER.error("Could not keep a copy of the unreadable file {}", file, e);
+            }
+            return List.of();
         }
     }
 
@@ -368,13 +383,17 @@ public final class WaystonesCompat {
         JsonObject root = new JsonObject();
         root.add("seen", arr);
         try {
-            Files.createDirectories(file.getParent());
-            // Through a temporary file: a write cut short would leave a file that forgets every stone seen.
-            Path tmp = file.resolveSibling(file.getFileName() + ".tmp");
-            Files.writeString(tmp, root.toString(), StandardCharsets.UTF_8);
-            Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING);
+            write(file, root.toString());
         } catch (IOException ex) {
             TeyvatCartographia.LOGGER.warn("Could not write the waystones seen to {}", file, ex);
         }
+    }
+
+    /** Writes the file through a temporary one: a write cut short would leave a file that forgets every stone seen. */
+    static void write(Path file, String json) throws IOException {
+        Files.createDirectories(file.getParent());
+        Path tmp = file.resolveSibling(file.getFileName() + ".tmp");
+        Files.writeString(tmp, json, StandardCharsets.UTF_8);
+        Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING);
     }
 }
