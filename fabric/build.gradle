@@ -31,6 +31,7 @@ processResources {
             mod_authors            : mod_authors,
             mod_description        : mod_description,
             minecraft_version_range: fabric_minecraft_range,
+            aacs_min_version       : aacs_min_version,
     ]
     inputs.properties props
     filesMatching('fabric.mod.json') { expand props }
