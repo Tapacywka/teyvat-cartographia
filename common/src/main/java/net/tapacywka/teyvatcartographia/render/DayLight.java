@@ -17,22 +17,28 @@ public final class DayLight {
 
     /** ARGB tint for map tiles, given the current partial tick. White during the day. */
     public static int tint(float partialTick) {
-        ClientLevel level = Minecraft.getInstance().level;
-        if (level == null || !level.dimensionType().hasSkyLight()) return 0xFFFFFFFF;
-        float sky = level.getSkyDarken(partialTick);       // 0.2 .. 1.0
-        float day = Math.max(0f, Math.min(1f, (sky - 0.2f) / 0.8f));
-        int r = Math.round(255 * (NIGHT_R + (1 - NIGHT_R) * day));
-        int g = Math.round(255 * (NIGHT_G + (1 - NIGHT_G) * day));
-        int b = Math.round(255 * (NIGHT_B + (1 - NIGHT_B) * day));
-        return 0xFF000000 | (r << 16) | (g << 8) | b;
+        return tintAt(night(partialTick));
     }
 
     /** 0 in full daylight (or without a sky), 1 at the darkest point of the night. */
     public static float night(float partialTick) {
         ClientLevel level = Minecraft.getInstance().level;
         if (level == null || !level.dimensionType().hasSkyLight()) return 0f;
-        float sky = level.getSkyDarken(partialTick);
+        return nightOf(level.getSkyDarken(partialTick));
+    }
+
+    /** The night from the game's sky brightness (0.2 at midnight to 1.0 at noon): 0 at noon, 1 at midnight. */
+    static float nightOf(float sky) {
         return 1f - Math.max(0f, Math.min(1f, (sky - 0.2f) / 0.8f));
+    }
+
+    /** The tint of a night (0 day, white; 1 the darkest, moonlit blue). */
+    static int tintAt(float night) {
+        float day = 1 - night;
+        int r = Math.round(255 * (NIGHT_R + (1 - NIGHT_R) * day));
+        int g = Math.round(255 * (NIGHT_G + (1 - NIGHT_G) * day));
+        int b = Math.round(255 * (NIGHT_B + (1 - NIGHT_B) * day));
+        return 0xFF000000 | (r << 16) | (g << 8) | b;
     }
 
     /** Multiplies an ARGB colour's RGB by a tint's RGB (keeps the colour's alpha). */
