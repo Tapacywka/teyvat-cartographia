@@ -10,6 +10,8 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-11-17
+
 ### Added
 - Create's railways on the maps (Minecraft 1.21.1): the tracks as rails with sleepers on both maps (one line far out),
   stations with their names and signals, every train of the world on the world map (its carriages near, joined by
@@ -17,6 +19,7 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
   you on the minimap. Where each shows: Settings > Compatibility > Create.
 
 ### Changed
+- Needs Actually Amazing Config Screen 1.5.0 (only its version number changed: update it beside the mod).
 - The preview card of the settings shows an example for every row of the radar: one of each kind round you, drawn
   as the radar draws them with your settings, on the world map and the minimap. On Minecraft 1.21.1 likewise for the
   rows of Create (a railway with a station, a signal and a train), Sable (a ship) and the faces of Vanilla Backport
@@ -637,7 +640,8 @@ The first public release, for Minecraft 1.21.1 on NeoForge 21.1. Client only.
 - Cached HUD layers, chunk work on worker threads and path searches in short slices: the mod is meant to cost at most
   2 to 3% FPS.
 
-[Unreleased]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.4.1...HEAD
+[Unreleased]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.4.1...v1.5.0
 [1.4.1]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.3.2...v1.4.0
 [1.3.2]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.3.1...v1.3.2
