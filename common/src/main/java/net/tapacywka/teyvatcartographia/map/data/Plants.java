@@ -73,13 +73,18 @@ public final class Plants {
     public static Set<Block> shownSet() {
         List<? extends String> ids = MapConfig.get(MapConfig.PLANTS_HIDDEN);
         if (ids != shownFrom) {
-            Set<Block> s = new HashSet<>(all());
-            for (String id : ids) {
-                ResourceLocation rl = ResourceLocation.tryParse(id);
-                if (rl != null) BuiltInRegistries.BLOCK.getOptional(rl).ifPresent(s::remove);
+            // One worker builds it, the others wait for that set instead of building their own.
+            synchronized (Plants.class) {
+                if (ids != shownFrom) {
+                    Set<Block> s = new HashSet<>(all());
+                    for (String id : ids) {
+                        ResourceLocation rl = ResourceLocation.tryParse(id);
+                        if (rl != null) BuiltInRegistries.BLOCK.getOptional(rl).ifPresent(s::remove);
+                    }
+                    shown = s;
+                    shownFrom = ids;
+                }
             }
-            shown = s;
-            shownFrom = ids;
         }
         return MapConfig.get(MapConfig.MAP_PLANTS) ? shown : Set.of();
     }
