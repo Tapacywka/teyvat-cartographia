@@ -588,14 +588,14 @@ public final class WorldMapScreen extends Screen {
         }
     }
 
-    private void zoomAt(double mx, double my, double factor) {
+    /** One zoom step in ({@code steps} 1) or out (-1), keeping the place under (mx, my) where it is. */
+    private void zoomAt(double mx, double my, int steps) {
         anchorSX = mx;
         anchorSY = my;
         anchorWX = view.worldX(mx, my);
         anchorWZ = view.worldZ(mx, my);
         flying = false;
-        // One step in the direction of the factor (factor > 1 zooms in, < 1 zooms out).
-        targetScale = MapView.stepZoom(targetScale, factor > 1 ? 1 : factor < 1 ? -1 : 0);
+        targetScale = MapView.stepZoom(targetScale, steps);
         thumbAtTarget = false;
         zoomAnchored = true;
     }
@@ -1758,11 +1758,11 @@ public final class WorldMapScreen extends Screen {
         // Zoom slider
         float sx = leftColumnX();
         if (Draw.inCircle(mx, my, sx, sliderPlusY(), 9)) {
-            zoomAt(width / 2.0, height / 2.0, 2);
+            zoomAt(width / 2.0, height / 2.0, 1);
             return true;
         }
         if (Draw.inCircle(mx, my, sx, sliderMinusY(), 9)) {
-            zoomAt(width / 2.0, height / 2.0, 0.5); // one step out
+            zoomAt(width / 2.0, height / 2.0, -1);
             return true;
         }
         if (Draw.inRect(mx, my, sx - 9, sliderTop() - 4, 18, sliderBottom() - sliderTop() + 8)) {
@@ -2035,7 +2035,7 @@ public final class WorldMapScreen extends Screen {
             return true;
         }
         if (scrollY != 0) {
-            zoomAt(mx, my, scrollY > 0 ? 2 : 0.5); // one step per wheel notch
+            zoomAt(mx, my, scrollY > 0 ? 1 : -1); // one step per wheel notch
         }
         return true;
     }
@@ -2070,8 +2070,8 @@ public final class WorldMapScreen extends Screen {
         closePick(); // keys move or zoom the map under it
         switch (key) {
             case InputConstants.KEY_SPACE -> recenterOnPlayer();
-            case InputConstants.KEY_EQUALS, InputConstants.KEY_ADD -> zoomAt(width / 2.0, height / 2.0, 1.5);
-            case InputConstants.KEY_MINUS, Keys.KP_SUBTRACT -> zoomAt(width / 2.0, height / 2.0, 1 / 1.5);
+            case InputConstants.KEY_EQUALS, InputConstants.KEY_ADD -> zoomAt(width / 2.0, height / 2.0, 1);
+            case InputConstants.KEY_MINUS, Keys.KP_SUBTRACT -> zoomAt(width / 2.0, height / 2.0, -1);
             case InputConstants.KEY_LEFT, InputConstants.KEY_A -> flyTo(targetX - 80 / scale, targetZ);
             case InputConstants.KEY_RIGHT, InputConstants.KEY_D -> flyTo(targetX + 80 / scale, targetZ);
             case InputConstants.KEY_UP, InputConstants.KEY_W -> flyTo(targetX, targetZ - 80 / scale);

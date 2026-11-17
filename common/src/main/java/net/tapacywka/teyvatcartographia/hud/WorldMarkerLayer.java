@@ -105,21 +105,47 @@ public final class WorldMarkerLayer {
     /** The beam's rows: heights relative to the camera and brightness ({@link BeamShape#rows}). */
     private static final float[] BEAM_Y = new float[BeamShape.ROWS], BEAM_A = new float[BeamShape.ROWS];
 
-    private static long pulseStart = Long.MIN_VALUE;
     /**
-     * Fade of the beam at the screen's edge on the last HUD frame, 0..1: dimmed near the limiter ellipse, then gone a
-     * second after the glyph went onto it (the beam stays at the target's place meanwhile, so the fade
-     * shows; skipping the beam once the glyph left the view hid it). The beam is drawn in the world before the
-     * HUD, so it follows the previous frame.
+     * What the last HUD frame decided, for the world part of the next frame: the world (stars, beam) is drawn before
+     * the HUD, but what it shows is decided in the HUD (the marker's timer, its place on the screen), so the world
+     * follows it a frame late, which no one sees. The HUD writes it ({@link #render}), the world reads it
+     * ({@link #renderInWorld}, {@link #renderBeam}); render thread only.
      */
-    private static float edgeFade;
+    private static final class LastHud {
+        /**
+         * Fade of the beam at the screen's edge, 0..1: dimmed near the limiter ellipse, then gone a second after the
+         * glyph went onto it (the beam stays at the target's place meanwhile, so the fade shows; skipping the beam once
+         * the glyph left the view hid it).
+         */
+        float edgeFade;
+        /** Visibility of the marker, 0..1; the beam fades with it. */
+        float shown;
+        /** Fade of the marker close to the target, 0..1 (the beam fades with it). */
+        float nearFade;
+        /** Visibility of the stars (they follow the marker's timer, even with the marker off). */
+        float starsShown;
+        /** Whether the beam is on for the tracked pin's kind. */
+        boolean beamOn;
+
+        /** A new HUD frame: nothing shows until it says so (the fade near the target stays, set again before use). */
+        void clear() {
+            edgeFade = 0f;
+            shown = 0f;
+            starsShown = 0f;
+            beamOn = false;
+        }
+    }
+
+    private static final LastHud HUD = new LastHud();
+
+    private static long pulseStart = Long.MIN_VALUE;
     /** The beam's timed fade at the screen's edge before smoothing ({@link MarkerTiming#edgeStep}), and when it was last moved. */
     private static float edgeT;
     private static long edgeMs;
 
     /**
-     * Fabric's WorldRenderEvents.LAST: once the level is rendered draws the stars and the beam and keeps this
-     * frame's view and projection for the HUD.
+     * Once the level is rendered (Fabric's WorldRenderEvents.LAST, NeoForge's RenderLevelStageEvent AFTER_LEVEL): draws
+     * the stars and the beam and keeps this frame's view and projection for the HUD.
      */
     public static void afterLevel(Matrix4fc levelView, Camera camera, DeltaTracker delta) {
         // The level's projection of this frame (since 26.1 kept in the camera's render state).
@@ -140,16 +166,6 @@ public final class WorldMarkerLayer {
      */
     private static Navigation.Target shownTarget;
     private static long shownSince;
-    /**
-     * Visibility of the marker on the last HUD frame, 0..1; the beam fades with it.
-     */
-    private static float shown;
-    /** Fade of the marker close to the target on the last HUD frame, 0..1 (the beam fades with it). */
-    private static float nearFade;
-    /** Visibility of the stars on the last HUD frame (they follow the marker's timer, even with the marker off). */
-    private static float starsShown;
-    /** Whether the beam is on for the tracked pin's kind (last HUD frame). */
-    private static boolean beamOn;
 
     /**
      * Pulse key: shows the marker again for the time the settings say (fading in if hidden) and a golden diamond closes in on it.
@@ -185,10 +201,7 @@ public final class WorldMarkerLayer {
     public void render(GuiGraphicsExtractor g, DeltaTracker delta) {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
-        edgeFade = 0f;
-        shown = 0f;
-        starsShown = 0f;
-        beamOn = false;
+        HUD.clear();
         Navigation.setPathWanted(Navigation.PATH_WORLD, false); // the stars need the path only while they show
         if (player == null || mc.level == null) return;
         Navigation.Target t = Navigation.target();
@@ -201,21 +214,21 @@ public final class WorldMarkerLayer {
         float vis = visibility(Util.getMillis());
         if (vis <= 0.01f) return;
         if (o.pathInWorld()) {
-            starsShown = vis;
+            HUD.starsShown = vis;
             Navigation.setPathWanted(Navigation.PATH_WORLD, true);
         }
-        // The marker (and its beam) only on the "In the world" step and above; the stars follow the path's setting.
+        // The marker (and its beam) only with the kind's "Marker in the world" box ticked; the stars follow the path's.
         if (!o.marker()) return;
-        shown = vis;
-        beamOn = o.beam();
+        HUD.shown = vis;
+        HUD.beamOn = o.beam();
 
         float pt = delta.getGameTimeDeltaPartialTick(true);
         double px = Mth.lerp(pt, player.xo, player.getX()), py = Mth.lerp(pt, player.yo, player.getY()), pz = Mth.lerp(pt, player.zo, player.getZ());
         double ty = targetY(mc, t, py);
         double dx = t.x() - px, dy = ty - py, dz = t.z() - pz;
         double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        nearFade = MarkerTiming.smooth(dist / FADE_FAR);
-        float alpha = nearFade * shown;
+        HUD.nearFade = MarkerTiming.smooth(dist / FADE_FAR);
+        float alpha = HUD.nearFade * HUD.shown;
         if (alpha <= 0.01f) return;
 
         float gw = g.guiWidth(), gh = g.guiHeight();
@@ -239,7 +252,7 @@ public final class WorldMarkerLayer {
         if (nowMs - edgeMs > 250) edgeT = 0f;
         edgeMs = nowMs;
         edgeT = MarkerTiming.edgeStep(edgeT, inView, dtS);
-        edgeFade = MarkerTiming.smooth(edgeT) * MarkerTiming.approach(front ? ellipse : Float.NaN);
+        HUD.edgeFade = MarkerTiming.smooth(edgeT) * MarkerTiming.approach(front ? ellipse : Float.NaN);
 
         float dirX = 0, dirY = 0;
         if (!inView) {
@@ -390,13 +403,13 @@ public final class WorldMarkerLayer {
     private static void renderInWorld(Matrix4fc levelView, Matrix4fc projection, Camera camera, DeltaTracker delta) {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || Game.hideGui()) return;
-        boolean stars = starsShown > 0f && Navigation.inPlayerDimension(Navigation.target(), mc.player);
-        if (!stars && !beamOn) return;
+        boolean stars = HUD.starsShown > 0f && Navigation.inPlayerDimension(Navigation.target(), mc.player);
+        if (!stars && !HUD.beamOn) return;
         // The depth Fabulous leaves in the main target hid every star; the particles' target holds the scene's depth
         // (its own copy, plus the particles), so the light is tested against that one there.
         WorldGlow.begin(levelView, Game.particlesTarget());
         try {
-            if (stars) PathStars.render(camera, starsShown, projection);
+            if (stars) PathStars.render(camera, HUD.starsShown, projection);
             renderBeam(camera, delta);
         } finally {
             WorldGlow.end();
@@ -413,7 +426,7 @@ public final class WorldMarkerLayer {
     private static void renderBeam(Camera camera, DeltaTracker delta) {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
-        if (player == null || mc.level == null || Game.hideGui() || !beamOn) return;
+        if (player == null || mc.level == null || Game.hideGui() || !HUD.beamOn) return;
         Navigation.Target t = Navigation.target();
         if (!Navigation.inPlayerDimension(t, player)) return;
         float pt = delta.getGameTimeDeltaPartialTick(false);
@@ -421,7 +434,7 @@ public final class WorldMarkerLayer {
         double ty = targetY(mc, t, py);
         double dx = t.x() - px, dy = ty - py, dz = t.z() - pz;
         float dist = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
-        float a = shown * nearFade * edgeFade;
+        float a = HUD.shown * HUD.nearFade * HUD.edgeFade;
         if (a <= 0.01f) return;
 
         Vec3 cam = camera.position();
@@ -481,11 +494,11 @@ public final class WorldMarkerLayer {
     private static void clampToLimiter(float cx, float cy, float rx, float ry, float dx, float dy) {
         float t = (float) (1.0 / Math.sqrt(sq(dx / rx) + sq(dy / ry)));
         float x = cx + dx * t, y = cy + dy * t;
-        if (MinimapLayer.shown) {
+        if (MinimapLayer.drawnLastFrame()) {
             // Inside the minimap (plus the glyph's half size and a gap): stop where the ray enters that area, so the
             // marker slides along the minimap's border instead of covering it.
             float k = SIZE / 2f + Grid.GAP;
-            float ex0 = MinimapLayer.shownX0 - k, ey0 = MinimapLayer.shownY0 - k, ex1 = MinimapLayer.shownX1 + k, ey1 = MinimapLayer.shownY1 + k;
+            float ex0 = MinimapLayer.areaX0() - k, ey0 = MinimapLayer.areaY0() - k, ex1 = MinimapLayer.areaX1() + k, ey1 = MinimapLayer.areaY1() + k;
             boolean centreInside = cx > ex0 && cx < ex1 && cy > ey0 && cy < ey1;
             if (!centreInside && x > ex0 && x < ex1 && y > ey0 && y < ey1) {
                 float enterX = dx > 0 ? (ex0 - cx) / dx : dx < 0 ? (ex1 - cx) / dx : -Float.MAX_VALUE;
@@ -501,9 +514,7 @@ public final class WorldMarkerLayer {
 
     /** Whether (x, y) is under the minimap, where the marker would be hidden. */
     private static boolean inHud(float x, float y) {
-        if (!MinimapLayer.shown) return false;
-        float k = SIZE / 2f;
-        return x > MinimapLayer.shownX0 - k && x < MinimapLayer.shownX1 + k && y > MinimapLayer.shownY0 - k && y < MinimapLayer.shownY1 + k;
+        return MinimapLayer.covers(x, y, SIZE / 2f);
     }
 
     /** Height of the target's floor: its stored Y, else the loaded terrain, else the player's own height. */

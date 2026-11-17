@@ -421,8 +421,34 @@ public final class MinimapLayer {
      * The area the minimap (with its pills) covered when last drawn, for the marker in the world to go around it.
      * {@link WorldMarkerLayer} is drawn just before the minimap, so it sees the previous frame's area.
      */
-    static boolean shown;
-    static int shownX0, shownY0, shownX1, shownY1;
+    private static boolean shown;
+    private static int shownX0, shownY0, shownX1, shownY1;
+
+    /** Whether the minimap was drawn last frame (its area below is then the one it covered). */
+    static boolean drawnLastFrame() {
+        return shown;
+    }
+
+    static int areaX0() {
+        return shownX0;
+    }
+
+    static int areaY0() {
+        return shownY0;
+    }
+
+    static int areaX1() {
+        return shownX1;
+    }
+
+    static int areaY1() {
+        return shownY1;
+    }
+
+    /** Whether (x, y) lies on the minimap's last area grown by {@code pad} all round; never while it was not drawn. */
+    static boolean covers(float x, float y, float pad) {
+        return shown && x > shownX0 - pad && x < shownX1 + pad && y > shownY0 - pad && y < shownY1 + pad;
+    }
     private Navigation.Target kTarget;
     private Component kCoords, kBiome, kTime, kTime2;
     private float kPillScale;
