@@ -6,7 +6,7 @@ import java.util.Locale;
 
 /**
  * Rules of the minimap ({@link MinimapLayer}) kept apart to be tested: a minimap too large for the screen is drawn
- * smaller (B23), a pill wider than the map near the screen edge is shifted inward (B22), the text size, the clock row
+ * smaller, a pill wider than the map near the screen edge is shifted inward, the text size, the clock row
  * and its texts, the day of the world.
  */
 final class MinimapFit {

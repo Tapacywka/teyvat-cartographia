@@ -308,7 +308,7 @@ public final class Route {
     /** The pulse key keeps the path while the player is this close to its line (blocks); farther off it searches again. */
     public static final double NEAR_LINE = 8;
 
-    /** Whether (x, z) is near the line: the pulse key then shows the stars again without a new search (B10). */
+    /** Whether (x, z) is near the line: the pulse key then shows the stars again without a new search. */
     public static boolean nearLine(double x, double z) {
         return distanceTo(x, z) <= NEAR_LINE;
     }

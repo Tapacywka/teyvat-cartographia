@@ -263,7 +263,7 @@ public final class PathFinder {
         startPZ = (float) pz;
         start = cellOf(px, pz);
         startY = (int) Math.floor(py);
-        // In the water, or over deep water (flying, in a boat): the path may swim out to the shore (B21).
+        // In the water, or over deep water (flying, in a boat): the path may swim out to the shore.
         ground(start);
         swimming = inWater || deep[start];
         swum[start] = swimming ? FROM_START : 0;
