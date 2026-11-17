@@ -151,6 +151,7 @@ public final class TextureColors {
             }
         }
         ResourceManager rm = mc.getResourceManager();
+        int ticket = READS.begin();
         Util.backgroundExecutor().execute(() -> {
             Map<Identifier, Integer> averages = new HashMap<>();
             Map<Block, Entry> out = new IdentityHashMap<>();
@@ -163,15 +164,25 @@ public final class TextureColors {
                 Entry en = entry(e.getValue(), averages, rm);
                 if (en != null) outStates.put(e.getKey(), en);
             }
-            water = averages.computeIfAbsent(Identifier.withDefaultNamespace("block/water_still"), t -> read(rm, t));
-            lava = averages.computeIfAbsent(Identifier.withDefaultNamespace("block/lava_still"), t -> read(rm, t));
-            snow = averages.computeIfAbsent(Identifier.withDefaultNamespace("block/snow"), t -> read(rm, t));
-            blocks = out;
-            states = outStates;
-            fresh = true;
-            TeyvatCartographia.LOGGER.info("Teyvat Cartographia: texture colours of {} blocks, {} plant states ({} textures)", out.size(), outStates.size(), averages.size());
+            int w = averages.computeIfAbsent(Identifier.withDefaultNamespace("block/water_still"), t -> read(rm, t));
+            int l = averages.computeIfAbsent(Identifier.withDefaultNamespace("block/lava_still"), t -> read(rm, t));
+            int s = averages.computeIfAbsent(Identifier.withDefaultNamespace("block/snow"), t -> read(rm, t));
+            boolean published = READS.publish(ticket, () -> {
+                water = w;
+                lava = l;
+                snow = s;
+                blocks = out;
+                states = outStates;
+                fresh = true;
+            });
+            if (published) {
+                TeyvatCartographia.LOGGER.info("Teyvat Cartographia: texture colours of {} blocks, {} plant states ({} textures)", out.size(), outStates.size(), averages.size());
+            }
         });
     }
+
+    /** The readings of the colours: a reading started before another that ends after it is not used. */
+    private static final Latest READS = new Latest();
 
     /** At most this many states for the colours per state of one plant (wheat 8, a rose bush 2, sweet berries 4). */
     private static final int MAX_STATES = 32;
