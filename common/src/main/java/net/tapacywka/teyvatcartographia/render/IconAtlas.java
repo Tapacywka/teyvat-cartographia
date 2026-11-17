@@ -57,14 +57,16 @@ public final class IconAtlas {
     }
 
     private static void load() {
+        // The level being made: closed in the end also when a step fails, so no native memory is left behind.
+        NativeImage level = null;
         try {
             NativeImage base = stitch();
+            level = base;
             premultiply(base);
             texture = Gpu.texture("Teyvat Cartographia icons", GpuTexture.USAGE_TEXTURE_BINDING | GpuTexture.USAGE_COPY_DST,
                     base.getWidth(), base.getHeight(), MAX_LEVEL + 1);
             view = RenderSystem.getDevice().createTextureView(texture);
             CommandEncoder encoder = RenderSystem.getDevice().createCommandEncoder();
-            NativeImage level = base;
             for (int l = 0; l <= MAX_LEVEL; l++) {
                 Gpu.write(encoder, texture, level, l);
                 if (l < MAX_LEVEL) {
@@ -73,7 +75,6 @@ public final class IconAtlas {
                     level = next;
                 }
             }
-            level.close();
             tex = new Tex(view, RenderSystem.getSamplerCache().getSampler(AddressMode.CLAMP_TO_EDGE, AddressMode.CLAMP_TO_EDGE,
                     FilterMode.LINEAR, FilterMode.LINEAR, true));
         } catch (Exception e) {
@@ -83,6 +84,8 @@ public final class IconAtlas {
             texture = Gpu.texture("Teyvat Cartographia icons", GpuTexture.USAGE_TEXTURE_BINDING | GpuTexture.USAGE_COPY_DST, 1, 1, 1);
             view = RenderSystem.getDevice().createTextureView(texture);
             tex = Tex.clamped(view, false);
+        } finally {
+            if (level != null) level.close();
         }
     }
 
