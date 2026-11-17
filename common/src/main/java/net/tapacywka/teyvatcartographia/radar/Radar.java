@@ -31,6 +31,7 @@ import net.minecraft.world.entity.vehicle.VehicleEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.scores.Team;
+import net.tapacywka.teyvatcartographia.TeyvatCartographia;
 import net.tapacywka.teyvatcartographia.compat.TinyTakeover;
 import net.tapacywka.teyvatcartographia.compat.VanillaBackport;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
@@ -94,6 +95,8 @@ public final class Radar {
                        float[] yaw0, float[] yaw1, int[] team, Component[] name, UUID[] uuid, EntityType<?>[] type) {}
     private static volatile Far far;
     private static final AtomicBoolean asking = new AtomicBoolean();
+    /** The far entities could not be asked once: said in the log once, the radar goes on with what the client knows. */
+    private static volatile boolean askFailed;
 
     /** Sizes in GUI units: the dots' radius and the players' arrows, on the minimap and on the world map. */
     public static final float DOT_MINIMAP = 1.5f, DOT_MAP = 2f, ARROW_MINIMAP = 10f, ARROW_MAP = 13f;
@@ -231,6 +234,8 @@ public final class Radar {
                 try {
                     far = askServer(server, dim, me, px, pz, range);
                 } catch (RuntimeException e) {
+                    if (!askFailed) TeyvatCartographia.LOGGER.warn("The radar could not ask the game's server for far entities", e);
+                    askFailed = true;
                     far = null;
                 } finally {
                     asking.set(false);
