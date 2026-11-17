@@ -4,6 +4,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.tapacywka.teyvatcartographia.TeyvatCartographia;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
 import net.tapacywka.teyvatcartographia.gui.TeyvatConfigScreen;
 import net.tapacywka.teyvatcartographia.platform.Platform;
@@ -59,6 +60,16 @@ public final class VanillaBackport {
         return loaded() && MapConfig.get(MapConfig.VANILLA_BACKPORT_FACES);
     }
 
+    /** The mod's classes did not answer as expected (another version): its faces go, said once in the log. */
+    private static boolean warned;
+
+    private static void off(Throwable cause) {
+        on = false;
+        if (warned) return;
+        warned = true;
+        TeyvatCartographia.LOGGER.warn("Vanilla Backport's mob variants cannot be read, the radar shows their usual faces", cause);
+    }
+
     private static boolean on() {
         if (on == null) {
             on = false;
@@ -73,7 +84,7 @@ public final class VanillaBackport {
                 path = Class.forName(API + "ClientAsset", false, loader).getMethod("path");
                 on = true;
             } catch (ReflectiveOperationException | LinkageError e) {
-                on = false;
+                off(e);
             }
         }
         return on;
@@ -96,7 +107,7 @@ public final class VanillaBackport {
             }
             return known;
         } catch (ReflectiveOperationException | RuntimeException | LinkageError x) {
-            on = false;
+            off(x);
             return null;
         }
     }

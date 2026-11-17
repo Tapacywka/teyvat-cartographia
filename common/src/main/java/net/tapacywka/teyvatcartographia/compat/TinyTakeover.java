@@ -4,6 +4,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.tapacywka.teyvatcartographia.TeyvatCartographia;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
 import net.tapacywka.teyvatcartographia.platform.Platform;
 import net.tapacywka.teyvatcartographia.radar.MobFaces;
@@ -38,6 +39,16 @@ public final class TinyTakeover {
         return Platform.get() != null && Platform.get().isModLoaded(MobFaces.TINY_TAKEOVER);
     }
 
+    /** The mod's classes did not answer as expected (another version): its faces go, said once in the log. */
+    private static boolean warned;
+
+    private static void off(Throwable cause) {
+        on = false;
+        if (warned) return;
+        warned = true;
+        TeyvatCartographia.LOGGER.warn("Tiny Takeover Backport's baby textures cannot be read, the radar shows the usual faces", cause);
+    }
+
     private static boolean on() {
         if (on == null) {
             on = false;
@@ -48,7 +59,7 @@ public final class TinyTakeover {
                 drawnTexture = registry.getMethod("getBabyTexture", LivingEntity.class, ResourceLocation.class);
                 on = true;
             } catch (ReflectiveOperationException | LinkageError e) {
-                on = false;
+                off(e);
             }
         }
         return on && MapConfig.get(MapConfig.TINY_TAKEOVER_FACES);
@@ -76,7 +87,7 @@ public final class TinyTakeover {
             try {
                 known = (ResourceLocation) drawnTexture.invoke(null, mob, usual);
             } catch (ReflectiveOperationException | RuntimeException | LinkageError e) {
-                on = false;
+                off(e);
                 return null;
             }
             if (known == null) known = usual;
