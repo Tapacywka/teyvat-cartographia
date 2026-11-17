@@ -48,11 +48,12 @@ public final class IconAtlas {
 
     private static int load() {
         int id = TextureUtil.generateTextureId();
+        // The level being made: closed in the end also when a step fails, so no native memory is left behind.
+        NativeImage level = null;
         try {
-            NativeImage base = stitch();
-            premultiply(base);
-            TextureUtil.prepareImage(id, MAX_LEVEL, base.getWidth(), base.getHeight());
-            NativeImage level = base;
+            level = stitch();
+            premultiply(level);
+            TextureUtil.prepareImage(id, MAX_LEVEL, level.getWidth(), level.getHeight());
             for (int l = 0; l <= MAX_LEVEL; l++) {
                 GlStateManager._bindTexture(id);
                 level.upload(l, 0, 0, 0, 0, level.getWidth(), level.getHeight(), true, true, true, false);
@@ -62,12 +63,13 @@ public final class IconAtlas {
                     level = next;
                 }
             }
-            level.close();
             GlStateManager._bindTexture(id);
             GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
             GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
         } catch (Exception e) {
             TeyvatCartographia.LOGGER.error("Could not build the icon atlas", e);
+        } finally {
+            if (level != null) level.close();
         }
         return id;
     }
