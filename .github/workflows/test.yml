@@ -1,3 +1,8 @@
+          if ! git clone --depth 1 --branch "v$v" "$repo" ../aacs; then
+            # A release builds against a released AACS only: without its tag the run stops instead of taking the branch.
+            if [ "${{ github.ref_type }}" = "tag" ]; then echo "::error::AACS v$v has no tag yet: push it before the release tag"; exit 1; fi
+            git clone --depth 1 "$repo" ../aacs
+          fi
 name: Test
 
 on:
@@ -38,12 +43,16 @@ jobs:
       # Actually Amazing Config Screen (the settings screen, a required mod of its own), at the version gradle.properties
       # names (its mc26 branch, tag v<version>+mc26, built for this job's game), into the local Maven repository the build
       # reads it from. A version not tagged yet (a dev version in a pull request) is built from AACS's branch mc26 under that
-      # version.
+      # version; on a version tag that fails the run.
       - name: Actually Amazing Config Screen
         run: |
           v=$(grep '^aacs_version=' gradle.properties | cut -d= -f2 | tr -d '\r')
           repo=https://github.com/Tapacywka/actually-amazing-config-screen.git
-          git clone --depth 1 --branch "v$v+mc26" "$repo" ../aacs || git clone --depth 1 --branch mc26 "$repo" ../aacs
+          if ! git clone --depth 1 --branch "v$v+mc26" "$repo" ../aacs; then
+            # A release builds against a released AACS only: without its tag the run stops instead of taking the branch.
+            if [ "${{ github.ref_type }}" = "tag" ]; then echo "::error::AACS v$v+mc26 has no tag yet: push it before the release tag"; exit 1; fi
+            git clone --depth 1 --branch mc26 "$repo" ../aacs
+          fi
           cd ../aacs && chmod +x gradlew && ./gradlew publishToMavenLocal --no-daemon -Pmc=${{ matrix.game }} -Pmod_version="$v"
 
       - name: Run the unit tests
