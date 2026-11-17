@@ -32,6 +32,14 @@ final class EdgeMask {
     private boolean forShader;
     /** The chunks the outline comes from. */
     private long[] grid;
+    /*
+     * Two flags apart, as both can hold at once (a new outline worked out while the last one shows):
+     *   ready: an outline (or none, known) is there to draw. waitForFirst() clears it for a new picture; set() and
+     *          clear() set it. Not ready, the picture is not uploaded, so no frame shows the chunks' stairs.
+     *   busy:  a job for it is on the edge thread. started() sets it; set(), clear() and ignored() (a result nobody
+     *          wants any more) clear it. TileStore asks no new job while it is busy.
+     * Checked by EdgeMaskStateTest.
+     */
     /** False until the first outline is there: the picture is not uploaded before, so no frame shows the chunks' stairs. */
     private boolean ready = true;
     private boolean busy;
