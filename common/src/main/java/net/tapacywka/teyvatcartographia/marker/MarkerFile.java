@@ -7,6 +7,8 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
+import net.tapacywka.teyvatcartographia.TeyvatCartographia;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.io.Writer;
@@ -43,11 +45,11 @@ public final class MarkerFile {
         }
     }
 
-    /** The pins of the file; a broken pin is left out. Throws if the file is not a pin file at all. */
+    /** The pins of the file; a broken pin is left out, and said in the log. Throws if the file is not a pin file at all. */
     public static List<Marker> read(Path file) throws IOException {
         try (Reader r = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
             return Contents.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseReader(r))
-                    .resultOrPartial(e -> {}).map(Contents::markers)
+                    .resultOrPartial(e -> TeyvatCartographia.LOGGER.warn("Pins left out of {}: {}", file, e)).map(Contents::markers)
                     .orElseThrow(() -> new IOException("No pins in " + file));
         } catch (RuntimeException e) {
             throw new IOException("Not a pin file: " + file, e);
