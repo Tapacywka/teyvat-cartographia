@@ -1,12 +1,9 @@
 package net.tapacywka.teyvatcartographia.map.data;
 
-import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.tapacywka.teyvatcartographia.map.MapView;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL12;
 
 /**
  * A region where nothing is explored, in a concave corner of explored land: the smooth outline of the land around cuts
@@ -49,9 +46,7 @@ public final class EdgeOnly {
             image = new NativeImage(MapTile.SIZE, MapTile.SIZE, true);
             texture = new DynamicTexture(image);
             // Clamp, as a region: the clear picture's far side is not beside this one.
-            texture.bind();
-            GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
-            GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+            MapTile.clampToEdge(texture);
             gpuDirty = true;
         }
         if (gpuDirty) {

@@ -6,6 +6,7 @@ import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.tapacywka.teyvatcartographia.map.MapView;
+import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL12;
@@ -21,6 +22,16 @@ import java.util.Collections;
  * chunk was shaded). Main/render thread only.
  */
 public final class MapTile {
+    /**
+     * Binds a map picture's texture and clamps it at its edges: sampled at the very edge it would wrap to the opposite
+     * (often unexplored) side and show as thin seams between regions. Regions, far tiles and edge pictures alike.
+     */
+    static void clampToEdge(AbstractTexture texture) {
+        texture.bind();
+        GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
+        GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+    }
+
     public static final int SIZE = MapView.TILE_SIZE;
     public static final int CHUNKS = MapView.CHUNKS_PER_TILE;
     /** About the memory of a region: per pixel its colour, height, flags, light, and the colour again on the GPU. */
@@ -244,11 +255,7 @@ public final class MapTile {
                     releaseId();
                 }
             };
-            // Clamp, otherwise samples at the very edge wrap to the opposite (often unexplored) side
-            // and show up as 1px seams between regions.
-            texture.bind();
-            GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
-            GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+            clampToEdge(texture);
             if (edge.baked()) edge.overKept(image).upload(0, 0, 0, false);
             edge.uploadField();
             gpuDirty = false;
@@ -330,9 +337,7 @@ public final class MapTile {
                     releaseId();
                 }
             };
-            lightTexture.bind();
-            GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
-            GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+            clampToEdge(lightTexture);
         } else {
             lightTexture.upload();
         }

@@ -1,6 +1,5 @@
 package net.tapacywka.teyvatcartographia.map.data;
 
-import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
@@ -10,8 +9,6 @@ import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.tapacywka.teyvatcartographia.TeyvatCartographia;
 import net.tapacywka.teyvatcartographia.map.MapView;
 import net.minecraft.client.renderer.texture.DynamicTexture;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL12;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -139,9 +136,7 @@ public final class LodStore {
                     }
                 };
                 texture.setFilter(true, false);
-                texture.bind();
-                GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL12.GL_CLAMP_TO_EDGE);
-                GlStateManager._texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL12.GL_CLAMP_TO_EDGE);
+                MapTile.clampToEdge(texture);
                 if (edge.baked()) edge.over(image).upload(0, 0, 0, false);
                 edge.uploadField();
                 gpuDirty = false;
