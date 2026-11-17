@@ -18,6 +18,8 @@ public final class MapPalette {
     public static final int WATER_SHALLOW = 0xFF6CC2C6;
     public static final int WATER_DEEP = 0xFF1D5C74;
     public static final int LAVA = 0xFFF08A3A;
+    /** Cave layers: solid rock between the caves, and ore on a cave floor (gems: diamond, emerald, lapis; the rest). */
+    public static final int CAVE_ROCK = 0xFF3A3D44, ORE_GEM = 0xFF7CC7C2, ORE = 0xFFD9C27A;
 
     /** The game's own map colour of a block, as it is (no texture read for the block yet). */
     public static int standard(MapColor mc) {
