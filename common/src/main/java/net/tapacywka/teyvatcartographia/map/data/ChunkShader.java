@@ -29,9 +29,25 @@ public final class ChunkShader {
         return (z + PAD) * W + (x + PAD);
     }
 
+    /** Height the relief's light is measured from (about the sea), and over how many blocks it reaches full. */
+    private static final int ELEVATION_FROM = 62, ELEVATION_RANGE = 120;
+    /** Light a block of slope adds (towards the north-west light), and the most the height adds. */
+    private static final float SLOPE_LIGHT = 0.035f, ELEVATION_LIGHT = 0.07f;
+    /** The top of a step (High detail) and land beside water are drawn this much darker. */
+    private static final float STEP_TOP = 0.82f, SHORE = 0.86f;
+    /** Water this deep has the deep colour in full; the curve of the gradient. */
+    private static final float DEEP_AT = 12f, DEPTH_CURVE = 0.7f;
+
+    /** {@link #shade(ChunkScanner.Snapshot, Neighbourhood, MapConfig.Detail, float, float)} with the water settings as they are. */
     public static Result shade(ChunkScanner.Snapshot s, Neighbourhood n, MapConfig.Detail detail) {
-        // How much deep water darkens and how much ground shows through shallow water (settings, 0 to 1).
-        float depthShading = MapConfig.get(MapConfig.WATER_DEPTH) / 100f, clear = MapConfig.get(MapConfig.SHALLOW_WATER) / 100f;
+        return shade(s, n, detail, MapConfig.get(MapConfig.WATER_DEPTH) / 100f, MapConfig.get(MapConfig.SHALLOW_WATER) / 100f);
+    }
+
+    /**
+     * Shades a chunk: {@code depthShading} how much deep water darkens, {@code clear} how much ground shows through
+     * shallow water (the settings, 0 to 1).
+     */
+    static Result shade(ChunkScanner.Snapshot s, Neighbourhood n, MapConfig.Detail detail, float depthShading, float clear) {
         short[] H = n.heights();
         byte[] F = n.flags();
         int[] out = new int[256];
@@ -51,8 +67,8 @@ public final class ChunkShader {
                     color = s.color()[i]; // a shimmer of its own: no depth gradient, no relief
                 } else if ((F[p] & MapTile.FLAG_WATER) != 0) {
                     int d = s.waterDepth()[i] & 0xFF;
-                    float t = Math.min(1f, d / 12f);
-                    t = (float) Math.pow(t, 0.7);
+                    float t = Math.min(1f, d / DEEP_AT);
+                    t = (float) Math.pow(t, DEPTH_CURVE);
                     // Shallow water near the shore is already lighter through the depth gradient; no extra rim
                     // highlight (Genshin's coasts have none, and it made small swamp pools glow).
                     color = MapPalette.lerp(s.color()[i], MapPalette.deepWater(s.color()[i]), t * depthShading);
@@ -64,14 +80,14 @@ public final class ChunkShader {
                         int hN = known(F, pidx(x, z - 1)) ? H[pidx(x, z - 1)] : h;
                         int hW = known(F, pidx(x - 1, z)) ? H[pidx(x - 1, z)] : h;
                         float slope = Math.max(-6, Math.min(6, (h - hN) + (h - hW)));
-                        float elev = Math.max(-0.3f, Math.min(1f, (h - 62) / 120f));
-                        color = MapPalette.scale(color, 1f + slope * 0.035f + elev * 0.07f);
+                        float elev = Math.max(-0.3f, Math.min(1f, (h - ELEVATION_FROM) / (float) ELEVATION_RANGE));
+                        color = MapPalette.scale(color, 1f + slope * SLOPE_LIGHT + elev * ELEVATION_LIGHT);
                     }
                     if (detail == MapConfig.Detail.HIGH && isStepTop(H, F, x, z, h)) {
-                        color = MapPalette.scale(color, 0.82f);
+                        color = MapPalette.scale(color, STEP_TOP);
                     }
                     if (touchesWater(F, x, z)) {
-                        color = MapPalette.scale(color, 0.86f); // subtle shoreline, not a dark outline
+                        color = MapPalette.scale(color, SHORE); // subtle shoreline, not a dark outline
                     }
                 }
                 // No soft fade at the explored edge here: it would be measured in blocks and change width with zoom.
