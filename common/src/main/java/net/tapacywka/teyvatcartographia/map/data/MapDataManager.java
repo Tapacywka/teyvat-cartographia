@@ -132,7 +132,16 @@ public final class MapDataManager {
     private final int[] mappedPerTick = new int[100];
     private int mappedCursor, mappedNow;
 
-    private MapDataManager() {}
+    /**
+     * When the game closes, the writes still queued are waited for (at most {@code SHUTDOWN_IO_SECONDS}): the IO thread
+     * is a daemon, which the game's end would stop mid-file. Leaving a world waits less ({@link #closeAll}), as the
+     * game goes on and the thread with it.
+     */
+    private MapDataManager() {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> flushIo(SHUTDOWN_IO_SECONDS), "TeyvatCartographia-IO-Flush"));
+    }
+
+    private static final int SHUTDOWN_IO_SECONDS = 60;
 
     /**
      * Whether the active dimension has cave layers: a sky and no ceiling, and the setting on for either map. The caves
@@ -486,6 +495,7 @@ public final class MapDataManager {
         queued.clear();
         lastScan.clear();
         results.clear();
+        BiomeIndex.forgetAll();
         if (waitForIo) flushIo(5);
     }
 

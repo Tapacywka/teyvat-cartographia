@@ -41,7 +41,7 @@ import java.util.Arrays;
  * {@code r.<tx>.<tz>.dat} the gzip'd heights, flags and chunk metadata. Pure IO, safe to call from worker threads.
  */
 public final class MapStorage {
-    private static final int MAGIC = 0x54594D31; // "TYM1"
+    static final int MAGIC = 0x54594D31; // "TYM1"
     /**
      * The format of a region's metadata. 7 since 0.2.0 (colours of the block textures, plants, shallow water); regions of
      * an older one are deleted ({@link #dropOutdated}). Before it: 2 the surface sampled at the right height, 3 no rim
@@ -90,8 +90,10 @@ public final class MapStorage {
                 writePalette(out, s.biomePalette());
                 out.write(s.light());
             }
-            replace(datTmp, dat);
+            // The picture first: cut off between the two, new pixels under the old metadata only map those chunks
+            // again, while new metadata over the old picture would call blank chunks explored, holes until revisited.
             replace(pngTmp, png);
+            replace(datTmp, dat);
         } finally {
             s.image().close();
         }
@@ -131,7 +133,8 @@ public final class MapStorage {
                     in.readFully(light);
                 }
             } catch (IOException e) {
-                // Pixels are still usable; metadata will be rebuilt as chunks are revisited.
+                // A metadata file of this format damaged inside (one missing never comes here, see above): the pixels
+                // are still usable, the metadata is rebuilt as chunks are revisited.
                 TeyvatCartographia.LOGGER.warn("Damaged map metadata {}, ignoring", dat, e);
             }
         }
