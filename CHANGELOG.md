@@ -10,6 +10,12 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 
 ## [Unreleased]
 
+### Fixed
+- A pin file with some pins this version cannot read is kept as `markers.json.broken` before those pins are left out,
+  as it already was when no pin could be read.
+- The list of waystones seen is written through a temporary file, so a game closed in the middle of writing it no
+  longer forgets every stone seen but not activated.
+
 ## [1.5.0] - 2026-11-17
 
 ### Added

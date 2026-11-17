@@ -39,8 +39,6 @@ import java.util.function.Consumer;
 import net.minecraft.client.server.IntegratedServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.border.WorldBorder;
-import net.tapacywka.teyvatcartographia.gui.WorldMapScreen;
-import net.tapacywka.teyvatcartographia.version.Game;
 
 /**
  * Owns the cartography pipeline for the current world and dimension:
@@ -264,6 +262,13 @@ public final class MapDataManager {
         return index;
     }
 
+    /** Whether the world map is the screen shown; set by the map itself, so this package needs no GUI class. */
+    private boolean worldMapOpen;
+
+    public void setWorldMapOpen(boolean open) {
+        worldMapOpen = open;
+    }
+
     public void releaseViewStores() {
         viewStores.values().forEach(TileStore::close);
         viewStores.clear();
@@ -380,10 +385,6 @@ public final class MapDataManager {
         importing = false;
     }
 
-    public boolean importing() {
-        return importing;
-    }
-
     public void tick() {
         Minecraft mc = Minecraft.getInstance();
         if (TextureColors.tick()) remapLoaded(); // the texture colours were read (again): the chunks around in them
@@ -462,7 +463,7 @@ public final class MapDataManager {
                     Level.OVERWORLD, dimDir(Level.OVERWORLD).resolve("far"), io, reads, generation);
         }
         boolean here = active.dimension == far.dimension();
-        far.tick(Game.screen() instanceof WorldMapScreen, here, player.getX(), player.getZ(), here ? active : null);
+        far.tick(worldMapOpen, here, player.getX(), player.getZ(), here ? active : null);
     }
 
     private void closeFar() {

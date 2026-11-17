@@ -470,6 +470,7 @@ public final class WorldMapScreen extends Screen {
         }
         layoutPanels(width, height);
         lastFrameNs = System.nanoTime();
+        MapDataManager.get().setWorldMapOpen(true);
     }
 
     /** The map while it dissolves in or out. */
@@ -512,6 +513,7 @@ public final class WorldMapScreen extends Screen {
     public void removed() {
         Cursors.reset();
         Navigation.setPathWanted(Navigation.PATH_MAP, false);
+        MapDataManager.get().setWorldMapOpen(false);
         MapDataManager.get().releaseViewStores();
         chrome.destroy();
         picture.destroy();

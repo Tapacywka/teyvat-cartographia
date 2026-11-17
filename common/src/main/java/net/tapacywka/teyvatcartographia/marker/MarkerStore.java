@@ -10,6 +10,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 import net.tapacywka.teyvatcartographia.TeyvatCartographia;
 import net.tapacywka.teyvatcartographia.map.WorldId;
+import net.tapacywka.teyvatcartographia.map.data.MapStorage;
 import net.tapacywka.teyvatcartographia.nav.Navigation;
 
 import java.io.IOException;
@@ -152,16 +153,18 @@ public final class MarkerStore {
         Path file = file();
         if (Files.exists(file)) {
             try (Reader r = Files.newBufferedReader(file, StandardCharsets.UTF_8)) {
-                // A broken pin is left out and logged; the others load.
+                // A broken pin is left out and logged; the others load. The file is kept as it was, as the next save
+                // writes it without the broken pins.
                 Saved saved = Saved.CODEC.parse(JsonOps.INSTANCE, JsonParser.parseReader(r))
-                        .resultOrPartial(e -> TeyvatCartographia.LOGGER.error("Problem in {}: {}", file, e)).orElse(null);
+                        .resultOrPartial(e -> {
+                            TeyvatCartographia.LOGGER.error("Problem in {}: {}", file, e);
+                            keepUnreadable(file);
+                        }).orElse(null);
                 if (saved != null) {
                     markers.addAll(saved.markers());
                     // A pin or an automatic point. Free points of older versions (neither) are dropped.
                     saved.target().filter(t -> t.markerId() != null || t.auto() != null).ifPresent(Navigation::restore);
                     TeyvatCartographia.LOGGER.info("Teyvat Cartographia: loaded {} markers for {}", markers.size(), id);
-                } else {
-                    keepUnreadable(file);
                 }
             } catch (IOException | RuntimeException e) {
                 TeyvatCartographia.LOGGER.error("Could not read markers from {}", file, e);
@@ -232,7 +235,7 @@ public final class MarkerStore {
             try (Writer w = Files.newBufferedWriter(tmp, StandardCharsets.UTF_8)) {
                 GSON.toJson(root, w);
             }
-            Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING);
+            MapStorage.replace(tmp, file);
         } catch (IOException e) {
             TeyvatCartographia.LOGGER.error("Could not save markers to {}", file, e);
         }

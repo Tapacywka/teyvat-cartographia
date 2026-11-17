@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -368,7 +369,10 @@ public final class WaystonesCompat {
         root.add("seen", arr);
         try {
             Files.createDirectories(file.getParent());
-            Files.writeString(file, root.toString(), StandardCharsets.UTF_8);
+            // Through a temporary file: a write cut short would leave a file that forgets every stone seen.
+            Path tmp = file.resolveSibling(file.getFileName() + ".tmp");
+            Files.writeString(tmp, root.toString(), StandardCharsets.UTF_8);
+            Files.move(tmp, file, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException ex) {
             TeyvatCartographia.LOGGER.warn("Could not write the waystones seen to {}", file, ex);
         }
