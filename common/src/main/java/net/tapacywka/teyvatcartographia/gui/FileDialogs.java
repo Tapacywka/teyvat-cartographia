@@ -45,7 +45,7 @@ public final class FileDialogs {
      * A title or description as tinyfd takes it: it refuses straight quotes ("Xaero's" showed "INVALID TITLE WITH
      * QUOTES" instead of the title), so they become typographic ones.
      */
-    private static String text(String s) {
+    static String text(String s) {
         return s.replace('\'', '\u2019').replace('"', '\u201D');
     }
 
