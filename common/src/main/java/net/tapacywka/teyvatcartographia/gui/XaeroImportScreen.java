@@ -81,6 +81,15 @@ public final class XaeroImportScreen extends Screen {
         return y0() + panelH() - Grid.PAD - Grid.ACTION_H;
     }
 
+    /** Where the switch of row {@code i} is: the same place drawn and clicked. */
+    private float toggleX() {
+        return x0() + W - Grid.PAD - Grid.TOGGLE_W;
+    }
+
+    private float toggleY(int i) {
+        return listTop() + i * ROW + (ROW - Grid.TOGGLE_H) / 2f;
+    }
+
     @Override
     public void render(GuiGraphics g, int mx, int my, float pt) {
         super.render(g, mx, my, pt);
@@ -100,7 +109,7 @@ public final class XaeroImportScreen extends Screen {
             DrawText.text(g, DrawText.fit(name, (int) (bw - Grid.TOGGLE_W - Grid.GAP)), bx, ry + 2, Theme.WHITE, false);
             String sub = Component.translatable(K + "regions", s.regions(), DATE.format(s.newest().toInstant())).getString();
             DrawText.text(g, DrawText.fit(sub, (int) (bw - Grid.TOGGLE_W - Grid.GAP)), bx, ry + 2 + DrawText.LINE + 2, Theme.TEXT_MUTED, false);
-            if (running == null) Ui.toggle(g, x + w - Grid.PAD - Grid.TOGGLE_W, ry + (ROW - Grid.TOGGLE_H) / 2f, chosen[i], mx, my);
+            if (running == null) Ui.toggle(g, toggleX(), toggleY(i), chosen[i], mx, my);
         }
         float ny = ly + rows() * ROW + 2;
         if (running == null) {
@@ -186,7 +195,7 @@ public final class XaeroImportScreen extends Screen {
                 return true;
             }
             for (int i = 0; i < Math.min(sources.size(), rows()); i++) {
-                if (Ui.toggleHit(x + w - Grid.PAD - Grid.TOGGLE_W, listTop() + i * ROW + (ROW - Grid.TOGGLE_H) / 2f, mx, my)) {
+                if (Ui.toggleHit(toggleX(), toggleY(i), mx, my)) {
                     chosen[i] = !chosen[i];
                     return true;
                 }
