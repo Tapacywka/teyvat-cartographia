@@ -18,29 +18,31 @@ public final class DayLight {
 
     /** ARGB tint for map tiles, given the current partial tick. White during the day. */
     public static int tint(float partialTick) {
-        ClientLevel level = Minecraft.getInstance().level;
-        if (level == null || !level.dimensionType().hasSkyLight()) return 0xFFFFFFFF;
-        float day = daylight(level);
-        int r = Math.round(255 * (NIGHT_R + (1 - NIGHT_R) * day));
-        int g = Math.round(255 * (NIGHT_G + (1 - NIGHT_G) * day));
-        int b = Math.round(255 * (NIGHT_B + (1 - NIGHT_B) * day));
-        return 0xFF000000 | (r << 16) | (g << 8) | b;
+        return tintAt(night(partialTick));
     }
 
     /** 0 in full daylight (or without a sky), 1 at the darkest point of the night. */
     public static float night(float partialTick) {
         ClientLevel level = Minecraft.getInstance().level;
         if (level == null || !level.dimensionType().hasSkyLight()) return 0f;
-        return 1f - daylight(level);
+        return nightOf(level.environmentAttributes().getDimensionValue(EnvironmentAttributes.SKY_LIGHT_LEVEL));
     }
 
     /**
-     * 1 in full daylight, 0 at the darkest point of the night: the sky light level of the dimension (15 by day, 4 at
-     * night; since 26.1 an environment attribute, the old smooth sky brightness 0.2 to 1 is gone).
+     * The night from the sky light level of the dimension (15 by day, 4 at night; since 26.1 an environment attribute,
+     * the old smooth sky brightness 0.2 to 1 is gone): 0 at noon, 1 at midnight.
      */
-    private static float daylight(ClientLevel level) {
-        float sky = level.environmentAttributes().getDimensionValue(EnvironmentAttributes.SKY_LIGHT_LEVEL);
-        return Math.max(0f, Math.min(1f, (sky - 4f) / 11f));
+    static float nightOf(float sky) {
+        return 1f - Math.max(0f, Math.min(1f, (sky - 4f) / 11f));
+    }
+
+    /** The tint of a night (0 day, white; 1 the darkest, moonlit blue). */
+    static int tintAt(float night) {
+        float day = 1 - night;
+        int r = Math.round(255 * (NIGHT_R + (1 - NIGHT_R) * day));
+        int g = Math.round(255 * (NIGHT_G + (1 - NIGHT_G) * day));
+        int b = Math.round(255 * (NIGHT_B + (1 - NIGHT_B) * day));
+        return 0xFF000000 | (r << 16) | (g << 8) | b;
     }
 
     /** Multiplies an ARGB colour's RGB by a tint's RGB (keeps the colour's alpha). */
