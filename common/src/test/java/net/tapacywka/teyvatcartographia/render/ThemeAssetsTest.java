@@ -64,6 +64,18 @@ class ThemeAssetsTest {
         assertTrue(missing.isEmpty(), "icons missing: " + missing);
     }
 
+    /** No icon file without its {@link Icon}: the atlas loads only the enum's, so a stray file is dead weight. */
+    @Test
+    void noIconFileWithoutAnIcon() throws IOException {
+        Set<String> known = new TreeSet<>();
+        for (Icon i : Icon.values()) known.add(i.name().toLowerCase(Locale.ROOT) + ".png");
+        List<String> stray = new ArrayList<>();
+        try (var files = Files.list(DEFAULT.resolve("icons/64"))) {
+            files.map(p -> p.getFileName().toString()).filter(n -> !known.contains(n)).forEach(stray::add);
+        }
+        assertTrue(stray.isEmpty(), "icon files no Icon names: " + stray);
+    }
+
     @Test
     void theThemeHasItsFiles() {
         for (String f : new String[]{"theme.json", "colors.json", "fog.png"}) {
