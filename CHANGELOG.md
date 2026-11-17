@@ -15,6 +15,8 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
   as it already was when no pin could be read.
 - The list of waystones seen is written through a temporary file, so a game closed in the middle of writing it no
   longer forgets every stone seen but not activated.
+- Two worlds or servers whose names are longer than 80 characters and begin alike no longer share one map. The map of
+  such a world moves to a folder of its own the first time the world is opened.
 
 ## [1.5.0] - 2026-11-17
 
