@@ -10,12 +10,12 @@ import org.junit.jupiter.api.io.TempDir;
 
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPOutputStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -36,19 +36,13 @@ class BiomeIndexCacheTest {
     @TempDir
     Path dir;
 
-    private static int storageInt(String name) throws ReflectiveOperationException {
-        Field f = MapStorage.class.getDeclaredField(name);
-        f.setAccessible(true);
-        return f.getInt(null);
-    }
-
     /** A region's metadata file as the map writes it, with every chunk in the given biome. */
     private void writeRegion(int tx, int tz, ResourceKey<Biome> biome) throws Exception {
         int pixels = MapTile.SIZE * MapTile.SIZE;
         Path dat = dir.resolve("r." + tx + "." + tz + ".dat");
         try (DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new GZIPOutputStream(Files.newOutputStream(dat))))) {
-            out.writeInt(storageInt("MAGIC"));
-            out.writeInt(storageInt("VERSION"));
+            out.writeInt(MapStorage.MAGIC);
+            out.writeInt(MapStorage.VERSION);
             for (int i = 0; i < pixels; i++) out.writeShort(64);
             out.write(new byte[pixels]); // flags
             out.write(new byte[N * N]); // chunk states
@@ -59,15 +53,16 @@ class BiomeIndexCacheTest {
     }
 
     /** A fresh index of the folder, as after a restart (the shared instance of {@link BiomeIndex#of} is kept per path). */
-    private BiomeIndex fresh() throws ReflectiveOperationException {
-        Constructor<BiomeIndex> c = BiomeIndex.class.getDeclaredConstructor(Path.class);
-        c.setAccessible(true);
-        return c.newInstance(dir);
+    private BiomeIndex fresh() {
+        return new BiomeIndex(dir);
     }
 
-    private static BiomeIndex.Snapshot refreshed(BiomeIndex index) throws InterruptedException {
+    /** Refreshes and waits for it: the search thread runs its jobs in order, so a job queued after the refresh ends after it. */
+    private static BiomeIndex.Snapshot refreshed(BiomeIndex index) throws Exception {
         index.refresh();
-        for (int i = 0; i < 500 && index.busy(); i++) Thread.sleep(10);
+        CompletableFuture<Void> done = new CompletableFuture<>();
+        BiomeIndex.run(() -> done.complete(null));
+        done.get(10, TimeUnit.SECONDS);
         assertFalse(index.busy(), "the refresh finished");
         return index.snapshot();
     }
@@ -135,6 +130,21 @@ class BiomeIndexCacheTest {
         Files.setLastModifiedTime(dat, FileTime.fromMillis(Files.getLastModifiedTime(dat).toMillis() + 5000));
         BiomeIndex.Snapshot s = refreshed(index);
         assertEquals(DESERT, s.palette().get(region(s, 0, 0).biome()[0]));
+    }
+
+    /** Leaving a world lets its indexes go; the next one of a folder is read from its cache again. */
+    @Test
+    void leavingTheWorldForgetsTheIndexes() throws Exception {
+        writeRegion(0, 0, PLAINS);
+        BiomeIndex first = BiomeIndex.of(dir);
+        refreshed(first);
+        assertTrue(BiomeIndex.kept() > 0);
+        BiomeIndex.forgetAll();
+        assertEquals(0, BiomeIndex.kept());
+        BiomeIndex again = BiomeIndex.of(dir);
+        assertFalse(again == first, "a new index after the world was left");
+        assertEquals(1, refreshed(again).regions().size(), "read again, from the cache");
+        BiomeIndex.forgetAll();
     }
 
     @Test

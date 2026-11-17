@@ -82,13 +82,26 @@ public final class BiomeIndex {
     private final Long2ObjectOpenHashMap<Region> regions = new Long2ObjectOpenHashMap<>();
     private boolean cacheRead;
 
-    private BiomeIndex(Path dir) {
+    BiomeIndex(Path dir) {
         this.dir = dir;
     }
 
     /** The index of a dimension's map folder. */
     public static BiomeIndex of(Path dir) {
         return INDEXES.computeIfAbsent(dir, BiomeIndex::new);
+    }
+
+    /**
+     * The world was left: its indexes go (each holds a snapshot of every explored region), so a session that visits
+     * many worlds and servers does not keep them all. They are on disk ({@code biomes.idx}) for the next visit.
+     */
+    public static void forgetAll() {
+        INDEXES.clear();
+    }
+
+    /** How many indexes are kept now. */
+    static int kept() {
+        return INDEXES.size();
     }
 
     /** Runs a job on the search thread, after any refresh queued before it. */
