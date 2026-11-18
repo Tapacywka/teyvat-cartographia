@@ -1,8 +1,3 @@
-          if ! git clone --depth 1 --branch "v$v" "$repo" ../aacs; then
-            # A release builds against a released AACS only: without its tag the run stops instead of taking the branch.
-            if [ "${{ github.ref_type }}" = "tag" ]; then echo "::error::AACS v$v has no tag yet: push it before the release tag"; exit 1; fi
-            git clone --depth 1 "$repo" ../aacs
-          fi
 name: Test
 
 on:
