@@ -45,11 +45,7 @@ class MapTeleportTest {
                 "known ground in the Nether: straight there");
     }
 
-    /**
-     * Known bug: the middle of a block is written as the block and ".5", so block -21 (from -21 to -20) gives -21.5,
-     * the middle of block -22. Enable with its fix.
-     */
-    @org.junit.jupiter.api.Disabled("negative coordinates land a block off: -21 + \".5\" is the middle of block -22")
+    /** Block -21 runs from -21 to -20: its middle is -20.5 (written as the block and ".5" it was -21.5, block -22's). */
     @Test
     void negativeBlocksTheirOwnMiddle() {
         assertEquals("execute in minecraft:overworld run tp @s -9.5 65 -20.5", MapTeleport.command(Level.OVERWORLD, -10, 65, -21));
@@ -58,6 +54,13 @@ class MapTeleportTest {
                 MapTeleport.command(Level.NETHER, -10, MapTeleport.UNKNOWN, -21));
         assertEquals("execute in minecraft:overworld positioned -9.5 0 -20.5 positioned over motion_blocking run tp @s ~ ~ ~",
                 MapTeleport.landCommand(Level.OVERWORLD, -10, -21));
+    }
+
+    @Test
+    void farCoordinatesStayPlainNumbers() {
+        assertEquals("29999999.5", MapTeleport.mid(29_999_999));
+        assertEquals("-29999999.5", MapTeleport.mid(-30_000_000));
+        assertEquals("10000000.5", MapTeleport.mid(10_000_000));
     }
 
     @Test
