@@ -382,6 +382,15 @@ public final class MapTile {
                 Collections.unmodifiableList(new ArrayList<>(biomePalette)));
     }
 
+    /** The region again from a copy whose write failed (it takes the copy's picture), unsaved so it is written again. */
+    static MapTile restore(TileSnapshot s) {
+        MapTile t = new MapTile(s.tx(), s.tz(), s.image(), s.heights(), s.flags(), s.light(), s.chunkState(), s.chunkBiome());
+        t.biomePalette.addAll(s.biomePalette());
+        t.gpuDirty = true;
+        t.diskDirty = true;
+        return t;
+    }
+
     record TileSnapshot(int tx, int tz, NativeImage image, short[] heights, byte[] flags, byte[] light, byte[] chunkState,
                         short[] chunkBiome, List<ResourceKey<Biome>> biomePalette) {}
 }

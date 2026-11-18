@@ -166,6 +166,39 @@ class TileStoreTest {
         store.close();
     }
 
+    /**
+     * Back at an evicted region before the failed write was tried again: it comes back from the kept copy, not from the
+     * older files, and is unsaved so it is written again.
+     */
+    @Test
+    void anEvictedRegionReadBackComesFromItsKeptCopy(@TempDir Path root) throws Exception {
+        Path dir = root.resolve("map");
+        TileStore store = new TileStore(DIMENSION, dir, io, 1);
+        finishIo();
+        store.drainLoaded();
+        store.apply(new ChunkShader.Result(0, 0, new int[256], new short[256], new byte[256], new byte[256], 0, null, false));
+        store.saveAll();
+        io.submit(() -> {}).get(); // the older files: one chunk explored
+        assertTrue(Files.exists(dir.resolve("r.0.0.png")));
+
+        store.apply(new ChunkShader.Result(1, 0, new int[256], new short[256], new byte[256], new byte[256], 0, null, false));
+        assertEquals(2, store.peek(0, 0).chunkCount, "a second chunk, not saved yet");
+        store.peek(0, 0).lastUsedMs = 0;
+        Files.createDirectories(dir.resolve("r.0.0.png.tmp"));
+        store.evict(0);
+        io.submit(() -> {}).get();
+
+        assertNull(store.get(0, 0), "asked for again: read on the IO thread");
+        io.submit(() -> {}).get();
+        store.drainLoaded();
+        MapTile back = store.peek(0, 0);
+        assertNotNull(back);
+        assertEquals(2, back.chunkCount, "both chunks: from the kept copy, not the older files");
+        assertTrue(back.diskDirty, "unsaved, so the next save writes it");
+        Files.delete(dir.resolve("r.0.0.png.tmp"));
+        store.close();
+    }
+
     /** Files that cannot be read are set aside, so the region mapped anew does not write over them. */
     @Test
     void anUnreadableRegionIsSetAside(@TempDir Path root) throws IOException {
