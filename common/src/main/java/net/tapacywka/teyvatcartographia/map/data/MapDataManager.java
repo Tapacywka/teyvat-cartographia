@@ -5,9 +5,6 @@ import net.tapacywka.teyvatcartographia.compat.ModCompat;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
 import net.tapacywka.teyvatcartographia.map.MapView;
 import net.tapacywka.teyvatcartographia.map.WorldId;
-import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
-import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
@@ -62,7 +59,6 @@ public final class MapDataManager {
     }
 
     private static final int MAX_IN_FLIGHT = 48;
-    private static final long STALE_MS = 90_000;
 
     private final ExecutorService workers = Executors.newFixedThreadPool(2, r -> {
         Thread t = new Thread(r, "TeyvatCartographia-Shader");
@@ -98,9 +94,11 @@ public final class MapDataManager {
 
     private final ConcurrentLinkedQueue<Scanned> results = new ConcurrentLinkedQueue<>();
     private final AtomicInteger inFlight = new AtomicInteger();
-    private final LongArrayFIFOQueue queue = new LongArrayFIFOQueue();
-    private final LongOpenHashSet queued = new LongOpenHashSet();
-    private final Long2LongOpenHashMap lastScan = new Long2LongOpenHashMap();
+    /** The chunks waiting to be mapped and when each was last mapped. */
+    private final ScanQueue queue = new ScanQueue();
+    /** Whether a chunk is loaded on the client (made once, so the sweep allocates nothing). */
+    private final java.util.function.LongPredicate loaded =
+            k -> this.level != null && this.level.getChunkSource().getChunk(ChunkPos.getX(k), ChunkPos.getZ(k), ChunkStatus.FULL, false) != null;
 
     private ClientLevel level;
     private String worldId;
@@ -108,9 +106,6 @@ public final class MapDataManager {
     private final Map<ResourceKey<Level>, TileStore> viewStores = new HashMap<>();
     private long generation;
     private int tickCounter;
-    private int sweepCursor;
-    private int sweepRadius = -1;
-    private int[] sweepOffsets = new int[0];
 
     // Cave layers of the active dimension.
     private final CaveLayers caves = new CaveLayers(band -> new TileStore(active.dimension,
@@ -317,7 +312,7 @@ public final class MapDataManager {
 
     public void onChunkLoaded(LevelChunk chunk) {
         if (active == null || chunk.getLevel() != level) return;
-        enqueue(chunk.getPos().x, chunk.getPos().z, false);
+        queue.add(chunk.getPos().x, chunk.getPos().z, false);
     }
 
     // ------------------------------------------------------------------ lifecycle
@@ -372,9 +367,9 @@ public final class MapDataManager {
         int pcx = player.chunkPosition().x, pcz = player.chunkPosition().z;
         if (tickCounter % 20 == 0) {
             // Blocks change mostly around the player: refresh the 3x3 chunks regularly.
-            for (int dz = -1; dz <= 1; dz++) for (int dx = -1; dx <= 1; dx++) enqueue(pcx + dx, pcz + dz, true);
+            for (int dz = -1; dz <= 1; dz++) for (int dx = -1; dx <= 1; dx++) queue.add(pcx + dx, pcz + dz, true);
         }
-        sweep(pcx, pcz);
+        queue.sweep(pcx, pcz, effectiveRadius(), System.currentTimeMillis(), loaded);
         scanQueued();
 
         if (tickCounter % 100 == 0) {
@@ -386,7 +381,7 @@ public final class MapDataManager {
         if (tickCounter % 1200 == 0) {
             active.saveSoon();
             for (TileStore s : caves.stores()) s.saveSoon();
-            pruneScanHistory(pcx, pcz);
+            queue.prune(pcx, pcz, effectiveRadius() + 8);
         }
         // The timer's save, two regions a tick (a copy each, 0.1 ms): all at once was 3 to 4 ms in one tick.
         active.saveSome(SAVES_PER_TICK);
@@ -438,8 +433,6 @@ public final class MapDataManager {
         worldId = null;
         generation++;
         queue.clear();
-        queued.clear();
-        lastScan.clear();
         results.clear();
         BiomeIndex.forgetAll();
         if (waitForIo) flushIo(5);
@@ -465,8 +458,6 @@ public final class MapDataManager {
         }
         generation++;
         queue.clear();
-        queued.clear();
-        lastScan.clear();
         results.clear();
         level = lvl;
         worldId = newWorld;
@@ -474,7 +465,6 @@ public final class MapDataManager {
         TileStore reuse = viewStores.remove(dim);
         if (reuse != null) reuse.close();
         active = new TileStore(dim, dimDir(dim), io, reads, generation, false, false);
-        sweepCursor = 0;
         Plants.worldOpened();
         caves.listSaved(MapStorage.listDimensions(dimDir(dim).resolve("caves")));
         TeyvatCartographia.LOGGER.info("Teyvat Cartographia: mapping {} / {}", worldId, dim.location());
@@ -487,59 +477,9 @@ public final class MapDataManager {
 
     // ------------------------------------------------------------------ scheduling
 
-    private static long chunkKey(int cx, int cz) {
-        return ChunkPos.asLong(cx, cz);
-    }
-
-    private void enqueue(int cx, int cz, boolean priority) {
-        long k = chunkKey(cx, cz);
-        if (!queued.add(k)) return;
-        if (priority) queue.enqueueFirst(k);
-        else queue.enqueue(k);
-    }
-
     private int effectiveRadius() {
         int view = Minecraft.getInstance().options.getEffectiveRenderDistance();
         return Math.max(2, Math.min(MapConfig.get(MapConfig.SCAN_RADIUS), view + 1));
-    }
-
-    /** Rolling sweep over the loaded area: finds chunks never mapped this session or mapped long ago. */
-    private void sweep(int pcx, int pcz) {
-        int radius = effectiveRadius();
-        if (radius != sweepRadius) buildSweep(radius);
-        if (sweepOffsets.length == 0 || queue.size() > 256) return;
-        long now = System.currentTimeMillis();
-        int checks = Math.min(sweepOffsets.length / 2, 128);
-        for (int i = 0; i < checks; i++) {
-            sweepCursor = (sweepCursor + 1) % (sweepOffsets.length / 2);
-            int cx = pcx + sweepOffsets[sweepCursor * 2], cz = pcz + sweepOffsets[sweepCursor * 2 + 1];
-            long k = chunkKey(cx, cz);
-            long last = lastScan.getOrDefault(k, 0L);
-            boolean neverThisSession = last == 0L;
-            if (!neverThisSession && now - last < STALE_MS) continue;
-            if (level.getChunkSource().getChunk(cx, cz, ChunkStatus.FULL, false) == null) continue;
-            enqueue(cx, cz, false);
-        }
-    }
-
-    private void buildSweep(int radius) {
-        sweepRadius = radius;
-        List<int[]> list = new ArrayList<>();
-        for (int dz = -radius; dz <= radius; dz++) for (int dx = -radius; dx <= radius; dx++) {
-            if (dx * dx + dz * dz <= radius * radius) list.add(new int[]{dx, dz});
-        }
-        list.sort((a, b) -> Integer.compare(a[0] * a[0] + a[1] * a[1], b[0] * b[0] + b[1] * b[1]));
-        sweepOffsets = new int[list.size() * 2];
-        for (int i = 0; i < list.size(); i++) {
-            sweepOffsets[i * 2] = list.get(i)[0];
-            sweepOffsets[i * 2 + 1] = list.get(i)[1];
-        }
-        sweepCursor = 0;
-    }
-
-    private void pruneScanHistory(int pcx, int pcz) {
-        int limit = effectiveRadius() + 8;
-        lastScan.keySet().removeIf((long k) -> Math.abs(ChunkPos.getX(k) - pcx) > limit || Math.abs(ChunkPos.getZ(k) - pcz) > limit);
     }
 
     private void scanQueued() {
@@ -552,14 +492,13 @@ public final class MapDataManager {
         LocalPlayer player = Minecraft.getInstance().player;
         int pcx = player.chunkPosition().x, pcz = player.chunkPosition().z;
         while (budget > 0 && !queue.isEmpty() && inFlight.get() < MAX_IN_FLIGHT) {
-            long k = queue.dequeueLong();
-            queued.remove(k);
+            long k = queue.next();
             int cx = ChunkPos.getX(k), cz = ChunkPos.getZ(k);
             if (Math.abs(cx - pcx) > maxDist || Math.abs(cz - pcz) > maxDist) continue;
             LevelChunk chunk = level.getChunkSource().getChunk(cx, cz, ChunkStatus.FULL, false);
             if (chunk == null || chunk.isEmpty()) continue;
             budget--;
-            lastScan.put(k, System.currentTimeMillis());
+            queue.scanned(k, System.currentTimeMillis());
             // The main thread only gathers the neighbours' edges from the map; reading the chunk and shading it
             // run on a worker, like the vanilla section compile reads blocks, tints and light off the main thread.
             ChunkShader.Neighbourhood n = neighbourhood(cx, cz);
@@ -666,7 +605,7 @@ public final class MapDataManager {
                 continue;
             }
             if (scanned instanceof Unreadable failed) {
-                lastScan.remove(failed.chunk()); // could not be read: the sweep picks it up again
+                queue.failed(failed.chunk()); // could not be read: the sweep picks it up again
                 continue;
             }
             ChunkShader.Result r = ((Shaded) scanned).result();
@@ -679,7 +618,7 @@ public final class MapDataManager {
             int around = 0;
             for (int i = 0; i < DIRS.length; i++) if (active.hasChunk(r.cx() + DIRS[i][0], r.cz() + DIRS[i][1])) around |= OWN_BITS[i];
             if (MapTile.needsRedo(around, r.neighbourMask()) && level.getChunkSource().getChunk(r.cx(), r.cz(), ChunkStatus.FULL, false) != null) {
-                enqueue(r.cx(), r.cz(), false);
+                queue.add(r.cx(), r.cz(), false);
             }
             // Neighbours shaded before this chunk existed lack correct edges (coast rim, contours), and those shaded
             // with its old edge before the land there changed (a forest cut, ground levelled) show a line along the
@@ -689,7 +628,7 @@ public final class MapDataManager {
                 int nx = r.cx() + d[0], nz = r.cz() + d[1];
                 if (active.hasChunk(nx, nz) && ((active.neighbourMask(nx, nz) & d[2]) == 0 || (edges & 1 << i) != 0)
                         && level.getChunkSource().getChunk(nx, nz, ChunkStatus.FULL, false) != null) {
-                    enqueue(nx, nz, false);
+                    queue.add(nx, nz, false);
                 }
             }
         }
@@ -697,7 +636,6 @@ public final class MapDataManager {
 
     /** Forces every loaded chunk around the player to be re-sampled (e.g. after changing detail settings). */
     public void remapLoaded() {
-        lastScan.clear();
-        sweepCursor = 0;
+        queue.remapAll();
     }
 }
