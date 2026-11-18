@@ -1758,21 +1758,15 @@ public final class WorldMapScreen extends Screen {
     /**
      * The context menu at the point: on a pin (the nearest of those under it) "Edit", or "Open" for an automatic
      * point, and "Track" or "Stop tracking"; on empty ground "New pin" and, for operators (cheats in single player),
-     * "Teleport" (unexplored ground too, see teleportTo). The spot is marked while it is open.
+     * "Teleport" (unexplored ground too, see {@link MapTeleport}). The spot is marked while it is open.
      */
     private void openMenuAt(double mx, double my) {
         if (viewedDim == null) return;
-        List<MapContextMenu.Item> items = new ArrayList<>(2);
+        List<MapContextMenu.Item> items;
         List<Marker> hits = markersAt(mx, my);
         if (!hits.isEmpty()) {
             Marker m = hits.get(0);
-            items.add(new MapContextMenu.Item(m.automatic ? Icon.VIEW : Icon.PENCIL,
-                    Component.translatable(m.automatic ? "teyvatcartographia.map.menu.open" : "teyvatcartographia.map.menu.edit"), () -> selectMarker(m)));
-            items.add(new MapContextMenu.Item(Icon.LOCATE,
-                    Component.translatable(Navigation.isTracking(m) ? "teyvatcartographia.pin.untrack" : "teyvatcartographia.pin.track"), () -> {
-                if (Navigation.isTracking(m)) Navigation.clear();
-                else Navigation.track(m);
-            }));
+            items = MapContextMenu.forPin(m, () -> selectMarker(m));
         } else {
             int bx = (int) Math.floor(view.worldX(mx, my)), bz = (int) Math.floor(view.worldZ(mx, my));
             TileStore s = store();
@@ -1781,13 +1775,10 @@ public final class WorldMapScreen extends Screen {
             selectionGoing = false;
             selX = bx + 0.5;
             selZ = bz + 0.5;
-            items.add(new MapContextMenu.Item(Icon.NEW_PIN, Component.translatable("teyvatcartographia.map.menu.new_pin"), () -> newPinAt(bx, y, bz)));
-            if (MarkerType.isOperator()) {
-                items.add(new MapContextMenu.Item(Icon.TARGET, Component.translatable("teyvatcartographia.map.menu.teleport"),
-                        () -> {
-                    if (teleportTo(viewedDim, bx, y, bz)) onClose();
-                }));
-            }
+            ResourceKey<Level> dim = viewedDim;
+            items = MapContextMenu.forGround(() -> newPinAt(bx, y, bz), !MarkerType.isOperator() ? null : () -> {
+                if (MapTeleport.to(dim, bx, y, bz)) onClose();
+            });
         }
         closePick();
         menu = new MapContextMenu(items, mx, my, width, height);
@@ -1800,46 +1791,6 @@ public final class WorldMapScreen extends Screen {
             menu = null;
         }
         if (panel == null) releaseSelection(); // the spot marked for the menu
-    }
-
-    /**
-     * The vanilla /tp, in the viewed dimension; the server checks the rights again; true if it was sent (the map closes then). Where the map does
-     * not know the ground (unexplored, {@code y} is {@link Integer#MIN_VALUE}) the server finds it: in the Nether (under
-     * its roof) and the End /spreadplayers (it refuses the void and lava, then the player stays); elsewhere the player
-     * goes up to {@link #TELEPORT_HIGH} over the spot first (the server loads the chunk; "positioned over" needs it
-     * loaded) and down onto its top block once the chunk has reached this client ({@link #tickTeleport}).
-     */
-    private static boolean teleportTo(ResourceKey<Level> dim, int bx, int y, int bz) {
-        LocalPlayer p = Minecraft.getInstance().player;
-        if (p == null || !MarkerType.isOperator()) return false; // re-checked: /deop meanwhile
-        String in = "execute in " + dim.identifier() + " ";
-        if (y != Integer.MIN_VALUE) p.connection.sendCommand(in + "run tp @s " + bx + ".5 " + y + " " + bz + ".5");
-        else if (dim == Level.NETHER) p.connection.sendCommand(in + "run spreadplayers " + bx + ".5 " + bz + ".5 0 8 under 120 false @s");
-        else if (dim == Level.END) p.connection.sendCommand(in + "run spreadplayers " + bx + ".5 " + bz + ".5 0 8 false @s");
-        else {
-            p.connection.sendCommand(in + "run tp @s " + bx + ".5 " + TELEPORT_HIGH + " " + bz + ".5");
-            landDim = dim;
-            landX = bx;
-            landZ = bz;
-            landTicks = LAND_WAIT;
-        }
-        return true;
-    }
-
-    /** Height of the first step of a teleport to unexplored ground, and how long the second step waits (ticks). */
-    private static final int TELEPORT_HIGH = 320, LAND_WAIT = 200;
-    private static ResourceKey<Level> landDim;
-    private static int landX, landZ, landTicks;
-
-    /** Client tick: the second step of a teleport to unexplored ground, onto the top block, once its chunk is here. */
-    public static void tickTeleport(Minecraft mc) {
-        if (landTicks <= 0) return;
-        landTicks--;
-        LocalPlayer p = mc.player;
-        if (p == null || p.level().dimension() != landDim || !p.level().hasChunk(landX >> 4, landZ >> 4)
-                || Math.abs(p.getX() - landX - 0.5) > 1 || Math.abs(p.getZ() - landZ - 0.5) > 1) return;
-        landTicks = 0;
-        p.connection.sendCommand("execute in " + landDim.identifier() + " positioned " + landX + ".5 0 " + landZ + ".5 positioned over motion_blocking run tp @s ~ ~ ~");
     }
 
     /** Over a button, the zoom slider, the layer field or an off-screen indicator (a right click there opens no menu). */

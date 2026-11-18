@@ -5,6 +5,7 @@ import net.tapacywka.teyvatcartographia.version.Game;
 import net.tapacywka.teyvatcartographia.compat.WaystonesCompat;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
 import net.tapacywka.teyvatcartographia.gui.WorldMapScreen;
+import net.tapacywka.teyvatcartographia.gui.MapTeleport;
 import net.tapacywka.teyvatcartographia.hud.MinimapLayer;
 import net.tapacywka.teyvatcartographia.hud.WorldMarkerLayer;
 import net.tapacywka.teyvatcartographia.map.MapView;
@@ -35,7 +36,7 @@ public final class ClientEvents {
         DirectPath.tick();
         Radar.tick(mc);
         if (mc.player == null) return;
-        WorldMapScreen.tickTeleport(mc);
+        MapTeleport.tick(mc);
 
         while (Keybinds.OPEN_MAP.consumeClick()) {
             if (Game.screen() == null) Game.setScreen(new WorldMapScreen());
