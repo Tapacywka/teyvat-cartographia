@@ -118,6 +118,31 @@ class TileStoreTest {
         assertEquals("minecraft:overworld", Files.readString(dir.resolve("dimension.txt")));
     }
 
+    /** A region whose write failed is saved again by the next save, not left unsaved until it changes. */
+    @Test
+    void aRegionWhoseWriteFailedIsSavedAgain(@TempDir Path root) throws Exception {
+        Path dir = root.resolve("map");
+        TileStore store = new TileStore(DIMENSION, dir, io, 1);
+        finishIo();
+        store.drainLoaded();
+        assertTrue(store.opened());
+        store.apply(new ChunkShader.Result(0, 0, new int[256], new short[256], new byte[256], new byte[256], 0, null, false));
+        assertEquals(1, store.regions());
+        Path png = dir.resolve("r.0.0.png");
+        Files.createDirectories(dir.resolve("r.0.0.png.tmp")); // the picture cannot be written there
+        store.saveSoon();
+        store.saveSome(1);
+        io.submit(() -> {}).get();
+        assertFalse(Files.exists(png), "the first write failed");
+
+        Files.delete(dir.resolve("r.0.0.png.tmp"));
+        store.saveSome(1); // takes the failure in
+        store.saveSoon();
+        store.saveSome(1);
+        io.submit(() -> {}).get();
+        assertTrue(Files.exists(png), "saved again once it could be written");
+    }
+
     /** Files that cannot be read are set aside, so the region mapped anew does not write over them. */
     @Test
     void anUnreadableRegionIsSetAside(@TempDir Path root) throws IOException {

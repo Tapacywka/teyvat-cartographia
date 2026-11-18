@@ -23,6 +23,8 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
   explored: its picture is written before what it says about its chunks.
 - Closing the game while the map is still being saved waits for it to finish (up to a minute) instead of cutting it
   off after 5 seconds.
+- A region of the map that could not be written (a full disk, a file held by another program) is saved again with the
+  next save instead of keeping its last changes only in memory.
 - Switching resource packs twice in a row no longer leaves the map with the block colours of the first pack.
 - Large ships of Sable on the radar no longer make the game stutter when several come into view at once (1.21.1).
 - A tracked pin whose file could not be read no longer comes back as a target without its pin after rejoining the
