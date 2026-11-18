@@ -21,24 +21,26 @@ of each class.
 ## The map, from a chunk to the disk
 
 1. **Choosing chunks** (`MapDataManager`, main thread, every tick): loaded chunks around the player that are new, changed
-   or not seen for a while go into a queue. Each tick takes a few of them (the setting Chunks per tick), and never more
-   than 48 are on their way at once.
-2. **Taking a chunk** (main thread): the chunk and its eight neighbours as the level holds them now
-   (`ChunkScanner.around`), and what the map already knows of the neighbours' edges. A chunk object keeps its data once
-   taken, so the worker never asks the level, which may have unloaded a neighbour meanwhile.
+   or not seen for a while go into a queue (`ScanQueue`, with a rolling sweep over the loaded circle). Each tick takes a
+   few of them (the setting Chunks per tick), and never more than 48 are on their way at once.
+2. **Taking a chunk** (main thread): a copy of its blocks, heightmaps and block light (`ChunkCopy.take`), the chunk and
+   its eight neighbours for their biomes (`ChunkScanner.around`), and what the map already knows of the neighbours'
+   edges. So the worker does not read the live chunk, which the game may change or unload meanwhile.
 3. **Reading and shading** (a worker, `TeyvatCartographia-Shader`, two threads): the top of every column, its colour from
    the block textures and biome tints, water depth, light (`ChunkScanner`), then the shading against the neighbours
-   (`ChunkShader`). A chunk that changed under the reader is given back and read again on a later sweep.
+   (`ChunkShader`). Only a block tinted by a mod's own colour handler still asks the level. A chunk that changed under
+   the reader is given back and read again on a later sweep.
 4. **Applying** (main thread, `MapDataManager.applyResults`): the result goes into its region (`TileStore`, `MapTile`).
    Every result carries the generation it was taken in; entering another world or dimension raises the generation, so
    results of the one before are dropped, never applied to the wrong map.
 5. **Saving and reading regions** (`TeyvatCartographia-IO` writes, `TeyvatCartographia-IO-Read` reads): a region is
    written through a temporary file moved into place (`MapStorage.save`, `replace`), so it is never half written. A read
-   of a region whose write is still queued goes behind that write (`IoOrder`). Leaving a world waits for the writes.
+   of a region whose write is still queued goes behind that write (`IoOrder`). A region whose write failed is saved again
+   with the next save. Leaving a world waits for the writes, closing the game for up to a minute.
 
-Beside it, each handing finished work to the main thread: the cave layers (`CaveScanner`, on the same workers, bands of
-16 blocks while the player is underground), far away zooms (`LodStore`, thumbnails of regions read on the IO threads),
-the outline of the explored map (`TileStore`'s `TeyvatCartographia-Edges`), the land not explored yet worked
+Beside it, each handing finished work to the main thread: the cave layers (`CaveLayers` and `CaveScanner`, on the same
+workers, bands of 16 blocks while the player is underground), far away zooms (`LodStore`, thumbnails of regions read on
+the IO threads), the outline of the explored map (`EdgeQueue`, `TeyvatCartographia-Edges`), the land not explored yet worked
 out from the world's generator (`FarLand`, `TeyvatCartographia-FarLand-*`, off by default), the biome index of the map
 search (`BiomeIndex`, `TeyvatCartographia-Search`) and the import of Xaero's World Map (`XaeroImport`).
 
@@ -47,7 +49,7 @@ search (`BiomeIndex`, `TeyvatCartographia-Search`) and the import of Xaero's Wor
 | Thread | May touch | Hands its work over through |
 |---|---|---|
 | Main (client tick, frames) | The level, the game's GUI and GPU, every map store, pins, navigation | |
-| `TeyvatCartographia-Shader` | Only the chunk objects it was given and its own arrays | `MapDataManager.results`, a queue the main thread drains |
+| `TeyvatCartographia-Shader` | Only the chunk copies and chunk objects it was given and its own arrays | `MapDataManager.results`, a queue the main thread drains |
 | `TeyvatCartographia-IO`, `-IO-Read` | Only the files of a map folder and the copies it was given | the store's `loaded` queue, read on the main thread |
 | `TeyvatCartographia-Edges`, `-FarLand-*`, `-Search` | Only their own data and pure rules | queues read by the main thread |
 
@@ -60,7 +62,8 @@ a tick.
 Every HUD picture (the minimap, the lines under it, the marker of the tracked pin) is drawn into a cached layer
 (`render/CachedLayer`) and drawn again only when what it shows changes: everything it depends on is in its cache key.
 Code that runs every frame allocates nothing. The world map (`gui/WorldMapScreen`) draws the regions' textures through
-`render/MapLayerRenderer`; its side panels are in `gui/panel`. The beam and the path's stars are drawn in the world after
+`render/MapLayerRenderer`; where it looks is `gui/MapCamera`, its layer field `gui/LayerField`, its right click menu
+`gui/MapContextMenu` with `gui/MapTeleport`, its side panels are in `gui/panel`. The beam and the path's stars are drawn in the world after
 the level (`hud/WorldMarkerLayer`, `hud/PathStars`).
 
 ## Files
@@ -84,7 +87,8 @@ writes over the only copy; an error of the game itself (out of memory) is not ta
 
 ## Rules apart from the game, and tests
 
-What decides something (the path search, pin visibility, radar rules, zoom steps, the outline's shape, the far land's
-answers, the settings' defaults) lives in classes that take plain data, not the level or the screen, so the unit tests
+What decides something (the path search, one A* for the near and the far path in `nav/GridSearch` over the level or the
+stored map, `nav/MapGround`; pin visibility, radar rules and whether a mob is underground, `EntityDepth`; zoom steps,
+the outline's shape, the far land's answers, the settings' defaults) lives in classes that take plain data, not the level or the screen, so the unit tests
 in `common/src/test/java` run them without a game: `./gradlew test`. A change of such a rule comes with a test. GitHub
 runs the tests and builds both JARs on every pull request.
