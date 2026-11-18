@@ -10,7 +10,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.QuartPos;
 import net.minecraft.tags.FluidTags;
 import net.minecraft.world.level.ColorResolver;
-import net.minecraft.world.level.LightLayer;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -69,12 +69,13 @@ public final class ChunkScanner {
         return out;
     }
 
-    /** {@link #scan(ClientLevel, LevelChunk, boolean, LevelChunk[])} with the chunks around as they are now (main thread). */
-    public static Snapshot scan(ClientLevel level, LevelChunk chunk, boolean ceiling) {
-        return scan(level, chunk, ceiling, around(level, chunk.getPos().x(), chunk.getPos().z()));
-    }
-
-    public static Snapshot scan(ClientLevel level, LevelChunk chunk, boolean ceiling, LevelChunk[] around) {
+    /**
+     * Reads a chunk into its map colours, heights, water, light and biome: from a copy of its blocks, heightmaps and
+     * block light taken on the game's thread ({@link ChunkCopy#take}), with the chunks around ({@link #around}) for the
+     * biome tints. Any thread; a block tinted by its own colour handler still asks the level.
+     */
+    public static Snapshot scan(ClientLevel level, ChunkCopy copy, boolean ceiling, LevelChunk[] around) {
+        LevelChunk chunk = copy.chunk;
         int cx = chunk.getPos().x(), cz = chunk.getPos().z();
         around[4] = chunk; // itself, whatever the level held when the ring was taken
         int[] color = new int[256];
@@ -99,15 +100,15 @@ public final class ChunkScanner {
             for (int x = 0; x < 16; x++) {
                 int i = z * 16 + x;
                 int wx = (cx << 4) + x, wz = (cz << 4) + z;
-                int y = ceiling ? findCeilingSurface(chunk, pos, wx, wz, ceilingStart, minY)
-                        : chunk.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z); // already the Y of the top block
+                int y = ceiling ? findCeilingSurface(copy, pos, wx, wz, ceilingStart, minY)
+                        : copy.height(Heightmap.Types.MOTION_BLOCKING, x, z); // already the Y of the top block
                 BlockState state = Blocks.AIR.defaultBlockState();
                 MapColor mc = MapColor.NONE;
                 // Skip invisible blocks (glass, barriers, ...) down to something with a map colour.
                 for (int guard = 0; y >= minY && guard < 32; guard++, y--) {
                     pos.set(wx, y, wz);
-                    state = chunk.getBlockState(pos);
-                    mc = state.getMapColor(level, pos);
+                    state = copy.getBlockState(pos);
+                    mc = state.getMapColor(copy, pos);
                     // A solid plant the list leaves out (a cactus, chorus) is looked through to the ground under it; not
                     // one holding water (seagrass, kelp): its column stays water, as with the plants on (with the
                     // plants off, sea grass showed the sea floor's sand as dots in the water).
@@ -127,12 +128,12 @@ public final class ChunkScanner {
                 BlockState shown = state;
                 int shownY = y;
                 if (!ceiling && plants) {
-                    for (int py = chunk.getHeight(Heightmap.Types.WORLD_SURFACE, x, z); py > y; py--) {
-                        BlockState s = chunk.getBlockState(pos.set(wx, py, wz));
+                    for (int py = copy.height(Heightmap.Types.WORLD_SURFACE, x, z); py > y; py--) {
+                        BlockState s = copy.getBlockState(pos.set(wx, py, wz));
                         // A colour of its texture is enough: many mod plants (Regions Unexplored's flowers, shrubs, branches,
                         // leaf litter) leave the vanilla map colour unset, and were left off
                         // the map.
-                        if (plantSet.contains(s.getBlock()) && (s.getMapColor(level, pos) != MapColor.NONE || TextureColors.get(s) != null)) {
+                        if (plantSet.contains(s.getBlock()) && (s.getMapColor(copy, pos) != MapColor.NONE || TextureColors.get(s) != null)) {
                             shown = s;
                             shownY = py;
                             break;
@@ -143,16 +144,16 @@ public final class ChunkScanner {
                     int d = 1;
                     while (d < MAX_WATER_DEPTH && y - d >= minY) {
                         pos.set(wx, y - d, wz);
-                        if (!chunk.getBlockState(pos).getFluidState().is(FluidTags.WATER)) break;
+                        if (!copy.getBlockState(pos).getFluidState().is(FluidTags.WATER)) break;
                         d++;
                     }
                     depth[i] = (byte) d;
                     if (shallow && d <= SHALLOW && y - d >= minY) {
                         // The ground under the water, seen through it where it is shallow.
-                        BlockState floor = chunk.getBlockState(pos.set(wx, y - d, wz));
+                        BlockState floor = copy.getBlockState(pos.set(wx, y - d, wz));
                         TextureColors.Entry fe = TextureColors.get(floor);
                         bottom[i] = fe != null ? tinted(level, floor, pos, fe, grass, foliageTint, x, y - d, z)
-                                : MapPalette.standard(floor.getMapColor(level, pos));
+                                : MapPalette.standard(floor.getMapColor(copy, pos));
                     }
                     pos.set(wx, y, wz);
                     TextureColors.Entry floating = shown == state ? null : TextureColors.get(shown);
@@ -172,7 +173,7 @@ public final class ChunkScanner {
                     continue;
                 }
                 pos.set(wx, y + 1, wz);
-                BlockState above = chunk.getBlockState(pos);
+                BlockState above = copy.getBlockState(pos);
                 pos.set(wx, y, wz);
                 Integer mine = own == null ? null : own.get(shown.getBlock());
                 TextureColors.Entry tex = TextureColors.get(shown);
@@ -195,9 +196,9 @@ public final class ChunkScanner {
                 int i = z * 16 + x;
                 if (isVoid[i]) continue;
                 pos.set((cx << 4) + x, height[i] + 1, (cz << 4) + z);
-                int surface = level.getBrightness(LightLayer.BLOCK, pos);
+                int surface = copy.blockLight(pos);
                 pos.set((cx << 4) + x, height[i], (cz << 4) + z);
-                int self = chunk.getBlockState(pos).getLightEmission(); // emissive surface blocks (lava, glowstone)
+                int self = copy.getBlockState(pos).getLightEmission(); // emissive surface blocks (lava, glowstone)
                 blockLight[i] = (byte) Math.max(surface, self);
             }
         }
@@ -357,14 +358,14 @@ public final class ChunkScanner {
     }
 
     /** For dimensions with a ceiling (Nether): first floor below the roof. */
-    private static int findCeilingSurface(LevelChunk chunk, BlockPos.MutableBlockPos pos, int wx, int wz, int start, int minY) {
+    private static int findCeilingSurface(BlockGetter chunk, BlockPos.MutableBlockPos pos, int wx, int wz, int start, int minY) {
         int y = start;
         while (y > minY && isSolid(chunk, pos.set(wx, y, wz))) y--;
         while (y > minY && !isSolid(chunk, pos.set(wx, y, wz))) y--;
         return y;
     }
 
-    private static boolean isSolid(LevelChunk chunk, BlockPos pos) {
+    private static boolean isSolid(BlockGetter chunk, BlockPos pos) {
         BlockState s = chunk.getBlockState(pos);
         return !s.isAir() && (Game.blocksMotion(s) || !s.getFluidState().isEmpty());
     }

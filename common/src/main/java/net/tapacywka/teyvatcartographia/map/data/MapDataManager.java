@@ -496,16 +496,17 @@ public final class MapDataManager {
             if (chunk == null || chunk.isEmpty()) continue;
             budget--;
             queue.scanned(k, System.currentTimeMillis());
-            // The main thread only gathers the neighbours' edges from the map; reading the chunk and shading it
-            // run on a worker, like the vanilla section compile reads blocks, tints and light off the main thread.
+            // The main thread gathers the neighbours' edges from the map and copies the chunk's blocks, heightmaps and
+            // block light; reading the copy and shading it run on a worker.
             ChunkShader.Neighbourhood n = neighbourhood(cx, cz);
             LevelChunk[] ring = ChunkScanner.around(level, cx, cz); // here: the worker reads these, not the level
+            ChunkCopy copy = ChunkCopy.take(level, chunk); // its blocks and light as they are now: the worker reads the copy
             ClientLevel lvl = level;
             long gen = generation;
             inFlight.incrementAndGet();
             workers.execute(() -> {
                 try {
-                    ChunkScanner.Snapshot snap = ChunkScanner.scan(lvl, chunk, ceiling, ring);
+                    ChunkScanner.Snapshot snap = ChunkScanner.scan(lvl, copy, ceiling, ring);
                     fillOwnColumns(snap, n);
                     results.add(new Shaded(gen, ChunkShader.shade(snap, n, detail)));
                 } catch (RuntimeException e) {
