@@ -10,6 +10,10 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 
 ## [Unreleased]
 
+### Fixed
+- A region of the map pushed out of memory while its save failed is no longer lost: it is written with the next
+  save, or before it is read again when you come back to it.
+
 ## [2.0.0] - 2026-11-18
 
 ### Changed
