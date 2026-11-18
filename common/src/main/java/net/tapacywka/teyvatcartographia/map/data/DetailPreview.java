@@ -50,7 +50,7 @@ final class DetailPreview {
                     ChunkScanner.Snapshot snap = ChunkScanner.scan(level, copy, ceiling, rings.get(i));
                     ChunkShader.Neighbourhood n = pads.get(i);
                     MapDataManager.fillOwnColumns(snap, n);
-                    int ox = (chunk.getPos().x - pcx + rx) * 16, oz = (chunk.getPos().z - pcz + rz) * 16;
+                    int ox = (chunk.getPos().x() - pcx + rx) * 16, oz = (chunk.getPos().z() - pcz + rz) * 16;
                     for (MapConfig.Detail d : modes) place(ChunkShader.shade(snap, n, d).abgr(), out[d.ordinal()], side, ox, oz);
                 }
                 done.accept(out);

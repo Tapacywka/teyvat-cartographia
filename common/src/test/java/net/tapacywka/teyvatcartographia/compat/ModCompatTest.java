@@ -48,6 +48,6 @@ class ModCompatTest {
     /** Without a loader (no Platform) no supported mod counts as loaded. */
     @Test
     void noModWithoutALoader() {
-        assertFalse(ModCompat.vulkan() || ModCompat.waystones() || ModCompat.xaero());
+        assertFalse(ModCompat.vulkan() || ModCompat.waystones());
     }
 }

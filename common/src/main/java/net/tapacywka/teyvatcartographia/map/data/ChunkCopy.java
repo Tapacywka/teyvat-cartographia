@@ -42,9 +42,9 @@ public final class ChunkCopy implements BlockGetter {
     @SuppressWarnings("unchecked")
     private ChunkCopy(ClientLevel level, LevelChunk chunk) {
         this.chunk = chunk;
-        minY = chunk.getMinBuildHeight();
+        minY = chunk.getMinY();
         height = chunk.getHeight();
-        minSection = chunk.getMinSection();
+        minSection = chunk.getMinSectionY();
         LevelChunkSection[] sections = chunk.getSections();
         states = new PalettedContainer[sections.length];
         for (int i = 0; i < sections.length; i++) if (!sections[i].hasOnlyAir()) states[i] = sections[i].getStates().copy();
@@ -57,7 +57,7 @@ public final class ChunkCopy implements BlockGetter {
         minLightSection = minSection - 1;
         light = new DataLayer[sections.length + 2];
         LayerLightEventListener engine = level.getLightEngine().getLayerListener(LightLayer.BLOCK);
-        int cx = chunk.getPos().x, cz = chunk.getPos().z;
+        int cx = chunk.getPos().x(), cz = chunk.getPos().z();
         for (int i = 0; i < light.length; i++) {
             DataLayer d = engine.getDataLayerData(SectionPos.of(cx, minLightSection + i, cz));
             if (d != null) light[i] = d.copy();
@@ -117,7 +117,7 @@ public final class ChunkCopy implements BlockGetter {
     }
 
     @Override
-    public int getMinBuildHeight() {
+    public int getMinY() {
         return minY;
     }
 }

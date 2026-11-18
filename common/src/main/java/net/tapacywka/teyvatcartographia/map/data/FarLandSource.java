@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.LongAdder;
  * suite's category farland on 1.21.1): only the generator's formulas are asked, nothing of the world, so any thread may
  * ask, also after the world closed. What differs between the games is in {@link FarNoise}.
  * <p>
- * The density around the sea is asked every {@link FarLandRules#FINE} blocks and blended between (98.5% of the columns as
+ * The density around the sea is asked every {@link FarLandRules#FINE} blocks and blended between (99.38% of the columns as
  * the real map), the same answers for every level, and asked there only near a coast: the
  * corners of each {@link FarLandRules#SQUARE} first, and between them only where they are not all sure of one thing
  * ({@link FarLandRules#sure}). Carvers, structures and features are not seen (a spring's stream, a village's farms), nor

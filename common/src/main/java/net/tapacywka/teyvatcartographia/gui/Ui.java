@@ -120,7 +120,7 @@ public final class Ui {
      * between its arrows, the thumb over the part of {@code content} (the list's whole height) in view, the arrows at
      * both ends. Pass the pointer off the screen while the list slides (its arrows then take no pointer).
      */
-    public static void thinScrollBar(GuiGraphics g, float barX, float top, float h, float content, SmoothScroll s, ScrollArrows a,
+    public static void thinScrollBar(GuiGraphicsExtractor g, float barX, float top, float h, float content, SmoothScroll s, ScrollArrows a,
                                      int mx, int my) {
         float tt = top + ScrollArrows.ROOM, track = h - 2 * ScrollArrows.ROOM;
         Draw.rect(g, barX, tt, barX + THIN_BAR_W, tt + track, Theme.SCROLL_TRACK);

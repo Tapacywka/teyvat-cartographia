@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /** The queue of chunks to map and its sweep, without a game. */
 class ScanQueueTest {
     private static long k(int cx, int cz) {
-        return ChunkPos.asLong(cx, cz);
+        return ChunkPos.pack(cx, cz);
     }
 
     private static List<Long> drain(ScanQueue q) {

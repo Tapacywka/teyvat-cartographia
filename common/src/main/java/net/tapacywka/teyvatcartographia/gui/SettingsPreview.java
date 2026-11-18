@@ -496,8 +496,8 @@ final class SettingsPreview {
     /** Chunks east and west, and north and south, of the player's in the detail samples (11 x 3 chunks, 176 x 48 blocks). */
     private static final int DETAIL_RX = 5, DETAIL_RZ = 1, DETAIL_W = 16 * (2 * DETAIL_RX + 1), DETAIL_H = 16 * (2 * DETAIL_RZ + 1);
     /**
-     * The settings screen went (AACS 1.5.1 and on tell it, {@code Preview.closed}): the detail and The Sift textures go
-     * (5, about 120 KB). The next opening makes them again: the detail from the pixels kept, The Sift's drawn anew.
+     * The settings screen went (AACS 1.5.1 and on tell it, {@code Preview.closed}): the detail textures go
+     * (3, about 100 KB). The next opening makes them again from the pixels kept.
      */
     static void dispose() {
         for (int i = 0; i < DETAIL_TEX.length; i++) {
@@ -505,18 +505,12 @@ final class SettingsPreview {
             DETAIL_TEX[i] = null;
         }
         detailShown = null;
-        for (int i = 0; i < SIFT_TEX.length; i++) {
-            if (SIFT_TEX[i] != null) SIFT_TEX[i].close();
-            SIFT_TEX[i] = null;
-            SIFT_SHOWN[i] = null;
-        }
     }
 
     /** How many of those textures are made now (for the in-game test of their freeing). */
     static int texturesMade() {
         int n = 0;
         for (DynamicTexture t : DETAIL_TEX) if (t != null) n++;
-        for (DynamicTexture t : SIFT_TEX) if (t != null) n++;
         return n;
     }
 

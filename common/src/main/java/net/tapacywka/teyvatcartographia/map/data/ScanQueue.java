@@ -32,7 +32,7 @@ final class ScanQueue {
 
     /** Adds a chunk unless it waits already; {@code first} puts it before the others. */
     void add(int cx, int cz, boolean first) {
-        long k = ChunkPos.asLong(cx, cz);
+        long k = ChunkPos.pack(cx, cz);
         if (!queued.add(k)) return;
         if (first) queue.enqueueFirst(k);
         else queue.enqueue(k);
@@ -95,7 +95,7 @@ final class ScanQueue {
         for (int i = 0; i < checks; i++) {
             sweepCursor = (sweepCursor + 1) % places;
             int cx = pcx + sweepOffsets[sweepCursor * 2], cz = pcz + sweepOffsets[sweepCursor * 2 + 1];
-            long k = ChunkPos.asLong(cx, cz);
+            long k = ChunkPos.pack(cx, cz);
             long last = lastScan.getOrDefault(k, 0L);
             if (last != 0L && now - last < STALE_MS) continue;
             if (!loaded.test(k)) continue;

@@ -2,7 +2,7 @@ package net.tapacywka.teyvatcartographia.map.data;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.Level;
 import net.tapacywka.teyvatcartographia.config.MapConfig;
 import org.junit.jupiter.api.AfterEach;
@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** The outline's queue follows the setting "Map edges" for the surface only, and with nothing to do it is idle. */
 class EdgeQueueTest {
-    private static final ResourceKey<Level> DIMENSION = ResourceKey.create(Registries.DIMENSION, ResourceLocation.withDefaultNamespace("overworld"));
+    private static final ResourceKey<Level> DIMENSION = ResourceKey.create(Registries.DIMENSION, Identifier.withDefaultNamespace("overworld"));
 
     private final ExecutorService io = Executors.newSingleThreadExecutor();
 

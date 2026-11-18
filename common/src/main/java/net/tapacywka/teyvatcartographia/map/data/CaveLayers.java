@@ -98,7 +98,7 @@ final class CaveLayers {
         Integer now = null;
         if (caves) {
             BlockPos eye = BlockPos.containing(player.getEyePosition());
-            int top = Math.min(level.getMaxBuildHeight(), eye.getY() + ROOF_SCAN);
+            int top = Math.min(level.getMaxY() + 1, eye.getY() + ROOF_SCAN);
             roof.reset();
             for (int y = eye.getY() + 1; y < top && roof.best() < Underground.ROOF; y++) {
                 roof.add(Underground.natural(level.getBlockState(ROOF_POS.set(eye.getX(), y, eye.getZ()))));
@@ -128,10 +128,10 @@ final class CaveLayers {
                     try {
                         sink.scanned(band, CaveScanner.scan(level, chunk, band, px, pz, RADIUS));
                     } catch (RuntimeException e) {
-                        TeyvatCartographia.LOGGER.debug("Cave chunk {},{} could not be sampled", chunk.getPos().x, chunk.getPos().z, e);
+                        TeyvatCartographia.LOGGER.debug("Cave chunk {},{} could not be sampled", chunk.getPos().x(), chunk.getPos().z(), e);
                     } catch (LinkageError e) {
                         // A mod's block whose classes are missing.
-                        TeyvatCartographia.LOGGER.error("Cave mapping failed for chunk {},{}", chunk.getPos().x, chunk.getPos().z, e);
+                        TeyvatCartographia.LOGGER.error("Cave mapping failed for chunk {},{}", chunk.getPos().x(), chunk.getPos().z(), e);
                     } finally {
                         inFlight.decrementAndGet();
                     }

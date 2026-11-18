@@ -2,7 +2,7 @@ package net.tapacywka.teyvatcartographia.gui;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.level.Level;
 import org.junit.jupiter.api.Test;
 
@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** The commands of the world map's "Teleport", and the context menu's rows on empty ground. */
 class MapTeleportTest {
-    private static final ResourceKey<Level> AETHER = ResourceKey.create(Registries.DIMENSION, ResourceLocation.fromNamespaceAndPath("aether", "the_aether"));
+    private static final ResourceKey<Level> AETHER = ResourceKey.create(Registries.DIMENSION, Identifier.fromNamespaceAndPath("aether", "the_aether"));
 
     @Test
     void knownGroundOneStep() {

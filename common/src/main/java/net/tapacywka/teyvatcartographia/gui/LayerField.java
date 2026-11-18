@@ -6,7 +6,7 @@ import net.tapacywka.teyvatcartographia.render.Draw;
 import net.tapacywka.teyvatcartographia.render.Icon;
 import net.tapacywka.teyvatcartographia.render.MarkerRenderer;
 import net.tapacywka.teyvatcartographia.render.Theme;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
 
 import java.util.HashMap;
@@ -214,7 +214,7 @@ final class LayerField {
         return mx >= x() - BIG_R - Grid.GAP && my >= top && my <= bottom;
     }
 
-    void draw(GuiGraphics g, int mx, int my) {
+    void draw(GuiGraphicsExtractor g, int mx, int my) {
         if (!host.on()) return;
         int[] it = items();
         Integer viewed = host.viewed();
@@ -259,7 +259,7 @@ final class LayerField {
      * Tooltip of the field under the mouse, left of it: "Layers" on the closed large button, "Surface" on the open
      * one, the band's name on a small one. Returns whether one was drawn.
      */
-    boolean drawTooltip(GuiGraphics g, int mx, int my) {
+    boolean drawTooltip(GuiGraphicsExtractor g, int mx, int my) {
         float right = x() - BIG_R - Grid.GAP;
         if (buttonHit(mx, my)) {
             String key = open ? "teyvatcartographia.map.layer.surface" : "teyvatcartographia.map.layers";

@@ -36,7 +36,7 @@ public final class MapTeleport {
 
     /** The command that goes there, or up over the spot when its ground is not known and there is no other way. */
     static String command(ResourceKey<Level> dim, int bx, int y, int bz) {
-        String in = "execute in " + dim.location() + " ";
+        String in = "execute in " + dim.identifier() + " ";
         if (y != UNKNOWN) return in + "run tp @s " + mid(bx) + " " + y + " " + mid(bz);
         if (dim == Level.NETHER) return in + "run spreadplayers " + mid(bx) + " " + mid(bz) + " 0 8 under 120 false @s";
         if (dim == Level.END) return in + "run spreadplayers " + mid(bx) + " " + mid(bz) + " 0 8 false @s";
@@ -50,7 +50,7 @@ public final class MapTeleport {
 
     /** The second step: onto the top block of the column. */
     static String landCommand(ResourceKey<Level> dim, int bx, int bz) {
-        return "execute in " + dim.location() + " positioned " + mid(bx) + " 0 " + mid(bz) + " positioned over motion_blocking run tp @s ~ ~ ~";
+        return "execute in " + dim.identifier() + " positioned " + mid(bx) + " 0 " + mid(bz) + " positioned over motion_blocking run tp @s ~ ~ ~";
     }
 
     /** Sends the teleport; true if it was sent (the map closes then). */
