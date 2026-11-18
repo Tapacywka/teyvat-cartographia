@@ -10,6 +10,11 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-11-18
+
+### Changed
+- Needs Actually Amazing Config Screen 2.0.0: update it beside the mod.
+
 ### Fixed
 - A pin file with some pins this version cannot read is kept as `markers.json.broken` before those pins are left out,
   as it already was when no pin could be read.
@@ -660,7 +665,8 @@ The first public release, for Minecraft 1.21.1 on NeoForge 21.1. Client only.
 - Cached HUD layers, chunk work on worker threads and path searches in short slices: the mod is meant to cost at most
   2 to 3% FPS.
 
-[Unreleased]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.5.0...HEAD
+[Unreleased]: https://github.com/Tapacywka/teyvat-cartographia/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.5.0...v2.0.0
 [1.5.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.4.1...v1.5.0
 [1.4.1]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/Tapacywka/teyvat-cartographia/compare/v1.3.2...v1.4.0
