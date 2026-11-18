@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 
@@ -276,12 +277,11 @@ public final class TileStore {
     private void requestLoad(long key) {
         if (closed || !onDisk.contains(key) || loading.contains(key) || failed.contains(key)) return;
         loading.add(key);
-        MapTile.TileSnapshot waiting = unwritten.remove(key);
-        if (waiting != null) write(key, waiting); // the read goes behind it (IoOrder) and finds the newest files
         int tx = MapView.tileKeyX(key), tz = MapView.tileKeyZ(key);
         order.read(key, () -> {
             if (closed) return;
-            MapTile t = readOrSetAside(dir, tx, tz, MapStorage::load);
+            MapTile.TileSnapshot copy = failedCopies.remove(key); // newer than the files: its write failed
+            MapTile t = copy != null ? MapTile.restore(copy) : readOrSetAside(dir, tx, tz, MapStorage::load);
             loaded.add(new Loaded(key, t));
             // Nobody drains a closed store: a region left here would keep its native image for good.
             if (closed) discardLoaded();
@@ -367,58 +367,61 @@ public final class TileStore {
         }
     }
 
-    /** Copies whose write failed (IO thread), taken in on the game's thread by {@link #takeFailedWrites}. */
-    private final ConcurrentLinkedQueue<MapTile.TileSnapshot> failedWrites = new ConcurrentLinkedQueue<>();
     /**
-     * Copies of regions no longer in memory whose write failed (game's thread): written again with the next save, and
-     * before the region is read back, so its last changes are not lost. At most {@link #MAX_UNWRITTEN} are kept.
+     * Copies of regions whose last write failed, by region (written on the IO thread). Whoever removes one owns it: a
+     * read of the region takes it instead of the older files ({@link MapTile#restore}), a region still in memory is
+     * marked unsaved again, and the copy of one evicted meanwhile is written again with the next save. A later write
+     * of the region that succeeds drops it. At most {@link #MAX_FAILED} are kept, about 0.4 MB each.
      */
-    private final Long2ObjectOpenHashMap<MapTile.TileSnapshot> unwritten = new Long2ObjectOpenHashMap<>();
-    /** About 0.4 MB each (the picture and the region's arrays). */
-    private static final int MAX_UNWRITTEN = 64;
+    private final ConcurrentHashMap<Long, MapTile.TileSnapshot> failedCopies = new ConcurrentHashMap<>();
+    private static final int MAX_FAILED = 64;
 
     private void write(long key, MapTile.TileSnapshot snap) {
         order.write(key, () -> {
             try {
                 MapStorage.write(dir, snap);
                 snap.image().close();
+                MapTile.TileSnapshot older = failedCopies.remove(key);
+                if (older != null) older.image().close();
             } catch (Exception e) {
                 TeyvatCartographia.LOGGER.error("Failed to save map region {},{}", snap.tx(), snap.tz(), e);
-                failedWrites.add(snap);
+                MapTile.TileSnapshot older = failedCopies.put(key, snap);
+                if (older != null) older.image().close();
+                if (failedCopies.size() > MAX_FAILED) dropFailed(failedCopies.keySet().iterator().next());
                 // Nobody takes it in after the store closed: its picture would stay in native memory for good.
-                if (closed && failedWrites.remove(snap)) snap.image().close();
+                if (closed) dropFailed(key);
             }
         });
     }
 
-    /**
-     * The failed writes: a region still in memory is marked unsaved again (the next save takes a fresh copy), the copy
-     * of one evicted meanwhile waits in {@link #unwritten}.
-     */
+    private void dropFailed(long key) {
+        MapTile.TileSnapshot s = failedCopies.remove(key);
+        if (s == null) return;
+        TeyvatCartographia.LOGGER.error("Map region {},{} could not be written and is given up", s.tx(), s.tz());
+        s.image().close();
+    }
+
+    /** A region in memory whose write failed is unsaved again: the next save takes a fresh copy (game's thread). */
     private void takeFailedWrites() {
-        MapTile.TileSnapshot f;
-        while ((f = failedWrites.poll()) != null) {
-            long key = MapView.tileKey(f.tx(), f.tz());
-            MapTile t = tiles.get(key);
-            if (t != null) {
-                t.diskDirty = true;
-                f.image().close();
-                continue;
-            }
-            MapTile.TileSnapshot old = unwritten.put(key, f);
-            if (old != null) old.image().close();
-            if (unwritten.size() > MAX_UNWRITTEN) {
-                long drop = unwritten.keySet().iterator().nextLong();
-                TeyvatCartographia.LOGGER.error("Map region {},{} could not be written and is given up", MapView.tileKeyX(drop), MapView.tileKeyZ(drop));
-                unwritten.remove(drop).image().close();
-            }
+        if (failedCopies.isEmpty()) return;
+        for (Long key : failedCopies.keySet()) {
+            MapTile t = tiles.get((long) key);
+            if (t == null) continue;
+            MapTile.TileSnapshot s = failedCopies.remove(key);
+            if (s == null) continue; // a read took it meanwhile
+            t.diskDirty = true;
+            s.image().close();
         }
     }
 
-    /** Tries the waiting copies of evicted regions again (each goes back to {@link #unwritten} if it fails again). */
-    private void writeUnwritten() {
-        for (var e : unwritten.long2ObjectEntrySet()) write(e.getLongKey(), e.getValue());
-        unwritten.clear();
+    /** Writes the kept copies of evicted regions again (each comes back if it fails again). */
+    private void writeFailedAgain() {
+        if (failedCopies.isEmpty()) return;
+        for (Long key : failedCopies.keySet()) {
+            if (tiles.containsKey((long) key) || loading.contains((long) key)) continue;
+            MapTile.TileSnapshot s = failedCopies.remove(key);
+            if (s != null) write(key, s);
+        }
     }
 
     private void save(MapTile t) {
@@ -430,15 +433,13 @@ public final class TileStore {
         diskChunkCounts.put(t.key, t.chunkCount);
         if (outlined) diskChunks.put(t.key, t.chunkBits());
         indexDirty = true;
-        MapTile.TileSnapshot waiting = unwritten.remove(t.key);
-        if (waiting != null) waiting.image().close(); // this copy is newer
         write(t.key, snap);
     }
 
     void saveAll() {
         takeFailedWrites();
         for (MapTile t : tiles.values()) save(t);
-        writeUnwritten();
+        writeFailedAgain();
         saveQueue.clear();
         saveQueued.clear();
         if (indexDirty) writeIndexAsync();
@@ -454,7 +455,7 @@ public final class TileStore {
     /** The timer's save: every region with unsaved changes is queued, {@link #saveSome} saves a few a tick. */
     void saveSoon() {
         takeFailedWrites();
-        writeUnwritten();
+        writeFailedAgain();
         for (MapTile t : tiles.values()) if (t.diskDirty && saveQueued.add(t.key)) saveQueue.enqueue(t.key);
         if (saveQueue.isEmpty() && indexDirty) writeIndexAsync();
     }
@@ -477,9 +478,7 @@ public final class TileStore {
     void close() {
         saveAll();
         closed = true;
-        takeFailedWrites(); // the failures so far: their copies are closed below with the rest
-        for (MapTile.TileSnapshot s : unwritten.values()) s.image().close();
-        unwritten.clear();
+        for (Long key : failedCopies.keySet()) dropFailed(key);
         drainLoaded();
         for (MapTile t : tiles.values()) t.release();
         tiles.clear();
