@@ -71,13 +71,8 @@ import net.tapacywka.teyvatcartographia.marker.MarkerType;
  */
 public final class WorldMapScreen extends Screen {
     private final MapView view = new MapView();
-    private double centerX, centerZ, scale;
-    private double targetX, targetZ, targetScale;
-    private boolean zoomAnchored;
-    // A flight to a search result (startFlight): from where, how far into it, and how far out it zooms on the way.
-    private boolean flying;
-    private double flyFromX, flyFromZ, flyFromScale, flyBump;
-    private float flyT, flyDuration;
+    /** Where the map looks and how near ({@link MapCamera}). */
+    private final MapCamera camera;
     // The place a search result flew to: rings go out from it for a few seconds after arriving.
     private ResourceKey<Level> foundDim;
     private double foundX, foundZ;
@@ -86,7 +81,6 @@ public final class WorldMapScreen extends Screen {
     private boolean foundPlace;
     /** The search of the pin list; kept while the map is open, so a closed and reopened list shows it again. */
     private final MapSearch search = new MapSearch();
-    private double anchorSX, anchorSY, anchorWX, anchorWZ;
 
     private ResourceKey<Level> viewedDim;
     /** The cave band shown (in the player's dimension), or null for the surface. */
@@ -123,13 +117,11 @@ public final class WorldMapScreen extends Screen {
         super(Component.translatable("teyvatcartographia.map.title"));
         entry.show();
         LocalPlayer p = Minecraft.getInstance().player;
+        camera = new MapCamera(p == null ? 0 : p.getX(), p == null ? 0 : p.getZ(), MapConfig.get(MapConfig.MAP_DEFAULT_ZOOM));
         if (p != null) {
-            centerX = targetX = p.getX();
-            centerZ = targetZ = p.getZ();
             viewedDim = p.level().dimension();
             viewedBand = MapDataManager.get().cavesOnMap() ? MapDataManager.get().undergroundBand() : null; // opens on the layer the player is in
         }
-        scale = targetScale = clampScale(MapConfig.get(MapConfig.MAP_DEFAULT_ZOOM));
     }
 
     /**
@@ -193,11 +185,6 @@ public final class WorldMapScreen extends Screen {
         if (viewedDim == null) return null;
         if (viewedBand != null && viewingPlayerDim() && MapDataManager.get().cavesOnMap()) return MapDataManager.get().caveStore(viewedBand);
         return MapDataManager.get().viewStore(viewedDim);
-    }
-
-    /** Snaps any scale to the nearest zoom step (MapView.ZOOM_STEPS: wheel, keys, buttons and slider move between them). */
-    private static double clampScale(double s) {
-        return MapView.snapZoom(s);
     }
 
     /** Markers of the viewed dimension: all of them, or only those drawn (MarkerVisibility). */
@@ -374,7 +361,7 @@ public final class WorldMapScreen extends Screen {
     public void showMarker(Marker m) {
         MarkerListPanel list = panel instanceof MarkerListPanel l ? l : null;
         viewDimension(m.dimension);
-        startFlight(m.centerX(), m.centerZ(), Math.max(targetScale, 1));
+        startFlight(m.centerX(), m.centerZ(), Math.max(camera.targetScale(), 1));
         found(m.dimension, m.centerX(), m.centerZ(), false);
         selectMarker(m);
         backToList = list;
@@ -383,7 +370,7 @@ public final class WorldMapScreen extends Screen {
     /** A biome place found by the search: flies there (in its dimension) and sends rings out from it. */
     public void showPlace(ResourceKey<Level> dim, double x, double z) {
         viewDimension(dim);
-        startFlight(x, z, targetScale);
+        startFlight(x, z, camera.targetScale());
         found(dim, x, z, true);
     }
 
@@ -392,7 +379,7 @@ public final class WorldMapScreen extends Screen {
         foundDim = dim;
         foundX = x;
         foundZ = z;
-        foundAt = time + flyDuration;
+        foundAt = time + camera.flightTime();
     }
 
     /**
@@ -400,21 +387,10 @@ public final class WorldMapScreen extends Screen {
      * screen away, zoomed out on the way (the further, the more) so the map does not just smear past.
      */
     private void startFlight(double x, double z, double endScale) {
-        zoomAnchored = false;
-        endScale = clampScale(endScale);
+        endScale = MapCamera.snap(endScale);
         // The point ends in the middle of the map left uncovered by the side panel.
         if (panel != null) x += panel.width() / 2.0 / endScale;
-        double screens = Math.hypot(x - centerX, z - centerZ) * scale / Math.max(1, width);
-        flyBump = Math.max(0, Math.min(3, Math.log(Math.max(1, screens))));
-        flyDuration = 0.45f + 0.15f * (float) flyBump;
-        flyFromX = centerX;
-        flyFromZ = centerZ;
-        flyFromScale = scale;
-        flyT = 0;
-        flying = true;
-        targetX = x;
-        targetZ = z;
-        targetScale = endScale;
+        camera.fly(x, z, endScale, width);
         thumbAtTarget = false;
     }
 
@@ -434,17 +410,11 @@ public final class WorldMapScreen extends Screen {
     }
 
     private void flyTo(double x, double z) {
-        zoomAnchored = false;
-        flying = false;
-        targetX = x;
-        targetZ = z;
+        camera.moveTo(x, z);
     }
 
     private void jumpTo(double x, double z) {
-        zoomAnchored = false;
-        flying = false;
-        centerX = targetX = x;
-        centerZ = targetZ = z;
+        camera.jump(x, z);
     }
 
     private void recenterOnPlayer() {
@@ -552,50 +522,13 @@ public final class WorldMapScreen extends Screen {
     }
 
     private void animate(float dt) {
-        if (flying) {
-            flyT += dt;
-            float t = Math.min(1f, flyT / flyDuration);
-            double e = t * t * (3 - 2 * t);
-            centerX = flyFromX + (targetX - flyFromX) * e;
-            centerZ = flyFromZ + (targetZ - flyFromZ) * e;
-            double ls = Math.log(flyFromScale), lt = Math.log(targetScale);
-            scale = Math.exp(ls + (lt - ls) * e - flyBump * Math.sin(Math.PI * e));
-            if (t >= 1f) {
-                flying = false;
-                centerX = targetX;
-                centerZ = targetZ;
-                scale = targetScale;
-            }
-            return;
-        }
-        float k = (float) (1 - Math.exp(-dt * 14));
-        double ls = Math.log(scale), lt = Math.log(targetScale);
-        if (Math.abs(lt - ls) < 1e-4) scale = targetScale;
-        else scale = Math.exp(ls + (lt - ls) * k);
-        if (zoomAnchored) {
-            centerX = anchorWX - (anchorSX - width / 2.0) / scale;
-            centerZ = anchorWZ - (anchorSY - height / 2.0) / scale;
-            targetX = centerX;
-            targetZ = centerZ;
-            if (scale == targetScale) zoomAnchored = false;
-        } else {
-            centerX += (targetX - centerX) * k;
-            centerZ += (targetZ - centerZ) * k;
-            if (Math.abs(targetX - centerX) < 1e-3) centerX = targetX;
-            if (Math.abs(targetZ - centerZ) < 1e-3) centerZ = targetZ;
-        }
+        camera.animate(dt, width, height);
     }
 
     /** One zoom step in ({@code steps} 1) or out (-1), keeping the place under (mx, my) where it is. */
     private void zoomAt(double mx, double my, int steps) {
-        anchorSX = mx;
-        anchorSY = my;
-        anchorWX = view.worldX(mx, my);
-        anchorWZ = view.worldZ(mx, my);
-        flying = false;
-        targetScale = MapView.stepZoom(targetScale, steps);
+        camera.zoomAt(mx, my, view.worldX(mx, my), view.worldZ(mx, my), steps);
         thumbAtTarget = false;
-        zoomAnchored = true;
     }
 
     // ================================================================== rendering
@@ -621,7 +554,7 @@ public final class WorldMapScreen extends Screen {
         Cursors.begin();
         animate(dt);
         updateSlides(dt);
-        view.set(centerX, centerZ, scale, 0, width / 2f, height / 2f);
+        view.set(camera.x(), camera.z(), camera.scale(), 0, width / 2f, height / 2f);
 
         TileStore store = store();
         Navigation.setPathWanted(Navigation.PATH_MAP, pathShown());
@@ -634,7 +567,7 @@ public final class WorldMapScreen extends Screen {
         }
         // 1-2. Fog-of-war backdrop with gentle parallax (follows panning, stays still while zooming) and the map
         // regions lit by the time of day, cached together while the view and the map data stay the same
-        picture.draw(g, store, view, centerX, centerZ, scale, width, height, pt);
+        picture.draw(g, store, view, camera.x(), camera.z(), camera.scale(), width, height, pt);
         // 3. Grid
         if (MapConfig.get(MapConfig.MAP_SHOW_GRID)) drawGrid(g);
         // 4. Labels
@@ -665,13 +598,13 @@ public final class WorldMapScreen extends Screen {
         // 8. Panels (they dim the map behind them, like the references; a panel itself is frosted glass)
         if (panels) {
             // Re-blur only when the map behind the panel moved, and a few times a second for its animations.
-            boolean moved = centerX != blurX || centerZ != blurZ || scale != blurScale;
+            boolean moved = camera.x() != blurX || camera.z() != blurZ || camera.scale() != blurScale;
             Backdrop.capture(g, pt, moved || time - blurTime > 0.25f, this,
-                    () -> picture.draw(g, store, view, centerX, centerZ, scale, width, height, pt));
+                    () -> picture.draw(g, store, view, camera.x(), camera.z(), camera.scale(), width, height, pt));
             if (moved || time - blurTime > 0.25f) {
-                blurX = centerX;
-                blurZ = centerZ;
-                blurScale = scale;
+                blurX = camera.x();
+                blurZ = camera.z();
+                blurScale = camera.scale();
                 blurTime = time;
             }
             Draw.rect(g, 0, 0, width, height, Theme.withAlpha(Theme.SCREEN_DIM, panelsAmount()));
@@ -741,8 +674,8 @@ public final class WorldMapScreen extends Screen {
 
     private void drawGrid(GuiGraphicsExtractor g) {
         // Region lines from 1/8 like the biome names, chunk lines from 2 (closer, they fill the map).
-        if (scale < MapView.DETAIL_FROM - 1e-6) return;
-        int step = scale >= 2 ? 16 : 256;
+        if (camera.scale() < MapView.DETAIL_FROM - 1e-6) return;
+        int step = camera.scale() >= 2 ? 16 : 256;
         double wx0 = view.worldX(0, 0), wz0 = view.worldZ(0, 0), wx1 = view.worldX(width, height), wz1 = view.worldZ(width, height);
         int n = 0;
         for (long x = (long) Math.floor(wx0 / step) * step; x <= wx1; x += step) {
@@ -814,7 +747,7 @@ public final class WorldMapScreen extends Screen {
                 }
                 linePoint(Route.oldX(i), Route.oldZ(i), Route.oldFog(i), Route.oldWater(i));
             }
-            drawLine(g, color, (float) (from * scale));
+            drawLine(g, color, (float) (from * camera.scale()));
         }
         // After a new search the line is drawn in from the player up to shownTo.
         float to = Route.shownTo(), pa = 0, px = 0, pz = 0;
@@ -833,7 +766,7 @@ public final class WorldMapScreen extends Screen {
             px = wx;
             pz = wz;
         }
-        drawLine(g, color, (float) (Route.cutAlong() * scale));
+        drawLine(g, color, (float) (Route.cutAlong() * camera.scale()));
         // The sea icon where each crossing begins, once the line has come so far.
         for (int i = first; i < n; i++) {
             if (!Route.crossingAt(i) || Route.along(i) > to) continue;
@@ -982,7 +915,7 @@ public final class WorldMapScreen extends Screen {
     }
 
     private float markerSize() {
-        return scale >= 0.5 ? MarkerRenderer.SIZE : 16;
+        return camera.scale() >= 0.5 ? MarkerRenderer.SIZE : 16;
     }
 
     // ------------------------------------------------------------------ map content
@@ -1305,7 +1238,7 @@ public final class WorldMapScreen extends Screen {
         int hover = chromeHover(mx, my, !live, locate);
         Window w = Minecraft.getInstance().getWindow();
         double guiScale = w.getGuiScale();
-        boolean dirty = !chrome.exists() || !chromeValid || hover != kHover || scale != kScale || barsOn != kBars
+        boolean dirty = !chrome.exists() || !chromeValid || hover != kHover || camera.scale() != kScale || barsOn != kBars
                 || locate != kLocate || width != kWidth || height != kHeight || guiScale != kGuiScale || Theme.generation() != kChromeTheme
                 || cursor != kCursor || player != kPlayer || explored != kExplored || !Objects.equals(area, kArea)
                 || viewedDim != kDim || !Objects.equals(viewedBand, kBand)
@@ -1327,7 +1260,7 @@ public final class WorldMapScreen extends Screen {
             }
             chromeValid = true;
             kHover = hover;
-            kScale = scale;
+            kScale = camera.scale();
             kBars = barsOn;
             kLocate = locate;
             kWidth = width;
@@ -1371,7 +1304,7 @@ public final class WorldMapScreen extends Screen {
     private int chromeHover(int mx, int my, boolean panelOpen, boolean locate) {
         if (exiting) return 0;
         float x = leftColumnX();
-        float ty = (float) (sliderBottom() - scaleToT(scale) * (sliderBottom() - sliderTop()));
+        float ty = (float) (sliderBottom() - scaleToT(camera.scale()) * (sliderBottom() - sliderTop()));
         int h = 0;
         if (Draw.inCircle(mx, my, x, sliderPlusY(), 9)) h |= 1;
         if (Draw.inCircle(mx, my, x, sliderMinusY(), 9)) h |= 2;
@@ -1443,7 +1376,7 @@ public final class WorldMapScreen extends Screen {
         sliderEnd(g, x, sliderPlusY(), Icon.PLUS, Draw.inCircle(mx, my, x, sliderPlusY(), 9));
         sliderEnd(g, x, sliderMinusY(), Icon.MINUS, Draw.inCircle(mx, my, x, sliderMinusY(), 9));
         // The thumb's middle stops thumbHalf() inside the track's ends at the least and the most zoom, in both styles.
-        float ty = (float) (bottom - thumbHalf() - scaleToT(thumbAtTarget ? targetScale : scale) * (bottom - top - 2 * thumbHalf()));
+        float ty = (float) (bottom - thumbHalf() - scaleToT(thumbAtTarget ? camera.targetScale() : camera.scale()) * (bottom - top - 2 * thumbHalf()));
         boolean thumbHover = sliderDrag || Draw.inCircle(mx, my, x, ty, 9);
         if (Theme.Style.squareUi) {
             // As the rounded slider with square shapes: a framed track, a thumb with its core.
@@ -1460,7 +1393,7 @@ public final class WorldMapScreen extends Screen {
         }
         // The zoom beside the thumb, moving with it: "1/4", "1", "8", outlined like the
         // biome names so it reads over any land.
-        String label = MapView.zoomLabel(thumbAtTarget ? targetScale : scale);
+        String label = MapView.zoomLabel(thumbAtTarget ? camera.targetScale() : camera.scale());
         if (!label.equals(zoomLabel)) {
             zoomLabel = label;
             zoomText = Component.literal(label);
@@ -1697,12 +1630,8 @@ public final class WorldMapScreen extends Screen {
         double s = tToScale(t);
         // Keep the screen centre fixed; the map eases to the new scale like the wheel and the buttons (the thumb follows
         // the cursor at once, drawn at the target).
-        targetScale = clampScale(s);
+        camera.zoomTo(s);
         thumbAtTarget = true;
-        zoomAnchored = false;
-        flying = false;
-        targetX = centerX;
-        targetZ = centerZ;
     }
 
     @Override
@@ -1715,15 +1644,7 @@ public final class WorldMapScreen extends Screen {
         }
         if (dragging && button == InputConstants.MOUSE_BUTTON_LEFT) {
             if (!dragMoved && Math.hypot(mx - dragStartX, my - dragStartY) > 3) dragMoved = true;
-            if (dragMoved) {
-                zoomAnchored = false;
-                flying = false;
-                centerX -= dx / scale;
-                centerZ -= dy / scale;
-                targetX = centerX;
-                targetZ = centerZ;
-                targetScale = scale;
-            }
+            if (dragMoved) camera.drag(dx, dy);
             return true;
         }
         return false;
@@ -1855,10 +1776,10 @@ public final class WorldMapScreen extends Screen {
             case InputConstants.KEY_SPACE -> recenterOnPlayer();
             case InputConstants.KEY_EQUALS, InputConstants.KEY_ADD -> zoomAt(width / 2.0, height / 2.0, 1);
             case InputConstants.KEY_MINUS, Keys.KP_SUBTRACT -> zoomAt(width / 2.0, height / 2.0, -1);
-            case InputConstants.KEY_LEFT, InputConstants.KEY_A -> flyTo(targetX - 80 / scale, targetZ);
-            case InputConstants.KEY_RIGHT, InputConstants.KEY_D -> flyTo(targetX + 80 / scale, targetZ);
-            case InputConstants.KEY_UP, InputConstants.KEY_W -> flyTo(targetX, targetZ - 80 / scale);
-            case InputConstants.KEY_DOWN, InputConstants.KEY_S -> flyTo(targetX, targetZ + 80 / scale);
+            case InputConstants.KEY_LEFT, InputConstants.KEY_A -> flyTo(camera.targetX() - 80 / camera.scale(), camera.targetZ());
+            case InputConstants.KEY_RIGHT, InputConstants.KEY_D -> flyTo(camera.targetX() + 80 / camera.scale(), camera.targetZ());
+            case InputConstants.KEY_UP, InputConstants.KEY_W -> flyTo(camera.targetX(), camera.targetZ() - 80 / camera.scale());
+            case InputConstants.KEY_DOWN, InputConstants.KEY_S -> flyTo(camera.targetX(), camera.targetZ() + 80 / camera.scale());
             default -> {
                 return super.keyPressed(event);
             }
