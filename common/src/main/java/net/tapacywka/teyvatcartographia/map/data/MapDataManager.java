@@ -312,41 +312,7 @@ public final class MapDataManager {
     public boolean sampleDetails(int rx, int rz, Consumer<int[][]> done) {
         LocalPlayer player = Minecraft.getInstance().player;
         if (active == null || level == null || player == null) return false;
-        boolean ceiling = level.dimensionType().hasCeiling();
-        int side = 2 * rx + 1, rows = 2 * rz + 1, pcx = player.chunkPosition().x, pcz = player.chunkPosition().z;
-        List<LevelChunk> chunks = new ArrayList<>();
-        List<ChunkShader.Neighbourhood> around = new ArrayList<>();
-        List<LevelChunk[]> rings = new ArrayList<>();
-        for (int dz = -rz; dz <= rz; dz++) {
-            for (int dx = -rx; dx <= rx; dx++) {
-                LevelChunk chunk = level.getChunkSource().getChunk(pcx + dx, pcz + dz, ChunkStatus.FULL, false);
-                if (chunk == null || chunk.isEmpty()) continue;
-                chunks.add(chunk);
-                around.add(neighbourhood(pcx + dx, pcz + dz));
-                rings.add(ChunkScanner.around(level, pcx + dx, pcz + dz));
-            }
-        }
-        ClientLevel lvl = level;
-        workers.execute(() -> {
-            MapConfig.Detail[] modes = MapConfig.Detail.values();
-            int[][] out = new int[modes.length][256 * side * rows];
-            try {
-                for (int i = 0; i < chunks.size(); i++) {
-                    LevelChunk chunk = chunks.get(i);
-                    ChunkScanner.Snapshot snap = ChunkScanner.scan(lvl, chunk, ceiling, rings.get(i));
-                    ChunkShader.Neighbourhood n = around.get(i);
-                    fillOwnColumns(snap, n);
-                    int ox = (chunk.getPos().x - pcx + rx) * 16, oz = (chunk.getPos().z - pcz + rz) * 16;
-                    for (MapConfig.Detail d : modes) {
-                        int[] abgr = ChunkShader.shade(snap, n, d).abgr();
-                        for (int z = 0; z < 16; z++) System.arraycopy(abgr, z * 16, out[d.ordinal()], (oz + z) * 16 * side + ox, 16);
-                    }
-                }
-                done.accept(out);
-            } catch (RuntimeException e) {
-                TeyvatCartographia.LOGGER.debug("The detail preview could not be sampled", e);
-            }
-        });
+        DetailPreview.sample(level, player.chunkPosition().x, player.chunkPosition().z, rx, rz, this::neighbourhood, workers, done);
         return true;
     }
 
@@ -697,7 +663,7 @@ public final class MapDataManager {
     private static final byte PENDING_EDGE = (byte) 0x80;
 
     /** Worker side of {@link #neighbourhood}: the chunk's own columns, and its edge continued where a neighbour is pending. */
-    private static void fillOwnColumns(ChunkScanner.Snapshot s, ChunkShader.Neighbourhood n) {
+    static void fillOwnColumns(ChunkScanner.Snapshot s, ChunkShader.Neighbourhood n) {
         int pad = ChunkShader.PAD;
         short[] h = n.heights();
         byte[] f = n.flags();
