@@ -146,6 +146,9 @@ public final class FarPath {
     private float bestH, startPX, startPZ;
     private long searchNanos;
     private TileStore store;
+    /** The map the search reads: in the game the store's regions in memory ({@link MapGround.Store}). */
+    private MapGround map;
+    private final MapGround.Store storeGround = new MapGround.Store();
 
     /** Client tick: searches the far path when due. */
     public static void tick() {
@@ -226,28 +229,15 @@ public final class FarPath {
         lastTarget = null;
         // The map of the last search is let go (after leaving a world it would stay in memory).
         store = null;
+        map = null;
+        storeGround.use(null);
         lastStore = null;
     }
 
     private void begin(LocalPlayer p, Navigation.Target t, TileStore s, boolean boat) {
-        if (height == null) {
-            height = new int[CELLS];
-            deep = new boolean[CELLS];
-            swum = new float[CELLS];
-            cost = new float[CELLS];
-            from = new int[CELLS];
-            closed = new boolean[CELLS];
-            open = new CellHeap(CELLS * 4);
-        }
         store = s;
-        byBoat = boat;
-        forced = false;
-        // Cells on the world grid of STEP blocks, so a cell never straddles two regions.
-        originX = Math.floorDiv((int) Math.floor(p.getX()) - RADIUS, STEP) * STEP;
-        originZ = Math.floorDiv((int) Math.floor(p.getZ()) - RADIUS, STEP) * STEP;
-        Arrays.fill(height, UNKNOWN);
-        Arrays.fill(cost, Float.MAX_VALUE);
-        Arrays.fill(closed, false);
+        storeGround.use(s);
+        startSearch(storeGround, p.getX(), p.getY(), p.getZ(), p.isInWater(), boat, t.x(), t.z());
         // Ask for the regions in range, so those still on disk come in for the next search.
         int t0x = MapView.blockToTile(originX), t0z = MapView.blockToTile(originZ);
         int t1x = MapView.blockToTile(originX + SIDE * STEP), t1z = MapView.blockToTile(originZ + SIDE * STEP);
@@ -259,17 +249,74 @@ public final class FarPath {
                 }
             }
         }
-        startPX = (float) p.getX();
-        startPZ = (float) p.getZ();
-        start = cellOf(p.getX(), p.getZ());
-        startY = (int) Math.floor(p.getY());
+    }
+
+    /**
+     * A whole search over {@code g} at once, as the ticks would run it (search, smoothing, laying out), on a far path of
+     * its own: the unit tests. The path is read with {@link #px}, {@link #pz}, {@link #fogAt}, {@link #water}.
+     */
+    static FarPath search(MapGround g, double px, double py, double pz, boolean inWater, boolean boat, double tx, double tz) {
+        FarPath f = new FarPath();
+        f.startSearch(g, px, py, pz, inWater, boat, tx, tz);
+        while (!f.step(Long.MAX_VALUE)) {
+            // runs to the end
+        }
+        f.searching = false;
+        f.startBuild(f.best);
+        while (!f.smoothing.step(Long.MAX_VALUE)) {
+            // runs to the end
+        }
+        f.startLayOut(f.smoothing.count());
+        while (!f.layOut(Long.MAX_VALUE)) {
+            // runs to the end
+        }
+        return f;
+    }
+
+    /** Whether the search reached the goal's cell rather than the nearest it could (the unit tests). */
+    boolean reachedGoal() {
+        return best == goal;
+    }
+
+    /** Whether point {@code i} lies in unexplored land. */
+    boolean fogAt(int i) {
+        return fogPoint[i];
+    }
+
+    /**
+     * Begins a search over {@code g} from the player at (px, py, pz) ({@code inWater}: swimming) towards the target at
+     * (tx, tz), on foot or by boat.
+     */
+    private void startSearch(MapGround g, double px, double py, double pz, boolean inWater, boolean boat, double tx, double tz) {
+        if (height == null) {
+            height = new int[CELLS];
+            deep = new boolean[CELLS];
+            swum = new float[CELLS];
+            cost = new float[CELLS];
+            from = new int[CELLS];
+            closed = new boolean[CELLS];
+            open = new CellHeap(CELLS * 4);
+        }
+        map = g;
+        byBoat = boat;
+        forced = false;
+        // Cells on the world grid of STEP blocks, so a cell never straddles two regions.
+        originX = Math.floorDiv((int) Math.floor(px) - RADIUS, STEP) * STEP;
+        originZ = Math.floorDiv((int) Math.floor(pz) - RADIUS, STEP) * STEP;
+        Arrays.fill(height, UNKNOWN);
+        Arrays.fill(cost, Float.MAX_VALUE);
+        Arrays.fill(closed, false);
+        startPX = (float) px;
+        startPZ = (float) pz;
+        start = cellOf(px, pz);
+        startY = (int) Math.floor(py);
         // In the water, or over deep water (flying, in a boat): the path may swim out to the shore.
         ground(start);
-        swimming = p.isInWater() || deep[start];
+        swimming = inWater || deep[start];
         swum[start] = swimming ? Float.NEGATIVE_INFINITY : 0;
-        double dx = t.x() - p.getX(), dz = t.z() - p.getZ(), d = Math.hypot(dx, dz);
+        double dx = tx - px, dz = tz - pz, d = Math.hypot(dx, dz);
         double reach = Math.min(d, RADIUS - STEP);
-        goal = cellOf(p.getX() + dx / d * reach, p.getZ() + dz / d * reach);
+        goal = cellOf(px + dx / d * reach, pz + dz / d * reach);
         goalX = goal % SIDE;
         goalZ = goal / SIDE;
         open.clear();
@@ -381,24 +428,22 @@ public final class FarPath {
         if (h != UNKNOWN) return h;
         int x0 = originX + (c % SIDE) * STEP, z0 = originZ + (c / SIDE) * STEP;
         deep[c] = false;
-        MapTile tile = store.peek(MapView.blockToTile(x0), MapView.blockToTile(z0));
-        if (tile == null) return height[c] = FOG;
-        int lx0 = x0 & (MapTile.SIZE - 1), lz0 = z0 & (MapTile.SIZE - 1);
+        if (!map.has(x0, z0)) return height[c] = FOG;
         int known = 0, blocked = 0, walkable = 0, sum = 0, lava = 0, deepSum = 0;
         for (int s = 0; s < 4; s++) {
-            int lx = lx0 + (s & 1) * 4 + 2, lz = lz0 + (s >> 1) * 4 + 2;
-            byte f = tile.flags(lx, lz);
+            int x = x0 + (s & 1) * 4 + 2, z = z0 + (s >> 1) * 4 + 2;
+            byte f = map.flags(x, z);
             if ((f & MapTile.FLAG_KNOWN) == 0) continue;
             known++;
             if ((f & MapTile.FLAG_IMPASSABLE) != 0) {
                 blocked++;
                 // Deep water is impassable water; lava is impassable without the water flag.
                 if ((f & MapTile.FLAG_WATER) == 0) lava++;
-                else deepSum += tile.height(lx, lz);
+                else deepSum += map.height(x, z);
                 continue;
             }
             walkable++;
-            sum += tile.height(lx, lz);
+            sum += map.height(x, z);
         }
         if (known == 0) return height[c] = FOG;
         if (2 * blocked >= known || walkable == 0) {
