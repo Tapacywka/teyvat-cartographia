@@ -5,6 +5,8 @@ import net.tapacywka.teyvatcartographia.render.Draw;
 import net.tapacywka.teyvatcartographia.render.DrawText;
 import net.tapacywka.teyvatcartographia.render.Icon;
 import net.tapacywka.teyvatcartographia.render.Theme;
+import net.tapacywka.teyvatcartographia.marker.Marker;
+import net.tapacywka.teyvatcartographia.nav.Navigation;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 
@@ -36,6 +38,24 @@ final class MapContextMenu {
     private final String[] labels;
     private final float x, y, w;
     private final Slide slide = new Slide();
+
+    /** The rows on a pin: "Edit" ("Open" for an automatic point) with {@code open}, then "Track" or "Stop tracking". */
+    static List<Item> forPin(Marker m, Runnable open) {
+        return List.of(
+                new Item(m.automatic ? Icon.VIEW : Icon.PENCIL,
+                        Component.translatable(m.automatic ? "teyvatcartographia.map.menu.open" : "teyvatcartographia.map.menu.edit"), open),
+                new Item(Icon.LOCATE, Component.translatable(Navigation.isTracking(m) ? "teyvatcartographia.pin.untrack" : "teyvatcartographia.pin.track"), () -> {
+                    if (Navigation.isTracking(m)) Navigation.clear();
+                    else Navigation.track(m);
+                }));
+    }
+
+    /** The rows on empty ground: "New pin", and "Teleport" when {@code teleport} is given (for operators). */
+    static List<Item> forGround(Runnable newPin, Runnable teleport) {
+        Item pin = new Item(Icon.NEW_PIN, Component.translatable("teyvatcartographia.map.menu.new_pin"), newPin);
+        if (teleport == null) return List.of(pin);
+        return List.of(pin, new Item(Icon.TARGET, Component.translatable("teyvatcartographia.map.menu.teleport"), teleport));
+    }
 
     /** Beside the point (mx, my), below and to the right of it, moved inside the screen where it does not fit there. */
     MapContextMenu(List<Item> items, double mx, double my, int screenW, int screenH) {
