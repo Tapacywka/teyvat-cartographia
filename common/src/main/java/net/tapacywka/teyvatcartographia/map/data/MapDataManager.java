@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableSet;
-import java.util.TreeSet;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -34,7 +33,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.Collections;
 import java.util.function.Consumer;
 import net.minecraft.client.server.IntegratedServer;
 import net.minecraft.server.level.ServerLevel;
@@ -52,8 +50,8 @@ import net.minecraft.world.level.border.WorldBorder;
  * Handles world/dimension changes, logout and respawn. Main-thread API only.
  * <p>
  * Cave layers (dimensions with a sky and no ceiling): while the player is underground the band of
- * {@link CaveScanner#BAND} blocks they are in is mapped around them ({@link CaveScanner}, within {@code CAVE_RADIUS}
- * blocks, every {@code CAVE_TICKS} ticks) into its own store under {@code <dimension>/caves/b<band>/}.
+ * {@link CaveScanner#BAND} blocks they are in is mapped around them ({@link CaveScanner}, within {@code CaveLayers.RADIUS}
+ * blocks, every {@code CaveLayers.TICKS} ticks) into its own store under {@code <dimension>/caves/b<band>/}.
  */
 public final class MapDataManager {
     private static final MapDataManager INSTANCE = new MapDataManager();
@@ -113,16 +111,9 @@ public final class MapDataManager {
     private int sweepRadius = -1;
     private int[] sweepOffsets = new int[0];
 
-    // Cave layers of the active dimension: stores by band, the bands with saved data, and the band the player is in
-    // (null above ground, see Underground).
-    private static final double CAVE_RADIUS = 32;
-    private static final int CAVE_TICKS = 10, ROOF_SCAN = 128;
-    private static final BlockPos.MutableBlockPos ROOF_POS = new BlockPos.MutableBlockPos();
-    private final Underground.Roof roof = new Underground.Roof();
-    private final Map<Integer, TileStore> caveStores = new HashMap<>();
-    private final TreeSet<Integer> caveBands = new TreeSet<>();
-    private final NavigableSet<Integer> caveBandsView = Collections.unmodifiableNavigableSet(caveBands.descendingSet());
-    private final Underground underground = new Underground();
+    // Cave layers of the active dimension.
+    private final CaveLayers caves = new CaveLayers(band -> new TileStore(active.dimension,
+            dimDir(active.dimension).resolve("caves").resolve(CaveLayers.folder(band)), io, reads, generation, true, false));
 
     // The far land of this world's Overworld (single player, setting on); tried once per world, so a flat world does not ask every tick.
     private FarLand far;
@@ -185,28 +176,22 @@ public final class MapDataManager {
 
     /** The cave band the minimap shows (the player's while underground and the minimap shows caves), or null. */
     public Integer minimapBand() {
-        return cavesOnMinimap() ? underground.current() : null;
+        return cavesOnMinimap() ? caves.current() : null;
     }
 
     /** The cave band the player is in, or null above ground (or without cave layers). */
     public Integer undergroundBand() {
-        return cavesSupported() ? underground.current() : null;
+        return cavesSupported() ? caves.current() : null;
     }
 
     /** Store of a cave band of the active dimension. */
     public TileStore caveStore(int band) {
-        TileStore s = caveStores.get(band);
-        if (s == null) {
-            s = new TileStore(active.dimension, caveDir(band), io, reads, generation, true, false);
-            caveStores.put(band, s);
-            caveBands.add(band);
-        }
-        return s;
+        return caves.store(band);
     }
 
     /** The cave bands of the active dimension that have map data, highest first. */
     public NavigableSet<Integer> caveBands() {
-        return caveBandsView;
+        return caves.bands();
     }
 
     /** What the minimap shows: the cave band the player is in, else the surface. */
@@ -321,7 +306,7 @@ public final class MapDataManager {
     /** Regions in memory over every store: the dimension, its cave layers and the dimensions viewed on the map. */
     public int regionsInMemory() {
         int n = active == null ? 0 : active.regions();
-        for (TileStore s : caveStores.values()) n += s.regions();
+        for (TileStore s : caves.stores()) n += s.regions();
         for (TileStore s : viewStores.values()) if (s != active) n += s.regions();
         if (far != null) n += far.regions();
         return n;
@@ -366,7 +351,7 @@ public final class MapDataManager {
 
         active.drainLoaded();
         for (TileStore s : viewStores.values()) s.drainLoaded();
-        for (TileStore s : caveStores.values()) s.drainLoaded();
+        for (TileStore s : caves.stores()) s.drainLoaded();
         applyResults();
         updateFar(mc, player);
         if (!mc.isPaused()) {
@@ -374,8 +359,12 @@ public final class MapDataManager {
             mappedCursor = (mappedCursor + 1) % mappedPerTick.length;
         }
         mappedNow = 0;
-        updateUnderground(player);
-        if (underground.current() != null && cavesSupported() && tickCounter % CAVE_TICKS == 0) scanCaves(player, underground.current());
+        caves.updateUnderground(level, player, cavesSupported());
+        Integer band = caves.current();
+        if (band != null && cavesSupported() && tickCounter % CaveLayers.TICKS == 0 && inFlight.get() <= MAX_IN_FLIGHT / 2) {
+            long gen = generation;
+            caves.scan(level, player, band, workers, inFlight, (b, r) -> results.add(new CaveShaded(gen, r, b)));
+        }
 
         int pcx = player.chunkPosition().x(), pcz = player.chunkPosition().z();
         if (tickCounter % 20 == 0) {
@@ -389,16 +378,16 @@ public final class MapDataManager {
             int max = MapConfig.get(MapConfig.MAX_CACHED_TILES);
             active.evict(max);
             for (TileStore s : viewStores.values()) s.evict(Math.max(32, max / 2));
-            for (TileStore s : caveStores.values()) s.evict(Math.max(32, max / 2));
+            for (TileStore s : caves.stores()) s.evict(Math.max(32, max / 2));
         }
         if (tickCounter % 1200 == 0) {
             active.saveSoon();
-            for (TileStore s : caveStores.values()) s.saveSoon();
+            for (TileStore s : caves.stores()) s.saveSoon();
             pruneScanHistory(pcx, pcz);
         }
         // The timer's save, two regions a tick (a copy each, 0.1 ms): all at once was 3 to 4 ms in one tick.
         active.saveSome(SAVES_PER_TICK);
-        for (TileStore s : caveStores.values()) s.saveSome(SAVES_PER_TICK);
+        for (TileStore s : caves.stores()) s.saveSome(SAVES_PER_TICK);
     }
 
     private static final int SAVES_PER_TICK = 2;
@@ -439,7 +428,7 @@ public final class MapDataManager {
     public void closeAll(boolean waitForIo) {
         if (active != null) active.close();
         closeFar();
-        closeCaves();
+        caves.close();
         releaseViewStores();
         active = null;
         level = null;
@@ -466,7 +455,7 @@ public final class MapDataManager {
     private void switchContext(ClientLevel lvl) {
         String newWorld = WorldId.current();
         if (active != null) active.close();
-        closeCaves();
+        caves.close();
         if (worldId != null && !worldId.equals(newWorld)) {
             releaseViewStores();
             closeFar();
@@ -484,70 +473,8 @@ public final class MapDataManager {
         active = new TileStore(dim, dimDir(dim), io, reads, generation, false, false);
         sweepCursor = 0;
         Plants.worldOpened();
-        for (String folder : MapStorage.listDimensions(dimDir(dim).resolve("caves"))) {
-            if (folder.matches("b-?\\d+")) caveBands.add(Integer.parseInt(folder.substring(1)));
-        }
+        caves.listSaved(MapStorage.listDimensions(dimDir(dim).resolve("caves")));
         TeyvatCartographia.LOGGER.info("Teyvat Cartographia: mapping {} / {}", worldId, dim.identifier());
-    }
-
-    private void closeCaves() {
-        caveStores.values().forEach(TileStore::close);
-        caveStores.clear();
-        caveBands.clear();
-        underground.reset();
-    }
-
-    private Path caveDir(int band) {
-        return dimDir(active.dimension).resolve("caves").resolve("b" + band);
-    }
-
-    /**
-     * Underground ({@link Underground}): the longest run of natural blocks above the player's head, looked for up to
-     * ROOF_SCAN blocks up. The sky light and the heightmaps are not used: on the client they are not reliable in closed
-     * caves.
-     */
-    private void updateUnderground(LocalPlayer player) {
-        Integer now = null;
-        if (cavesSupported()) {
-            BlockPos eye = BlockPos.containing(player.getEyePosition());
-            int top = Math.min(level.getMaxY() + 1, eye.getY() + ROOF_SCAN);
-            roof.reset();
-            for (int y = eye.getY() + 1; y < top && roof.best() < Underground.ROOF; y++) {
-                roof.add(Underground.natural(level.getBlockState(ROOF_POS.set(eye.getX(), y, eye.getZ()))));
-            }
-            now = Underground.band(roof.best(), player.getBlockY());
-        }
-        underground.update(now);
-    }
-
-    /** Maps the chunks around the player that reach into CAVE_RADIUS, for the player's band, on the workers. */
-    private void scanCaves(LocalPlayer player, int band) {
-        if (inFlight.get() > MAX_IN_FLIGHT / 2) return;
-        double px = player.getX(), pz = player.getZ();
-        int c0x = (int) Math.floor(px - CAVE_RADIUS) >> 4, c1x = (int) Math.floor(px + CAVE_RADIUS) >> 4;
-        int c0z = (int) Math.floor(pz - CAVE_RADIUS) >> 4, c1z = (int) Math.floor(pz + CAVE_RADIUS) >> 4;
-        ClientLevel lvl = level;
-        long gen = generation;
-        caveStore(band); // the band is listed from its first scan on
-        for (int cz = c0z; cz <= c1z; cz++) {
-            for (int cx = c0x; cx <= c1x; cx++) {
-                LevelChunk chunk = level.getChunkSource().getChunk(cx, cz, ChunkStatus.FULL, false);
-                if (chunk == null || chunk.isEmpty()) continue;
-                inFlight.incrementAndGet();
-                workers.execute(() -> {
-                    try {
-                        results.add(new CaveShaded(gen, CaveScanner.scan(lvl, chunk, band, px, pz, CAVE_RADIUS), band));
-                    } catch (RuntimeException e) {
-                        TeyvatCartographia.LOGGER.debug("Cave chunk {},{} could not be sampled", chunk.getPos().x(), chunk.getPos().z(), e);
-                    } catch (LinkageError e) {
-                        // A mod's block whose classes are missing.
-                        TeyvatCartographia.LOGGER.error("Cave mapping failed for chunk {},{}", chunk.getPos().x(), chunk.getPos().z(), e);
-                    } finally {
-                        inFlight.decrementAndGet();
-                    }
-                });
-            }
-        }
     }
 
     /** Folder of a dimension's map: its id with ':' as '_' (as in earlier versions, so old maps stay). */
