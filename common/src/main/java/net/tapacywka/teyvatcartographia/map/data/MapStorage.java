@@ -66,35 +66,41 @@ public final class MapStorage {
         return keys;
     }
 
+    /** Writes a region and closes its copy of the picture, written or not. */
     static void save(Path dir, MapTile.TileSnapshot s) throws IOException {
         try {
-            Files.createDirectories(dir);
-            String base = "r." + s.tx() + "." + s.tz();
-            Path png = dir.resolve(base + ".png"), pngTmp = dir.resolve(base + ".png.tmp");
-            Path dat = dir.resolve(base + ".dat"), datTmp = dir.resolve(base + ".dat.tmp");
-            s.image().writeToFile(pngTmp);
-            try (NativeImage thumb = thumbnail(s.image())) {
-                writeThumbnail(dir, s.tx(), s.tz(), thumb);
-            } catch (IOException e) {
-                TeyvatCartographia.LOGGER.warn("Could not write the map thumbnail of region {},{}", s.tx(), s.tz(), e);
-            }
-            try (DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new GZIPOutputStream(Files.newOutputStream(datTmp))))) {
-                out.writeInt(MAGIC);
-                out.writeInt(VERSION);
-                for (short h : s.heights()) out.writeShort(h);
-                out.write(s.flags());
-                out.write(s.chunkState());
-                for (short b : s.chunkBiome()) out.writeShort(b);
-                writePalette(out, s.biomePalette());
-                out.write(s.light());
-            }
-            // The picture first: cut off between the two, new pixels under the old metadata only map those chunks
-            // again, while new metadata over the old picture would call blank chunks explored, holes until revisited.
-            replace(pngTmp, png);
-            replace(datTmp, dat);
+            write(dir, s);
         } finally {
             s.image().close();
         }
+    }
+
+    /** Writes a region; its copy of the picture stays open, so a failed write can be tried again with it. */
+    static void write(Path dir, MapTile.TileSnapshot s) throws IOException {
+        Files.createDirectories(dir);
+        String base = "r." + s.tx() + "." + s.tz();
+        Path png = dir.resolve(base + ".png"), pngTmp = dir.resolve(base + ".png.tmp");
+        Path dat = dir.resolve(base + ".dat"), datTmp = dir.resolve(base + ".dat.tmp");
+        s.image().writeToFile(pngTmp);
+        try (NativeImage thumb = thumbnail(s.image())) {
+            writeThumbnail(dir, s.tx(), s.tz(), thumb);
+        } catch (IOException e) {
+            TeyvatCartographia.LOGGER.warn("Could not write the map thumbnail of region {},{}", s.tx(), s.tz(), e);
+        }
+        try (DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new GZIPOutputStream(Files.newOutputStream(datTmp))))) {
+            out.writeInt(MAGIC);
+            out.writeInt(VERSION);
+            for (short h : s.heights()) out.writeShort(h);
+            out.write(s.flags());
+            out.write(s.chunkState());
+            for (short b : s.chunkBiome()) out.writeShort(b);
+            writePalette(out, s.biomePalette());
+            out.write(s.light());
+        }
+        // The picture first: cut off between the two, new pixels under the old metadata only map those chunks
+        // again, while new metadata over the old picture would call blank chunks explored, holes until revisited.
+        replace(pngTmp, png);
+        replace(datTmp, dat);
     }
 
     /** Loads a tile; returns {@code null} if the files are missing. Caller owns the returned tile. */

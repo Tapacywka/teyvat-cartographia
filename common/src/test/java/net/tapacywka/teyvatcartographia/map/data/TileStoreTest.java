@@ -143,6 +143,29 @@ class TileStoreTest {
         assertTrue(Files.exists(png), "saved again once it could be written");
     }
 
+    /** A region evicted from memory whose write failed is written from its kept copy with the next save. */
+    @Test
+    void anEvictedRegionWhoseWriteFailedIsWrittenFromItsCopy(@TempDir Path root) throws Exception {
+        Path dir = root.resolve("map");
+        TileStore store = new TileStore(DIMENSION, dir, io, 1);
+        finishIo();
+        store.drainLoaded();
+        store.apply(new ChunkShader.Result(0, 0, new int[256], new short[256], new byte[256], new byte[256], 0, null, false));
+        store.peek(0, 0).lastUsedMs = 0; // long unused: evicted first
+        Path png = dir.resolve("r.0.0.png");
+        Files.createDirectories(dir.resolve("r.0.0.png.tmp")); // the picture cannot be written there
+        store.evict(0);
+        assertEquals(0, store.regions(), "evicted");
+        io.submit(() -> {}).get();
+        assertFalse(Files.exists(png), "the write failed");
+
+        Files.delete(dir.resolve("r.0.0.png.tmp"));
+        store.saveSoon(); // takes the failure in and writes the kept copy
+        io.submit(() -> {}).get();
+        assertTrue(Files.exists(png), "written from the copy kept after the failure");
+        store.close();
+    }
+
     /** Files that cannot be read are set aside, so the region mapped anew does not write over them. */
     @Test
     void anUnreadableRegionIsSetAside(@TempDir Path root) throws IOException {
