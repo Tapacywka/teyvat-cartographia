@@ -12,7 +12,6 @@ import net.tapacywka.teyvatcartographia.gui.panel.SettingsPanel;
 import net.tapacywka.teyvatcartographia.gui.panel.SidePanel;
 import net.tapacywka.teyvatcartographia.gui.Ui.Grid;
 import net.tapacywka.teyvatcartographia.map.MapView;
-import net.tapacywka.teyvatcartographia.map.data.CaveScanner;
 import net.tapacywka.teyvatcartographia.map.data.MapDataManager;
 import net.tapacywka.teyvatcartographia.map.data.TileStore;
 import net.tapacywka.teyvatcartographia.marker.AutoMarkers;
@@ -108,7 +107,7 @@ public final class WorldMapScreen extends Screen {
     // What slides (see Slide): the map itself, dissolving into the game and back, with the zoom
     // slider; the other buttons and texts, away while a side panel is open, those of the right side (rightBars) also
     // while the pick list is; the small buttons of the layer field.
-    private final Slide entry = new Slide(), bars = new Slide(), rightBars = new Slide(), layerSlide = new Slide();
+    private final Slide entry = new Slide(), bars = new Slide(), rightBars = new Slide();
     /** The map is closing: everything slides out, input is over, and the screen goes when {@link #entry} is gone. */
     private boolean exiting;
     /** Client ticks of a closing map without a frame (a minimised window draws none): it then goes at once. */
@@ -533,8 +532,7 @@ public final class WorldMapScreen extends Screen {
         bars.update(dt);
         rightBars.set(bars.in() && pick == null);
         rightBars.update(dt);
-        layerSlide.set(layersOpen);
-        layerSlide.update(dt);
+        layers.update(dt);
         for (int i = under.size() - 1; i >= 0; i--) {
             if (under.get(i).gone() || panel != null && panel.inPlace()) under.remove(i);
         }
@@ -684,7 +682,7 @@ public final class WorldMapScreen extends Screen {
         }
         if (menuOut != null) menuOut.render(g, -1, -1, time, dt);
         if (menu != null) menu.render(g, mx, my, time, dt);
-        else if (pick == null && panel == null && !exiting && entry.settled() && !dragging && !drawLayerTooltip(g, mx, my)) {
+        else if (pick == null && panel == null && !exiting && entry.settled() && !dragging && !layers.drawTooltip(g, mx, my)) {
             if (hovered != null) drawTooltip(g, hovered, mx, my);
             // Another player of the radar: their name.
             else if (radarPointed != null) Ui.tooltip(g, radarPointed.getString(), null, mx, my, width, height);
@@ -715,7 +713,7 @@ public final class WorldMapScreen extends Screen {
             Cursors.want(Cursors.Shape.HAND);
         }
         if (panel == null && pick == null) {
-            if (hovered != null || layerArrowAt(mx, my) != 0
+            if (hovered != null || layers.arrowAt(mx, my) != 0
                     || !Float.isNaN(indicatorX) && Draw.inCircle(mx, my, indicatorX, indicatorY, INDICATOR_R + 2)
                     || !Float.isNaN(targetIndicatorX) && Draw.inCircle(mx, my, targetIndicatorX, targetIndicatorY, INDICATOR_R + 2)) {
                 Cursors.want(Cursors.Shape.HAND);
@@ -897,15 +895,18 @@ public final class WorldMapScreen extends Screen {
     }
     // ------------------------------------------------------------------ layout (all positions on the grid)
 
-    private static final int M = Grid.MARGIN, R = Grid.BUTTON / 2;
+    static final int M = Grid.MARGIN;
+    private static final int R = Grid.BUTTON / 2;
 
     /**
      * Diameter of the three corner buttons (close, settings, dimensions/compass): as tall as the two text lines
      * beside the compass. They share size, light style and icon size.
      */
-    private static final int COMPASS_D = 28, BIG_R = COMPASS_D / 2;
+    static final int COMPASS_D = 28;
+    private static final int BIG_R = COMPASS_D / 2;
     /** Icon size in the corner buttons; the compass glyph is drawn larger because its star is thin. */
-    private static final int BIG_ICON = Grid.ICON_L, COMPASS_ICON = 22;
+    static final int BIG_ICON = Grid.ICON_L;
+    private static final int COMPASS_ICON = 22;
     /** Top of the pills in the top bar: vertically centred on the close button. */
     private static final int BAR_Y = M + (COMPASS_D - Grid.PILL_H) / 2;
 
@@ -1244,9 +1245,8 @@ public final class WorldMapScreen extends Screen {
         float textW = Math.max(AREA_TEXT_RESERVE, Math.max(area == null ? 0 : DrawText.width(area), explored == null ? 0 : DrawText.width(explored)));
         setRect(3, compassX() - COMPASS_D / 2f - Grid.PAD - textW - pad, height - M - COMPASS_D - pad, width, height);
         // Layer buttons on the right (empty when not shown)
-        if (layersOn()) {
-            float top = layerItemY(layerShownFrom()) - LAYER_BIG_SLOT / 2f, bottom = layerItemY(layerShownTo() - 1) + LAYER_BIG_SLOT / 2f;
-            setRect(4, layerX() - BIG_R - pad, top - 2 * LAYER_ARROW - pad, width, bottom + 2 * LAYER_ARROW + pad);
+        if (layers.on()) {
+            setRect(4, layers.x() - BIG_R - pad, layers.top() - pad, width, layers.bottom() + pad);
         } else {
             setRect(4, 0, 0, 0, 0);
         }
@@ -1303,8 +1303,8 @@ public final class WorldMapScreen extends Screen {
                 || locate != kLocate || width != kWidth || height != kHeight || guiScale != kGuiScale || Theme.generation() != kChromeTheme
                 || cursor != kCursor || player != kPlayer || explored != kExplored || !Objects.equals(area, kArea)
                 || viewedDim != kDim || !Objects.equals(viewedBand, kBand)
-                || MapDataManager.get().caveBands().size() != kBandCount || layerShownFrom() != kLayerFirst || layersOpen != kLayersOpen
-                || layerSlide.amount() != kLayerAmount;
+                || MapDataManager.get().caveBands().size() != kBandCount || layers.shownFrom() != kLayerFirst || layers.isOpen() != kLayersOpen
+                || layers.amount() != kLayerAmount;
         if (dirty) {
             chrome.bind(g, w.getWidth(), w.getHeight(), false);
             Draw.beginLayer();
@@ -1315,7 +1315,7 @@ public final class WorldMapScreen extends Screen {
                     drawTopBar(g, bx, by, cursor, player);
                     drawBottomLeft(g, bx, by);
                     drawBottomRight(g, bx, by, area, explored);
-                    drawLayers(g, bx, by);
+                    layers.draw(g, bx, by);
                 }
                 g.flush();
             } finally {
@@ -1338,9 +1338,9 @@ public final class WorldMapScreen extends Screen {
             kDim = viewedDim;
             kBand = viewedBand;
             kBandCount = MapDataManager.get().caveBands().size();
-            kLayerFirst = layerShownFrom();
-            kLayersOpen = layersOpen;
-            kLayerAmount = layerSlide.amount();
+            kLayerFirst = layers.shownFrom();
+            kLayersOpen = layers.isOpen();
+            kLayerAmount = layers.amount();
             // Composited only where the chrome is (the UI rectangles, which include a margin), not over the whole
             // screen: the rest of the layer is empty.
             List<float[]> rects = uiRects(store, mx, my);
@@ -1383,9 +1383,9 @@ public final class WorldMapScreen extends Screen {
         if (pick != null) return h; // the right side has slid away
         if (Ui.buttonHit(closeX(), closeY(), COMPASS_D, mx, my)) h |= 8;
         if (Ui.buttonHit(compassX(), compassY(), COMPASS_D, mx, my)) h |= 128;
-        if (layerButtonHit(mx, my)) h |= 256;
-        int row = layerRowAt(mx, my);
-        if (row >= 0) h |= 512 << Math.min(20, row - layerShownFrom());
+        if (layers.buttonHit(mx, my)) h |= 256;
+        int row = layers.rowAt(mx, my);
+        if (row >= 0) h |= 512 << Math.min(20, row - layers.shownFrom());
         return h;
     }
 
@@ -1497,216 +1497,48 @@ public final class WorldMapScreen extends Screen {
 
     // ------------------------------------------------------------------ cave layers
 
-    /**
-     * The layer field at the right edge (reference: the layer buttons of the Genshin Impact map), always centred on
-     * the screen's height, all with the layers glyph. A large button stands for the surface; clicked, it opens the cave layers as small buttons
-     * on a thin line, in height order: the bands above the sea level over it, the others under it (the large button
-     * moves with them). A second click on it goes back to the surface; a click on it while the surface is shown closes the field. At most
-     * {@code LAYER_SMALL_MAX} small buttons show; with more, the wheel (or a click on the small arrow over or under the
-     * field, shown where it can go on) scrolls it by one button. Names and heights are in the tooltips.
-     */
-    private static final int LAYER_STEP = 28, LAYER_BIG_SLOT = COMPASS_D + 2 * Grid.GAP, LAYER_SMALL_MAX = 5;
-    /** Marks the surface (the large button) among the bands of {@link #layerItems}. */
-    private static final int SURFACE_ITEM = Integer.MIN_VALUE;
-    private boolean layersOpen;
-    /** First item of the field shown (scrolled by the wheel). */
-    private int layerFirst;
-    /** The cave bands, and the field's items from top to bottom (bands with the surface between them). */
-    private int[] layerBands = new int[0], layerItems = new int[]{SURFACE_ITEM};
-
-    /** The items of the field, rebuilt when a band is added (drawing does not iterate the set). */
-    private int[] items() {
-        NavigableSet<Integer> set = MapDataManager.get().caveBands();
-        if (set.size() != layerBands.length) {
-            layerBands = new int[set.size()];
-            int i = 0, sea = Minecraft.getInstance().level == null ? 63 : Minecraft.getInstance().level.getSeaLevel();
-            for (int b : set) layerBands[i++] = b; // highest first
-            List<Integer> order = CaveScanner.layerOrder(set, sea);
-            layerItems = new int[order.size()];
-            for (int k = 0; k < order.size(); k++) layerItems[k] = order.get(k) == null ? SURFACE_ITEM : order.get(k);
+    /** The layer field at the right edge ({@link LayerField}). */
+    private final LayerField layers = new LayerField(new LayerField.Host() {
+        @Override
+        public int width() {
+            return width;
         }
-        return layerItems;
-    }
 
-    /** The field is there in the player's dimension once it has cave layers. */
-    private boolean layersOn() {
-        return viewingPlayerDim() && MapDataManager.get().cavesOnMap() && !MapDataManager.get().caveBands().isEmpty();
-    }
-
-    /** It takes the mouse while no side panel is open. */
-    private boolean layersShown() {
-        return panel == null && !exiting && layersOn();
-    }
-
-    private float layerX() {
-        return width - M - BIG_R;
-    }
-
-    /** One past the last item shown from {@code first}: as far as {@code LAYER_SMALL_MAX} small buttons reach. */
-    private int layerEnd(int first) {
-        int[] it = items();
-        int end = first, small = 0;
-        while (end < it.length && (it[end] == SURFACE_ITEM || small < LAYER_SMALL_MAX)) {
-            if (it[end] != SURFACE_ITEM) small++;
-            end++;
+        @Override
+        public int height() {
+            return height;
         }
-        return end;
-    }
 
-    /** The largest first item that still fills the field to the end of the list. */
-    private int layerMaxFirst() {
-        int n = items().length, first = 0;
-        while (first < n - 1 && layerEnd(first) < n) first++;
-        return first;
-    }
-
-    /** The small buttons are out, or on their way in or out. */
-    private boolean layersUnfolded() {
-        return layersOpen || layerSlide.visible();
-    }
-
-    /** Items shown: only the large button while the field is closed. */
-    private int layerShownFrom() {
-        return layersUnfolded() ? Math.max(0, Math.min(layerMaxFirst(), layerFirst)) : surfaceIndex();
-    }
-
-    private int layerShownTo() {
-        return layersUnfolded() ? layerEnd(layerShownFrom()) : surfaceIndex() + 1;
-    }
-
-    private int surfaceIndex() {
-        int[] it = items();
-        for (int i = 0; i < it.length; i++) if (it[i] == SURFACE_ITEM) return i;
-        return 0;
-    }
-
-    private float slotHeight(int item) {
-        return items()[item] == SURFACE_ITEM ? LAYER_BIG_SLOT : LAYER_STEP;
-    }
-
-    /** Centre Y of a shown item: the shown items are centred on the screen's height together. */
-    private float layerItemY(int item) {
-        int from = layerShownFrom(), to = layerShownTo();
-        float total = 0, before = 0;
-        for (int i = from; i < to; i++) {
-            if (i < item) before += slotHeight(i);
-            total += slotHeight(i);
+        @Override
+        public boolean on() {
+            return viewingPlayerDim() && MapDataManager.get().cavesOnMap() && !MapDataManager.get().caveBands().isEmpty();
         }
-        return Draw.snap(height / 2f - total / 2f) + before + slotHeight(item) / 2f;
-    }
 
-    /** Centre Y of the large button: on the screen's height with the field closed, moving to its place among the bands. */
-    private float surfaceY() {
-        float closed = Draw.snap(height / 2f - LAYER_BIG_SLOT / 2f) + LAYER_BIG_SLOT / 2f;
-        int s = surfaceIndex();
-        if (s < layerShownFrom() || s >= layerShownTo()) return closed;
-        return closed + (layerItemY(s) - closed) * layerSlide.amount();
-    }
-
-    /** Opens the field with the shown layer in view (the scroll position puts it near the middle). */
-    private void openLayers() {
-        layersOpen = true;
-        int[] it = items();
-        int focus = surfaceIndex();
-        for (int i = 0; viewedBand != null && i < it.length; i++) if (it[i] == viewedBand) focus = i;
-        layerFirst = Math.max(0, Math.min(layerMaxFirst(), focus - LAYER_SMALL_MAX / 2));
-    }
-
-    private boolean layerButtonHit(double mx, double my) {
-        if (!layersShown()) return false;
-        int s = surfaceIndex();
-        return s >= layerShownFrom() && s < layerShownTo() && Ui.buttonHit(layerX(), surfaceY(), COMPASS_D, mx, my);
-    }
-
-    /** The small button (cave band) under the mouse, as an item index, or -1. */
-    private int layerRowAt(double mx, double my) {
-        if (!layersShown() || !layersOpen) return -1;
-        int[] it = items();
-        for (int i = layerShownFrom(), to = layerShownTo(); i < to; i++) {
-            if (it[i] != SURFACE_ITEM && Ui.iconButtonHit(layerX(), layerItemY(i), mx, my)) return i;
+        @Override
+        public boolean takesMouse() {
+            return panel == null && !exiting && on();
         }
-        return -1;
-    }
 
-    /** Whether the mouse is over the open field (the wheel scrolls it there). */
-    private boolean overLayers(double mx, double my) {
-        if (!layersShown() || !layersOpen) return false;
-        float top = layerItemY(layerShownFrom()) - LAYER_STEP / 2f, bottom = layerItemY(layerShownTo() - 1) + LAYER_STEP / 2f;
-        return mx >= layerX() - BIG_R - Grid.GAP && my >= top && my <= bottom;
-    }
-
-    private void drawLayers(GuiGraphics g, int mx, int my) {
-        if (!layersOn()) return;
-        int[] it = items();
-        int from = layerShownFrom(), to = layerShownTo(), surface = surfaceIndex();
-        float x = layerX(), e = layerSlide.amount(), travel = width - x + BIG_R;
-        if (to - from > 1) Draw.rect(g, x - 0.75f, layerItemY(from), x + 0.75f, layerItemY(to - 1), Theme.withAlpha(Theme.PANEL_LINE, e));
-        // Scrolled away from the large button, it leaves over the edge as the small ones come.
-        if (surface < from || surface >= to) Ui.iconButton(g, x + travel * e, surfaceY(), COMPASS_D, BIG_ICON, Icon.LAYERS, viewedBand == null, mx, my);
-        for (int i = from; i < to; i++) {
-            // The shown layer is a light button (like the large one on the Genshin Impact map), the others dark. The
-            // small ones slide in over the right edge one after the other, the large one moves up or down to its place.
-            if (it[i] == SURFACE_ITEM) Ui.iconButton(g, x, surfaceY(), COMPASS_D, BIG_ICON, Icon.LAYERS, viewedBand == null, mx, my);
-            else Ui.iconButton(g, x + travel * (1 - layerSlide.staggered(i - from, to - from)), layerItemY(i), Icon.LAYERS, viewedBand != null && it[i] == viewedBand, mx, my);
+        @Override
+        public Integer viewed() {
+            return viewedBand;
         }
-        // Arrows where the field can be scrolled: over the first button shown, under the last.
-        if (layersUnfolded() && from > 0) MarkerRenderer.levelArrow(g, x, layerArrowY(true), LAYER_ARROW, true, Theme.WORLD_MARKER_LEVEL, e);
-        if (layersUnfolded() && to < it.length) MarkerRenderer.levelArrow(g, x, layerArrowY(false), LAYER_ARROW, false, Theme.WORLD_MARKER_LEVEL, e);
-    }
 
-    /** Width of the scroll arrows of the layer field. */
-    private static final float LAYER_ARROW = 6;
-
-    /** Centre Y of the scroll arrow over the first button shown ({@code up}) or under the last one. */
-    private float layerArrowY(boolean up) {
-        int item = up ? layerShownFrom() : layerShownTo() - 1;
-        float half = items()[item] == SURFACE_ITEM ? BIG_R : R;
-        return up ? layerItemY(item) - half - LAYER_ARROW : layerItemY(item) + half + LAYER_ARROW;
-    }
-
-    /** The scroll arrow under the mouse: -1 the upper one, 1 the lower one, 0 none (a click scrolls by one button). */
-    private int layerArrowAt(double mx, double my) {
-        if (!layersShown() || !layersOpen || Math.abs(mx - layerX()) > R) return 0;
-        if (layerShownFrom() > 0 && Math.abs(my - layerArrowY(true)) <= LAYER_ARROW) return -1;
-        if (layerShownTo() < items().length && Math.abs(my - layerArrowY(false)) <= LAYER_ARROW) return 1;
-        return 0;
-    }
-
-    private void scrollLayers(int by) {
-        layerFirst = Math.max(0, Math.min(layerMaxFirst(), layerShownFrom() + by));
-    }
-
-    /**
-     * Tooltip of the layer field under the mouse, left of it: "Layers" on the closed large button, "Surface" on the
-     * open one, the band's name on a small one. Returns whether one was drawn.
-     */
-    private boolean drawLayerTooltip(GuiGraphics g, int mx, int my) {
-        float right = layerX() - BIG_R - Grid.GAP;
-        if (layerButtonHit(mx, my)) {
-            String key = layersOpen ? "teyvatcartographia.map.layer.surface" : "teyvatcartographia.map.layers";
-            Ui.tooltipLeftOf(g, Component.translatable(key).getString(), right, surfaceY());
-            return true;
+        @Override
+        public NavigableSet<Integer> bands() {
+            return MapDataManager.get().caveBands();
         }
-        int row = layerRowAt(mx, my);
-        if (row < 0) return false;
-        Ui.tooltipLeftOf(g, cavesText(items()[row]).getString(), right, layerItemY(row));
-        return true;
-    }
+
+        @Override
+        public int seaLevel() {
+            return Minecraft.getInstance().level == null ? 63 : Minecraft.getInstance().level.getSeaLevel();
+        }
+    });
 
     /** The cave band shown, or null for the surface (also in other dimensions); new pins belong to it. */
     public Integer viewedBand() {
         TileStore s = store();
         return s != null && s.cave ? viewedBand : null;
-    }
-    // Labels of the bands, built once each.
-    private final Map<Integer, Component> cavesTexts = new HashMap<>();
-
-    /** "Height 64 to 79" over the surface, "Height 63 to 48" under it: the tooltip of a cave layer's button. */
-    private Component cavesText(int band) {
-        return cavesTexts.computeIfAbsent(band, b -> {
-            int[] h = CaveScanner.heights(b, Minecraft.getInstance().level == null ? 63 : Minecraft.getInstance().level.getSeaLevel());
-            return Component.translatable("teyvatcartographia.map.caves", h[0], h[1]);
-        });
     }
 
     private void drawTooltip(GuiGraphics g, Marker m, int mx, int my) {
@@ -1788,21 +1620,21 @@ public final class WorldMapScreen extends Screen {
                 openPanel(new DimensionPanel(this));
                 return true;
             }
-            if (layerButtonHit(mx, my)) {
+            if (layers.buttonHit(mx, my)) {
                 // Closed: open the field. Open on a cave band: back to the surface. Open on the surface: close it.
-                if (!layersOpen) openLayers();
+                if (!layers.isOpen()) layers.open();
                 else if (viewedBand != null) viewedBand = null;
-                else layersOpen = false;
+                else layers.close();
                 return true;
             }
-            int row = layerRowAt(mx, my);
+            int row = layers.rowAt(mx, my);
             if (row >= 0) {
-                viewedBand = items()[row];
+                viewedBand = layers.items()[row];
                 return true;
             }
-            int arrow = layerArrowAt(mx, my);
+            int arrow = layers.arrowAt(mx, my);
             if (arrow != 0) {
-                scrollLayers(arrow);
+                layers.scroll(arrow);
                 return true;
             }
         }
@@ -2010,7 +1842,7 @@ public final class WorldMapScreen extends Screen {
         if (Draw.inRect(mx, my, sx - 9, sliderPlusY() - 9, 18, sliderMinusY() - sliderPlusY() + 18)) return true;
         if (panel == null && (Ui.buttonHit(closeX(), closeY(), COMPASS_D, mx, my) || Ui.buttonHit(rowButtonX(0), rowButtonY(), COMPASS_D, mx, my)
                 || Ui.iconButtonHit(rowButtonX(1), rowButtonY(), mx, my) || Ui.iconButtonHit(rowButtonX(2), rowButtonY(), mx, my)
-                || Ui.buttonHit(compassX(), compassY(), COMPASS_D, mx, my) || overLayers(mx, my))) return true;
+                || Ui.buttonHit(compassX(), compassY(), COMPASS_D, mx, my) || layers.over(mx, my))) return true;
         return !Float.isNaN(indicatorX) && Draw.inCircle(mx, my, indicatorX, indicatorY, INDICATOR_R + 2)
                 || !Float.isNaN(targetIndicatorX) && Draw.inCircle(mx, my, targetIndicatorX, targetIndicatorY, INDICATOR_R + 2);
     }
@@ -2024,8 +1856,8 @@ public final class WorldMapScreen extends Screen {
             closePick(); // the map moves under it
         }
         if (panel != null && panel.mouseScrolled(mx, my, scrollY)) return true;
-        if (scrollY != 0 && panel == null && overLayers(mx, my)) {
-            scrollLayers(-(int) Math.signum(scrollY));
+        if (scrollY != 0 && panel == null && layers.over(mx, my)) {
+            layers.scroll(-(int) Math.signum(scrollY));
             return true;
         }
         if (scrollY != 0) {
