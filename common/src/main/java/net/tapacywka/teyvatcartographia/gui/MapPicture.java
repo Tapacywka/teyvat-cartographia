@@ -37,12 +37,11 @@ final class MapPicture {
 
     private final CachedLayer layer = new CachedLayer();
     private boolean complete;
-    private TileStore kStore;
-    private FarLand kFar;
-    private int kVersion, kFarVersion, kBorder, kTint, kWidth, kHeight, kTheme;
-    private float kNight;
-    private double kCenterX, kCenterZ, kScale, kGuiScale, kFogX, kFogZ;
-    private long kDrawnNs;
+    /** The inputs of this frame and of the drawn picture: two objects made once, so a frame allocates nothing. */
+    private final Key now = new Key(), drawn = new Key();
+    // Not in the key: the far land and the time are compared with a delay, not for equality.
+    private int drawnFarVersion;
+    private long drawnNs;
     /** Whether the last picture had an edge that breathes. */
     private boolean breathing;
 
@@ -54,20 +53,29 @@ final class MapPicture {
         int tint = cave ? 0xFFFFFFFF : DayLight.tint(pt);
         // Quantised like the tint, so the slow change of daylight does not redraw every frame.
         float night = cave ? 0f : Math.round(DayLight.night(pt) * 255) / 255f;
-        int version = store == null ? -1 : store.version();
         // Not under a cave layer.
         FarLand far = store == null || cave ? null : MapDataManager.get().farLand(store.dimension);
         int farVersion = MapLayerRenderer.farVersion(far, view);
-        int border = store == null ? 0 : BorderLine.stamp(store.dimension);
         Window w = Minecraft.getInstance().getWindow();
-        double guiScale = w.getGuiScale();
-        long now = Util.getNanos();
-        boolean dirty = !layer.exists() || !complete || now - kDrawnNs > 1_000_000_000L
-                || store != kStore || version != kVersion || centerX != kCenterX || centerZ != kCenterZ || scale != kScale
-                || tint != kTint || night != kNight || width != kWidth || height != kHeight || guiScale != kGuiScale
-                || fogOffsetX != kFogX || fogOffsetZ != kFogZ || Theme.generation() != kTheme
-                || far != kFar || farVersion != kFarVersion && now - kDrawnNs > FAR_REFRESH_NS || border != kBorder
-                || breathing && now - kDrawnNs >= BREATH_NS;
+        now.store = store;
+        now.far = far;
+        now.version = store == null ? -1 : store.version();
+        now.border = store == null ? 0 : BorderLine.stamp(store.dimension);
+        now.centerX = centerX;
+        now.centerZ = centerZ;
+        now.scale = scale;
+        now.tint = tint;
+        now.night = night;
+        now.width = width;
+        now.height = height;
+        now.guiScale = w.getGuiScale();
+        now.fogX = fogOffsetX;
+        now.fogZ = fogOffsetZ;
+        now.theme = Theme.generation();
+        long ns = Util.getNanos();
+        boolean dirty = !layer.exists() || !complete || ns - drawnNs > 1_000_000_000L || drawn.differs(now)
+                || farVersion != drawnFarVersion && ns - drawnNs > FAR_REFRESH_NS
+                || breathing && ns - drawnNs >= BREATH_NS;
         if (dirty) {
             layer.bind(g, w.getWidth(), w.getHeight(), false);
             try {
@@ -84,23 +92,9 @@ final class MapPicture {
             } finally {
                 layer.unbind();
             }
-            kStore = store;
-            kFar = far;
-            kFarVersion = farVersion;
-            kBorder = border;
-            kVersion = version;
-            kCenterX = centerX;
-            kCenterZ = centerZ;
-            kScale = scale;
-            kTint = tint;
-            kNight = night;
-            kWidth = width;
-            kHeight = height;
-            kGuiScale = guiScale;
-            kDrawnNs = now;
-            kFogX = fogOffsetX;
-            kFogZ = fogOffsetZ;
-            kTheme = Theme.generation();
+            drawn.remember(now);
+            drawnFarVersion = farVersion;
+            drawnNs = ns;
         }
         Draw.texturedQuadPremultiplied(g, layer.tex(), 0, 0, width, height, 0f, CachedLayer.v(1f), 1f, CachedLayer.v(0f));
     }
@@ -114,6 +108,43 @@ final class MapPicture {
         fogLastX = centerX;
         fogLastZ = centerZ;
         fogLastScale = scale;
+    }
+
+    /**
+     * Everything the picture is drawn from that must stay equal for the layer to be reused. Every field takes part in
+     * {@link #differs} and {@link #remember} ({@code MapPictureKeyTest} changes each one by reflection). The store and
+     * the far land are compared by identity only, so they are kept as plain objects.
+     */
+    static final class Key {
+        Object store, far;
+        int version, border, tint, width, height, theme;
+        float night;
+        double centerX, centerZ, scale, guiScale, fogX, fogZ;
+
+        boolean differs(Key o) {
+            return store != o.store || far != o.far || version != o.version || border != o.border || tint != o.tint
+                    || width != o.width || height != o.height || theme != o.theme || night != o.night
+                    || centerX != o.centerX || centerZ != o.centerZ || scale != o.scale || guiScale != o.guiScale
+                    || fogX != o.fogX || fogZ != o.fogZ;
+        }
+
+        void remember(Key o) {
+            store = o.store;
+            far = o.far;
+            version = o.version;
+            border = o.border;
+            tint = o.tint;
+            width = o.width;
+            height = o.height;
+            theme = o.theme;
+            night = o.night;
+            centerX = o.centerX;
+            centerZ = o.centerZ;
+            scale = o.scale;
+            guiScale = o.guiScale;
+            fogX = o.fogX;
+            fogZ = o.fogZ;
+        }
     }
 
     void destroy() {
