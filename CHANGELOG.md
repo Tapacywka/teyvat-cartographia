@@ -17,6 +17,8 @@ also for Minecraft 26.1.2 (`+mc26.1.2-fabric`, `+mc26.1.2-neoforge`), since 0.7.
   longer forgets every stone seen but not activated.
 - Two worlds or servers whose names are longer than 80 characters and begin alike no longer share one map. The map of
   such a world moves to a folder of its own the first time the world is opened.
+- Teleport on the world map put the player a block off at negative coordinates (west and north of 0); now they
+  stand in the middle of the block clicked.
 
 ## [1.5.0] - 2026-11-17
 

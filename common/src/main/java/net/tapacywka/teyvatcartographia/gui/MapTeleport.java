@@ -6,6 +6,8 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.Level;
 
+import java.util.Locale;
+
 /**
  * "Teleport" of the world map's context menu: the vanilla /tp in the viewed dimension, sent for an operator (the server
  * checks the rights again). Where the map does not know the ground (unexplored, the height {@link #UNKNOWN}) the server
@@ -24,13 +26,21 @@ public final class MapTeleport {
     private static ResourceKey<Level> landDim;
     private static int landX, landZ, landTicks;
 
+    /**
+     * The middle of block {@code b} as a command reads it: -21 is -20.5, not "-21" and ".5" (the middle of -22); one
+     * decimal, so a coordinate in the millions is no "1.0E7".
+     */
+    static String mid(int b) {
+        return String.format(Locale.ROOT, "%.1f", b + 0.5);
+    }
+
     /** The command that goes there, or up over the spot when its ground is not known and there is no other way. */
     static String command(ResourceKey<Level> dim, int bx, int y, int bz) {
         String in = "execute in " + dim.location() + " ";
-        if (y != UNKNOWN) return in + "run tp @s " + bx + ".5 " + y + " " + bz + ".5";
-        if (dim == Level.NETHER) return in + "run spreadplayers " + bx + ".5 " + bz + ".5 0 8 under 120 false @s";
-        if (dim == Level.END) return in + "run spreadplayers " + bx + ".5 " + bz + ".5 0 8 false @s";
-        return in + "run tp @s " + bx + ".5 " + HIGH + " " + bz + ".5";
+        if (y != UNKNOWN) return in + "run tp @s " + mid(bx) + " " + y + " " + mid(bz);
+        if (dim == Level.NETHER) return in + "run spreadplayers " + mid(bx) + " " + mid(bz) + " 0 8 under 120 false @s";
+        if (dim == Level.END) return in + "run spreadplayers " + mid(bx) + " " + mid(bz) + " 0 8 false @s";
+        return in + "run tp @s " + mid(bx) + " " + HIGH + " " + mid(bz);
     }
 
     /** Whether {@link #command} only went up, so the player is to be set down once the chunk is here. */
@@ -40,7 +50,7 @@ public final class MapTeleport {
 
     /** The second step: onto the top block of the column. */
     static String landCommand(ResourceKey<Level> dim, int bx, int bz) {
-        return "execute in " + dim.location() + " positioned " + bx + ".5 0 " + bz + ".5 positioned over motion_blocking run tp @s ~ ~ ~";
+        return "execute in " + dim.location() + " positioned " + mid(bx) + " 0 " + mid(bz) + " positioned over motion_blocking run tp @s ~ ~ ~";
     }
 
     /** Sends the teleport; true if it was sent (the map closes then). */
