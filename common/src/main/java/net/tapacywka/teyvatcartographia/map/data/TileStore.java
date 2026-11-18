@@ -365,6 +365,9 @@ public final class TileStore {
         }
     }
 
+    /** Regions whose write failed (IO thread): marked unsaved again on the game's thread, so the next save tries again. */
+    private final ConcurrentLinkedQueue<Long> unsaved = new ConcurrentLinkedQueue<>();
+
     private void save(MapTile t) {
         if (!t.diskDirty) return;
         t.diskDirty = false;
@@ -379,6 +382,7 @@ public final class TileStore {
                 MapStorage.save(dir, snap);
             } catch (Exception e) {
                 TeyvatCartographia.LOGGER.error("Failed to save map region {},{}", snap.tx(), snap.tz(), e);
+                unsaved.add(t.key);
             }
         });
     }
@@ -405,6 +409,12 @@ public final class TileStore {
 
     /** Saves up to {@code n} of the queued regions (every tick); the index once the queue is empty. */
     void saveSome(int n) {
+        Long failedKey;
+        while ((failedKey = unsaved.poll()) != null) {
+            // Still in memory: saved again with the next save. Evicted meanwhile: its picture is gone with it.
+            MapTile t = tiles.get((long) failedKey);
+            if (t != null) t.diskDirty = true;
+        }
         if (saveQueue.isEmpty()) return;
         while (n > 0 && !saveQueue.isEmpty()) {
             long key = saveQueue.dequeueLong();
